@@ -24,13 +24,25 @@ function parseICalDate(icalDate: string): string {
     const second = icalDate.substring(13, 15);
     return `${year}-${month}-${day}T${hour}:${minute}:${second}Z`;
   } else {
-    // Format: YYYYMMDD - treat as date only, use local timezone
+    // Format: YYYYMMDD - treat as date only in Sri Lanka timezone (UTC+5:30)
     const year = icalDate.substring(0, 4);
     const month = icalDate.substring(4, 6);
     const day = icalDate.substring(6, 8);
-    // Create date in local timezone to avoid off-by-one day issues
-    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-    return date.toISOString();
+    
+    // Create date at noon Sri Lanka time to avoid timezone issues
+    // This ensures the date stays correct when converted to UTC
+    const sriLankaOffset = 5.5 * 60; // 5:30 in minutes
+    const date = new Date(`${year}-${month}-${day}T12:00:00+05:30`);
+    
+    // Convert to UTC date at midnight
+    const utcDate = new Date(Date.UTC(
+      parseInt(year), 
+      parseInt(month) - 1, 
+      parseInt(day),
+      0, 0, 0, 0
+    ));
+    
+    return utcDate.toISOString();
   }
 }
 
@@ -105,6 +117,8 @@ serve(async (req) => {
       try {
         const checkIn = parseICalDate(event.dtstart);
         const checkOut = parseICalDate(event.dtend);
+        
+        console.log(`Processing event: ${event.summary}, Check-in: ${event.dtstart} -> ${checkIn}, Check-out: ${event.dtend} -> ${checkOut}`);
         
         // Check if booking already exists
         const { data: existingBooking } = await supabase
