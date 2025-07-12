@@ -26,7 +26,8 @@ export default function Income() {
     amount: "",
     accountId: "",
     locationId: "",
-    date: format(new Date(), "yyyy-MM-dd"),
+    dateFrom: format(new Date(), "yyyy-MM-dd"),
+    dateTo: format(new Date(), "yyyy-MM-dd"),
     note: "",
     paymentMethod: "",
     bookingSource: "direct" as Database["public"]["Enums"]["booking_source"],
@@ -81,10 +82,10 @@ export default function Income() {
     doc.text(`Amount: ${currencySymbol}${formData.amount}`, 20, 50);
     doc.text(`Account: ${selectedAccount?.name || "N/A"}`, 20, 60);
     doc.text(`Location: ${selectedLocation?.name || "N/A"}`, 20, 70);
-    doc.text(`Date: ${formData.date}`, 20, 80);
+    doc.text(`Date: ${formData.dateFrom}`, 20, 80);
     if (formData.note) doc.text(`Note: ${formData.note}`, 20, 90);
     
-    doc.save(`income-record-${formData.date}.pdf`);
+    doc.save(`income-record-${formData.dateFrom}.pdf`);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -95,7 +96,7 @@ export default function Income() {
         amount: parseFloat(formData.amount),
         account_id: formData.accountId,
         location_id: formData.locationId,
-        date: formData.date,
+        date: formData.dateFrom,
         note: formData.note || null,
         payment_method: formData.paymentMethod,
         is_advance: formData.isAdvance,
@@ -114,7 +115,8 @@ export default function Income() {
         amount: "",
         accountId: "",
         locationId: "",
-        date: format(new Date(), "yyyy-MM-dd"),
+        dateFrom: format(new Date(), "yyyy-MM-dd"),
+        dateTo: format(new Date(), "yyyy-MM-dd"),
         note: "",
         paymentMethod: "",
         bookingSource: "direct",
@@ -132,33 +134,14 @@ export default function Income() {
     }
   };
 
-  const deleteIncome = async (id: string) => {
-    if (confirm("Are you sure you want to delete this income record?")) {
-      try {
-        const { error } = await supabase
-          .from("income")
-          .delete()
-          .eq("id", id);
-        if (error) throw error;
-        toast({ title: "Success", description: "Income record deleted successfully" });
-        fetchData();
-      } catch (error) {
-        console.error("Error deleting income:", error);
-        toast({
-          title: "Error",
-          description: "Failed to delete income record",
-          variant: "destructive",
-        });
-      }
-    }
-  };
+  // Remove delete function - deletion should be done from settings page
 
   if (loading) {
-    return <div className="container mx-auto p-6">Loading...</div>;
+    return <div className="container mx-auto p-4 sm:p-6">Loading...</div>;
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center gap-4">
         <Button asChild variant="ghost" size="icon">
           <Link to="/">
@@ -166,21 +149,61 @@ export default function Income() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Add Income</h1>
-          <p className="text-muted-foreground">Record your income transactions</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Add Income</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Record your income transactions</p>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* Location Filter at Top */}
+      <Card className="border-green-200 bg-green-50">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="locationFilter" className="text-green-800 font-medium">Select Location</Label>
+              <Select value={formData.locationId} onValueChange={(value) => setFormData({...formData, locationId: value})}>
+                <SelectTrigger className="bg-white border-green-200">
+                  <SelectValue placeholder="All Locations" />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map((location) => (
+                    <SelectItem key={location.id} value={location.id}>
+                      {location.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-green-800 font-medium">Date Range</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  value={formData.dateFrom}
+                  onChange={(e) => setFormData({...formData, dateFrom: e.target.value})}
+                  className="bg-white border-green-200"
+                />
+                <Input
+                  type="date"
+                  value={formData.dateTo}
+                  onChange={(e) => setFormData({...formData, dateTo: e.target.value})}
+                  className="bg-white border-green-200"
+                />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         {/* Income Form */}
-        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-green-800 flex items-center gap-2">
+        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg order-2 lg:order-1">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-green-800 flex items-center gap-2 text-lg">
               <Plus className="h-5 w-5" />
               New Income Record
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -234,7 +257,7 @@ export default function Income() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="accountId">Account</Label>
                   <Select value={formData.accountId} onValueChange={(value) => setFormData({...formData, accountId: value})}>
@@ -250,36 +273,19 @@ export default function Income() {
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div>
-                  <Label htmlFor="locationId">Location</Label>
-                  <Select value={formData.locationId} onValueChange={(value) => setFormData({...formData, locationId: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {locations.map((location) => (
-                        <SelectItem key={location.id} value={location.id}>
-                          {location.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="date">Date</Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="date"
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({...formData, date: e.target.value})}
-                    className="pl-10"
-                    required
-                  />
+                  <Label htmlFor="date">Date</Label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="date"
+                      type="date"
+                      value={formData.dateFrom}
+                      onChange={(e) => setFormData({...formData, dateFrom: e.target.value})}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -294,11 +300,9 @@ export default function Income() {
                 />
               </div>
 
-              <div className="flex gap-3 pt-4">
-                <Button type="button" variant="outline" onClick={generatePDF} className="flex-1">
-                  Download PDF
-                </Button>
+              <div className="flex gap-2 pt-4">
                 <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700 text-white">
+                  <Plus className="h-4 w-4 mr-2" />
                   Add Income
                 </Button>
               </div>
@@ -307,31 +311,27 @@ export default function Income() {
         </Card>
 
         {/* Recent Income Records */}
-        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-green-800">Recent Income Records</CardTitle>
+        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg order-1 lg:order-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-green-800 text-lg">Recent Income Records</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
+          <CardContent className="p-4 sm:p-6">
+            <div className="space-y-2 max-h-80 sm:max-h-96 overflow-y-auto">
               {recentIncomes.map((income) => (
-                <div key={income.id} className="flex justify-between items-center p-3 bg-white/60 rounded-lg border border-green-100">
-                  <div className="flex-1">
-                    <div className="font-medium text-green-900">
-                      {income.type.charAt(0).toUpperCase() + income.type.slice(1)} - {income.accounts?.currency === "LKR" ? "Rs." : "$"}{income.amount.toLocaleString()}
-                    </div>
-                    <div className="text-sm text-green-700">
-                      {income.locations?.name} • {format(new Date(income.date), "MMM dd, yyyy")}
-                      {income.note && ` • ${income.note}`}
+                <div key={income.id} className="p-3 bg-white/60 rounded-lg border border-green-100">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                    <div className="flex-1">
+                      <div className="font-medium text-green-900 text-sm sm:text-base">
+                        {income.type.charAt(0).toUpperCase() + income.type.slice(1)} - {income.accounts?.currency === "LKR" ? "Rs." : "$"}{income.amount.toLocaleString()}
+                      </div>
+                      <div className="text-xs sm:text-sm text-green-700 mt-1">
+                        <div>{income.locations?.name}</div>
+                        <div>Account: {income.accounts?.name} ({income.accounts?.currency})</div>
+                        <div>{format(new Date(income.date), "MMM dd, yyyy")}</div>
+                        {income.note && <div className="mt-1 italic">"{income.note}"</div>}
+                      </div>
                     </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => deleteIncome(income.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </div>
               ))}
               {recentIncomes.length === 0 && (
