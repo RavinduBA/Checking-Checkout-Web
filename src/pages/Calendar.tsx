@@ -158,11 +158,27 @@ export default function Calendar() {
     // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const currentDateObj = new Date(year, month, day);
+      // Set to start of day for accurate comparison
+      currentDateObj.setHours(0, 0, 0, 0);
+      
       const dayBookings = filteredBookings.filter(booking => {
         const checkIn = new Date(booking.check_in);
         const checkOut = new Date(booking.check_out);
-        // Include booking if current date is between check-in and check-out (inclusive of check-in, exclusive of check-out)
-        return currentDateObj >= checkIn && currentDateObj <= checkOut;
+        
+        // Set to start of day for accurate comparison
+        checkIn.setHours(0, 0, 0, 0);
+        checkOut.setHours(0, 0, 0, 0);
+        
+        // Include booking if current date is between check-in and check-out
+        // For single day bookings (check-in = check-out), include that day
+        // For multi-day bookings, include from check-in up to but not including check-out
+        if (checkIn.getTime() === checkOut.getTime()) {
+          // Single day booking
+          return currentDateObj.getTime() === checkIn.getTime();
+        } else {
+          // Multi-day booking: include check-in date, exclude check-out date
+          return currentDateObj.getTime() >= checkIn.getTime() && currentDateObj.getTime() < checkOut.getTime();
+        }
       });
       
       days.push({
@@ -300,34 +316,34 @@ export default function Calendar() {
             {calendarDays.map((dayData, index) => (
               <div 
                 key={index} 
-                className={`min-h-16 md:min-h-20 p-2 border-2 border-border rounded-lg transition-all duration-200 ${
-                  dayData ? 'hover:bg-muted/50 cursor-pointer hover:shadow-md hover:border-primary/30' : ''
+                className={`min-h-12 md:min-h-16 p-1 border border-border rounded-md transition-colors ${
+                  dayData ? 'hover:bg-muted/50 cursor-pointer' : ''
                 }`}
                 onClick={() => dayData && handleDateClick(dayData.date, dayData.bookings)}
               >
                 {dayData && (
                   <>
-                    <div className="text-sm font-bold mb-2 text-foreground">{dayData.day}</div>
+                    <div className="text-xs font-medium mb-1">{dayData.day}</div>
                     {dayData.isAvailable ? (
-                      <div className="w-full h-6 md:h-8 bg-emerald-100 border-2 border-emerald-300 rounded-md text-xs flex items-center justify-center text-emerald-800 font-medium shadow-sm">
+                      <div className="w-full h-4 md:h-6 bg-emerald-500/20 rounded text-xs flex items-center justify-center text-emerald-700">
                         <span className="hidden md:inline">Available</span>
-                        <span className="md:hidden text-lg">✓</span>
+                        <span className="md:hidden">✓</span>
                       </div>
                     ) : (
                       <div className="space-y-1">
-                        {dayData.bookings.slice(0, 2).map((booking, bookingIndex) => (
+                        {dayData.bookings.slice(0, 1).map((booking) => (
                           <div 
                             key={booking.id} 
-                            className={`text-xs font-semibold text-white px-2 py-1 rounded-md text-center shadow-sm border-2 ${getSourceColor(booking.source)} ${getSourceBorder(booking.source)}`}
-                            title={`${booking.guest_name} - ${booking.source} - ${new Date(booking.check_in).toLocaleDateString()} to ${new Date(booking.check_out).toLocaleDateString()}`}
+                            className={`text-xs text-white px-1 py-0.5 rounded text-center ${getSourceColor(booking.source)}`}
+                            title={`${booking.guest_name} - ${booking.source}`}
                           >
-                            <div className="hidden md:block truncate">{booking.guest_name.split(' ')[0]}</div>
-                            <div className="md:hidden">●</div>
+                            <span className="hidden md:inline">{booking.guest_name.split(' ')[0]}</span>
+                            <span className="md:hidden">•</span>
                           </div>
                         ))}
-                        {dayData.bookings.length > 2 && (
-                          <div className="text-xs text-center text-muted-foreground font-medium bg-muted/80 rounded px-1 py-0.5">
-                            +{dayData.bookings.length - 2} more
+                        {dayData.bookings.length > 1 && (
+                          <div className="text-xs text-center text-muted-foreground">
+                            +{dayData.bookings.length - 1}
                           </div>
                         )}
                       </div>
