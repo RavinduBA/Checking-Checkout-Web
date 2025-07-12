@@ -135,6 +135,15 @@ export default function Reports() {
     return convertToLkr(Number(item.amount), item.accounts?.currency || 'LKR');
   };
 
+  // Helper function to format currency display (shows original currency)
+  const formatCurrencyDisplay = (amount: number, currency: string = "LKR") => {
+    if (currency === "USD") {
+      return `$${Math.abs(amount).toLocaleString()}`;
+    }
+    return `Rs.${Math.abs(amount).toLocaleString()}`;
+  };
+
+  // Helper function for LKR totals only (always shows Rs.)
   const formatCurrency = (amount: number, currency: string = "LKR") => {
     return `Rs.${Math.abs(amount).toLocaleString()}`;
   };
@@ -684,7 +693,7 @@ export default function Reports() {
                              {items.map((item) => (
                                <div key={item.id} className="flex justify-between text-sm">
                                  <span>{new Date(item.date).toLocaleDateString()} - {item.accounts?.name}</span>
-                                 <span>{formatCurrency(item.amount)}</span>
+                                  <span>{formatCurrencyDisplay(Number(item.amount), item.accounts?.currency || 'LKR')}</span>
                                </div>
                              ))}
                            </div>
@@ -737,7 +746,7 @@ export default function Reports() {
                                      {items.map((item) => (
                                        <div key={item.id} className="flex justify-between text-xs text-muted-foreground">
                                          <span>{new Date(item.date).toLocaleDateString()} - {item.accounts?.name}</span>
-                                         <span>{formatCurrency(item.amount)}</span>
+                                         <span>{formatCurrencyDisplay(Number(item.amount), item.accounts?.currency || 'LKR')}</span>
                                        </div>
                                      ))}
                                    </div>
@@ -854,10 +863,10 @@ export default function Reports() {
                                 <p className="text-sm text-muted-foreground">{account.currency} Account</p>
                               </div>
                             </div>
-                            <div className="text-right">
-                              <div className="font-bold text-lg">
-                                {formatCurrency(currentBalance, account.currency)}
-                              </div>
+                             <div className="text-right">
+                               <div className="font-bold text-lg">
+                                 {formatCurrencyDisplay(currentBalance, account.currency)}
+                               </div>
                               <p className="text-xs text-muted-foreground">
                                 {accountTxns.length} transactions
                               </p>
@@ -946,16 +955,16 @@ export default function Reports() {
                                              )}
                                            </div>
                                            <div className="col-span-2 text-right">
-                                             <div className={`font-medium ${
-                                               txn.balance_change >= 0 ? 'text-success' : 'text-destructive'
-                                             }`}>
-                                               {txn.balance_change >= 0 ? '+' : ''}{formatCurrency(txn.balance_change, account.currency)}
-                                             </div>
-                                           </div>
-                                           <div className="col-span-3 text-right">
-                                             <div className="font-bold text-primary">
-                                               {formatCurrency(txn.runningBalance, account.currency)}
-                                             </div>
+                                              <div className={`font-medium ${
+                                                txn.balance_change >= 0 ? 'text-success' : 'text-destructive'
+                                              }`}>
+                                                {txn.balance_change >= 0 ? '+' : ''}{formatCurrencyDisplay(txn.balance_change, account.currency)}
+                                              </div>
+                                            </div>
+                                            <div className="col-span-3 text-right">
+                                              <div className="font-bold text-primary">
+                                                {formatCurrencyDisplay(txn.runningBalance, account.currency)}
+                                              </div>
                                              <div className="text-xs text-muted-foreground">Balance</div>
                                            </div>
                                          </div>
@@ -985,24 +994,25 @@ export default function Reports() {
                             accountTxns.reduce((sum, txn) => sum + txn.balance_change, 0);
                           
                           return (
-                            <div key={account.id} className="flex justify-between p-3 bg-muted/50 rounded-lg">
-                              <span className="font-medium">{account.name}</span>
-                              <span className="font-bold">{formatCurrency(currentBalance, account.currency)}</span>
-                            </div>
-                          );
-                        })}
-                        <div className="flex justify-between font-bold text-lg border-t pt-3">
-                          <span>Total Assets</span>
-                          <span className="text-success">
-                            {formatCurrency(
-                              accounts.reduce((sum, account) => {
-                                const accountTxns = accountTransactions[account.id] || [];
-                                return sum + account.initial_balance + 
-                                  accountTxns.reduce((txnSum, txn) => txnSum + txn.balance_change, 0);
-                              }, 0)
-                            )}
-                          </span>
-                        </div>
+                             <div key={account.id} className="flex justify-between p-3 bg-muted/50 rounded-lg">
+                               <span className="font-medium">{account.name}</span>
+                               <span className="font-bold">{formatCurrencyDisplay(currentBalance, account.currency)}</span>
+                             </div>
+                           );
+                         })}
+                         <div className="flex justify-between font-bold text-lg border-t pt-3">
+                           <span>Total Assets</span>
+                           <span className="text-success">
+                             {formatCurrency(
+                               accounts.reduce((sum, account) => {
+                                 const accountTxns = accountTransactions[account.id] || [];
+                                 const currentBalance = account.initial_balance + 
+                                   accountTxns.reduce((txnSum, txn) => txnSum + txn.balance_change, 0);
+                                 return sum + convertToLkr(currentBalance, account.currency);
+                               }, 0)
+                             )}
+                           </span>
+                         </div>
                       </div>
                     </div>
 
