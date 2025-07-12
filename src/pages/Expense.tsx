@@ -156,10 +156,11 @@ export default function Expense() {
       )}
 
       {/* Form */}
-      <Card className="bg-gradient-card border-0 shadow-elegant">
+      <Card className="bg-gradient-to-br from-red-50 to-pink-100 dark:from-red-950 dark:to-pink-950 border-red-200 shadow-red-200/50 shadow-xl"
+            style={{ boxShadow: '0 20px 25px -5px rgba(239, 68, 68, 0.1), 0 10px 10px -5px rgba(239, 68, 68, 0.04)' }}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Minus className="h-5 w-5 text-destructive" />
+          <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-300">
+            <Minus className="h-5 w-5" />
             Expense Details
           </CardTitle>
         </CardHeader>
@@ -231,7 +232,9 @@ export default function Expense() {
             <div className="space-y-2">
               <Label htmlFor="amount">Amount</Label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
+                  {selectedAccount?.currency === "USD" ? "$" : "Rs. "}
+                </span>
                 <Input
                   id="amount"
                   type="number"
@@ -265,30 +268,30 @@ export default function Expense() {
               </div>
             </div>
 
-            {/* Account */}
-            <div className="space-y-2">
-              <Label htmlFor="account">Pay from Account</Label>
-              <Select 
-                value={formData.accountId} 
-                onValueChange={(value) => setFormData({...formData, accountId: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>{account.name}</span>
-                        <Badge variant="outline" className="ml-2">
-                          {account.currency}
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                {/* Account */}
+                <div className="space-y-2">
+                  <Label htmlFor="account">Pay from Account</Label>
+                  <Select 
+                    value={formData.accountId} 
+                    onValueChange={(value) => setFormData({...formData, accountId: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{account.name}</span>
+                            <Badge variant="outline" className="ml-2">
+                              {account.currency}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
             {/* Note */}
             <div className="space-y-2">
@@ -319,8 +322,7 @@ export default function Expense() {
               </Button>
               <Button 
                 type="submit" 
-                variant="destructive"
-                className="flex-1"
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
                 disabled={!formData.mainCategory || !formData.subCategory || !formData.amount || !formData.accountId || !formData.locationId}
               >
                 <Minus className="h-4 w-4 mr-2" />

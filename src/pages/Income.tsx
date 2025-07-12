@@ -14,35 +14,40 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import jsPDF from 'jspdf';
 
-const incomeTypes = [
-  { value: "booking", label: "Booking Income" },
-  { value: "laundry", label: "Laundry Income" },
-  { value: "food", label: "Food Income" },
-  { value: "other", label: "Other Income" }
-];
-
-const paymentMethods = [
-  { value: "cash", label: "Cash" },
-  { value: "transfer", label: "Bank Transfer" },
-  { value: "payoneer", label: "Payoneer" }
+const bookingSources = [
+  { value: "direct", label: "Direct Booking" },
+  { value: "airbnb", label: "Airbnb" },
+  { value: "booking_com", label: "Booking.com" }
 ];
 
 type Location = Tables<"locations">;
 type Account = Tables<"accounts">;
+type IncomeType = Tables<"income">["type"];
+type Income = Tables<"income"> & {
+  accounts: Tables<"accounts">;
+  locations: Tables<"locations">;
+};
 
 export default function Income() {
   const [formData, setFormData] = useState({
-    type: "",
+    type: "" as IncomeType | "",
     amount: "",
     accountId: "",
     locationId: "",
-    paymentMethod: "",
+    bookingSource: "",
     isAdvance: false,
     note: "",
     date: new Date().toISOString().split('T')[0]
   });
   const [locations, setLocations] = useState<Location[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [incomeTypes, setIncomeTypes] = useState<{value: IncomeType, label: string}[]>([
+    { value: "booking", label: "Booking Income" },
+    { value: "laundry", label: "Laundry Income" },
+    { value: "food", label: "Food Income" },
+    { value: "other", label: "Other Income" }
+  ]);
+  const [recentIncomes, setRecentIncomes] = useState<Income[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -52,13 +57,15 @@ export default function Income() {
 
   const fetchData = async () => {
     try {
-      const [locationsData, accountsData] = await Promise.all([
+      const [locationsData, accountsData, recentIncomeData] = await Promise.all([
         supabase.from("locations").select("*").eq("is_active", true),
-        supabase.from("accounts").select("*")
+        supabase.from("accounts").select("*"),
+        supabase.from("income").select("*, accounts(*), locations(*)").order("created_at", { ascending: false }).limit(10)
       ]);
 
       setLocations(locationsData.data || []);
       setAccounts(accountsData.data || []);
+      setRecentIncomes(recentIncomeData.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -70,6 +77,7 @@ export default function Income() {
     const doc = new jsPDF();
     const selectedLocation = locations.find(l => l.id === formData.locationId);
     const selectedAccount = accounts.find(a => a.id === formData.accountId);
+    const currencySymbol = selectedAccount?.currency === "USD" ? "$" : "Rs. ";
     
     // Header
     doc.setFontSize(20);
@@ -79,9 +87,11 @@ export default function Income() {
     doc.setFontSize(12);
     doc.text(`Location: ${selectedLocation?.name || 'N/A'}`, 20, 50);
     doc.text(`Income Type: ${incomeTypes.find(t => t.value === formData.type)?.label || 'N/A'}`, 20, 60);
-    doc.text(`Amount: LKR ${Number(formData.amount).toLocaleString()}`, 20, 70);
+    doc.text(`Amount: ${currencySymbol}${Number(formData.amount).toLocaleString()}`, 20, 70);
     doc.text(`Account: ${selectedAccount?.name || 'N/A'}`, 20, 80);
-    doc.text(`Payment Method: ${paymentMethods.find(p => p.value === formData.paymentMethod)?.label || 'N/A'}`, 20, 90);
+    if (formData.type === "booking" && formData.bookingSource) {
+      doc.text(`Booking Source: ${bookingSources.find(s => s.value === formData.bookingSource)?.label || 'N/A'}`, 20, 90);
+    }
     doc.text(`Date: ${formData.date}`, 20, 100);
     doc.text(`Is Advance: ${formData.isAdvance ? 'Yes' : 'No'}`, 20, 110);
     if (formData.note) {
@@ -95,14 +105,16 @@ export default function Income() {
     e.preventDefault();
     
     try {
+      const paymentMethod = formData.type === "booking" ? formData.bookingSource : "direct";
+      
       const { error } = await supabase
         .from("income")
         .insert([{
-          type: formData.type as any,
+          type: formData.type as IncomeType,
           amount: Number(formData.amount),
           account_id: formData.accountId,
           location_id: formData.locationId,
-          payment_method: formData.paymentMethod,
+          payment_method: paymentMethod,
           is_advance: formData.isAdvance,
           note: formData.note || null,
           date: formData.date
@@ -110,22 +122,28 @@ export default function Income() {
 
       if (error) throw error;
 
+      const selectedAccount = accounts.find(a => a.id === formData.accountId);
+      const currencySymbol = selectedAccount?.currency === "USD" ? "$" : "Rs. ";
+
       toast({
         title: "Income Added Successfully",
-        description: `LKR ${Number(formData.amount).toLocaleString()} added to ${accounts.find(a => a.id === formData.accountId)?.name}`,
+        description: `${currencySymbol}${Number(formData.amount).toLocaleString()} added to ${selectedAccount?.name}`,
       });
       
-      // Reset form
+      // Reset form and refresh recent incomes
       setFormData({
-        type: "",
+        type: "" as IncomeType | "",
         amount: "",
         accountId: "",
         locationId: "",
-        paymentMethod: "",
+        bookingSource: "",
         isAdvance: false,
         note: "",
         date: new Date().toISOString().split('T')[0]
       });
+      
+      // Refresh recent incomes
+      fetchData();
     } catch (error) {
       console.error("Error adding income:", error);
       toast({
@@ -138,13 +156,14 @@ export default function Income() {
 
   const selectedAccount = accounts.find(a => a.id === formData.accountId);
   const selectedLocation = locations.find(l => l.id === formData.locationId);
+  const currencySymbol = selectedAccount?.currency === "USD" ? "$" : "Rs. ";
 
   if (loading) {
     return <div className="flex justify-center items-center min-h-64">Loading...</div>;
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
+    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button asChild variant="ghost" size="icon">
@@ -166,16 +185,19 @@ export default function Income() {
         </Badge>
       )}
 
-      {/* Form */}
-      <Card className="bg-gradient-card border-0 shadow-elegant">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5 text-primary" />
-            Income Details
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Form */}
+        <div className="lg:col-span-2">
+          <Card className="bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-950 dark:to-green-950 border-emerald-200 shadow-emerald-200/50 shadow-xl"
+                style={{ boxShadow: '0 20px 25px -5px rgba(16, 185, 129, 0.1), 0 10px 10px -5px rgba(16, 185, 129, 0.04)' }}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+                <Plus className="h-5 w-5" />
+                Income Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
             {/* Location */}
             <div className="space-y-2">
               <Label htmlFor="location">Location</Label>
@@ -196,92 +218,96 @@ export default function Income() {
               </Select>
             </div>
 
-            {/* Income Type */}
-            <div className="space-y-2">
-              <Label htmlFor="type">Income Type</Label>
-              <Select 
-                value={formData.type} 
-                onValueChange={(value) => setFormData({...formData, type: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select income type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {incomeTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                {/* Income Type */}
+                <div className="space-y-2">
+                  <Label htmlFor="type">Income Type</Label>
+                  <Select 
+                    value={formData.type} 
+                    onValueChange={(value) => setFormData({...formData, type: value as IncomeType, bookingSource: ""})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select income type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {incomeTypes.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            {/* Payment Method */}
-            <div className="space-y-2">
-              <Label htmlFor="paymentMethod">Payment Method</Label>
-              <Select 
-                value={formData.paymentMethod} 
-                onValueChange={(value) => setFormData({...formData, paymentMethod: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="How was this paid?" />
-                </SelectTrigger>
-                <SelectContent>
-                  {paymentMethods.map((method) => (
-                    <SelectItem key={method.value} value={method.value}>
-                      {method.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                {/* Booking Source - Only show if income type is booking */}
+                {formData.type === "booking" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="bookingSource">Booking Source</Label>
+                    <Select 
+                      value={formData.bookingSource} 
+                      onValueChange={(value) => setFormData({...formData, bookingSource: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Where did this booking come from?" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {bookingSources.map((source) => (
+                          <SelectItem key={source.value} value={source.value}>
+                            {source.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
-            {/* Account */}
-            <div className="space-y-2">
-              <Label htmlFor="account">Deposit to Account</Label>
-              <Select 
-                value={formData.accountId} 
-                onValueChange={(value) => setFormData({...formData, accountId: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {[...new Map(accounts.map(account => [account.id, account])).values()].map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>{account.name}</span>
-                        <Badge variant="outline" className="ml-2">
-                          {account.currency}
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                {/* Account */}
+                <div className="space-y-2">
+                  <Label htmlFor="account">Deposit to Account</Label>
+                  <Select 
+                    value={formData.accountId} 
+                    onValueChange={(value) => setFormData({...formData, accountId: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{account.name}</span>
+                            <Badge variant="outline" className="ml-2">
+                              {account.currency}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            {/* Amount */}
-            <div className="space-y-2">
-              <Label htmlFor="amount">Amount</Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="0.00"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                  className="pl-10"
-                  required
-                />
-              </div>
-              {selectedAccount && (
-                <p className="text-xs text-muted-foreground">
-                  Will be added to {selectedAccount.name} ({selectedAccount.currency})
-                </p>
-              )}
-            </div>
+                {/* Amount */}
+                <div className="space-y-2">
+                  <Label htmlFor="amount">Amount</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
+                      {currencySymbol}
+                    </span>
+                    <Input
+                      id="amount"
+                      type="number"
+                      placeholder="0.00"
+                      value={formData.amount}
+                      onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                  {selectedAccount && (
+                    <p className="text-xs text-muted-foreground">
+                      Will be added to {selectedAccount.name} ({selectedAccount.currency})
+                    </p>
+                  )}
+                </div>
 
             {/* Date */}
             <div className="space-y-2">
@@ -323,33 +349,69 @@ export default function Income() {
               />
             </div>
 
-            {/* Submit and PDF Buttons */}
-            <div className="flex gap-3 pt-4">
-              <Button asChild variant="outline" className="flex-1">
-                <Link to="/">Cancel</Link>
-              </Button>
-              <Button 
-                type="button"
-                variant="outline"
-                onClick={generatePDF}
-                disabled={!formData.type || !formData.amount || !formData.accountId || !formData.locationId || !formData.paymentMethod}
-                className="flex-1"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Download PDF
-              </Button>
-              <Button 
-                type="submit" 
-                className="flex-1"
-                disabled={!formData.type || !formData.amount || !formData.accountId || !formData.locationId || !formData.paymentMethod}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Income
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+                {/* Submit and PDF Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <Button asChild variant="outline" className="flex-1">
+                    <Link to="/">Cancel</Link>
+                  </Button>
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    onClick={generatePDF}
+                    disabled={!formData.type || !formData.amount || !formData.accountId || !formData.locationId || (formData.type === "booking" && !formData.bookingSource)}
+                    className="flex-1"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                    disabled={!formData.type || !formData.amount || !formData.accountId || !formData.locationId || (formData.type === "booking" && !formData.bookingSource)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Income
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Income List */}
+        <div className="lg:col-span-1">
+          <Card className="bg-gradient-card border-0 shadow-elegant">
+            <CardHeader>
+              <CardTitle className="text-sm text-muted-foreground">Recent Income</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {recentIncomes.length > 0 ? (
+                  recentIncomes.map((income) => (
+                    <div key={income.id} className="p-3 bg-emerald-50 dark:bg-emerald-950 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm capitalize">{income.type.replace('_', ' ')}</p>
+                          <p className="text-xs text-muted-foreground">{income.locations?.name}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(income.date).toLocaleDateString()}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-emerald-600">
+                            {income.accounts?.currency === "USD" ? "$" : "Rs. "}{Number(income.amount).toLocaleString()}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{income.accounts?.name}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">No recent income</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

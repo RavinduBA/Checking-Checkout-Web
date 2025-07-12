@@ -43,6 +43,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [expandedIncomeSection, setExpandedIncomeSection] = useState<string | null>(null);
   const [expandedExpenseSection, setExpandedExpenseSection] = useState<string | null>(null);
+  const [expandAllSections, setExpandAllSections] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -190,24 +191,99 @@ export default function Reports() {
     // Header
     doc.setFontSize(20);
     doc.text('Financial Reports', 20, 30);
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 40);
+    
+    let yPos = 55;
     
     // Summary
     doc.setFontSize(14);
-    doc.text('Summary', 20, 50);
+    doc.text('Summary', 20, yPos);
+    yPos += 15;
     doc.setFontSize(12);
-    doc.text(`Total Income (Year): ${formatCurrency(incomeTotal.thisYear)}`, 20, 65);
-    doc.text(`Total Expenses (Year): ${formatCurrency(expenseTotal.thisYear)}`, 20, 75);
-    doc.text(`Net Profit (Year): ${formatCurrency(profit.thisYear)}`, 20, 85);
+    doc.text(`Total Income (Year): ${formatCurrency(incomeTotal.thisYear)}`, 20, yPos);
+    yPos += 10;
+    doc.text(`Total Expenses (Year): ${formatCurrency(expenseTotal.thisYear)}`, 20, yPos);
+    yPos += 10;
+    doc.text(`Net Profit (Year): ${formatCurrency(profit.thisYear)}`, 20, yPos);
+    yPos += 20;
     
-    // Account Balances
+    // Income Details
     doc.setFontSize(14);
-    doc.text('Account Balances', 20, 105);
+    doc.text('Income Details', 20, yPos);
+    yPos += 15;
+    doc.setFontSize(10);
+    
+    Object.entries(groupByType(filteredIncome)).forEach(([type, items]) => {
+      doc.text(`${type.replace('_', ' ').toUpperCase()}:`, 30, yPos);
+      const typeTotal = items.reduce((sum, item) => sum + Number(item.amount), 0);
+      doc.text(`${formatCurrency(typeTotal)}`, 120, yPos);
+      yPos += 8;
+      
+      Object.entries(groupByLocation(items)).forEach(([location, locationItems]) => {
+        doc.text(`  ${location}:`, 40, yPos);
+        const locationTotal = locationItems.reduce((sum, item) => sum + Number(item.amount), 0);
+        doc.text(`${formatCurrency(locationTotal)}`, 120, yPos);
+        yPos += 6;
+        
+        locationItems.forEach((item) => {
+          doc.text(`    ${new Date(item.date).toLocaleDateString()} - ${item.accounts?.name}`, 50, yPos);
+          doc.text(`${formatCurrency(Number(item.amount))}`, 120, yPos);
+          yPos += 5;
+          if (yPos > 280) { // New page
+            doc.addPage();
+            yPos = 20;
+          }
+        });
+      });
+      yPos += 5;
+    });
+    
+    yPos += 10;
+    
+    // Expense Details
+    doc.setFontSize(14);
+    doc.text('Expense Details', 20, yPos);
+    yPos += 15;
+    doc.setFontSize(10);
+    
+    Object.entries(groupByType(filteredExpenses)).forEach(([type, items]) => {
+      doc.text(`${type.replace('_', ' ').toUpperCase()}:`, 30, yPos);
+      const typeTotal = items.reduce((sum, item) => sum + Number(item.amount), 0);
+      doc.text(`${formatCurrency(typeTotal)}`, 120, yPos);
+      yPos += 8;
+      
+      Object.entries(groupByLocation(items)).forEach(([location, locationItems]) => {
+        doc.text(`  ${location}:`, 40, yPos);
+        const locationTotal = locationItems.reduce((sum, item) => sum + Number(item.amount), 0);
+        doc.text(`${formatCurrency(locationTotal)}`, 120, yPos);
+        yPos += 6;
+        
+        locationItems.forEach((item) => {
+          const expenseItem = item as Expense;
+          doc.text(`    ${new Date(expenseItem.date).toLocaleDateString()} - ${expenseItem.sub_type}`, 50, yPos);
+          doc.text(`${formatCurrency(Number(expenseItem.amount))}`, 120, yPos);
+          yPos += 5;
+          if (yPos > 280) { // New page
+            doc.addPage();
+            yPos = 20;
+          }
+        });
+      });
+      yPos += 5;
+    });
+    
+    // Account Balances (New page)
+    doc.addPage();
+    yPos = 30;
+    doc.setFontSize(14);
+    doc.text('Account Balances', 20, yPos);
+    yPos += 15;
     doc.setFontSize(12);
-    let yPos = 120;
     Object.entries(accountBalances).forEach(([accountId, balance]) => {
       const account = accounts.find(a => a.id === accountId);
       if (account) {
-        doc.text(`${account.name}: ${formatCurrency(balance, account.currency)}`, 20, yPos);
+        doc.text(`${account.name}: ${formatCurrency(balance, account.currency)}`, 30, yPos);
         yPos += 10;
       }
     });
@@ -272,8 +348,19 @@ export default function Reports() {
                 onChange={(e) => setEndDate(e.target.value)}
               />
             </div>
-            <div className="flex items-end">
-              <Button variant="outline" className="w-full" onClick={generatePDF}>
+            <div className="flex items-end gap-2">
+              <Button 
+                variant="outline" 
+                className="flex-1" 
+                onClick={() => {
+                  setExpandAllSections(!expandAllSections);
+                  setExpandedIncomeSection(expandAllSections ? null : "all");
+                  setExpandedExpenseSection(expandAllSections ? null : "all");
+                }}
+              >
+                {expandAllSections ? "Collapse All" : "Expand All"}
+              </Button>
+              <Button variant="outline" className="flex-1" onClick={generatePDF}>
                 <Download className="h-4 w-4 mr-2" />
                 Export PDF
               </Button>
@@ -357,13 +444,13 @@ export default function Reports() {
                   {Object.entries(groupByType(filteredIncome)).map(([type, items]) => (
                     <Collapsible 
                       key={type}
-                      open={expandedIncomeSection === type}
+                      open={expandedIncomeSection === type || expandedIncomeSection === "all"}
                       onOpenChange={() => setExpandedIncomeSection(expandedIncomeSection === type ? null : type)}
                     >
                       <CollapsibleTrigger asChild>
                         <Button variant="ghost" className="w-full justify-between p-3 h-auto">
                           <div className="flex items-center gap-3">
-                            {expandedIncomeSection === type ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            {(expandedIncomeSection === type || expandedIncomeSection === "all") ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                             <span className="font-semibold capitalize">{type.replace('_', ' ')}</span>
                             <Badge variant="outline">{items.length} items</Badge>
                           </div>
@@ -382,17 +469,12 @@ export default function Reports() {
                               </span>
                             </div>
                             <div className="space-y-1">
-                              {locationItems.slice(0, 3).map((item) => (
+                              {locationItems.map((item) => (
                                 <div key={item.id} className="text-sm text-muted-foreground flex justify-between">
                                   <span>{new Date(item.date).toLocaleDateString()} - {item.accounts?.name}</span>
                                   <span>{formatCurrency(Number(item.amount))}</span>
                                 </div>
                               ))}
-                              {locationItems.length > 3 && (
-                                <div className="text-xs text-muted-foreground">
-                                  +{locationItems.length - 3} more entries
-                                </div>
-                              )}
                             </div>
                           </div>
                         ))}
@@ -411,13 +493,13 @@ export default function Reports() {
                   {Object.entries(groupByType(filteredExpenses)).map(([type, items]) => (
                     <Collapsible 
                       key={type}
-                      open={expandedExpenseSection === type}
+                      open={expandedExpenseSection === type || expandedExpenseSection === "all"}
                       onOpenChange={() => setExpandedExpenseSection(expandedExpenseSection === type ? null : type)}
                     >
                       <CollapsibleTrigger asChild>
                         <Button variant="ghost" className="w-full justify-between p-3 h-auto">
                           <div className="flex items-center gap-3">
-                            {expandedExpenseSection === type ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            {(expandedExpenseSection === type || expandedExpenseSection === "all") ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                             <span className="font-semibold capitalize">{type.replace('_', ' ')}</span>
                             <Badge variant="outline">{items.length} items</Badge>
                           </div>
@@ -436,17 +518,15 @@ export default function Reports() {
                               </span>
                             </div>
                             <div className="space-y-1">
-                              {locationItems.slice(0, 3).map((item) => (
-                                <div key={item.id} className="text-sm text-muted-foreground flex justify-between">
-                                  <span>{new Date(item.date).toLocaleDateString()} - {item.accounts?.name}</span>
-                                  <span>{formatCurrency(Number(item.amount))}</span>
-                                </div>
-                              ))}
-                              {locationItems.length > 3 && (
-                                <div className="text-xs text-muted-foreground">
-                                  +{locationItems.length - 3} more entries
-                                </div>
-                              )}
+                              {locationItems.map((item) => {
+                                const expenseItem = item as Expense;
+                                return (
+                                  <div key={item.id} className="text-sm text-muted-foreground flex justify-between">
+                                    <span>{new Date(expenseItem.date).toLocaleDateString()} - {expenseItem.sub_type} ({expenseItem.accounts?.name})</span>
+                                    <span>{formatCurrency(Number(expenseItem.amount))}</span>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         ))}
