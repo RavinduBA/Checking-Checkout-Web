@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -13,44 +13,121 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
 
-// Mock data - in real app this would come from Supabase
-const mockData = {
-  location: "Asaliya Villa",
-  todayIncome: 45000,
-  todayExpenses: 12000,
-  weeklyIncome: 280000,
-  weeklyExpenses: 85000,
-  accounts: [
-    { name: "Sampath Bank", balance: 125000, currency: "LKR" },
-    { name: "Payoneer", balance: 450, currency: "USD" },
-    { name: "Cash", balance: 25000, currency: "LKR" },
-  ],
-  upcomingBookings: [
-    {
-      id: 1,
-      guestName: "John Smith",
-      checkIn: "2025-01-13",
-      checkOut: "2025-01-15",
-      amount: 35000,
-      source: "booking.com",
-      status: "confirmed"
-    },
-    {
-      id: 2,
-      guestName: "Sarah Wilson",
-      checkIn: "2025-01-14",
-      checkOut: "2025-01-16",
-      amount: 28000,
-      source: "airbnb",
-      status: "pending"
-    }
-  ]
+type Income = Tables<"income"> & {
+  accounts: Tables<"accounts">;
 };
 
+type Expense = Tables<"expenses"> & {
+  accounts: Tables<"accounts">;
+};
+
+type Booking = Tables<"bookings"> & {
+  locations: Tables<"locations">;
+};
+
+type Account = Tables<"accounts">;
+
 export default function Dashboard() {
-  const profit = mockData.weeklyIncome - mockData.weeklyExpenses;
-  const profitPercentage = ((profit / mockData.weeklyIncome) * 100).toFixed(1);
+  const [loading, setLoading] = useState(true);
+  const [todayIncome, setTodayIncome] = useState(0);
+  const [todayExpenses, setTodayExpenses] = useState(0);
+  const [weeklyIncome, setWeeklyIncome] = useState(0);
+  const [weeklyExpenses, setWeeklyExpenses] = useState(0);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
+  const [accountBalances, setAccountBalances] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      const [
+        todayIncomeData,
+        todayExpensesData,
+        weeklyIncomeData,
+        weeklyExpensesData,
+        accountsData,
+        bookingsData
+      ] = await Promise.all([
+        supabase.from("income").select("amount").eq("date", today),
+        supabase.from("expenses").select("amount").eq("date", today),
+        supabase.from("income").select("amount").gte("date", weekAgo),
+        supabase.from("expenses").select("amount").gte("date", weekAgo),
+        supabase.from("accounts").select("*"),
+        supabase.from("bookings").select("*, locations(*)").gte("check_in", today).order("check_in").limit(5)
+      ]);
+
+      setTodayIncome(todayIncomeData.data?.reduce((sum, item) => sum + item.amount, 0) || 0);
+      setTodayExpenses(todayExpensesData.data?.reduce((sum, item) => sum + item.amount, 0) || 0);
+      setWeeklyIncome(weeklyIncomeData.data?.reduce((sum, item) => sum + item.amount, 0) || 0);
+      setWeeklyExpenses(weeklyExpensesData.data?.reduce((sum, item) => sum + item.amount, 0) || 0);
+      setAccounts(accountsData.data || []);
+      setUpcomingBookings(bookingsData.data || []);
+
+      // Calculate account balances
+      await calculateAccountBalances(accountsData.data || []);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculateAccountBalances = async (accountsList: Account[]) => {
+    const balances: Record<string, number> = {};
+    
+    for (const account of accountsList) {
+      let balance = account.initial_balance;
+      
+      // Add income
+      const { data: income } = await supabase
+        .from("income")
+        .select("amount")
+        .eq("account_id", account.id);
+      
+      // Subtract expenses
+      const { data: expenses } = await supabase
+        .from("expenses")
+        .select("amount")
+        .eq("account_id", account.id);
+      
+      // Add incoming transfers
+      const { data: incomingTransfers } = await supabase
+        .from("account_transfers")
+        .select("amount, conversion_rate")
+        .eq("to_account_id", account.id);
+      
+      // Subtract outgoing transfers
+      const { data: outgoingTransfers } = await supabase
+        .from("account_transfers")
+        .select("amount")
+        .eq("from_account_id", account.id);
+      
+      balance += (income || []).reduce((sum, item) => sum + item.amount, 0);
+      balance -= (expenses || []).reduce((sum, item) => sum + item.amount, 0);
+      balance += (incomingTransfers || []).reduce((sum, item) => sum + (item.amount * item.conversion_rate), 0);
+      balance -= (outgoingTransfers || []).reduce((sum, item) => sum + item.amount, 0);
+      
+      balances[account.id] = balance;
+    }
+    
+    setAccountBalances(balances);
+  };
+
+  if (loading) {
+    return <div className="space-y-6 animate-fade-in">Loading dashboard...</div>;
+  }
+
+  const profit = weeklyIncome - weeklyExpenses;
+  const profitPercentage = weeklyIncome > 0 ? ((profit / weeklyIncome) * 100).toFixed(1) : '0';
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -58,7 +135,7 @@ export default function Dashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Welcome back!</h1>
-          <p className="text-muted-foreground">Managing {mockData.location}</p>
+          <p className="text-muted-foreground">Financial Management Dashboard</p>
         </div>
         <div className="flex gap-2">
           <Button asChild variant="villa" size="sm">
@@ -87,10 +164,10 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">
-              Rs. {mockData.todayIncome.toLocaleString()}
+              Rs. {todayIncome.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">
-              +12% from yesterday
+              Real-time data
             </p>
           </CardContent>
         </Card>
@@ -104,10 +181,10 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              Rs. {mockData.todayExpenses.toLocaleString()}
+              Rs. {todayExpenses.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">
-              -5% from yesterday
+              Real-time data
             </p>
           </CardContent>
         </Card>
@@ -139,7 +216,7 @@ export default function Dashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {mockData.accounts.map((account, index) => (
+          {accounts.map((account, index) => (
             <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-border/50">
               <div>
                 <p className="font-medium text-foreground">{account.name}</p>
@@ -148,7 +225,7 @@ export default function Dashboard() {
               <div className="text-right">
                 <p className="font-bold text-lg">
                   {account.currency === "USD" ? "$" : "Rs. "}
-                  {account.balance.toLocaleString()}
+                  {(accountBalances[account.id] || 0).toLocaleString()}
                 </p>
                 <Badge variant="outline" className="mt-1">
                   {account.currency}
@@ -174,32 +251,39 @@ export default function Dashboard() {
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
-          {mockData.upcomingBookings.map((booking) => (
-            <div key={booking.id} className="p-4 rounded-lg bg-background/50 border border-border/50">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <div>
-                  <p className="font-medium text-foreground">{booking.guestName}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {booking.checkIn} to {booking.checkOut}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge 
-                    variant={booking.status === 'confirmed' ? 'default' : 'secondary'}
-                    className="capitalize"
-                  >
-                    {booking.status}
-                  </Badge>
-                  <Badge variant="outline">
-                    {booking.source}
-                  </Badge>
-                  <span className="font-bold text-success">
-                    Rs. {booking.amount.toLocaleString()}
-                  </span>
+          {upcomingBookings.length > 0 ? (
+            upcomingBookings.map((booking) => (
+              <div key={booking.id} className="p-4 rounded-lg bg-background/50 border border-border/50">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div>
+                    <p className="font-medium text-foreground">{booking.guest_name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(booking.check_in).toLocaleDateString()} to {new Date(booking.check_out).toLocaleDateString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{booking.locations?.name}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant={booking.status === 'confirmed' ? 'default' : 'secondary'}
+                      className="capitalize"
+                    >
+                      {booking.status}
+                    </Badge>
+                    <Badge variant="outline">
+                      {booking.source.replace('_', '.')}
+                    </Badge>
+                    <span className="font-bold text-success">
+                      Rs. {booking.total_amount.toLocaleString()}
+                    </span>
+                  </div>
                 </div>
               </div>
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No upcoming bookings</p>
             </div>
-          ))}
+          )}
         </CardContent>
       </Card>
     </div>

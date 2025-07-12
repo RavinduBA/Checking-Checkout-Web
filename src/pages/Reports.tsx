@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, TrendingUp, TrendingDown, Calendar, Download, BarChart3, ChevronDown, ChevronRight } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Calendar, Download, BarChart3, ChevronDown, ChevronRight, DollarSign, PieChart, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +37,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [expandedIncomeSection, setExpandedIncomeSection] = useState<string | null>("all");
   const [expandedExpenseSection, setExpandedExpenseSection] = useState<string | null>("all");
+  const [activeTab, setActiveTab] = useState("summary");
 
   useEffect(() => {
     fetchData();
@@ -279,6 +281,10 @@ export default function Reports() {
     return <div className="container mx-auto p-4 sm:p-6">Loading...</div>;
   }
 
+  const totalIncome = filteredIncome.reduce((sum, item) => sum + Number(item.amount), 0);
+  const totalExpenses = filteredExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
+  const netProfit = totalIncome - totalExpenses;
+
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
       {/* Header */}
@@ -349,171 +355,309 @@ export default function Reports() {
         </CardContent>
       </Card>
 
-      {/* Main Report Content */}
-      <div className="grid grid-cols-1 gap-6">
-        {/* Hierarchical Income Report */}
-        <Card className="bg-gradient-card border-0 shadow-elegant">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-green-700">
-                <TrendingUp className="h-5 w-5" />
-                Income Breakdown
-              </CardTitle>
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                Total: {formatCurrency(filteredIncome.reduce((sum, item) => sum + Number(item.amount), 0))}
-              </Badge>
-            </div>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-gradient-card border-0 shadow-elegant hover-scale">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+            <TrendingUp className="h-4 w-4 text-success" />
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {Object.entries(groupIncomeBySource(filteredIncome)).map(([source, items]) => {
-                const sourceTotal = items.reduce((sum, item) => sum + Number(item.amount), 0);
-                const isExpanded = expandedIncomeSection === source || expandedIncomeSection === "all";
-                
-                return (
-                  <Collapsible 
-                    key={source} 
-                    open={isExpanded}
-                    onOpenChange={(open) => setExpandedIncomeSection(open ? source : null)}
-                  >
-                    <CollapsibleTrigger asChild>
-                      <div className="flex items-center justify-between p-4 bg-green-50 hover:bg-green-100 rounded-lg cursor-pointer border border-green-200 transition-colors">
-                        <div className="flex items-center gap-3">
-                          {isExpanded ? <ChevronDown className="h-4 w-4 text-green-600" /> : <ChevronRight className="h-4 w-4 text-green-600" />}
-                          <span className="font-semibold text-green-800">{source}</span>
-                          <Badge variant="outline" className="bg-white border-green-300 text-green-700">
-                            {items.length} entries
-                          </Badge>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-green-800">{formatCurrency(sourceTotal)}</div>
-                        </div>
-                      </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="ml-6 mt-2 space-y-2">
-                        {items.map((item, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 bg-white rounded border border-green-100 hover:shadow-sm transition-shadow">
-                            <div className="flex-1">
-                              <div className="text-sm font-medium text-gray-900">
-                                {new Date(item.date).toLocaleDateString()} - {item.accounts?.name}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {item.locations?.name} • {item.accounts?.currency}
-                                {item.note && ` • ${item.note}`}
-                              </div>
-                            </div>
-                            <div className="text-green-700 font-semibold">
-                              {formatCurrency(Number(item.amount), item.accounts?.currency)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                );
-              })}
-            </div>
+            <div className="text-2xl font-bold text-success">{formatCurrency(totalIncome)}</div>
+            <p className="text-xs text-muted-foreground">
+              {filteredIncome.length} transactions
+            </p>
           </CardContent>
         </Card>
 
-        {/* Hierarchical Expense Report */}
-        <Card className="bg-gradient-card border-0 shadow-elegant">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-red-700">
-                <TrendingDown className="h-5 w-5" />
-                Expense Breakdown
-              </CardTitle>
-              <Badge variant="secondary" className="bg-red-100 text-red-800">
-                Total: {formatCurrency(filteredExpenses.reduce((sum, item) => sum + Number(item.amount), 0))}
-              </Badge>
-            </div>
+        <Card className="bg-gradient-card border-0 shadow-elegant hover-scale">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+            <TrendingDown className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {Object.entries(groupByMainAndSubType(filteredExpenses)).map(([mainType, subTypes]) => {
-                const mainTypeTotal = Object.values(subTypes).flat().reduce((sum, item) => sum + Number(item.amount), 0);
-                const mainTypeKey = `main-${mainType}`;
-                const isMainExpanded = expandedExpenseSection === mainTypeKey || expandedExpenseSection === "all" || !expandedExpenseSection;
-                
-                return (
-                  <Collapsible 
-                    key={mainType}
-                    open={isMainExpanded}
-                    onOpenChange={(open) => setExpandedExpenseSection(open ? mainTypeKey : null)}
-                  >
-                    <CollapsibleTrigger asChild>
-                      <div className="flex items-center justify-between p-4 bg-red-50 hover:bg-red-100 rounded-lg cursor-pointer border border-red-200 transition-colors">
-                        <div className="flex items-center gap-3">
-                          {isMainExpanded ? <ChevronDown className="h-4 w-4 text-red-600" /> : <ChevronRight className="h-4 w-4 text-red-600" />}
-                          <span className="font-semibold text-red-800">{mainType.toUpperCase()}</span>
-                          <Badge variant="outline" className="bg-white border-red-300 text-red-700">
-                            {Object.keys(subTypes).length} categories
-                          </Badge>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-red-800">{formatCurrency(mainTypeTotal)}</div>
-                        </div>
-                      </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="ml-6 mt-2 space-y-2">
-                        {Object.entries(subTypes).map(([subType, items]) => {
-                          const subTypeTotal = items.reduce((sum, item) => sum + Number(item.amount), 0);
-                          const subTypeKey = `sub-${mainType}-${subType}`;
-                          const isSubExpanded = expandedExpenseSection === subTypeKey || expandedExpenseSection === "all" || !expandedExpenseSection;
-                          
-                          return (
-                            <Collapsible 
-                              key={subType}
-                              open={isSubExpanded}
-                              onOpenChange={(open) => setExpandedExpenseSection(open ? subTypeKey : null)}
-                            >
-                              <CollapsibleTrigger asChild>
-                                <div className="flex items-center justify-between p-3 bg-orange-50 hover:bg-orange-100 rounded border border-orange-200 cursor-pointer transition-colors">
-                                  <div className="flex items-center gap-2">
-                                    {isSubExpanded ? <ChevronDown className="h-3 w-3 text-orange-600" /> : <ChevronRight className="h-3 w-3 text-orange-600" />}
-                                    <span className="font-medium text-orange-800">{subType}</span>
-                                    <Badge variant="outline" className="bg-white border-orange-300 text-orange-700 text-xs">
-                                      {items.length} entries
-                                    </Badge>
-                                  </div>
-                                  <div className="font-semibold text-orange-800">{formatCurrency(subTypeTotal)}</div>
-                                </div>
-                              </CollapsibleTrigger>
-                              <CollapsibleContent>
-                                <div className="ml-6 mt-2 space-y-1">
-                                  {items.map((item, index) => (
-                                    <div key={index} className="flex items-center justify-between p-2 bg-white rounded border border-orange-100 hover:shadow-sm transition-shadow">
-                                      <div className="flex-1">
-                                        <div className="text-sm font-medium text-gray-900">
-                                          {new Date(item.date).toLocaleDateString()} - {item.accounts?.name}
-                                        </div>
-                                        <div className="text-xs text-gray-500">
-                                          {item.locations?.name} • {item.accounts?.currency}
-                                          {item.note && ` • ${item.note}`}
-                                        </div>
-                                      </div>
-                                      <div className="text-red-700 font-semibold">
-                                        {formatCurrency(Number(item.amount), item.accounts?.currency)}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </CollapsibleContent>
-                            </Collapsible>
-                          );
-                        })}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                );
-              })}
+            <div className="text-2xl font-bold text-destructive">{formatCurrency(totalExpenses)}</div>
+            <p className="text-xs text-muted-foreground">
+              {filteredExpenses.length} transactions
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className={`bg-gradient-card border-0 shadow-elegant hover-scale ${netProfit >= 0 ? 'border-l-4 border-l-success' : 'border-l-4 border-l-destructive'}`}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
+            <DollarSign className={`h-4 w-4 ${netProfit >= 0 ? 'text-success' : 'text-destructive'}`} />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
+              {formatCurrency(netProfit)}
             </div>
+            <p className="text-xs text-muted-foreground">
+              {totalIncome > 0 ? ((netProfit / totalIncome) * 100).toFixed(1) : '0'}% margin
+            </p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Tabs for different report views */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="summary" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Summary
+          </TabsTrigger>
+          <TabsTrigger value="profit-loss" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Profit & Loss
+          </TabsTrigger>
+          <TabsTrigger value="balance-sheet" className="flex items-center gap-2">
+            <PieChart className="h-4 w-4" />
+            Balance Sheet
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Summary Tab */}
+        <TabsContent value="summary" className="space-y-6 mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Income Summary */}
+            <Card className="bg-gradient-card border-0 shadow-elegant">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-success" />
+                    Income Summary
+                  </span>
+                  <Badge variant="outline">{formatCurrency(totalIncome)}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {Object.entries(groupIncomeBySource(filteredIncome)).map(([source, items]) => {
+                    const sourceTotal = items.reduce((sum, item) => sum + Number(item.amount), 0);
+                    const percentage = totalIncome > 0 ? ((sourceTotal / totalIncome) * 100).toFixed(1) : '0';
+                    
+                    return (
+                      <Collapsible key={source} className="border rounded-lg">
+                        <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-muted/50">
+                          <span className="font-medium">{source}</span>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary">{percentage}%</Badge>
+                            <span className="font-medium">{formatCurrency(sourceTotal)}</span>
+                            <ChevronDown className="h-4 w-4" />
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="px-4 pb-4">
+                          <div className="space-y-2">
+                            {items.slice(0, 5).map((item) => (
+                              <div key={item.id} className="flex justify-between text-sm">
+                                <span>{new Date(item.date).toLocaleDateString()} - {item.accounts?.name}</span>
+                                <span>{formatCurrency(item.amount)}</span>
+                              </div>
+                            ))}
+                            {items.length > 5 && (
+                              <p className="text-xs text-muted-foreground">
+                                +{items.length - 5} more transactions
+                              </p>
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Expense Summary */}
+            <Card className="bg-gradient-card border-0 shadow-elegant">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <TrendingDown className="h-5 w-5 text-destructive" />
+                    Expense Summary
+                  </span>
+                  <Badge variant="outline">{formatCurrency(totalExpenses)}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {Object.entries(groupByMainAndSubType(filteredExpenses)).map(([mainType, subTypes]) => {
+                    const mainTypeTotal = Object.values(subTypes).flat().reduce((sum, item) => sum + Number(item.amount), 0);
+                    const percentage = totalExpenses > 0 ? ((mainTypeTotal / totalExpenses) * 100).toFixed(1) : '0';
+                    
+                    return (
+                      <Collapsible key={mainType} className="border rounded-lg">
+                        <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-muted/50">
+                          <span className="font-medium">{mainType}</span>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary">{percentage}%</Badge>
+                            <span className="font-medium">{formatCurrency(mainTypeTotal)}</span>
+                            <ChevronDown className="h-4 w-4" />
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="px-4 pb-4">
+                          <div className="space-y-3">
+                            {Object.entries(subTypes).map(([subType, items]) => {
+                              const subTypeTotal = items.reduce((sum, item) => sum + Number(item.amount), 0);
+                              return (
+                                <div key={subType} className="border-l-2 border-muted pl-4">
+                                  <div className="flex justify-between items-center mb-2">
+                                    <span className="font-medium text-sm">{subType}</span>
+                                    <span className="font-medium">{formatCurrency(subTypeTotal)}</span>
+                                  </div>
+                                  {items.slice(0, 3).map((item) => (
+                                    <div key={item.id} className="flex justify-between text-xs text-muted-foreground">
+                                      <span>{new Date(item.date).toLocaleDateString()} - {item.accounts?.name}</span>
+                                      <span>{formatCurrency(item.amount)}</span>
+                                    </div>
+                                  ))}
+                                  {items.length > 3 && (
+                                    <p className="text-xs text-muted-foreground">
+                                      +{items.length - 3} more
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Profit & Loss Tab */}
+        <TabsContent value="profit-loss" className="space-y-6 mt-6">
+          <Card className="bg-gradient-card border-0 shadow-elegant">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Profit & Loss Statement
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* Revenue Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center justify-between">
+                    Revenue
+                    <span className="text-success">{formatCurrency(totalIncome)}</span>
+                  </h3>
+                  <div className="pl-4 space-y-2">
+                    {Object.entries(groupIncomeBySource(filteredIncome)).map(([source, items]) => {
+                      const sourceTotal = items.reduce((sum, item) => sum + Number(item.amount), 0);
+                      return (
+                        <div key={source} className="flex justify-between py-2 border-b border-muted">
+                          <span>{source} Revenue</span>
+                          <span>{formatCurrency(sourceTotal)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Expenses Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center justify-between">
+                    Operating Expenses
+                    <span className="text-destructive">({formatCurrency(totalExpenses)})</span>
+                  </h3>
+                  <div className="pl-4 space-y-2">
+                    {Object.entries(groupByMainAndSubType(filteredExpenses)).map(([mainType, subTypes]) => {
+                      const mainTypeTotal = Object.values(subTypes).flat().reduce((sum, item) => sum + Number(item.amount), 0);
+                      return (
+                        <div key={mainType} className="flex justify-between py-2 border-b border-muted">
+                          <span>{mainType}</span>
+                          <span>({formatCurrency(mainTypeTotal)})</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Net Income */}
+                <div className="border-t-2 border-primary pt-4">
+                  <div className={`flex justify-between text-xl font-bold ${netProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    <span>Net {netProfit >= 0 ? 'Profit' : 'Loss'}</span>
+                    <span>{formatCurrency(Math.abs(netProfit))}</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Balance Sheet Tab */}
+        <TabsContent value="balance-sheet" className="space-y-6 mt-6">
+          <Card className="bg-gradient-card border-0 shadow-elegant">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PieChart className="h-5 w-5 text-primary" />
+                Balance Sheet Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Assets */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-success">Assets</h3>
+                  <div className="space-y-3">
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <h4 className="font-medium mb-2">Current Assets</h4>
+                      <div className="space-y-2 pl-4">
+                        {accounts.map((account) => (
+                          <div key={account.id} className="flex justify-between text-sm">
+                            <span>{account.name}</span>
+                            <span>{formatCurrency(account.initial_balance, account.currency)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex justify-between font-semibold text-success border-t pt-2">
+                      <span>Total Assets</span>
+                      <span>
+                        {formatCurrency(
+                          accounts.reduce((sum, acc) => sum + acc.initial_balance, 0)
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Equity */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-primary">Owner's Equity</h3>
+                  <div className="space-y-3">
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <h4 className="font-medium mb-2">Retained Earnings</h4>
+                      <div className="space-y-2 pl-4">
+                        <div className="flex justify-between text-sm">
+                          <span>Net Income</span>
+                          <span className={netProfit >= 0 ? 'text-success' : 'text-destructive'}>
+                            {formatCurrency(netProfit)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Previous Earnings</span>
+                          <span>{formatCurrency(0)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between font-semibold text-primary border-t pt-2">
+                      <span>Total Equity</span>
+                      <span>{formatCurrency(netProfit)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

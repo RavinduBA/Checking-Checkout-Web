@@ -519,6 +519,7 @@ export default function Accounts() {
         </Dialog>
       </div>
 
+      {/* Account Cards */}
       <div className="grid gap-4">
         {accounts.map((account) => (
           <Card key={account.id} className="border-2">
@@ -547,6 +548,9 @@ export default function Accounts() {
                   <span className="font-medium">Currency:</span> {account.currency}
                 </div>
                 <div>
+                  <span className="font-medium">Current Balance:</span> {account.currency === "LKR" ? "Rs." : "$"}{(accountBalances[account.id] || 0).toLocaleString()}
+                </div>
+                <div>
                   <span className="font-medium">Initial Balance:</span> {account.currency === "LKR" ? "Rs." : "$"}{account.initial_balance.toLocaleString()}
                 </div>
                 <div className="col-span-2">
@@ -564,6 +568,101 @@ export default function Accounts() {
           </Card>
         ))}
       </div>
+
+      {/* Transfer History */}
+      <Card className="border-2">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ArrowRightLeft className="h-5 w-5" />
+            Recent Transfers
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TransferHistory />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Transfer History Component
+function TransferHistory() {
+  const [transfers, setTransfers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+
+  useEffect(() => {
+    fetchTransfers();
+  }, []);
+
+  const fetchTransfers = async () => {
+    try {
+      const [transfersResponse, accountsResponse] = await Promise.all([
+        supabase
+          .from("account_transfers")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(20),
+        supabase.from("accounts").select("*")
+      ]);
+
+      setTransfers(transfersResponse.data || []);
+      setAccounts(accountsResponse.data || []);
+    } catch (error) {
+      console.error("Error fetching transfers:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getAccountName = (accountId: string) => {
+    return accounts.find(acc => acc.id === accountId)?.name || 'Unknown Account';
+  };
+
+  const getAccountCurrency = (accountId: string) => {
+    return accounts.find(acc => acc.id === accountId)?.currency || 'LKR';
+  };
+
+  if (loading) {
+    return <div>Loading transfers...</div>;
+  }
+
+  if (transfers.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">No transfers found</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {transfers.map((transfer) => (
+        <div key={transfer.id} className="p-4 border border-border rounded-lg">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">
+                {getAccountName(transfer.from_account_id)} → {getAccountName(transfer.to_account_id)}
+              </span>
+            </div>
+            <div className="text-right">
+              <div className="font-medium">
+                {getAccountCurrency(transfer.from_account_id) === "LKR" ? "Rs." : "$"}{transfer.amount.toLocaleString()}
+              </div>
+              {transfer.conversion_rate !== 1 && (
+                <div className="text-sm text-muted-foreground">
+                  Rate: {transfer.conversion_rate} = {getAccountCurrency(transfer.to_account_id) === "LKR" ? "Rs." : "$"}{(transfer.amount * transfer.conversion_rate).toLocaleString()}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>{new Date(transfer.created_at).toLocaleDateString()}</span>
+            {transfer.note && <span>{transfer.note}</span>}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
