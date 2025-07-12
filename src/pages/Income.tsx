@@ -175,187 +175,187 @@ export default function Income() {
         </CardContent>
       </Card>
 
-      {/* Only show form after location is selected */}
+      {/* Only show content after location is selected */}
       {formData.locationId && (
-        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-          {/* Income Form */}
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg order-2 lg:order-1">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-green-800 flex items-center gap-2 text-lg">
-              <Plus className="h-5 w-5" />
-              New Income Record
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="type">Income Type</Label>
-                  <Select value={formData.type} onValueChange={(value: Database["public"]["Enums"]["income_type"]) => setFormData({ ...formData, type: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {incomeTypes.map((type) => (
-                        <SelectItem key={type.id} value={type.type_name}>
-                          {type.type_name.charAt(0).toUpperCase() + type.type_name.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {formData.type === "booking" && (
+        <div className="space-y-4 sm:space-y-6">
+          {/* Income Form - Show First */}
+          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-green-800 flex items-center gap-2 text-lg">
+                <Plus className="h-5 w-5" />
+                New Income Record
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="bookingSource">Booking Source</Label>
-                    <Select value={formData.bookingSource} onValueChange={(value: Database["public"]["Enums"]["booking_source"]) => setFormData({ ...formData, bookingSource: value })}>
+                    <Label htmlFor="type">Income Type</Label>
+                    <Select value={formData.type} onValueChange={(value: Database["public"]["Enums"]["income_type"]) => setFormData({ ...formData, type: value })}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="direct">Direct</SelectItem>
-                        <SelectItem value="airbnb">Airbnb</SelectItem>
-                        <SelectItem value="booking_com">Booking.com</SelectItem>
+                        {incomeTypes.map((type) => (
+                          <SelectItem key={type.id} value={type.type_name}>
+                            {type.type_name.charAt(0).toUpperCase() + type.type_name.slice(1)}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
-                )}
-              </div>
 
-              {/* Date Range Section - Check-in/Check-out for Bookings */}
-              <div className="bg-white/50 p-4 rounded-lg border border-green-100">
-                <Label className="text-green-800 font-medium mb-3 block">Booking Period</Label>
+                  {formData.type === "booking" && (
+                    <div>
+                      <Label htmlFor="bookingSource">Booking Source</Label>
+                      <Select value={formData.bookingSource} onValueChange={(value: Database["public"]["Enums"]["booking_source"]) => setFormData({ ...formData, bookingSource: value })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="direct">Direct</SelectItem>
+                          <SelectItem value="airbnb">Airbnb</SelectItem>
+                          <SelectItem value="booking_com">Booking.com</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+
+                {/* Date Range Section - Check-in/Check-out for Bookings */}
+                <div className="bg-white/50 p-4 rounded-lg border border-green-100">
+                  <Label className="text-green-800 font-medium mb-3 block">Booking Period</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="checkIn">Check-in Date</Label>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="checkIn"
+                          type="date"
+                          value={formData.dateFrom}
+                          onChange={(e) => setFormData({...formData, dateFrom: e.target.value})}
+                          className="pl-10"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="checkOut">Check-out Date</Label>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="checkOut"
+                          type="date"
+                          value={formData.dateTo}
+                          onChange={(e) => setFormData({...formData, dateTo: e.target.value})}
+                          className="pl-10"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="amount">Amount</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
+                      {currencySymbol}
+                    </span>
+                    <Input
+                      id="amount"
+                      type="number"
+                      placeholder="0.00"
+                      value={formData.amount}
+                      onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="checkIn">Check-in Date</Label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="checkIn"
-                        type="date"
-                        value={formData.dateFrom}
-                        onChange={(e) => setFormData({...formData, dateFrom: e.target.value})}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
+                    <Label htmlFor="accountId">Account</Label>
+                    <Select value={formData.accountId} onValueChange={(value) => setFormData({...formData, accountId: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select account" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accounts.map((account) => (
+                          <SelectItem key={account.id} value={account.id}>
+                            {account.name} ({account.currency})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
-                    <Label htmlFor="checkOut">Check-out Date</Label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="checkOut"
-                        type="date"
-                        value={formData.dateTo}
-                        onChange={(e) => setFormData({...formData, dateTo: e.target.value})}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
+                    <Label htmlFor="paymentMethod">Payment Method</Label>
+                    <Input
+                      id="paymentMethod"
+                      placeholder="Cash, Card, Bank Transfer..."
+                      value={formData.paymentMethod}
+                      onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})}
+                      required
+                    />
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <Label htmlFor="amount">Amount</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
-                    {currencySymbol}
-                  </span>
-                  <Input
-                    id="amount"
-                    type="number"
-                    placeholder="0.00"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                    className="pl-10"
-                    required
+                <div>
+                  <Label htmlFor="note">Note (Optional)</Label>
+                  <Textarea
+                    id="note"
+                    placeholder="Add any additional details..."
+                    value={formData.note}
+                    onChange={(e) => setFormData({...formData, note: e.target.value})}
+                    rows={3}
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="accountId">Account</Label>
-                  <Select value={formData.accountId} onValueChange={(value) => setFormData({...formData, accountId: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select account" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          {account.name} ({account.currency})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="flex gap-2 pt-4">
+                  <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700 text-white">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Income
+                  </Button>
                 </div>
-                <div>
-                  <Label htmlFor="paymentMethod">Payment Method</Label>
-                  <Input
-                    id="paymentMethod"
-                    placeholder="Cash, Card, Bank Transfer..."
-                    value={formData.paymentMethod}
-                    onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})}
-                    required
-                  />
-                </div>
-              </div>
+              </form>
+            </CardContent>
+          </Card>
 
-              <div>
-                <Label htmlFor="note">Note (Optional)</Label>
-                <Textarea
-                  id="note"
-                  placeholder="Add any additional details..."
-                  value={formData.note}
-                  onChange={(e) => setFormData({...formData, note: e.target.value})}
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700 text-white">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Income
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Recent Income Records */}
-        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg order-1 lg:order-2">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-green-800 text-lg">Recent Income Records</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6">
-            <div className="space-y-2 max-h-80 sm:max-h-96 overflow-y-auto">
-              {recentIncomes.map((income) => (
-                <div key={income.id} className="p-3 bg-white/60 rounded-lg border border-green-100">
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-                    <div className="flex-1">
-                      <div className="font-medium text-green-900 text-sm sm:text-base">
-                        {income.type.charAt(0).toUpperCase() + income.type.slice(1)} - {income.accounts?.currency === "LKR" ? "Rs." : "$"}{income.amount.toLocaleString()}
-                      </div>
-                      <div className="text-xs sm:text-sm text-green-700 mt-1">
-                        <div>{income.locations?.name}</div>
-                        <div>Account: {income.accounts?.name} ({income.accounts?.currency})</div>
-                        <div>{format(new Date(income.date), "MMM dd, yyyy")}</div>
-                        {income.note && <div className="mt-1 italic">"{income.note}"</div>}
+          {/* Recent Income Records - Show Second */}
+          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-green-800 text-lg">Recent Income Records</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6">
+              <div className="space-y-2 max-h-80 sm:max-h-96 overflow-y-auto">
+                {recentIncomes.map((income) => (
+                  <div key={income.id} className="p-3 bg-white/60 rounded-lg border border-green-100">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                      <div className="flex-1">
+                        <div className="font-medium text-green-900 text-sm sm:text-base">
+                          {income.type.charAt(0).toUpperCase() + income.type.slice(1)} - {income.accounts?.currency === "LKR" ? "Rs." : "$"}{income.amount.toLocaleString()}
+                        </div>
+                        <div className="text-xs sm:text-sm text-green-700 mt-1">
+                          <div>{income.locations?.name}</div>
+                          <div>Account: {income.accounts?.name} ({income.accounts?.currency})</div>
+                          <div>{format(new Date(income.date), "MMM dd, yyyy")}</div>
+                          {income.note && <div className="mt-1 italic">"{income.note}"</div>}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              {recentIncomes.length === 0 && (
-                <div className="text-center py-8 text-green-600">
-                  No income records yet. Add your first income above!
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+                {recentIncomes.length === 0 && (
+                  <div className="text-center py-8 text-green-600">
+                    No income records yet. Add your first income above!
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

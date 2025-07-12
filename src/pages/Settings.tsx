@@ -235,16 +235,17 @@ export default function Settings() {
                   {expenseTypes.map((type) => (
                     <div
                       key={type.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
+                      className="flex items-center justify-between p-3 border rounded-lg group hover:bg-gray-50"
                     >
-                      <div>
-                        <span className="font-medium">{type.main_type}</span>
-                        <span className="text-muted-foreground"> - {type.sub_type}</span>
+                      <div className="flex-1">
+                        <div className="font-medium">{type.main_type}</div>
+                        <div className="text-sm text-muted-foreground">{type.sub_type}</div>
                       </div>
                       <Button
                         variant="destructive"
                         size="sm"
                         onClick={() => deleteExpenseType(type.id)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -284,15 +285,16 @@ export default function Settings() {
                   {incomeTypes.map((type) => (
                     <div
                       key={type.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
+                      className="flex items-center justify-between p-3 border rounded-lg group hover:bg-gray-50"
                     >
-                      <div>
-                        <span className="font-medium">{type.type_name}</span>
+                      <div className="flex-1">
+                        <div className="font-medium">{type.type_name}</div>
                       </div>
                       <Button
                         variant="destructive"
                         size="sm"
                         onClick={() => deleteIncomeType(type.id)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
