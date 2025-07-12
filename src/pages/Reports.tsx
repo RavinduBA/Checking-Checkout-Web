@@ -660,21 +660,16 @@ export default function Reports() {
                             <ChevronDown className="h-4 w-4" />
                           </div>
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="px-4 pb-4">
-                          <div className="space-y-2">
-                            {items.slice(0, 5).map((item) => (
-                              <div key={item.id} className="flex justify-between text-sm">
-                                <span>{new Date(item.date).toLocaleDateString()} - {item.accounts?.name}</span>
-                                <span>{formatCurrency(item.amount)}</span>
-                              </div>
-                            ))}
-                            {items.length > 5 && (
-                              <p className="text-xs text-muted-foreground">
-                                +{items.length - 5} more transactions
-                              </p>
-                            )}
-                          </div>
-                        </CollapsibleContent>
+                         <CollapsibleContent className="px-4 pb-4">
+                           <div className="space-y-2 max-h-64 overflow-y-auto">
+                             {items.map((item) => (
+                               <div key={item.id} className="flex justify-between text-sm">
+                                 <span>{new Date(item.date).toLocaleDateString()} - {item.accounts?.name}</span>
+                                 <span>{formatCurrency(item.amount)}</span>
+                               </div>
+                             ))}
+                           </div>
+                         </CollapsibleContent>
                       </Collapsible>
                     );
                   })}
@@ -719,17 +714,14 @@ export default function Reports() {
                                     <span className="font-medium text-sm">{subType}</span>
                                     <span className="font-medium">{formatCurrency(subTypeTotal)}</span>
                                   </div>
-                                  {items.slice(0, 3).map((item) => (
-                                    <div key={item.id} className="flex justify-between text-xs text-muted-foreground">
-                                      <span>{new Date(item.date).toLocaleDateString()} - {item.accounts?.name}</span>
-                                      <span>{formatCurrency(item.amount)}</span>
-                                    </div>
-                                  ))}
-                                  {items.length > 3 && (
-                                    <p className="text-xs text-muted-foreground">
-                                      +{items.length - 3} more
-                                    </p>
-                                  )}
+                                   <div className="max-h-48 overflow-y-auto space-y-1">
+                                     {items.map((item) => (
+                                       <div key={item.id} className="flex justify-between text-xs text-muted-foreground">
+                                         <span>{new Date(item.date).toLocaleDateString()} - {item.accounts?.name}</span>
+                                         <span>{formatCurrency(item.amount)}</span>
+                                       </div>
+                                     ))}
+                                   </div>
                                 </div>
                               );
                             })}
@@ -887,49 +879,72 @@ export default function Reports() {
                                 </div>
                               </div>
                               
-                              {/* Transaction History */}
-                              <div>
-                                <h4 className="font-medium mb-3">Transaction History</h4>
-                                <div className="space-y-2 max-h-96 overflow-y-auto">
-                                  {accountTxns.length === 0 ? (
-                                    <p className="text-muted-foreground text-center py-4">No transactions found</p>
-                                  ) : (
-                                    accountTxns.map((txn, index) => (
-                                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                                        <div className="flex-1">
-                                          <div className="flex items-center gap-2">
-                                            <Badge 
-                                              variant={
-                                                txn.type === 'income' ? 'default' :
-                                                txn.type === 'expense' ? 'destructive' :
-                                                txn.type === 'transfer_in' ? 'secondary' : 'outline'
-                                              }
-                                              className="text-xs"
-                                            >
-                                              {txn.type.replace('_', ' ').toUpperCase()}
-                                            </Badge>
-                                            <span className="text-sm">{new Date(txn.date).toLocaleDateString()}</span>
-                                            <span className="text-xs text-muted-foreground">
-                                              {new Date(txn.created_at).toLocaleTimeString()}
-                                            </span>
-                                          </div>
-                                          <p className="text-sm font-medium mt-1">{txn.description}</p>
-                                          {txn.note && (
-                                            <p className="text-xs text-muted-foreground mt-1">{txn.note}</p>
-                                          )}
-                                        </div>
-                                        <div className="text-right">
-                                          <div className={`font-medium ${
-                                            txn.balance_change >= 0 ? 'text-success' : 'text-destructive'
-                                          }`}>
-                                            {txn.balance_change >= 0 ? '+' : ''}{formatCurrency(txn.balance_change, account.currency)}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    ))
-                                  )}
-                                </div>
-                              </div>
+                               {/* Transaction History */}
+                               <div>
+                                 <h4 className="font-medium mb-3">Transaction History (Sorted by Date)</h4>
+                                 <div className="space-y-2 max-h-96 overflow-y-auto">
+                                   {accountTxns.length === 0 ? (
+                                     <p className="text-muted-foreground text-center py-4">No transactions found</p>
+                                   ) : (
+                                     (() => {
+                                       // Sort transactions by date ascending for running balance calculation
+                                       const sortedTxns = [...accountTxns].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+                                       let runningBalance = account.initial_balance;
+                                       
+                                       // Calculate running balance for each transaction
+                                       const txnsWithBalance = sortedTxns.map(txn => {
+                                         runningBalance += txn.balance_change;
+                                         return { ...txn, runningBalance };
+                                       });
+                                       
+                                       // Reverse to show newest first for display
+                                       return txnsWithBalance.reverse().map((txn, index) => (
+                                         <div key={index} className="grid grid-cols-12 gap-2 items-center p-3 border rounded-lg text-sm">
+                                           <div className="col-span-3">
+                                             <div className="flex items-center gap-2">
+                                               <Badge 
+                                                 variant={
+                                                   txn.type === 'income' ? 'default' :
+                                                   txn.type === 'expense' ? 'destructive' :
+                                                   txn.type === 'transfer_in' ? 'secondary' : 'outline'
+                                                 }
+                                                 className="text-xs"
+                                               >
+                                                 {txn.type.replace('_', ' ').toUpperCase()}
+                                               </Badge>
+                                             </div>
+                                             <div className="text-xs text-muted-foreground mt-1">
+                                               {new Date(txn.date).toLocaleDateString()}
+                                             </div>
+                                             <div className="text-xs text-muted-foreground">
+                                               {new Date(txn.created_at).toLocaleTimeString()}
+                                             </div>
+                                           </div>
+                                           <div className="col-span-4">
+                                             <p className="font-medium text-sm">{txn.description}</p>
+                                             {txn.note && (
+                                               <p className="text-xs text-muted-foreground mt-1">{txn.note}</p>
+                                             )}
+                                           </div>
+                                           <div className="col-span-2 text-right">
+                                             <div className={`font-medium ${
+                                               txn.balance_change >= 0 ? 'text-success' : 'text-destructive'
+                                             }`}>
+                                               {txn.balance_change >= 0 ? '+' : ''}{formatCurrency(txn.balance_change, account.currency)}
+                                             </div>
+                                           </div>
+                                           <div className="col-span-3 text-right">
+                                             <div className="font-bold text-primary">
+                                               {formatCurrency(txn.runningBalance, account.currency)}
+                                             </div>
+                                             <div className="text-xs text-muted-foreground">Balance</div>
+                                           </div>
+                                         </div>
+                                       ));
+                                     })()
+                                   )}
+                                 </div>
+                               </div>
                             </div>
                           </CollapsibleContent>
                         </Collapsible>
