@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Trash2, ArrowLeft } from "lucide-react";
@@ -22,11 +23,19 @@ type IncomeType = {
   created_at: string;
 };
 
+type Location = {
+  id: string;
+  name: string;
+  is_active: boolean;
+};
+
 export default function Settings() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);
   const [incomeTypes, setIncomeTypes] = useState<IncomeType[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [selectedLocationId, setSelectedLocationId] = useState<string>("");
   const [newMainType, setNewMainType] = useState("");
   const [newSubType, setNewSubType] = useState("");
   const [newIncomeType, setNewIncomeType] = useState("");
@@ -34,6 +43,7 @@ export default function Settings() {
   useEffect(() => {
     fetchExpenseTypes();
     fetchIncomeTypes();
+    fetchLocations();
   }, []);
 
   const fetchExpenseTypes = async () => {
@@ -69,6 +79,25 @@ export default function Settings() {
       });
     } else {
       setIncomeTypes(data || []);
+    }
+  };
+
+  const fetchLocations = async () => {
+    const { data, error } = await supabase
+      .from("locations")
+      .select("*")
+      .eq("is_active", true)
+      .order("name", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching locations:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch locations",
+        variant: "destructive",
+      });
+    } else {
+      setLocations(data || []);
     }
   };
 
@@ -183,6 +212,42 @@ export default function Settings() {
     }
   };
 
+  const clearLocationBookings = async () => {
+    if (!selectedLocationId) {
+      toast({
+        title: "Error",
+        description: "Please select a location first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const selectedLocation = locations.find(l => l.id === selectedLocationId);
+    if (!selectedLocation) return;
+
+    if (window.confirm(`Are you sure you want to clear ALL bookings for ${selectedLocation.name}? This action cannot be undone.`)) {
+      try {
+        const { data, error } = await supabase.functions.invoke('clear-bookings', {
+          body: { locationId: selectedLocationId }
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: `Cleared ${data.deletedCount} bookings from ${selectedLocation.name}`,
+        });
+      } catch (error) {
+        console.error("Error clearing bookings:", error);
+        toast({
+          title: "Error",
+          description: "Failed to clear bookings",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center gap-4 mb-6">
@@ -193,9 +258,10 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="expenses" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="expenses">Expense Categories</TabsTrigger>
           <TabsTrigger value="income">Income Types</TabsTrigger>
+          <TabsTrigger value="bookings">Booking Management</TabsTrigger>
         </TabsList>
         
         <TabsContent value="expenses">
@@ -300,6 +366,54 @@ export default function Settings() {
                       </Button>
                     </div>
                   ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="bookings">
+          <Card>
+            <CardHeader>
+              <CardTitle>Booking Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                  <h3 className="font-medium text-yellow-800 mb-2">Clear All Bookings</h3>
+                  <p className="text-sm text-yellow-700 mb-4">
+                    This will permanently delete all bookings for the selected location. 
+                    Use this before re-syncing from iCal to avoid duplicates.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="location">Select Location</Label>
+                      <Select value={selectedLocationId} onValueChange={setSelectedLocationId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select location to clear" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {locations.map((location) => (
+                            <SelectItem key={location.id} value={location.id}>
+                              {location.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-end">
+                      <Button 
+                        onClick={clearLocationBookings} 
+                        variant="destructive" 
+                        className="w-full"
+                        disabled={!selectedLocationId}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Clear All Bookings
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>

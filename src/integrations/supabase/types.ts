@@ -519,6 +519,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      clear_location_bookings: {
+        Args: { p_location_id: string }
+        Returns: number
+      }
       sync_ical_bookings: {
         Args: Record<PropertyKey, never>
         Returns: undefined
