@@ -40,10 +40,19 @@ export default function Reports() {
   const [activeTab, setActiveTab] = useState("summary");
   const [accountTransactions, setAccountTransactions] = useState<Record<string, any[]>>({});
   const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [usdToLkrRate, setUsdToLkrRate] = useState<number>(300);
 
   useEffect(() => {
     fetchData();
+    loadCurrencySettings();
   }, []);
+
+  const loadCurrencySettings = () => {
+    const savedRate = localStorage.getItem('usdToLkrRate');
+    if (savedRate) {
+      setUsdToLkrRate(Number(savedRate));
+    }
+  };
 
   useEffect(() => {
     if (accounts.length > 0 && activeTab === "balance-sheet") {
@@ -113,10 +122,20 @@ export default function Reports() {
     return grouped;
   };
 
-  const formatCurrency = (amount: number, currency: string = "LKR") => {
+  // Helper function to convert amounts to LKR equivalent
+  const convertToLkr = (amount: number, currency: string) => {
     if (currency === "USD") {
-      return `$${Math.abs(amount).toLocaleString()}`;
+      return amount * usdToLkrRate;
     }
+    return amount; // Already in LKR
+  };
+
+  // Helper function to get all amounts in LKR equivalent
+  const getAmountInLkr = (item: any) => {
+    return convertToLkr(Number(item.amount), item.accounts?.currency || 'LKR');
+  };
+
+  const formatCurrency = (amount: number, currency: string = "LKR") => {
     return `Rs.${Math.abs(amount).toLocaleString()}`;
   };
 
@@ -495,8 +514,8 @@ export default function Reports() {
     return <div className="container mx-auto p-4 sm:p-6">Loading...</div>;
   }
 
-  const totalIncome = filteredIncome.reduce((sum, item) => sum + Number(item.amount), 0);
-  const totalExpenses = filteredExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
+  const totalIncome = filteredIncome.reduce((sum, item) => sum + getAmountInLkr(item), 0);
+  const totalExpenses = filteredExpenses.reduce((sum, item) => sum + getAmountInLkr(item), 0);
   const netProfit = totalIncome - totalExpenses;
 
   return (
@@ -646,9 +665,9 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {Object.entries(groupIncomeBySource(filteredIncome)).map(([source, items]) => {
-                    const sourceTotal = items.reduce((sum, item) => sum + Number(item.amount), 0);
-                    const percentage = totalIncome > 0 ? ((sourceTotal / totalIncome) * 100).toFixed(1) : '0';
+                   {Object.entries(groupIncomeBySource(filteredIncome)).map(([source, items]) => {
+                     const sourceTotal = items.reduce((sum, item) => sum + getAmountInLkr(item), 0);
+                     const percentage = totalIncome > 0 ? ((sourceTotal / totalIncome) * 100).toFixed(1) : '0';
                     
                     return (
                       <Collapsible key={source} className="border rounded-lg">
@@ -690,25 +709,25 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {Object.entries(groupByMainAndSubType(filteredExpenses)).map(([mainType, subTypes]) => {
-                    const mainTypeTotal = Object.values(subTypes).flat().reduce((sum, item) => sum + Number(item.amount), 0);
-                    const percentage = totalExpenses > 0 ? ((mainTypeTotal / totalExpenses) * 100).toFixed(1) : '0';
-                    
-                    return (
-                      <Collapsible key={mainType} className="border rounded-lg">
-                        <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-muted/50">
-                          <span className="font-medium">{mainType}</span>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary">{percentage}%</Badge>
-                            <span className="font-medium">{formatCurrency(mainTypeTotal)}</span>
-                            <ChevronDown className="h-4 w-4" />
-                          </div>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="px-4 pb-4">
-                          <div className="space-y-3">
-                            {Object.entries(subTypes).map(([subType, items]) => {
-                              const subTypeTotal = items.reduce((sum, item) => sum + Number(item.amount), 0);
-                              return (
+                   {Object.entries(groupByMainAndSubType(filteredExpenses)).map(([mainType, subTypes]) => {
+                     const mainTypeTotal = Object.values(subTypes).flat().reduce((sum, item) => sum + getAmountInLkr(item), 0);
+                     const percentage = totalExpenses > 0 ? ((mainTypeTotal / totalExpenses) * 100).toFixed(1) : '0';
+                     
+                     return (
+                       <Collapsible key={mainType} className="border rounded-lg">
+                         <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-muted/50">
+                           <span className="font-medium">{mainType}</span>
+                           <div className="flex items-center gap-2">
+                             <Badge variant="secondary">{percentage}%</Badge>
+                             <span className="font-medium">{formatCurrency(mainTypeTotal)}</span>
+                             <ChevronDown className="h-4 w-4" />
+                           </div>
+                         </CollapsibleTrigger>
+                         <CollapsibleContent className="px-4 pb-4">
+                           <div className="space-y-3">
+                             {Object.entries(subTypes).map(([subType, items]) => {
+                               const subTypeTotal = items.reduce((sum, item) => sum + getAmountInLkr(item), 0);
+                               return (
                                 <div key={subType} className="border-l-2 border-muted pl-4">
                                   <div className="flex justify-between items-center mb-2">
                                     <span className="font-medium text-sm">{subType}</span>
@@ -754,15 +773,15 @@ export default function Reports() {
                     <span className="text-success">{formatCurrency(totalIncome)}</span>
                   </h3>
                   <div className="pl-4 space-y-2">
-                    {Object.entries(groupIncomeBySource(filteredIncome)).map(([source, items]) => {
-                      const sourceTotal = items.reduce((sum, item) => sum + Number(item.amount), 0);
-                      return (
-                        <div key={source} className="flex justify-between py-2 border-b border-muted">
-                          <span>{source} Revenue</span>
-                          <span>{formatCurrency(sourceTotal)}</span>
-                        </div>
-                      );
-                    })}
+                     {Object.entries(groupIncomeBySource(filteredIncome)).map(([source, items]) => {
+                       const sourceTotal = items.reduce((sum, item) => sum + getAmountInLkr(item), 0);
+                       return (
+                         <div key={source} className="flex justify-between py-2 border-b border-muted">
+                           <span>{source} Revenue</span>
+                           <span>{formatCurrency(sourceTotal)}</span>
+                         </div>
+                       );
+                     })}
                   </div>
                 </div>
 
@@ -773,8 +792,8 @@ export default function Reports() {
                     <span className="text-destructive">({formatCurrency(totalExpenses)})</span>
                   </h3>
                   <div className="pl-4 space-y-2">
-                    {Object.entries(groupByMainAndSubType(filteredExpenses)).map(([mainType, subTypes]) => {
-                      const mainTypeTotal = Object.values(subTypes).flat().reduce((sum, item) => sum + Number(item.amount), 0);
+                     {Object.entries(groupByMainAndSubType(filteredExpenses)).map(([mainType, subTypes]) => {
+                       const mainTypeTotal = Object.values(subTypes).flat().reduce((sum, item) => sum + getAmountInLkr(item), 0);
                       return (
                         <div key={mainType} className="flex justify-between py-2 border-b border-muted">
                           <span>{mainType}</span>

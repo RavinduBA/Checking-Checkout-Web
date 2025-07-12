@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, ArrowLeft } from "lucide-react";
+import { Trash2, ArrowLeft, DollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 type ExpenseType = {
@@ -39,12 +39,29 @@ export default function Settings() {
   const [newMainType, setNewMainType] = useState("");
   const [newSubType, setNewSubType] = useState("");
   const [newIncomeType, setNewIncomeType] = useState("");
+  const [usdToLkrRate, setUsdToLkrRate] = useState<number>(300);
 
   useEffect(() => {
     fetchExpenseTypes();
     fetchIncomeTypes();
     fetchLocations();
+    loadCurrencySettings();
   }, []);
+
+  const loadCurrencySettings = () => {
+    const savedRate = localStorage.getItem('usdToLkrRate');
+    if (savedRate) {
+      setUsdToLkrRate(Number(savedRate));
+    }
+  };
+
+  const saveCurrencySettings = () => {
+    localStorage.setItem('usdToLkrRate', usdToLkrRate.toString());
+    toast({
+      title: "Success",
+      description: "Currency conversion rate updated successfully",
+    });
+  };
 
   const fetchExpenseTypes = async () => {
     const { data, error } = await supabase
@@ -258,9 +275,10 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="expenses" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="expenses">Expense Categories</TabsTrigger>
           <TabsTrigger value="income">Income Types</TabsTrigger>
+          <TabsTrigger value="currency">Currency Settings</TabsTrigger>
           <TabsTrigger value="bookings">Booking Management</TabsTrigger>
         </TabsList>
         
@@ -366,6 +384,79 @@ export default function Settings() {
                       </Button>
                     </div>
                   ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="currency">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-primary" />
+                Currency Conversion Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                  <h3 className="font-medium text-blue-800 mb-2">Currency Conversion</h3>
+                  <p className="text-sm text-blue-700 mb-4">
+                    Set the conversion rate from USD to LKR. This rate will be used in reports to 
+                    calculate total values in LKR equivalent. All amounts will be displayed in LKR 
+                    after conversion.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="conversionRate">USD to LKR Conversion Rate</Label>
+                      <Input
+                        id="conversionRate"
+                        type="number"
+                        step="0.01"
+                        value={usdToLkrRate}
+                        onChange={(e) => setUsdToLkrRate(Number(e.target.value))}
+                        placeholder="300.00"
+                        className="text-lg font-medium"
+                      />
+                      <p className="text-sm text-muted-foreground mt-2">
+                        1 USD = {usdToLkrRate} LKR
+                      </p>
+                    </div>
+
+                    <Button onClick={saveCurrencySettings} className="w-full">
+                      Save Conversion Rate
+                    </Button>
+                  </div>
+
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <h4 className="font-medium mb-3">Example Conversion</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>$100 USD</span>
+                        <span>Rs.{(100 * usdToLkrRate).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>$500 USD</span>
+                        <span>Rs.{(500 * usdToLkrRate).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>$1,000 USD</span>
+                        <span>Rs.{(1000 * usdToLkrRate).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+                  <h4 className="font-medium text-amber-800 mb-2">Important Note</h4>
+                  <p className="text-sm text-amber-700">
+                    After updating the conversion rate, refresh the Reports page to see the updated 
+                    calculations. The new rate will apply to all future calculations.
+                  </p>
                 </div>
               </div>
             </CardContent>
