@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Calendar as CalendarIcon, Eye, Filter, Plus } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, Eye, Filter, Plus, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
+import { useToast } from "@/hooks/use-toast";
 
 type Booking = Tables<"bookings"> & {
   locations: Tables<"locations">;
@@ -15,10 +16,13 @@ type Booking = Tables<"bookings"> & {
 type Location = Tables<"locations">;
 
 export default function Calendar() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
 
   useEffect(() => {
@@ -73,6 +77,53 @@ export default function Calendar() {
     return colors[status as keyof typeof colors] || "bg-slate-500";
   };
 
+  const handleDateClick = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    navigate(`/booking/new?date=${dateStr}&location=${selectedLocation !== 'all' ? selectedLocation : ''}`);
+  };
+
+  const syncCalendars = async () => {
+    setSyncing(true);
+    try {
+      // Get Rusty Bunk location
+      const rustyBunk = locations.find(loc => loc.name.toLowerCase().includes('rusty'));
+      if (!rustyBunk) {
+        toast({
+          title: "Error",
+          description: "Rusty Bunk location not found",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('sync-ical', {
+        body: {
+          icalUrl: 'https://ical.booking.com/v1/export?t=1d0bea4b-1994-40ec-a9c9-8a718b6cb06a',
+          locationId: rustyBunk.id
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Synced ${data.eventsCount} bookings from Booking.com`
+      });
+
+      // Refresh data
+      fetchData();
+    } catch (error: any) {
+      console.error('Sync error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to sync calendars",
+        variant: "destructive"
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   // Generate calendar grid for current month
   const generateCalendarDays = () => {
     const year = currentDate.getFullYear();
@@ -114,30 +165,30 @@ export default function Calendar() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
+    <div className="max-w-6xl mx-auto p-4 space-y-4 animate-fade-in">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button asChild variant="ghost" size="icon">
+        <Button asChild variant="ghost" size="icon" className="md:hidden">
           <Link to="/">
             <ArrowLeft className="h-5 w-5" />
           </Link>
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Calendar & Bookings</h1>
-          <p className="text-muted-foreground">View upcoming bookings and availability</p>
+        <div className="flex-1">
+          <h1 className="text-xl md:text-2xl font-bold text-foreground">Calendar & Bookings</h1>
+          <p className="text-sm text-muted-foreground hidden md:block">View upcoming bookings and availability</p>
         </div>
       </div>
 
       {/* Filters */}
       <Card className="bg-gradient-card border-0 shadow-elegant">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5 text-primary" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Filter className="h-4 w-4 text-primary" />
             Filters
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4">
+          <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-1">
               <Select value={selectedLocation} onValueChange={setSelectedLocation}>
                 <SelectTrigger>
@@ -153,27 +204,34 @@ export default function Calendar() {
                 </SelectContent>
               </Select>
             </div>
-            <Button variant="outline">
-              <Eye className="h-4 w-4 mr-2" />
-              Sync Calendars
+            <Button 
+              variant="outline" 
+              onClick={syncCalendars}
+              disabled={syncing}
+              className="w-full md:w-auto"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? 'Syncing...' : 'Sync Calendars'}
             </Button>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Booking
+            <Button asChild className="w-full md:w-auto">
+              <Link to="/booking/new">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Booking
+              </Link>
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Calendar Grid - Simplified for now */}
+      {/* Calendar Grid */}
       <Card className="bg-gradient-card border-0 shadow-elegant">
-        <CardHeader>
+        <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <CalendarIcon className="h-4 w-4 text-primary" />
               {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </CardTitle>
-            <div className="flex gap-2">
+            <div className="flex gap-1">
               <Button 
                 variant="outline" 
                 size="sm"
@@ -192,7 +250,7 @@ export default function Calendar() {
           </div>
           
           {/* Legend */}
-          <div className="flex gap-4 text-xs mt-2">
+          <div className="flex flex-wrap gap-3 text-xs mt-3">
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 bg-emerald-500 rounded"></div>
               <span>Available</span>
@@ -212,9 +270,9 @@ export default function Calendar() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-7 gap-1 mb-4">
+          <div className="grid grid-cols-7 gap-1 mb-2">
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-              <div key={day} className="p-2 text-center font-semibold text-muted-foreground text-xs">
+              <div key={day} className="p-1 text-center font-semibold text-muted-foreground text-xs">
                 {day}
               </div>
             ))}
@@ -222,28 +280,36 @@ export default function Calendar() {
           
           <div className="grid grid-cols-7 gap-1">
             {calendarDays.map((dayData, index) => (
-              <div key={index} className="min-h-16 p-1 border border-border rounded-md">
+              <div 
+                key={index} 
+                className={`min-h-12 md:min-h-16 p-1 border border-border rounded-md transition-colors ${
+                  dayData ? 'hover:bg-muted/50 cursor-pointer' : ''
+                }`}
+                onClick={() => dayData && handleDateClick(dayData.date)}
+              >
                 {dayData && (
                   <>
                     <div className="text-xs font-medium mb-1">{dayData.day}</div>
                     {dayData.isAvailable ? (
-                      <div className="w-full h-6 bg-emerald-500/20 rounded text-xs flex items-center justify-center">
-                        Available
+                      <div className="w-full h-4 md:h-6 bg-emerald-500/20 rounded text-xs flex items-center justify-center text-emerald-700">
+                        <span className="hidden md:inline">Available</span>
+                        <span className="md:hidden">✓</span>
                       </div>
                     ) : (
                       <div className="space-y-1">
-                        {dayData.bookings.slice(0, 2).map((booking) => (
+                        {dayData.bookings.slice(0, 1).map((booking) => (
                           <div 
                             key={booking.id} 
                             className={`text-xs text-white px-1 py-0.5 rounded text-center ${getSourceColor(booking.source)}`}
                             title={`${booking.guest_name} - ${booking.source}`}
                           >
-                            {booking.guest_name.split(' ')[0]}
+                            <span className="hidden md:inline">{booking.guest_name.split(' ')[0]}</span>
+                            <span className="md:hidden">•</span>
                           </div>
                         ))}
-                        {dayData.bookings.length > 2 && (
+                        {dayData.bookings.length > 1 && (
                           <div className="text-xs text-center text-muted-foreground">
-                            +{dayData.bookings.length - 2}
+                            +{dayData.bookings.length - 1}
                           </div>
                         )}
                       </div>
@@ -258,35 +324,35 @@ export default function Calendar() {
 
       {/* Upcoming Bookings */}
       <Card className="bg-gradient-card border-0 shadow-elegant">
-        <CardHeader>
-          <CardTitle>Upcoming Bookings</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Upcoming Bookings</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {filteredBookings.slice(0, 10).map((booking) => (
-              <div key={booking.id} className="p-4 border border-border rounded-lg">
-                <div className="flex justify-between items-start mb-2">
+              <div key={booking.id} className="p-3 md:p-4 border border-border rounded-lg">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 mb-2">
                   <div>
                     <h3 className="font-semibold">{booking.guest_name}</h3>
                     <p className="text-sm text-muted-foreground">{booking.locations?.name}</p>
                   </div>
                   <div className="flex gap-2">
-                    <Badge className={`text-white ${getSourceColor(booking.source)}`}>
+                    <Badge className={`text-white text-xs ${getSourceColor(booking.source)}`}>
                       {booking.source.replace('_', '.')}
                     </Badge>
-                    <Badge className={`text-white ${getStatusColor(booking.status)}`}>
+                    <Badge className={`text-white text-xs ${getStatusColor(booking.status)}`}>
                       {booking.status}
                     </Badge>
                   </div>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span>Check-in: {new Date(booking.check_in).toLocaleDateString()} 2:00 PM</span>
-                  <span>Check-out: {new Date(booking.check_out).toLocaleDateString()} 11:00 AM</span>
+                <div className="flex flex-col md:flex-row md:justify-between text-sm gap-1">
+                  <span>Check-in: {new Date(booking.check_in).toLocaleDateString()}</span>
+                  <span>Check-out: {new Date(booking.check_out).toLocaleDateString()}</span>
                 </div>
                 <div className="mt-2 text-sm">
                   <span className="font-medium">Total: LKR {booking.total_amount.toLocaleString()}</span>
                   {booking.paid_amount > 0 && (
-                    <span className="ml-4 text-emerald-600">
+                    <span className="ml-2 md:ml-4 text-emerald-600">
                       Paid: LKR {booking.paid_amount.toLocaleString()}
                     </span>
                   )}

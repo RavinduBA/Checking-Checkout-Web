@@ -15,6 +15,7 @@ import Accounts from "./pages/Accounts";
 import Users from "./pages/Users";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import BookingForm from "./pages/BookingForm";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
               <Route path="income" element={<Income />} />
               <Route path="expense" element={<Expense />} />
               <Route path="calendar" element={<Calendar />} />
+              <Route path="booking/new" element={<BookingForm />} />
               <Route path="reports" element={<Reports />} />
               <Route path="accounts" element={<Accounts />} />
               <Route path="users" element={<Users />} />

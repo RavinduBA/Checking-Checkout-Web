@@ -501,7 +501,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      sync_ical_bookings: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       booking_source: "airbnb" | "booking_com" | "direct"
