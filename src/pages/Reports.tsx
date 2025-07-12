@@ -114,7 +114,7 @@ export default function Reports() {
     const doc = new jsPDF();
     let yPos = 20;
     
-    // Professional header (no colors)
+    // Professional header
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(20);
     doc.text('FINANCIAL REPORT', 105, yPos, { align: 'center' });
@@ -135,16 +135,23 @@ export default function Reports() {
     doc.text(periodText, 105, yPos, { align: 'center' });
     yPos += 20;
 
-    // Summary section
+    // Summary section with light box
     const totalIncome = filteredIncome.reduce((sum, item) => sum + Number(item.amount), 0);
     const totalExpenses = filteredExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
     const netProfit = totalIncome - totalExpenses;
 
+    // Executive Summary Box
+    doc.setFillColor(240, 240, 240); // Light gray background
+    doc.rect(15, yPos - 5, 180, 35, 'F');
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(15, yPos - 5, 180, 35, 'S');
+    
     doc.setFontSize(14);
-    doc.text('EXECUTIVE SUMMARY', 15, yPos);
+    doc.setTextColor(0, 0, 0);
+    doc.text('EXECUTIVE SUMMARY', 20, yPos + 5);
     yPos += 15;
 
-    // Summary table
+    // Summary content
     doc.setFontSize(10);
     doc.text('Total Income:', 20, yPos);
     doc.text(`${formatCurrency(totalIncome)}`, 170, yPos, { align: 'right' });
@@ -157,28 +164,40 @@ export default function Reports() {
     doc.setFontSize(12);
     doc.text('Net Profit:', 20, yPos);
     doc.text(`${formatCurrency(netProfit)}`, 170, yPos, { align: 'right' });
-    yPos += 20;
+    yPos += 25;
 
-    // Income section
+    // Income section with light box
+    doc.setFillColor(245, 255, 245); // Light green background
+    doc.rect(15, yPos - 5, 180, 10, 'F');
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(15, yPos - 5, 180, 10, 'S');
+    
     doc.setFontSize(14);
-    doc.text('INCOME', 15, yPos);
+    doc.text('INCOME', 20, yPos + 3);
     yPos += 15;
 
     const groupedIncome = groupIncomeBySource(filteredIncome);
     Object.entries(groupedIncome).forEach(([source, items]) => {
       const sourceTotal = items.reduce((sum, item) => sum + Number(item.amount), 0);
       
+      // Source header with light background
+      doc.setFillColor(250, 250, 250);
+      doc.rect(20, yPos - 3, 170, 8, 'F');
+      doc.setDrawColor(220, 220, 220);
+      doc.rect(20, yPos - 3, 170, 8, 'S');
+      
       doc.setFontSize(11);
-      doc.text(`${source}`, 20, yPos);
-      doc.text(`${formatCurrency(sourceTotal)}`, 170, yPos, { align: 'right' });
-      yPos += 8;
+      doc.setTextColor(0, 0, 0);
+      doc.text(`${source}`, 25, yPos + 2);
+      doc.text(`${formatCurrency(sourceTotal)}`, 185, yPos + 2, { align: 'right' });
+      yPos += 12;
 
       items.forEach(item => {
         doc.setFontSize(9);
         const date = new Date(item.date).toLocaleDateString();
         const accountName = item.accounts?.name || 'Unknown Account';
-        doc.text(`  ${date} - ${accountName}`, 25, yPos);
-        doc.text(`${formatCurrency(item.amount)}`, 170, yPos, { align: 'right' });
+        doc.text(`  ${date} - ${accountName}`, 30, yPos);
+        doc.text(`${formatCurrency(item.amount)}`, 185, yPos, { align: 'right' });
         yPos += 6;
         
         if (yPos > 270) {
@@ -191,34 +210,56 @@ export default function Reports() {
 
     yPos += 10;
 
-    // Expenses section
+    // Expenses section with light box
+    if (yPos > 250) {
+      doc.addPage();
+      yPos = 20;
+    }
+    
+    doc.setFillColor(255, 245, 245); // Light red background
+    doc.rect(15, yPos - 5, 180, 10, 'F');
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(15, yPos - 5, 180, 10, 'S');
+    
     doc.setFontSize(14);
-    doc.text('EXPENSES', 15, yPos);
+    doc.text('EXPENSES', 20, yPos + 3);
     yPos += 15;
 
     const groupedExpenses = groupByMainAndSubType(filteredExpenses);
     Object.entries(groupedExpenses).forEach(([mainType, subTypes]) => {
       const mainTypeTotal = Object.values(subTypes).flat().reduce((sum, item) => sum + Number(item.amount), 0);
       
+      // Main type header with light background
+      doc.setFillColor(250, 250, 250);
+      doc.rect(20, yPos - 3, 170, 8, 'F');
+      doc.setDrawColor(220, 220, 220);
+      doc.rect(20, yPos - 3, 170, 8, 'S');
+      
       doc.setFontSize(11);
-      doc.text(`${mainType}`, 20, yPos);
-      doc.text(`${formatCurrency(mainTypeTotal)}`, 170, yPos, { align: 'right' });
-      yPos += 8;
+      doc.text(`${mainType}`, 25, yPos + 2);
+      doc.text(`${formatCurrency(mainTypeTotal)}`, 185, yPos + 2, { align: 'right' });
+      yPos += 12;
 
       Object.entries(subTypes).forEach(([subType, items]) => {
         const subTypeTotal = items.reduce((sum, item) => sum + Number(item.amount), 0);
         
+        // Sub type with lighter background
+        doc.setFillColor(248, 248, 248);
+        doc.rect(25, yPos - 2, 165, 7, 'F');
+        doc.setDrawColor(230, 230, 230);
+        doc.rect(25, yPos - 2, 165, 7, 'S');
+        
         doc.setFontSize(10);
-        doc.text(`  ${subType}`, 25, yPos);
-        doc.text(`${formatCurrency(subTypeTotal)}`, 170, yPos, { align: 'right' });
-        yPos += 7;
+        doc.text(`  ${subType}`, 30, yPos + 2);
+        doc.text(`${formatCurrency(subTypeTotal)}`, 185, yPos + 2, { align: 'right' });
+        yPos += 10;
 
         items.forEach(item => {
           doc.setFontSize(9);
           const date = new Date(item.date).toLocaleDateString();
           const accountName = item.accounts?.name || 'Unknown Account';
-          doc.text(`    ${date} - ${accountName}`, 30, yPos);
-          doc.text(`${formatCurrency(item.amount)}`, 170, yPos, { align: 'right' });
+          doc.text(`    ${date} - ${accountName}`, 35, yPos);
+          doc.text(`${formatCurrency(item.amount)}`, 185, yPos, { align: 'right' });
           yPos += 6;
           
           if (yPos > 270) {

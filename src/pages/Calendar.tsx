@@ -152,7 +152,8 @@ export default function Calendar() {
       const dayBookings = filteredBookings.filter(booking => {
         const checkIn = new Date(booking.check_in);
         const checkOut = new Date(booking.check_out);
-        return currentDateObj >= checkIn && currentDateObj < checkOut;
+        // Include booking if current date is between check-in and check-out (inclusive of check-in, exclusive of check-out)
+        return currentDateObj >= checkIn && currentDateObj <= checkOut;
       });
       
       days.push({

@@ -20,6 +20,8 @@ export default function Accounts() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
+  const [accountBalances, setAccountBalances] = useState<Record<string, number>>({});
+  const [currentExchangeRate, setCurrentExchangeRate] = useState({ usdToLkr: 300, lkrToUsd: 0.0033 });
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [formData, setFormData] = useState({
@@ -53,6 +55,9 @@ export default function Accounts() {
 
       setAccounts(accountsResponse.data || []);
       setLocations(locationsResponse.data || []);
+
+      // Calculate balances for each account
+      await calculateAccountBalances(accountsResponse.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast({
@@ -63,6 +68,47 @@ export default function Accounts() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateAccountBalances = async (accountsList: Account[]) => {
+    const balances: Record<string, number> = {};
+    
+    for (const account of accountsList) {
+      let balance = account.initial_balance;
+      
+      // Add income
+      const { data: income } = await supabase
+        .from("income")
+        .select("amount")
+        .eq("account_id", account.id);
+      
+      // Add expense (subtract)
+      const { data: expenses } = await supabase
+        .from("expenses")
+        .select("amount")
+        .eq("account_id", account.id);
+      
+      // Add incoming transfers
+      const { data: incomingTransfers } = await supabase
+        .from("account_transfers")
+        .select("amount, conversion_rate")
+        .eq("to_account_id", account.id);
+      
+      // Subtract outgoing transfers
+      const { data: outgoingTransfers } = await supabase
+        .from("account_transfers")
+        .select("amount")
+        .eq("from_account_id", account.id);
+      
+      balance += (income || []).reduce((sum, item) => sum + item.amount, 0);
+      balance -= (expenses || []).reduce((sum, item) => sum + item.amount, 0);
+      balance += (incomingTransfers || []).reduce((sum, item) => sum + (item.amount * item.conversion_rate), 0);
+      balance -= (outgoingTransfers || []).reduce((sum, item) => sum + item.amount, 0);
+      
+      balances[account.id] = balance;
+    }
+    
+    setAccountBalances(balances);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -178,9 +224,8 @@ export default function Accounts() {
 
   const getExchangeRate = (fromCurrency: string, toCurrency: string) => {
     if (fromCurrency === toCurrency) return 1;
-    // Default exchange rates - in real app, these would come from an API
-    if (fromCurrency === "USD" && toCurrency === "LKR") return 300;
-    if (fromCurrency === "LKR" && toCurrency === "USD") return 0.0033;
+    if (fromCurrency === "USD" && toCurrency === "LKR") return currentExchangeRate.usdToLkr;
+    if (fromCurrency === "LKR" && toCurrency === "USD") return currentExchangeRate.lkrToUsd;
     return 1;
   };
 
@@ -356,7 +401,12 @@ export default function Accounts() {
                   <SelectContent>
                     {accounts.map((account) => (
                       <SelectItem key={account.id} value={account.id}>
-                        {account.name} ({account.currency})
+                        <div className="flex justify-between items-center w-full">
+                          <span>{account.name} ({account.currency})</span>
+                          <span className="text-muted-foreground ml-2">
+                            Balance: {account.currency === "LKR" ? "Rs." : "$"}{(accountBalances[account.id] || 0).toLocaleString()}
+                          </span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -372,11 +422,47 @@ export default function Accounts() {
                   <SelectContent>
                     {accounts.filter(acc => acc.id !== transferData.fromAccountId).map((account) => (
                       <SelectItem key={account.id} value={account.id}>
-                        {account.name} ({account.currency})
+                        <div className="flex justify-between items-center w-full">
+                          <span>{account.name} ({account.currency})</span>
+                          <span className="text-muted-foreground ml-2">
+                            Balance: {account.currency === "LKR" ? "Rs." : "$"}{(accountBalances[account.id] || 0).toLocaleString()}
+                          </span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="usdToLkr">USD to LKR Rate</Label>
+                  <Input
+                    id="usdToLkr"
+                    type="number"
+                    step="0.01"
+                    value={currentExchangeRate.usdToLkr}
+                    onChange={(e) => setCurrentExchangeRate({
+                      ...currentExchangeRate,
+                      usdToLkr: parseFloat(e.target.value) || 300,
+                      lkrToUsd: 1 / (parseFloat(e.target.value) || 300)
+                    })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="lkrToUsd">LKR to USD Rate</Label>
+                  <Input
+                    id="lkrToUsd"
+                    type="number"
+                    step="0.0001"
+                    value={currentExchangeRate.lkrToUsd}
+                    onChange={(e) => setCurrentExchangeRate({
+                      ...currentExchangeRate,
+                      lkrToUsd: parseFloat(e.target.value) || 0.0033,
+                      usdToLkr: 1 / (parseFloat(e.target.value) || 0.0033)
+                    })}
+                  />
+                </div>
               </div>
               
               <div>
