@@ -24,21 +24,14 @@ function parseICalDate(icalDate: string): string {
     const second = icalDate.substring(13, 15);
     return `${year}-${month}-${day}T${hour}:${minute}:${second}Z`;
   } else {
-    // Format: YYYYMMDD - parse as local date and keep it exactly as provided
+    // Format: YYYYMMDD - parse exactly as provided without shifting
     const year = icalDate.substring(0, 4);
     const month = icalDate.substring(4, 6);
     const day = icalDate.substring(6, 8);
     
-    // Create a UTC date at midnight for the exact date from iCal
-    // This preserves the exact date without timezone conversion issues
-    const utcDate = new Date(Date.UTC(
-      parseInt(year), 
-      parseInt(month) - 1, 
-      parseInt(day),
-      0, 0, 0, 0
-    ));
-    
-    return utcDate.toISOString();
+    // Simply return ISO format without timezone conversion
+    // This preserves the exact date from iCal
+    return `${year}-${month}-${day}T00:00:00.000Z`;
   }
 }
 

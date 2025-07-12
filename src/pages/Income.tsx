@@ -221,6 +221,47 @@ export default function Income() {
                   )}
                 </div>
 
+                {/* Amount Field - First */}
+                <div>
+                  <Label htmlFor="amount">Amount</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
+                      {currencySymbol}
+                    </span>
+                    <Input
+                      id="amount"
+                      type="number"
+                      placeholder="0.00"
+                      value={formData.amount}
+                      onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Account Field - Second */}
+                <div>
+                  <Label htmlFor="accountId">Account</Label>
+                  <Select value={formData.accountId} onValueChange={(value) => setFormData({...formData, accountId: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts
+                        .filter(account => 
+                          account.location_access.length === 0 || 
+                          account.location_access.includes(formData.locationId)
+                        )
+                        .map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.name} ({account.currency})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Date Range Section - Check-in/Check-out for Bookings */}
                 <div className="bg-white/50 p-4 rounded-lg border border-green-100">
                   <Label className="text-green-800 font-medium mb-3 block">Booking Period</Label>
@@ -254,45 +295,6 @@ export default function Income() {
                       </div>
                     </div>
                   </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="amount">Amount</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
-                      {currencySymbol}
-                    </span>
-                    <Input
-                      id="amount"
-                      type="number"
-                      placeholder="0.00"
-                      value={formData.amount}
-                      onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="accountId">Account</Label>
-                  <Select value={formData.accountId} onValueChange={(value) => setFormData({...formData, accountId: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select account" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accounts
-                        .filter(account => 
-                          account.location_access.length === 0 || 
-                          account.location_access.includes(formData.locationId)
-                        )
-                        .map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          {account.name} ({account.currency})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
 
                 <div>
