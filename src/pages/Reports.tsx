@@ -41,6 +41,7 @@ export default function Reports() {
   const [accountTransactions, setAccountTransactions] = useState<Record<string, any[]>>({});
   const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [usdToLkrRate, setUsdToLkrRate] = useState<number>(300);
+  const [selectedMonth, setSelectedMonth] = useState<string>("all");
 
   useEffect(() => {
     fetchData();
@@ -95,8 +96,43 @@ export default function Reports() {
     });
   };
 
+  const filterByMonth = (data: any[]) => {
+    if (selectedMonth === "all") return data;
+    return data.filter(item => {
+      const itemDate = new Date(item.date || item.created_at);
+      const itemMonth = `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}`;
+      return itemMonth === selectedMonth;
+    });
+  };
+
   const getFilteredData = (data: any[]) => {
-    return filterByDateRange(filterByLocation(data));
+    let filtered = filterByLocation(data);
+    if (selectedMonth !== "all") {
+      filtered = filterByMonth(filtered);
+    } else {
+      filtered = filterByDateRange(filtered);
+    }
+    return filtered;
+  };
+
+  // Get available months from existing data
+  const getAvailableMonths = () => {
+    const allData = [...income, ...expenses];
+    const months = new Set<string>();
+    
+    allData.forEach(item => {
+      const itemDate = new Date(item.date || item.created_at);
+      const monthKey = `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}`;
+      months.add(monthKey);
+    });
+    
+    return Array.from(months).sort().reverse(); // Most recent first
+  };
+
+  const formatMonthDisplay = (monthKey: string) => {
+    const [year, month] = monthKey.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1);
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
   const filteredIncome = getFilteredData(income);
@@ -550,24 +586,40 @@ export default function Reports() {
             Report Filters
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label>Location</Label>
-              <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Locations</SelectItem>
-                  {locations.map((location) => (
-                    <SelectItem key={location.id} value={location.id}>
-                      {location.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+         <CardContent>
+           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+             <div className="space-y-2">
+               <Label>Location</Label>
+               <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                 <SelectTrigger>
+                   <SelectValue />
+                 </SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="all">All Locations</SelectItem>
+                   {locations.map((location) => (
+                     <SelectItem key={location.id} value={location.id}>
+                       {location.name}
+                     </SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+             </div>
+             <div className="space-y-2">
+               <Label>Month Filter</Label>
+               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                 <SelectTrigger>
+                   <SelectValue />
+                 </SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="all">All Months</SelectItem>
+                   {getAvailableMonths().map((monthKey) => (
+                     <SelectItem key={monthKey} value={monthKey}>
+                       {formatMonthDisplay(monthKey)}
+                     </SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+             </div>
             <div className="space-y-2">
               <Label>Start Date</Label>
               <Input
