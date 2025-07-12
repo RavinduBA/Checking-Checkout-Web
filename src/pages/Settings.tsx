@@ -16,6 +16,7 @@ export default function Settings() {
 
   useEffect(() => {
     fetchExpenseTypes();
+    fetchIncomeTypes();
   }, []);
 
   const fetchExpenseTypes = async () => {

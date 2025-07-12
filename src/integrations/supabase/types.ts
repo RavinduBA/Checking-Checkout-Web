@@ -355,6 +355,24 @@ export type Database = {
           },
         ]
       }
+      income_types: {
+        Row: {
+          created_at: string
+          id: string
+          type_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          type_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          type_name?: string
+        }
+        Relationships: []
+      }
       locations: {
         Row: {
           created_at: string
