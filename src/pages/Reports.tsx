@@ -161,7 +161,7 @@ export default function Reports() {
   // Helper function to convert amounts to LKR equivalent
   const convertToLkr = (amount: number, currency: string) => {
     if (currency === "USD") {
-      return amount * usdToLkrRate;
+      return amount * 300; // Fixed conversion rate for PDF reports
     }
     return amount; // Already in LKR
   };
