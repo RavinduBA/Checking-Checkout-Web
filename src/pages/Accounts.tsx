@@ -88,7 +88,7 @@ export default function Accounts() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this account?")) {
+    if (window.confirm("Are you sure you want to delete this account?")) {
       try {
         const { error } = await supabase
           .from("accounts")

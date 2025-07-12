@@ -136,36 +136,50 @@ export default function Settings() {
   };
 
   const deleteExpenseType = async (id: string) => {
-    const { error } = await supabase
-      .from("expense_types")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      console.error("Error deleting expense type:", error);
-    } else {
-      toast({
-        title: "Success",
-        description: "Expense type deleted successfully",
-      });
-      fetchExpenseTypes();
+    if (window.confirm("Are you sure you want to delete this expense type?")) {
+      try {
+        const { error } = await supabase
+          .from("expense_types")
+          .delete()
+          .eq("id", id);
+        if (error) throw error;
+        toast({
+          title: "Success",
+          description: "Expense type deleted successfully",
+        });
+        fetchExpenseTypes();
+      } catch (error) {
+        console.error("Error deleting expense type:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete expense type",
+          variant: "destructive",
+        });
+      }
     }
   };
 
   const deleteIncomeType = async (id: string) => {
-    const { error } = await supabase
-      .from("income_types")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      console.error("Error deleting income type:", error);
-    } else {
-      toast({
-        title: "Success",
-        description: "Income type deleted successfully",
-      });
-      fetchIncomeTypes();
+    if (window.confirm("Are you sure you want to delete this income type?")) {
+      try {
+        const { error } = await supabase
+          .from("income_types")
+          .delete()
+          .eq("id", id);
+        if (error) throw error;
+        toast({
+          title: "Success",
+          description: "Income type deleted successfully",
+        });
+        fetchIncomeTypes();
+      } catch (error) {
+        console.error("Error deleting income type:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete income type",
+          variant: "destructive",
+        });
+      }
     }
   };
 
