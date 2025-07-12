@@ -41,9 +41,9 @@ export default function Reports() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedIncomeSection, setExpandedIncomeSection] = useState<string | null>(null);
-  const [expandedExpenseSection, setExpandedExpenseSection] = useState<string | null>(null);
-  const [expandAllSections, setExpandAllSections] = useState(false);
+  const [expandedIncomeSection, setExpandedIncomeSection] = useState<string | null>("all");
+  const [expandedExpenseSection, setExpandedExpenseSection] = useState<string | null>("all");
+  const [expandAllSections, setExpandAllSections] = useState(true);
 
   useEffect(() => {
     fetchData();
