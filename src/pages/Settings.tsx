@@ -76,7 +76,7 @@ export default function Settings() {
             </Button>
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-64 overflow-y-auto">
             {expenseTypes.map((type) => (
               <div key={type.id} className="flex justify-between items-center p-3 border rounded">
                 <span>{type.main_type} - {type.sub_type}</span>

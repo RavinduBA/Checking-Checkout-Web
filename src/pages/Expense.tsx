@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ArrowLeft, Minus, DollarSign, Calendar } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowLeft, Minus, DollarSign, Calendar, MapPin, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,23 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
+import jsPDF from 'jspdf';
 
-const expenseCategories = {
-  "Utilities": ["Electricity", "Water", "Internet", "Telephone"],
-  "Maintenance": ["Repairs", "Cleaning", "Garden", "Pool Maintenance"],
-  "Staff": ["Caretaker Salary", "Cleaning Staff", "Security"],
-  "Marketing": ["Booking.com Commission", "Airbnb Commission", "Photography"],
-  "Property": ["Monthly Rent", "Insurance", "Property Tax"],
-  "Supplies": ["Laundry Supplies", "Kitchen Supplies", "Bathroom Supplies"],
-  "Other": ["Miscellaneous", "Emergency Repairs"]
-};
-
-const accounts = [
-  { id: "1", name: "Sampath Bank", currency: "LKR" },
-  { id: "2", name: "Payoneer", currency: "USD" },
-  { id: "3", name: "Asaliya Cash", currency: "LKR" },
-  { id: "4", name: "Wishva Account", currency: "LKR" }
-];
+type Location = Tables<"locations">;
+type Account = Tables<"accounts">;
+type ExpenseType = Tables<"expense_types">;
 
 export default function Expense() {
   const [formData, setFormData] = useState({
@@ -33,33 +23,114 @@ export default function Expense() {
     subCategory: "",
     amount: "",
     accountId: "",
+    locationId: "",
     note: "",
     date: new Date().toISOString().split('T')[0]
   });
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In real app, this would save to Supabase
-    toast({
-      title: "Expense Added Successfully",
-      description: `Rs. ${Number(formData.amount).toLocaleString()} expense recorded for ${formData.subCategory}`,
-      variant: "destructive"
-    });
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [locationsData, accountsData, expenseTypesData] = await Promise.all([
+        supabase.from("locations").select("*").eq("is_active", true),
+        supabase.from("accounts").select("*"),
+        supabase.from("expense_types").select("*")
+      ]);
+
+      setLocations(locationsData.data || []);
+      setAccounts(accountsData.data || []);
+      setExpenseTypes(expenseTypesData.data || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    const selectedLocation = locations.find(l => l.id === formData.locationId);
+    const selectedAccount = accounts.find(a => a.id === formData.accountId);
     
-    // Reset form
-    setFormData({
-      mainCategory: "",
-      subCategory: "",
-      amount: "",
-      accountId: "",
-      note: "",
-      date: new Date().toISOString().split('T')[0]
-    });
+    // Header
+    doc.setFontSize(20);
+    doc.text('Expense Record', 20, 30);
+    
+    // Details
+    doc.setFontSize(12);
+    doc.text(`Location: ${selectedLocation?.name || 'N/A'}`, 20, 50);
+    doc.text(`Category: ${formData.mainCategory} - ${formData.subCategory}`, 20, 60);
+    doc.text(`Amount: LKR ${Number(formData.amount).toLocaleString()}`, 20, 70);
+    doc.text(`Account: ${selectedAccount?.name || 'N/A'}`, 20, 80);
+    doc.text(`Date: ${formData.date}`, 20, 90);
+    if (formData.note) {
+      doc.text(`Note: ${formData.note}`, 20, 100);
+    }
+    
+    doc.save(`expense-${formData.date}-${Date.now()}.pdf`);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const { error } = await supabase
+        .from("expenses")
+        .insert([{
+          main_type: formData.mainCategory,
+          sub_type: formData.subCategory,
+          amount: Number(formData.amount),
+          account_id: formData.accountId,
+          location_id: formData.locationId,
+          note: formData.note || null,
+          date: formData.date
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Expense Added Successfully",
+        description: `LKR ${Number(formData.amount).toLocaleString()} expense recorded for ${formData.subCategory}`,
+      });
+      
+      // Reset form
+      setFormData({
+        mainCategory: "",
+        subCategory: "",
+        amount: "",
+        accountId: "",
+        locationId: "",
+        note: "",
+        date: new Date().toISOString().split('T')[0]
+      });
+    } catch (error) {
+      console.error("Error adding expense:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add expense",
+        variant: "destructive"
+      });
+    }
   };
 
   const selectedAccount = accounts.find(a => a.id === formData.accountId);
-  const subCategories = formData.mainCategory ? expenseCategories[formData.mainCategory as keyof typeof expenseCategories] : [];
+  const selectedLocation = locations.find(l => l.id === formData.locationId);
+  const mainCategories = [...new Set(expenseTypes.map(et => et.main_type))];
+  const subCategories = expenseTypes
+    .filter(et => et.main_type === formData.mainCategory)
+    .map(et => et.sub_type);
+
+  if (loading) {
+    return <div className="flex justify-center items-center min-h-64">Loading...</div>;
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
@@ -77,9 +148,12 @@ export default function Expense() {
       </div>
 
       {/* Current Location Badge */}
-      <Badge variant="outline" className="w-fit">
-        📍 Asaliya Villa
-      </Badge>
+      {selectedLocation && (
+        <Badge variant="outline" className="w-fit flex items-center gap-2">
+          <MapPin className="h-3 w-3" />
+          {selectedLocation.name}
+        </Badge>
+      )}
 
       {/* Form */}
       <Card className="bg-gradient-card border-0 shadow-elegant">
@@ -91,6 +165,26 @@ export default function Expense() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Location */}
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Select 
+                value={formData.locationId} 
+                onValueChange={(value) => setFormData({...formData, locationId: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select location" />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map((location) => (
+                    <SelectItem key={location.id} value={location.id}>
+                      {location.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Main Category */}
             <div className="space-y-2">
               <Label htmlFor="mainCategory">Main Category</Label>
@@ -102,7 +196,7 @@ export default function Expense() {
                   <SelectValue placeholder="Select main category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.keys(expenseCategories).map((category) => (
+                  {mainCategories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
                     </SelectItem>
@@ -208,16 +302,26 @@ export default function Expense() {
               />
             </div>
 
-            {/* Submit Button */}
+            {/* Submit and PDF Buttons */}
             <div className="flex gap-3 pt-4">
               <Button asChild variant="outline" className="flex-1">
                 <Link to="/">Cancel</Link>
               </Button>
               <Button 
+                type="button"
+                variant="outline"
+                onClick={generatePDF}
+                disabled={!formData.mainCategory || !formData.subCategory || !formData.amount || !formData.accountId || !formData.locationId}
+                className="flex-1"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download PDF
+              </Button>
+              <Button 
                 type="submit" 
                 variant="destructive"
                 className="flex-1"
-                disabled={!formData.mainCategory || !formData.subCategory || !formData.amount || !formData.accountId}
+                disabled={!formData.mainCategory || !formData.subCategory || !formData.amount || !formData.accountId || !formData.locationId}
               >
                 <Minus className="h-4 w-4 mr-2" />
                 Add Expense

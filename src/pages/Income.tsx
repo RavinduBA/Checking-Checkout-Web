@@ -247,7 +247,7 @@ export default function Income() {
                   <SelectValue placeholder="Select account" />
                 </SelectTrigger>
                 <SelectContent>
-                  {accounts.map((account) => (
+                  {[...new Map(accounts.map(account => [account.id, account])).values()].map((account) => (
                     <SelectItem key={account.id} value={account.id}>
                       <div className="flex items-center justify-between w-full">
                         <span>{account.name}</span>

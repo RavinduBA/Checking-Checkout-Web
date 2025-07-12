@@ -15,7 +15,7 @@ interface ICalEvent {
 function parseICalDate(icalDate: string): string {
   // Handle both YYYYMMDD and YYYYMMDDTHHMMSSZ formats
   if (icalDate.includes('T')) {
-    // Format: YYYYMMDDTHHMMSSZ
+    // Format: YYYYMMDDTHHMMSSZ - parse as UTC
     const year = icalDate.substring(0, 4);
     const month = icalDate.substring(4, 6);
     const day = icalDate.substring(6, 8);
@@ -24,11 +24,13 @@ function parseICalDate(icalDate: string): string {
     const second = icalDate.substring(13, 15);
     return `${year}-${month}-${day}T${hour}:${minute}:${second}Z`;
   } else {
-    // Format: YYYYMMDD - treat as date only
+    // Format: YYYYMMDD - treat as date only, use local timezone
     const year = icalDate.substring(0, 4);
     const month = icalDate.substring(4, 6);
     const day = icalDate.substring(6, 8);
-    return `${year}-${month}-${day}T00:00:00Z`;
+    // Create date in local timezone to avoid off-by-one day issues
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    return date.toISOString();
   }
 }
 

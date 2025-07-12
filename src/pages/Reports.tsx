@@ -11,6 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
+import jsPDF from 'jspdf';
 
 type Income = Tables<"income"> & {
   locations: Tables<"locations">;
@@ -22,6 +23,11 @@ type Expense = Tables<"expenses"> & {
   accounts: Tables<"accounts">;
 };
 
+type Transfer = Tables<"account_transfers"> & {
+  from_account: Tables<"accounts">;
+  to_account: Tables<"accounts">;
+};
+
 type Location = Tables<"locations">;
 type Account = Tables<"accounts">;
 
@@ -31,6 +37,7 @@ export default function Reports() {
   const [endDate, setEndDate] = useState("");
   const [income, setIncome] = useState<Income[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,15 +50,21 @@ export default function Reports() {
 
   const fetchData = async () => {
     try {
-      const [incomeData, expenseData, locationData, accountData] = await Promise.all([
+      const [incomeData, expenseData, transferData, locationData, accountData] = await Promise.all([
         supabase.from("income").select("*, locations(*), accounts(*)").order("created_at", { ascending: false }),
         supabase.from("expenses").select("*, locations(*), accounts(*)").order("created_at", { ascending: false }),
+        supabase.from("account_transfers").select(`
+          *, 
+          from_account:accounts!from_account_id(*), 
+          to_account:accounts!to_account_id(*)
+        `).order("created_at", { ascending: false }),
         supabase.from("locations").select("*").eq("is_active", true),
         supabase.from("accounts").select("*")
       ]);
 
       setIncome(incomeData.data || []);
       setExpenses(expenseData.data || []);
+      setTransfers(transferData.data || []);
       setLocations(locationData.data || []);
       setAccounts(accountData.data || []);
     } catch (error) {
@@ -69,7 +82,7 @@ export default function Reports() {
   const filterByDateRange = (data: any[]) => {
     if (!startDate && !endDate) return data;
     return data.filter(item => {
-      const itemDate = new Date(item.date);
+      const itemDate = new Date(item.date || item.created_at);
       const start = startDate ? new Date(startDate) : new Date(0);
       const end = endDate ? new Date(endDate) : new Date();
       return itemDate >= start && itemDate <= end;
@@ -86,13 +99,48 @@ export default function Reports() {
     const thisYear = new Date(today.getFullYear(), 0, 1);
 
     return {
-      today: data.filter(item => new Date(item.date).toDateString() === today.toDateString())
+      today: data.filter(item => new Date(item.date || item.created_at).toDateString() === today.toDateString())
         .reduce((sum, item) => sum + Number(item.amount), 0),
-      thisMonth: data.filter(item => new Date(item.date) >= thisMonth)
+      thisMonth: data.filter(item => new Date(item.date || item.created_at) >= thisMonth)
         .reduce((sum, item) => sum + Number(item.amount), 0),
-      thisYear: data.filter(item => new Date(item.date) >= thisYear)
+      thisYear: data.filter(item => new Date(item.date || item.created_at) >= thisYear)
         .reduce((sum, item) => sum + Number(item.amount), 0)
     };
+  };
+
+  const calculateAccountBalances = () => {
+    const balances: Record<string, number> = {};
+    
+    // Initialize with initial balances
+    accounts.forEach(account => {
+      balances[account.id] = Number(account.initial_balance);
+    });
+    
+    // Add income
+    income.forEach(inc => {
+      if (balances[inc.account_id] !== undefined) {
+        balances[inc.account_id] += Number(inc.amount);
+      }
+    });
+    
+    // Subtract expenses
+    expenses.forEach(exp => {
+      if (balances[exp.account_id] !== undefined) {
+        balances[exp.account_id] -= Number(exp.amount);
+      }
+    });
+    
+    // Handle transfers
+    transfers.forEach(transfer => {
+      if (balances[transfer.from_account_id] !== undefined) {
+        balances[transfer.from_account_id] -= Number(transfer.amount);
+      }
+      if (balances[transfer.to_account_id] !== undefined) {
+        balances[transfer.to_account_id] += Number(transfer.amount) * Number(transfer.conversion_rate);
+      }
+    });
+    
+    return balances;
   };
 
   const filteredIncome = getFilteredData(income);
@@ -106,6 +154,8 @@ export default function Reports() {
     thisMonth: incomeTotal.thisMonth - expenseTotal.thisMonth,
     thisYear: incomeTotal.thisYear - expenseTotal.thisYear
   };
+
+  const accountBalances = calculateAccountBalances();
 
   const groupByType = (data: Income[] | Expense[]) => {
     const grouped: Record<string, any[]> = {};
@@ -132,6 +182,37 @@ export default function Reports() {
       return `$${amount.toLocaleString()}`;
     }
     return `Rs. ${amount.toLocaleString()}`;
+  };
+
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.text('Financial Reports', 20, 30);
+    
+    // Summary
+    doc.setFontSize(14);
+    doc.text('Summary', 20, 50);
+    doc.setFontSize(12);
+    doc.text(`Total Income (Year): ${formatCurrency(incomeTotal.thisYear)}`, 20, 65);
+    doc.text(`Total Expenses (Year): ${formatCurrency(expenseTotal.thisYear)}`, 20, 75);
+    doc.text(`Net Profit (Year): ${formatCurrency(profit.thisYear)}`, 20, 85);
+    
+    // Account Balances
+    doc.setFontSize(14);
+    doc.text('Account Balances', 20, 105);
+    doc.setFontSize(12);
+    let yPos = 120;
+    Object.entries(accountBalances).forEach(([accountId, balance]) => {
+      const account = accounts.find(a => a.id === accountId);
+      if (account) {
+        doc.text(`${account.name}: ${formatCurrency(balance, account.currency)}`, 20, yPos);
+        yPos += 10;
+      }
+    });
+    
+    doc.save(`financial-report-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   return (
@@ -192,9 +273,9 @@ export default function Reports() {
               />
             </div>
             <div className="flex items-end">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={generatePDF}>
                 <Download className="h-4 w-4 mr-2" />
-                Export CSV
+                Export PDF
               </Button>
             </div>
           </div>
@@ -390,13 +471,15 @@ export default function Reports() {
                   <div className="space-y-2 pl-4">
                     {Object.entries(groupByType(filteredIncome)).map(([type, items]) => (
                       <div key={type} className="flex justify-between">
-                        <span className="capitalize">{type.replace('_', ' ')} Income</span>
-                        <span>{formatCurrency(items.reduce((sum, item) => sum + Number(item.amount), 0))}</span>
+                        <span className="capitalize">{type.replace('_', ' ')}</span>
+                        <span className="text-emerald-600 font-semibold">
+                          {formatCurrency(items.reduce((sum, item) => sum + Number(item.amount), 0))}
+                        </span>
                       </div>
                     ))}
-                    <div className="flex justify-between font-semibold border-t pt-2">
+                    <div className="border-t pt-2 flex justify-between font-bold">
                       <span>Total Revenue</span>
-                      <span>{formatCurrency(incomeTotal.thisMonth)}</span>
+                      <span className="text-emerald-600">{formatCurrency(incomeTotal.thisYear)}</span>
                     </div>
                   </div>
                 </div>
@@ -407,21 +490,23 @@ export default function Reports() {
                     {Object.entries(groupByType(filteredExpenses)).map(([type, items]) => (
                       <div key={type} className="flex justify-between">
                         <span className="capitalize">{type.replace('_', ' ')}</span>
-                        <span>{formatCurrency(items.reduce((sum, item) => sum + Number(item.amount), 0))}</span>
+                        <span className="text-red-600 font-semibold">
+                          {formatCurrency(items.reduce((sum, item) => sum + Number(item.amount), 0))}
+                        </span>
                       </div>
                     ))}
-                    <div className="flex justify-between font-semibold border-t pt-2">
+                    <div className="border-t pt-2 flex justify-between font-bold">
                       <span>Total Expenses</span>
-                      <span>{formatCurrency(expenseTotal.thisMonth)}</span>
+                      <span className="text-red-600">{formatCurrency(expenseTotal.thisYear)}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="border-t pt-4">
-                  <div className="flex justify-between text-lg font-bold">
+                  <div className="flex justify-between text-xl font-bold">
                     <span>Net Profit</span>
-                    <span className={`${profit.thisMonth >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                      {formatCurrency(profit.thisMonth)}
+                    <span className={profit.thisYear >= 0 ? 'text-blue-600' : 'text-red-600'}>
+                      {formatCurrency(profit.thisYear)}
                     </span>
                   </div>
                 </div>
@@ -437,25 +522,59 @@ export default function Reports() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {accounts.map((account) => (
-                  <div key={account.id} className="flex justify-between items-center p-4 border border-border rounded-lg">
+                {accounts.map((account) => {
+                  const balance = accountBalances[account.id] || 0;
+                  return (
+                    <div key={account.id} className="flex justify-between items-center p-4 border rounded-lg">
+                      <div>
+                        <h4 className="font-semibold">{account.name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Initial: {formatCurrency(Number(account.initial_balance), account.currency)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-lg font-bold ${balance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                          {formatCurrency(balance, account.currency)}
+                        </p>
+                        <Badge variant="outline">{account.currency}</Badge>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Transfer History */}
+          <Card className="bg-gradient-card border-0 shadow-elegant">
+            <CardHeader>
+              <CardTitle>Transfer History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {transfers.slice(0, 10).map((transfer) => (
+                  <div key={transfer.id} className="flex justify-between items-center p-3 border rounded-lg">
                     <div>
-                      <h3 className="font-semibold">{account.name}</h3>
-                      <Badge variant="outline">{account.currency}</Badge>
+                      <p className="font-medium">
+                        {transfer.from_account?.name} → {transfer.to_account?.name}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(transfer.created_at).toLocaleDateString()}
+                        {transfer.note && ` - ${transfer.note}`}
+                      </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold">
-                        {formatCurrency(Number(account.initial_balance), account.currency)}
+                      <p className="font-bold">
+                        {formatCurrency(Number(transfer.amount))}
                       </p>
+                      {transfer.conversion_rate !== 1 && (
+                        <p className="text-xs text-muted-foreground">
+                          Rate: {transfer.conversion_rate}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}
-                <div className="border-t pt-4">
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>Total Assets</span>
-                    <span>{formatCurrency(accounts.reduce((sum, acc) => sum + Number(acc.initial_balance), 0))}</span>
-                  </div>
-                </div>
               </div>
             </CardContent>
           </Card>
