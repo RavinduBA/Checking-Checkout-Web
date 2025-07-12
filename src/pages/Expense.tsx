@@ -1,21 +1,25 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Minus, DollarSign, Calendar, MapPin, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import jsPDF from 'jspdf';
+import { format } from "date-fns";
+import jsPDF from "jspdf";
+import { ArrowLeft, Minus, Download, Calendar, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 type Location = Tables<"locations">;
 type Account = Tables<"accounts">;
 type ExpenseType = Tables<"expense_types">;
+type Expense = Tables<"expenses"> & {
+  locations?: Location;
+  accounts?: Account;
+};
 
 export default function Expense() {
   const [formData, setFormData] = useState({
@@ -24,12 +28,14 @@ export default function Expense() {
     amount: "",
     accountId: "",
     locationId: "",
+    date: format(new Date(), "yyyy-MM-dd"),
     note: "",
-    date: new Date().toISOString().split('T')[0]
   });
+
   const [locations, setLocations] = useState<Location[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);
+  const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -39,15 +45,17 @@ export default function Expense() {
 
   const fetchData = async () => {
     try {
-      const [locationsData, accountsData, expenseTypesData] = await Promise.all([
+      const [locationsData, accountsData, expenseTypesData, recentExpensesData] = await Promise.all([
         supabase.from("locations").select("*").eq("is_active", true),
         supabase.from("accounts").select("*"),
-        supabase.from("expense_types").select("*")
+        supabase.from("expense_types").select("*").order("main_type"),
+        supabase.from("expenses").select("*, accounts(*), locations(*)").order("created_at", { ascending: false }).limit(10)
       ]);
 
       setLocations(locationsData.data || []);
       setAccounts(accountsData.data || []);
       setExpenseTypes(expenseTypesData.data || []);
+      setRecentExpenses(recentExpensesData.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -55,52 +63,52 @@ export default function Expense() {
     }
   };
 
+  const selectedAccount = accounts.find(a => a.id === formData.accountId);
+  const currencySymbol = selectedAccount?.currency === "USD" ? "$" : "Rs.";
+
+  const mainCategories = [...new Set(expenseTypes.map(et => et.main_type))];
+  const subCategories = expenseTypes.filter(et => et.main_type === formData.mainCategory).map(et => et.sub_type);
+
   const generatePDF = () => {
     const doc = new jsPDF();
     const selectedLocation = locations.find(l => l.id === formData.locationId);
     const selectedAccount = accounts.find(a => a.id === formData.accountId);
-    
-    // Header
+    const currencySymbol = selectedAccount?.currency === "USD" ? "$" : "Rs. ";
+
     doc.setFontSize(20);
-    doc.text('Expense Record', 20, 30);
+    doc.text("Expense Record", 20, 20);
     
-    // Details
     doc.setFontSize(12);
-    doc.text(`Location: ${selectedLocation?.name || 'N/A'}`, 20, 50);
-    doc.text(`Category: ${formData.mainCategory} - ${formData.subCategory}`, 20, 60);
-    doc.text(`Amount: LKR ${Number(formData.amount).toLocaleString()}`, 20, 70);
-    doc.text(`Account: ${selectedAccount?.name || 'N/A'}`, 20, 80);
-    doc.text(`Date: ${formData.date}`, 20, 90);
-    if (formData.note) {
-      doc.text(`Note: ${formData.note}`, 20, 100);
-    }
+    doc.text(`Category: ${formData.mainCategory} - ${formData.subCategory}`, 20, 40);
+    doc.text(`Amount: ${currencySymbol}${formData.amount}`, 20, 50);
+    doc.text(`Account: ${selectedAccount?.name || "N/A"}`, 20, 60);
+    doc.text(`Location: ${selectedLocation?.name || "N/A"}`, 20, 70);
+    doc.text(`Date: ${formData.date}`, 20, 80);
+    if (formData.note) doc.text(`Note: ${formData.note}`, 20, 90);
     
-    doc.save(`expense-${formData.date}-${Date.now()}.pdf`);
+    doc.save(`expense-record-${formData.date}.pdf`);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     try {
-      const { error } = await supabase
-        .from("expenses")
-        .insert([{
-          main_type: formData.mainCategory,
-          sub_type: formData.subCategory,
-          amount: Number(formData.amount),
-          account_id: formData.accountId,
-          location_id: formData.locationId,
-          note: formData.note || null,
-          date: formData.date
-        }]);
+      const { error } = await supabase.from("expenses").insert([{
+        main_type: formData.mainCategory,
+        sub_type: formData.subCategory,
+        amount: parseFloat(formData.amount),
+        account_id: formData.accountId,
+        location_id: formData.locationId,
+        date: formData.date,
+        note: formData.note || null,
+      }]);
 
       if (error) throw error;
 
       toast({
-        title: "Expense Added Successfully",
-        description: `LKR ${Number(formData.amount).toLocaleString()} expense recorded for ${formData.subCategory}`,
+        title: "Success",
+        description: "Expense record added successfully",
       });
-      
+
       // Reset form
       setFormData({
         mainCategory: "",
@@ -108,33 +116,48 @@ export default function Expense() {
         amount: "",
         accountId: "",
         locationId: "",
+        date: format(new Date(), "yyyy-MM-dd"),
         note: "",
-        date: new Date().toISOString().split('T')[0]
       });
+
+      fetchData(); // Refresh recent expenses
     } catch (error) {
       console.error("Error adding expense:", error);
       toast({
         title: "Error",
-        description: "Failed to add expense",
-        variant: "destructive"
+        description: "Failed to add expense record",
+        variant: "destructive",
       });
     }
   };
 
-  const selectedAccount = accounts.find(a => a.id === formData.accountId);
-  const selectedLocation = locations.find(l => l.id === formData.locationId);
-  const mainCategories = [...new Set(expenseTypes.map(et => et.main_type))];
-  const subCategories = expenseTypes
-    .filter(et => et.main_type === formData.mainCategory)
-    .map(et => et.sub_type);
+  const deleteExpense = async (id: string) => {
+    if (confirm("Are you sure you want to delete this expense record?")) {
+      try {
+        const { error } = await supabase
+          .from("expenses")
+          .delete()
+          .eq("id", id);
+        if (error) throw error;
+        toast({ title: "Success", description: "Expense record deleted successfully" });
+        fetchData();
+      } catch (error) {
+        console.error("Error deleting expense:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete expense record",
+          variant: "destructive",
+        });
+      }
+    }
+  };
 
   if (loading) {
-    return <div className="flex justify-center items-center min-h-64">Loading...</div>;
+    return <div className="container mx-auto p-6">Loading...</div>;
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
-      {/* Header */}
+    <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center gap-4">
         <Button asChild variant="ghost" size="icon">
           <Link to="/">
@@ -143,195 +166,184 @@ export default function Expense() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold text-foreground">Add Expense</h1>
-          <p className="text-muted-foreground">Record expense for Asaliya Villa</p>
+          <p className="text-muted-foreground">Record your business expenses</p>
         </div>
       </div>
 
-      {/* Current Location Badge */}
-      {selectedLocation && (
-        <Badge variant="outline" className="w-fit flex items-center gap-2">
-          <MapPin className="h-3 w-3" />
-          {selectedLocation.name}
-        </Badge>
-      )}
-
-      {/* Form */}
-      <Card className="bg-gradient-to-br from-red-50 to-pink-100 dark:from-red-950 dark:to-pink-950 border-red-200 shadow-red-200/50 shadow-xl"
-            style={{ boxShadow: '0 20px 25px -5px rgba(239, 68, 68, 0.1), 0 10px 10px -5px rgba(239, 68, 68, 0.04)' }}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-300">
-            <Minus className="h-5 w-5" />
-            Expense Details
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Location */}
-            <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
-              <Select 
-                value={formData.locationId} 
-                onValueChange={(value) => setFormData({...formData, locationId: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select location" />
-                </SelectTrigger>
-                <SelectContent>
-                  {locations.map((location) => (
-                    <SelectItem key={location.id} value={location.id}>
-                      {location.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Main Category */}
-            <div className="space-y-2">
-              <Label htmlFor="mainCategory">Main Category</Label>
-              <Select 
-                value={formData.mainCategory} 
-                onValueChange={(value) => setFormData({...formData, mainCategory: value, subCategory: ""})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select main category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mainCategories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Sub Category */}
-            {formData.mainCategory && (
-              <div className="space-y-2">
-                <Label htmlFor="subCategory">Sub Category</Label>
-                <Select 
-                  value={formData.subCategory} 
-                  onValueChange={(value) => setFormData({...formData, subCategory: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select sub category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {subCategories.map((subCategory) => (
-                      <SelectItem key={subCategory} value={subCategory}>
-                        {subCategory}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Amount */}
-            <div className="space-y-2">
-              <Label htmlFor="amount">Amount</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
-                  {selectedAccount?.currency === "USD" ? "$" : "Rs. "}
-                </span>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="0.00"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                  className="pl-10"
-                  required
-                />
-              </div>
-              {selectedAccount && (
-                <p className="text-xs text-muted-foreground">
-                  Will be deducted from {selectedAccount.name} ({selectedAccount.currency})
-                </p>
-              )}
-            </div>
-
-            {/* Date */}
-            <div className="space-y-2">
-              <Label htmlFor="date">Date</Label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({...formData, date: e.target.value})}
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-
-                {/* Account */}
-                <div className="space-y-2">
-                  <Label htmlFor="account">Pay from Account</Label>
-                  <Select 
-                    value={formData.accountId} 
-                    onValueChange={(value) => setFormData({...formData, accountId: value})}
-                  >
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Expense Form */}
+        <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200 shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-red-800 flex items-center gap-2">
+              <Minus className="h-5 w-5" />
+              New Expense Record
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="mainCategory">Main Category</Label>
+                  <Select value={formData.mainCategory} onValueChange={(value) => setFormData({...formData, mainCategory: value, subCategory: ""})}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select account" />
+                      <SelectValue placeholder="Select main category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {accounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          <div className="flex items-center justify-between w-full">
-                            <span>{account.name}</span>
-                            <Badge variant="outline" className="ml-2">
-                              {account.currency}
-                            </Badge>
-                          </div>
+                      {mainCategories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-            {/* Note */}
-            <div className="space-y-2">
-              <Label htmlFor="note">Note (Optional)</Label>
-              <Textarea
-                id="note"
-                placeholder="Add details about this expense..."
-                value={formData.note}
-                onChange={(e) => setFormData({...formData, note: e.target.value})}
-                rows={3}
-              />
-            </div>
+                <div>
+                  <Label htmlFor="subCategory">Sub Category</Label>
+                  <Select value={formData.subCategory} onValueChange={(value) => setFormData({...formData, subCategory: value})} disabled={!formData.mainCategory}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select sub category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subCategories.map((subCategory) => (
+                        <SelectItem key={subCategory} value={subCategory}>
+                          {subCategory}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-            {/* Submit and PDF Buttons */}
-            <div className="flex gap-3 pt-4">
-              <Button asChild variant="outline" className="flex-1">
-                <Link to="/">Cancel</Link>
-              </Button>
-              <Button 
-                type="button"
-                variant="outline"
-                onClick={generatePDF}
-                disabled={!formData.mainCategory || !formData.subCategory || !formData.amount || !formData.accountId || !formData.locationId}
-                className="flex-1"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Download PDF
-              </Button>
-              <Button 
-                type="submit" 
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
-                disabled={!formData.mainCategory || !formData.subCategory || !formData.amount || !formData.accountId || !formData.locationId}
-              >
-                <Minus className="h-4 w-4 mr-2" />
-                Add Expense
-              </Button>
+              <div>
+                <Label htmlFor="amount">Amount</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
+                    {currencySymbol}
+                  </span>
+                  <Input
+                    id="amount"
+                    type="number"
+                    placeholder="0.00"
+                    value={formData.amount}
+                    onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="accountId">Pay From Account</Label>
+                  <Select value={formData.accountId} onValueChange={(value) => setFormData({...formData, accountId: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.name} ({account.currency})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="locationId">Location</Label>
+                  <Select value={formData.locationId} onValueChange={(value) => setFormData({...formData, locationId: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {locations.map((location) => (
+                        <SelectItem key={location.id} value={location.id}>
+                          {location.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="date">Date</Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="date"
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({...formData, date: e.target.value})}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="note">Note (Optional)</Label>
+                <Textarea
+                  id="note"
+                  placeholder="Add details about this expense..."
+                  value={formData.note}
+                  onChange={(e) => setFormData({...formData, note: e.target.value})}
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button type="button" variant="outline" onClick={generatePDF} className="flex-1">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download PDF
+                </Button>
+                <Button type="submit" className="flex-1 bg-red-600 hover:bg-red-700 text-white">
+                  <Minus className="h-4 w-4 mr-2" />
+                  Add Expense
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Recent Expenses */}
+        <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200 shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-red-800">Recent Expenses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {recentExpenses.map((expense) => (
+                <div key={expense.id} className="flex justify-between items-center p-3 bg-white/60 rounded-lg border border-red-100">
+                  <div className="flex-1">
+                    <div className="font-medium text-red-900">
+                      {expense.main_type} - {expense.sub_type} • {expense.accounts?.currency === "LKR" ? "Rs." : "$"}{expense.amount.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-red-700">
+                      {expense.locations?.name} • {format(new Date(expense.date), "MMM dd, yyyy")}
+                      {expense.note && ` • ${expense.note}`}
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => deleteExpense(expense.id)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              {recentExpenses.length === 0 && (
+                <div className="text-center py-8 text-red-600">
+                  No expense records yet. Add your first expense above!
+                </div>
+              )}
             </div>
-          </form>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
