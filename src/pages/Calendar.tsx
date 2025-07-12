@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Calendar as CalendarIcon, Eye, Filter, Plus, RefreshCw } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, Eye, Filter, Plus, RefreshCw, Edit, MapPin, User, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -24,6 +25,8 @@ export default function Calendar() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [showBookingDetails, setShowBookingDetails] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -77,9 +80,14 @@ export default function Calendar() {
     return colors[status as keyof typeof colors] || "bg-slate-500";
   };
 
-  const handleDateClick = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    navigate(`/booking/new?date=${dateStr}&location=${selectedLocation !== 'all' ? selectedLocation : ''}`);
+  const handleDateClick = (date: Date, bookings: Booking[]) => {
+    if (bookings.length > 0) {
+      setSelectedBooking(bookings[0]);
+      setShowBookingDetails(true);
+    } else {
+      const dateStr = date.toISOString().split('T')[0];
+      navigate(`/booking/new?date=${dateStr}&location=${selectedLocation !== 'all' ? selectedLocation : ''}`);
+    }
   };
 
   const syncCalendars = async () => {
@@ -285,7 +293,7 @@ export default function Calendar() {
                 className={`min-h-12 md:min-h-16 p-1 border border-border rounded-md transition-colors ${
                   dayData ? 'hover:bg-muted/50 cursor-pointer' : ''
                 }`}
-                onClick={() => dayData && handleDateClick(dayData.date)}
+                onClick={() => dayData && handleDateClick(dayData.date, dayData.bookings)}
               >
                 {dayData && (
                   <>
@@ -362,6 +370,93 @@ export default function Calendar() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Booking Details Sheet */}
+      <Sheet open={showBookingDetails} onOpenChange={setShowBookingDetails}>
+        <SheetContent className="w-full sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Booking Details
+            </SheetTitle>
+            <SheetDescription>
+              View and manage booking information
+            </SheetDescription>
+          </SheetHeader>
+          
+          {selectedBooking && (
+            <div className="space-y-6 mt-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  <User className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-semibold">{selectedBooking.guest_name}</p>
+                    <p className="text-sm text-muted-foreground">Guest</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-semibold">{selectedBooking.locations?.name}</p>
+                    <p className="text-sm text-muted-foreground">Location</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Check-in</p>
+                    <p className="font-semibold">{new Date(selectedBooking.check_in).toLocaleDateString()}</p>
+                  </div>
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Check-out</p>
+                    <p className="font-semibold">{new Date(selectedBooking.check_out).toLocaleDateString()}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  <DollarSign className="h-5 w-5 text-primary" />
+                  <div className="flex-1">
+                    <p className="font-semibold">LKR {selectedBooking.total_amount.toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Paid: LKR {selectedBooking.paid_amount.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Badge className={`${getSourceColor(selectedBooking.source)} text-white`}>
+                    {selectedBooking.source.replace('_', '.')}
+                  </Badge>
+                  <Badge className={`${getStatusColor(selectedBooking.status)} text-white`}>
+                    {selectedBooking.status}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => {
+                    navigate(`/booking/edit/${selectedBooking.id}`);
+                    setShowBookingDetails(false);
+                  }}
+                  className="w-full"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Booking
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowBookingDetails(false)}
+                  className="w-full"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ArrowLeft, TrendingUp, TrendingDown, Calendar, Download, BarChart3 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowLeft, TrendingUp, TrendingDown, Calendar, Download, BarChart3, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,42 +7,125 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
 
-const mockData = {
-  income: {
-    today: 15000,
-    thisWeek: 45000,
-    thisMonth: 180000,
-    thisYear: 2160000
-  },
-  expenses: {
-    today: 3500,
-    thisWeek: 12000,
-    thisMonth: 48000,
-    thisYear: 576000
-  },
-  profit: {
-    today: 11500,
-    thisWeek: 33000,
-    thisMonth: 132000,
-    thisYear: 1584000
-  }
+type Income = Tables<"income"> & {
+  locations: Tables<"locations">;
+  accounts: Tables<"accounts">;
 };
 
-const accounts = [
-  { name: "Sampath Bank", balance: 150000, currency: "LKR" },
-  { name: "Payoneer", balance: 500, currency: "USD" },
-  { name: "Asaliya Cash", balance: 25000, currency: "LKR" },
-  { name: "Wishva Account", balance: 75000, currency: "LKR" }
-];
+type Expense = Tables<"expenses"> & {
+  locations: Tables<"locations">;
+  accounts: Tables<"accounts">;
+};
 
-const locations = ["All Locations", "Asaliya Villa", "Rusty Bunk", "Antiqua Serenity"];
+type Location = Tables<"locations">;
+type Account = Tables<"accounts">;
 
 export default function Reports() {
-  const [selectedLocation, setSelectedLocation] = useState("All Locations");
+  const [selectedLocation, setSelectedLocation] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [income, setIncome] = useState<Income[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedIncomeSection, setExpandedIncomeSection] = useState<string | null>(null);
+  const [expandedExpenseSection, setExpandedExpenseSection] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [incomeData, expenseData, locationData, accountData] = await Promise.all([
+        supabase.from("income").select("*, locations(*), accounts(*)").order("created_at", { ascending: false }),
+        supabase.from("expenses").select("*, locations(*), accounts(*)").order("created_at", { ascending: false }),
+        supabase.from("locations").select("*").eq("is_active", true),
+        supabase.from("accounts").select("*")
+      ]);
+
+      setIncome(incomeData.data || []);
+      setExpenses(expenseData.data || []);
+      setLocations(locationData.data || []);
+      setAccounts(accountData.data || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterByLocation = (data: any[]) => {
+    if (selectedLocation === "all") return data;
+    return data.filter(item => item.location_id === selectedLocation);
+  };
+
+  const filterByDateRange = (data: any[]) => {
+    if (!startDate && !endDate) return data;
+    return data.filter(item => {
+      const itemDate = new Date(item.date);
+      const start = startDate ? new Date(startDate) : new Date(0);
+      const end = endDate ? new Date(endDate) : new Date();
+      return itemDate >= start && itemDate <= end;
+    });
+  };
+
+  const getFilteredData = (data: any[]) => {
+    return filterByDateRange(filterByLocation(data));
+  };
+
+  const calculateTotals = (data: any[]) => {
+    const today = new Date();
+    const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const thisYear = new Date(today.getFullYear(), 0, 1);
+
+    return {
+      today: data.filter(item => new Date(item.date).toDateString() === today.toDateString())
+        .reduce((sum, item) => sum + Number(item.amount), 0),
+      thisMonth: data.filter(item => new Date(item.date) >= thisMonth)
+        .reduce((sum, item) => sum + Number(item.amount), 0),
+      thisYear: data.filter(item => new Date(item.date) >= thisYear)
+        .reduce((sum, item) => sum + Number(item.amount), 0)
+    };
+  };
+
+  const filteredIncome = getFilteredData(income);
+  const filteredExpenses = getFilteredData(expenses);
+  
+  const incomeTotal = calculateTotals(filteredIncome);
+  const expenseTotal = calculateTotals(filteredExpenses);
+  
+  const profit = {
+    today: incomeTotal.today - expenseTotal.today,
+    thisMonth: incomeTotal.thisMonth - expenseTotal.thisMonth,
+    thisYear: incomeTotal.thisYear - expenseTotal.thisYear
+  };
+
+  const groupByType = (data: Income[] | Expense[]) => {
+    const grouped: Record<string, any[]> = {};
+    data.forEach(item => {
+      const key = 'type' in item ? item.type : item.main_type;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
+    });
+    return grouped;
+  };
+
+  const groupByLocation = (data: Income[] | Expense[]) => {
+    const grouped: Record<string, any[]> = {};
+    data.forEach(item => {
+      const key = item.locations?.name || 'Unknown';
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
+    });
+    return grouped;
+  };
 
   const formatCurrency = (amount: number, currency: string = "LKR") => {
     if (currency === "USD") {
@@ -83,9 +166,10 @@ export default function Reports() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">All Locations</SelectItem>
                   {locations.map((location) => (
-                    <SelectItem key={location} value={location}>
-                      {location}
+                    <SelectItem key={location.id} value={location.id}>
+                      {location.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -125,132 +209,173 @@ export default function Reports() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="bg-gradient-card border-0 shadow-elegant">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Today</p>
-                    <p className="text-2xl font-bold text-emerald-600">
-                      {formatCurrency(mockData.income.today)}
+          {loading ? (
+            <div className="flex justify-center items-center min-h-64">Loading...</div>
+          ) : (
+            <>
+              {/* Quick Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="bg-gradient-card border-0 shadow-elegant">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Today Income</p>
+                        <p className="text-2xl font-bold text-emerald-600">
+                          {formatCurrency(incomeTotal.today)}
+                        </p>
+                      </div>
+                      <TrendingUp className="h-8 w-8 text-emerald-600" />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Month: {formatCurrency(incomeTotal.thisMonth)}
                     </p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-emerald-600" />
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">Income</p>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
 
-            <Card className="bg-gradient-card border-0 shadow-elegant">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">This Week</p>
-                    <p className="text-2xl font-bold text-emerald-600">
-                      {formatCurrency(mockData.income.thisWeek)}
+                <Card className="bg-gradient-card border-0 shadow-elegant">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Today Expenses</p>
+                        <p className="text-2xl font-bold text-red-600">
+                          {formatCurrency(expenseTotal.today)}
+                        </p>
+                      </div>
+                      <TrendingDown className="h-8 w-8 text-red-600" />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Month: {formatCurrency(expenseTotal.thisMonth)}
                     </p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-emerald-600" />
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">Income</p>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
 
-            <Card className="bg-gradient-card border-0 shadow-elegant">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">This Month</p>
-                    <p className="text-2xl font-bold text-emerald-600">
-                      {formatCurrency(mockData.income.thisMonth)}
+                <Card className="bg-gradient-card border-0 shadow-elegant">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Today Profit</p>
+                        <p className={`text-2xl font-bold ${profit.today >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                          {formatCurrency(profit.today)}
+                        </p>
+                      </div>
+                      <BarChart3 className={`h-8 w-8 ${profit.today >= 0 ? 'text-blue-600' : 'text-red-600'}`} />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Month: {formatCurrency(profit.thisMonth)}
                     </p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-emerald-600" />
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">Income</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-card border-0 shadow-elegant">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">This Year</p>
-                    <p className="text-2xl font-bold text-emerald-600">
-                      {formatCurrency(mockData.income.thisYear)}
-                    </p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-emerald-600" />
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">Income</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Income vs Expenses */}
-          <Card className="bg-gradient-card border-0 shadow-elegant">
-            <CardHeader>
-              <CardTitle>Income vs Expenses Comparison</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-emerald-600">Income</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm">Today</span>
-                      <span className="font-medium">{formatCurrency(mockData.income.today)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">This Month</span>
-                      <span className="font-medium">{formatCurrency(mockData.income.thisMonth)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">This Year</span>
-                      <span className="font-medium">{formatCurrency(mockData.income.thisYear)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-red-600">Expenses</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm">Today</span>
-                      <span className="font-medium">{formatCurrency(mockData.expenses.today)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">This Month</span>
-                      <span className="font-medium">{formatCurrency(mockData.expenses.thisMonth)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">This Year</span>
-                      <span className="font-medium">{formatCurrency(mockData.expenses.thisYear)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-blue-600">Profit</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm">Today</span>
-                      <span className="font-medium">{formatCurrency(mockData.profit.today)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">This Month</span>
-                      <span className="font-medium">{formatCurrency(mockData.profit.thisMonth)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">This Year</span>
-                      <span className="font-medium">{formatCurrency(mockData.profit.thisYear)}</span>
-                    </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
+
+              {/* Detailed Income Section */}
+              <Card className="bg-gradient-card border-0 shadow-elegant">
+                <CardHeader>
+                  <CardTitle className="text-emerald-600">Income Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {Object.entries(groupByType(filteredIncome)).map(([type, items]) => (
+                    <Collapsible 
+                      key={type}
+                      open={expandedIncomeSection === type}
+                      onOpenChange={() => setExpandedIncomeSection(expandedIncomeSection === type ? null : type)}
+                    >
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" className="w-full justify-between p-3 h-auto">
+                          <div className="flex items-center gap-3">
+                            {expandedIncomeSection === type ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            <span className="font-semibold capitalize">{type.replace('_', ' ')}</span>
+                            <Badge variant="outline">{items.length} items</Badge>
+                          </div>
+                          <span className="font-bold text-emerald-600">
+                            {formatCurrency(items.reduce((sum, item) => sum + Number(item.amount), 0))}
+                          </span>
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="pl-4 space-y-2">
+                        {Object.entries(groupByLocation(items)).map(([location, locationItems]) => (
+                          <div key={location} className="border-l-2 border-emerald-200 pl-4">
+                            <div className="flex justify-between items-center py-2">
+                              <span className="font-medium">{location}</span>
+                              <span className="text-emerald-600 font-semibold">
+                                {formatCurrency(locationItems.reduce((sum, item) => sum + Number(item.amount), 0))}
+                              </span>
+                            </div>
+                            <div className="space-y-1">
+                              {locationItems.slice(0, 3).map((item) => (
+                                <div key={item.id} className="text-sm text-muted-foreground flex justify-between">
+                                  <span>{new Date(item.date).toLocaleDateString()} - {item.accounts?.name}</span>
+                                  <span>{formatCurrency(Number(item.amount))}</span>
+                                </div>
+                              ))}
+                              {locationItems.length > 3 && (
+                                <div className="text-xs text-muted-foreground">
+                                  +{locationItems.length - 3} more entries
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* Detailed Expense Section */}
+              <Card className="bg-gradient-card border-0 shadow-elegant">
+                <CardHeader>
+                  <CardTitle className="text-red-600">Expense Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {Object.entries(groupByType(filteredExpenses)).map(([type, items]) => (
+                    <Collapsible 
+                      key={type}
+                      open={expandedExpenseSection === type}
+                      onOpenChange={() => setExpandedExpenseSection(expandedExpenseSection === type ? null : type)}
+                    >
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" className="w-full justify-between p-3 h-auto">
+                          <div className="flex items-center gap-3">
+                            {expandedExpenseSection === type ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            <span className="font-semibold capitalize">{type.replace('_', ' ')}</span>
+                            <Badge variant="outline">{items.length} items</Badge>
+                          </div>
+                          <span className="font-bold text-red-600">
+                            {formatCurrency(items.reduce((sum, item) => sum + Number(item.amount), 0))}
+                          </span>
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="pl-4 space-y-2">
+                        {Object.entries(groupByLocation(items)).map(([location, locationItems]) => (
+                          <div key={location} className="border-l-2 border-red-200 pl-4">
+                            <div className="flex justify-between items-center py-2">
+                              <span className="font-medium">{location}</span>
+                              <span className="text-red-600 font-semibold">
+                                {formatCurrency(locationItems.reduce((sum, item) => sum + Number(item.amount), 0))}
+                              </span>
+                            </div>
+                            <div className="space-y-1">
+                              {locationItems.slice(0, 3).map((item) => (
+                                <div key={item.id} className="text-sm text-muted-foreground flex justify-between">
+                                  <span>{new Date(item.date).toLocaleDateString()} - {item.accounts?.name}</span>
+                                  <span>{formatCurrency(Number(item.amount))}</span>
+                                </div>
+                              ))}
+                              {locationItems.length > 3 && (
+                                <div className="text-xs text-muted-foreground">
+                                  +{locationItems.length - 3} more entries
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ))}
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="profit-loss" className="space-y-6">
@@ -263,21 +388,15 @@ export default function Reports() {
                 <div>
                   <h3 className="font-semibold text-emerald-600 mb-4">Revenue</h3>
                   <div className="space-y-2 pl-4">
-                    <div className="flex justify-between">
-                      <span>Booking Income</span>
-                      <span>{formatCurrency(150000)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Laundry Income</span>
-                      <span>{formatCurrency(20000)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Food Income</span>
-                      <span>{formatCurrency(10000)}</span>
-                    </div>
+                    {Object.entries(groupByType(filteredIncome)).map(([type, items]) => (
+                      <div key={type} className="flex justify-between">
+                        <span className="capitalize">{type.replace('_', ' ')} Income</span>
+                        <span>{formatCurrency(items.reduce((sum, item) => sum + Number(item.amount), 0))}</span>
+                      </div>
+                    ))}
                     <div className="flex justify-between font-semibold border-t pt-2">
                       <span>Total Revenue</span>
-                      <span>{formatCurrency(180000)}</span>
+                      <span>{formatCurrency(incomeTotal.thisMonth)}</span>
                     </div>
                   </div>
                 </div>
@@ -285,25 +404,15 @@ export default function Reports() {
                 <div>
                   <h3 className="font-semibold text-red-600 mb-4">Expenses</h3>
                   <div className="space-y-2 pl-4">
-                    <div className="flex justify-between">
-                      <span>Utilities</span>
-                      <span>{formatCurrency(15000)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Staff</span>
-                      <span>{formatCurrency(20000)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Maintenance</span>
-                      <span>{formatCurrency(8000)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Commission</span>
-                      <span>{formatCurrency(5000)}</span>
-                    </div>
+                    {Object.entries(groupByType(filteredExpenses)).map(([type, items]) => (
+                      <div key={type} className="flex justify-between">
+                        <span className="capitalize">{type.replace('_', ' ')}</span>
+                        <span>{formatCurrency(items.reduce((sum, item) => sum + Number(item.amount), 0))}</span>
+                      </div>
+                    ))}
                     <div className="flex justify-between font-semibold border-t pt-2">
                       <span>Total Expenses</span>
-                      <span>{formatCurrency(48000)}</span>
+                      <span>{formatCurrency(expenseTotal.thisMonth)}</span>
                     </div>
                   </div>
                 </div>
@@ -311,7 +420,9 @@ export default function Reports() {
                 <div className="border-t pt-4">
                   <div className="flex justify-between text-lg font-bold">
                     <span>Net Profit</span>
-                    <span className="text-blue-600">{formatCurrency(132000)}</span>
+                    <span className={`${profit.thisMonth >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                      {formatCurrency(profit.thisMonth)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -326,15 +437,15 @@ export default function Reports() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {accounts.map((account, index) => (
-                  <div key={index} className="flex justify-between items-center p-4 border border-border rounded-lg">
+                {accounts.map((account) => (
+                  <div key={account.id} className="flex justify-between items-center p-4 border border-border rounded-lg">
                     <div>
                       <h3 className="font-semibold">{account.name}</h3>
                       <Badge variant="outline">{account.currency}</Badge>
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold">
-                        {formatCurrency(account.balance, account.currency)}
+                        {formatCurrency(Number(account.initial_balance), account.currency)}
                       </p>
                     </div>
                   </div>
@@ -342,7 +453,7 @@ export default function Reports() {
                 <div className="border-t pt-4">
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total Assets</span>
-                    <span>{formatCurrency(250000)} + $500</span>
+                    <span>{formatCurrency(accounts.reduce((sum, acc) => sum + Number(acc.initial_balance), 0))}</span>
                   </div>
                 </div>
               </div>
