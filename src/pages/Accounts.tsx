@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import { ArrowLeft, Plus, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, ArrowRightLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
@@ -27,6 +27,14 @@ export default function Accounts() {
     currency: "LKR" as "LKR" | "USD",
     initial_balance: 0,
     location_access: [] as string[]
+  });
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
+  const [transferData, setTransferData] = useState({
+    fromAccountId: "",
+    toAccountId: "",
+    amount: 0,
+    conversionRate: 1,
+    note: ""
   });
 
   useEffect(() => {
@@ -130,6 +138,90 @@ export default function Accounts() {
     setShowAddDialog(true);
   };
 
+  const handleTransfer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase
+        .from("account_transfers")
+        .insert([{
+          from_account_id: transferData.fromAccountId,
+          to_account_id: transferData.toAccountId,
+          amount: transferData.amount,
+          conversion_rate: transferData.conversionRate,
+          note: transferData.note
+        }]);
+      
+      if (error) throw error;
+      
+      toast({ 
+        title: "Success", 
+        description: "Transfer completed successfully" 
+      });
+      
+      setTransferData({
+        fromAccountId: "",
+        toAccountId: "",
+        amount: 0,
+        conversionRate: 1,
+        note: ""
+      });
+      setShowTransferDialog(false);
+    } catch (error) {
+      console.error("Error creating transfer:", error);
+      toast({
+        title: "Error",
+        description: "Failed to complete transfer",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getExchangeRate = (fromCurrency: string, toCurrency: string) => {
+    if (fromCurrency === toCurrency) return 1;
+    // Default exchange rates - in real app, these would come from an API
+    if (fromCurrency === "USD" && toCurrency === "LKR") return 300;
+    if (fromCurrency === "LKR" && toCurrency === "USD") return 0.0033;
+    return 1;
+  };
+
+  const handleFromAccountChange = (accountId: string) => {
+    const fromAccount = accounts.find(acc => acc.id === accountId);
+    const toAccount = accounts.find(acc => acc.id === transferData.toAccountId);
+    
+    if (fromAccount && toAccount) {
+      const rate = getExchangeRate(fromAccount.currency, toAccount.currency);
+      setTransferData({
+        ...transferData,
+        fromAccountId: accountId,
+        conversionRate: rate
+      });
+    } else {
+      setTransferData({
+        ...transferData,
+        fromAccountId: accountId
+      });
+    }
+  };
+
+  const handleToAccountChange = (accountId: string) => {
+    const fromAccount = accounts.find(acc => acc.id === transferData.fromAccountId);
+    const toAccount = accounts.find(acc => acc.id === accountId);
+    
+    if (fromAccount && toAccount) {
+      const rate = getExchangeRate(fromAccount.currency, toAccount.currency);
+      setTransferData({
+        ...transferData,
+        toAccountId: accountId,
+        conversionRate: rate
+      });
+    } else {
+      setTransferData({
+        ...transferData,
+        toAccountId: accountId
+      });
+    }
+  };
+
   if (loading) {
     return <div className="p-6">Loading accounts...</div>;
   }
@@ -141,13 +233,25 @@ export default function Accounts() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-2xl font-bold">Account Management</h1>
+        <div className="flex gap-2">
+          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+            <DialogTrigger asChild>
+              <Button onClick={() => resetForm()}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Account
+              </Button>
+            </DialogTrigger>
+          </Dialog>
+          <Dialog open={showTransferDialog} onOpenChange={setShowTransferDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <ArrowRightLeft className="h-4 w-4 mr-2" />
+                Transfer Money
+              </Button>
+            </DialogTrigger>
+          </Dialog>
+        </div>
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button onClick={() => resetForm()}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Account
-            </Button>
-          </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{editingAccount ? "Edit Account" : "Add New Account"}</DialogTitle>
@@ -230,6 +334,97 @@ export default function Accounts() {
                   {editingAccount ? "Update Account" : "Add Account"}
                 </Button>
                 <Button type="button" variant="outline" onClick={resetForm}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+        
+        <Dialog open={showTransferDialog} onOpenChange={setShowTransferDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Transfer Money Between Accounts</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleTransfer} className="space-y-4">
+              <div>
+                <Label htmlFor="fromAccount">From Account</Label>
+                <Select value={transferData.fromAccountId} onValueChange={handleFromAccountChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select source account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.name} ({account.currency})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="toAccount">To Account</Label>
+                <Select value={transferData.toAccountId} onValueChange={handleToAccountChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select destination account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.filter(acc => acc.id !== transferData.fromAccountId).map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.name} ({account.currency})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="amount">Amount</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  step="0.01"
+                  value={transferData.amount}
+                  onChange={(e) => setTransferData({ ...transferData, amount: parseFloat(e.target.value) || 0 })}
+                  required
+                />
+              </div>
+              
+              {(() => {
+                const fromAccount = accounts.find(acc => acc.id === transferData.fromAccountId);
+                const toAccount = accounts.find(acc => acc.id === transferData.toAccountId);
+                return fromAccount && toAccount && fromAccount.currency !== toAccount.currency && (
+                  <div>
+                    <Label htmlFor="conversionRate">Conversion Rate ({fromAccount.currency} to {toAccount.currency})</Label>
+                    <Input
+                      id="conversionRate"
+                      type="number"
+                      step="0.0001"
+                      value={transferData.conversionRate}
+                      onChange={(e) => setTransferData({ ...transferData, conversionRate: parseFloat(e.target.value) || 1 })}
+                      required
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {transferData.amount} {fromAccount.currency} = {(transferData.amount * transferData.conversionRate).toFixed(2)} {toAccount.currency}
+                    </p>
+                  </div>
+                );
+              })()}
+              
+              <div>
+                <Label htmlFor="note">Note (Optional)</Label>
+                <Input
+                  id="note"
+                  value={transferData.note}
+                  onChange={(e) => setTransferData({ ...transferData, note: e.target.value })}
+                  placeholder="Transfer description..."
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <Button type="submit">Complete Transfer</Button>
+                <Button type="button" variant="outline" onClick={() => setShowTransferDialog(false)}>
                   Cancel
                 </Button>
               </div>

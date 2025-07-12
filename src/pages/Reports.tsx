@@ -112,161 +112,126 @@ export default function Reports() {
 
   const generateAdvancedPDF = () => {
     const doc = new jsPDF();
+    let yPos = 20;
     
-    // Header with colors
-    doc.setFillColor(41, 128, 185);
-    doc.rect(0, 0, 210, 40, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
-    doc.text('FINANCIAL REPORT', 105, 25, { align: 'center' });
+    // Professional header (no colors)
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(20);
+    doc.text('FINANCIAL REPORT', 105, yPos, { align: 'center' });
+    yPos += 10;
+    
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 105, yPos, { align: 'center' });
+    yPos += 5;
+    
+    const selectedLocationName = selectedLocation === "all" ? "All Locations" : 
+      locations.find(loc => loc.id === selectedLocation)?.name || "Unknown Location";
+    doc.text(`Location: ${selectedLocationName}`, 105, yPos, { align: 'center' });
+    yPos += 15;
+    
+    // Period information
+    const periodText = startDate && endDate ? 
+      `Period: ${startDate} to ${endDate}` : "Period: All time";
+    doc.text(periodText, 105, yPos, { align: 'center' });
+    yPos += 20;
+
+    // Summary section
+    const totalIncome = filteredIncome.reduce((sum, item) => sum + Number(item.amount), 0);
+    const totalExpenses = filteredExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
+    const netProfit = totalIncome - totalExpenses;
+
+    doc.setFontSize(14);
+    doc.text('EXECUTIVE SUMMARY', 15, yPos);
+    yPos += 15;
+
+    // Summary table
+    doc.setFontSize(10);
+    doc.text('Total Income:', 20, yPos);
+    doc.text(`${formatCurrency(totalIncome)}`, 170, yPos, { align: 'right' });
+    yPos += 8;
+    
+    doc.text('Total Expenses:', 20, yPos);
+    doc.text(`${formatCurrency(totalExpenses)}`, 170, yPos, { align: 'right' });
+    yPos += 8;
     
     doc.setFontSize(12);
-    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 105, 35, { align: 'center' });
-    
-    let yPos = 50;
-    doc.setTextColor(0, 0, 0);
-    
-    // Report Summary
-    doc.setFillColor(236, 240, 241);
-    doc.rect(10, yPos, 190, 30, 'F');
-    doc.setFontSize(16);
-    doc.setTextColor(52, 73, 94);
-    doc.text('EXECUTIVE SUMMARY', 105, yPos + 10, { align: 'center' });
-    
+    doc.text('Net Profit:', 20, yPos);
+    doc.text(`${formatCurrency(netProfit)}`, 170, yPos, { align: 'right' });
     yPos += 20;
-    doc.setFontSize(11);
-    doc.text(`Period: ${startDate || 'All time'} ${endDate ? `to ${endDate}` : ''}`, 15, yPos);
-    doc.text(`Location: ${selectedLocation === 'all' ? 'All Locations' : locations.find(l => l.id === selectedLocation)?.name}`, 15, yPos + 7);
-    
-    yPos += 25;
-    
-    // Income Section
-    doc.setFillColor(46, 204, 113);
-    doc.rect(10, yPos, 190, 8, 'F');
-    doc.setTextColor(255, 255, 255);
+
+    // Income section
     doc.setFontSize(14);
-    doc.text('INCOME', 15, yPos + 6);
-    
+    doc.text('INCOME', 15, yPos);
     yPos += 15;
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(11);
-    
-    const incomeBySource = groupIncomeBySource(filteredIncome);
-    let totalIncome = 0;
-    
-    Object.entries(incomeBySource).forEach(([source, items]) => {
+
+    const groupedIncome = groupIncomeBySource(filteredIncome);
+    Object.entries(groupedIncome).forEach(([source, items]) => {
       const sourceTotal = items.reduce((sum, item) => sum + Number(item.amount), 0);
-      totalIncome += sourceTotal;
       
-      doc.setFont(undefined, 'bold');
-      doc.text(`▼ ${source}`, 15, yPos);
-      doc.text(`${formatCurrency(sourceTotal)}`, 150, yPos);
+      doc.setFontSize(11);
+      doc.text(`${source}`, 20, yPos);
+      doc.text(`${formatCurrency(sourceTotal)}`, 170, yPos, { align: 'right' });
       yPos += 8;
-      
-      doc.setFont(undefined, 'normal');
-      items.slice(0, 5).forEach(item => {
-        doc.text(`    ${new Date(item.date).toLocaleDateString()} - ${item.accounts?.name}`, 20, yPos);
-        doc.text(`${formatCurrency(Number(item.amount))}`, 155, yPos);
-        yPos += 5;
-      });
-      
-      if (items.length > 5) {
-        doc.setFont(undefined, 'italic');
-        doc.text(`    ... and ${items.length - 5} more entries`, 20, yPos);
-        yPos += 5;
-      }
-      yPos += 3;
-    });
-    
-    // Total Income
-    doc.setFillColor(46, 204, 113);
-    doc.rect(10, yPos, 190, 6, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFont(undefined, 'bold');
-    doc.text('TOTAL INCOME', 15, yPos + 4);
-    doc.text(`${formatCurrency(totalIncome)}`, 150, yPos + 4);
-    
-    yPos += 15;
-    
-    // Check if new page needed
-    if (yPos > 240) {
-      doc.addPage();
-      yPos = 20;
-    }
-    
-    // Expenses Section
-    doc.setFillColor(231, 76, 60);
-    doc.rect(10, yPos, 190, 8, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(14);
-    doc.text('EXPENSES', 15, yPos + 6);
-    
-    yPos += 15;
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(11);
-    
-    const expensesByMainAndSub = groupByMainAndSubType(filteredExpenses);
-    let totalExpenses = 0;
-    
-    Object.entries(expensesByMainAndSub).forEach(([mainType, subTypes]) => {
-      const mainTypeTotal = Object.values(subTypes).flat().reduce((sum, item) => sum + Number(item.amount), 0);
-      totalExpenses += mainTypeTotal;
-      
-      doc.setFont(undefined, 'bold');
-      doc.text(`▼ ${mainType.toUpperCase()}`, 15, yPos);
-      doc.text(`${formatCurrency(mainTypeTotal)}`, 150, yPos);
-      yPos += 8;
-      
-      Object.entries(subTypes).forEach(([subType, items]) => {
-        const subTotal = items.reduce((sum, item) => sum + Number(item.amount), 0);
-        
-        doc.setFont(undefined, 'normal');
-        doc.text(`    ▼ ${subType}`, 20, yPos);
-        doc.text(`${formatCurrency(subTotal)}`, 155, yPos);
+
+      items.forEach(item => {
+        doc.setFontSize(9);
+        const date = new Date(item.date).toLocaleDateString();
+        const accountName = item.accounts?.name || 'Unknown Account';
+        doc.text(`  ${date} - ${accountName}`, 25, yPos);
+        doc.text(`${formatCurrency(item.amount)}`, 170, yPos, { align: 'right' });
         yPos += 6;
         
-        items.slice(0, 3).forEach(item => {
-          doc.setFont(undefined, 'normal');
-          doc.text(`        ${new Date(item.date).toLocaleDateString()} - ${item.accounts?.name}`, 25, yPos);
-          doc.text(`${formatCurrency(Number(item.amount))}`, 160, yPos);
-          yPos += 4;
-        });
-        
-        if (items.length > 3) {
-          doc.setFont(undefined, 'italic');
-          doc.text(`        ... and ${items.length - 3} more entries`, 25, yPos);
-          yPos += 4;
-        }
-        yPos += 2;
-        
-        if (yPos > 260) {
+        if (yPos > 270) {
           doc.addPage();
           yPos = 20;
         }
       });
-      yPos += 3;
+      yPos += 5;
+    });
+
+    yPos += 10;
+
+    // Expenses section
+    doc.setFontSize(14);
+    doc.text('EXPENSES', 15, yPos);
+    yPos += 15;
+
+    const groupedExpenses = groupByMainAndSubType(filteredExpenses);
+    Object.entries(groupedExpenses).forEach(([mainType, subTypes]) => {
+      const mainTypeTotal = Object.values(subTypes).flat().reduce((sum, item) => sum + Number(item.amount), 0);
+      
+      doc.setFontSize(11);
+      doc.text(`${mainType}`, 20, yPos);
+      doc.text(`${formatCurrency(mainTypeTotal)}`, 170, yPos, { align: 'right' });
+      yPos += 8;
+
+      Object.entries(subTypes).forEach(([subType, items]) => {
+        const subTypeTotal = items.reduce((sum, item) => sum + Number(item.amount), 0);
+        
+        doc.setFontSize(10);
+        doc.text(`  ${subType}`, 25, yPos);
+        doc.text(`${formatCurrency(subTypeTotal)}`, 170, yPos, { align: 'right' });
+        yPos += 7;
+
+        items.forEach(item => {
+          doc.setFontSize(9);
+          const date = new Date(item.date).toLocaleDateString();
+          const accountName = item.accounts?.name || 'Unknown Account';
+          doc.text(`    ${date} - ${accountName}`, 30, yPos);
+          doc.text(`${formatCurrency(item.amount)}`, 170, yPos, { align: 'right' });
+          yPos += 6;
+          
+          if (yPos > 270) {
+            doc.addPage();
+            yPos = 20;
+          }
+        });
+        yPos += 3;
+      });
+      yPos += 5;
     });
     
-    // Total Expenses
-    doc.setFillColor(231, 76, 60);
-    doc.rect(10, yPos, 190, 6, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFont(undefined, 'bold');
-    doc.text('TOTAL EXPENSES', 15, yPos + 4);
-    doc.text(`${formatCurrency(totalExpenses)}`, 150, yPos + 4);
-    
-    yPos += 15;
-    
-    // Net Profit
-    const netProfit = totalIncome - totalExpenses;
-    doc.setFillColor(netProfit >= 0 ? 46 : 231, netProfit >= 0 ? 204 : 76, netProfit >= 0 ? 113 : 60);
-    doc.rect(10, yPos, 190, 8, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.text('NET PROFIT', 15, yPos + 6);
-    doc.text(`${formatCurrency(netProfit)}`, 150, yPos + 6);
-    
-    doc.save(`detailed-financial-report-${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(`financial-report-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   if (loading) {
