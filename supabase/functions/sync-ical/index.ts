@@ -24,17 +24,13 @@ function parseICalDate(icalDate: string): string {
     const second = icalDate.substring(13, 15);
     return `${year}-${month}-${day}T${hour}:${minute}:${second}Z`;
   } else {
-    // Format: YYYYMMDD - treat as date only in Sri Lanka timezone (UTC+5:30)
+    // Format: YYYYMMDD - parse as local date and keep it exactly as provided
     const year = icalDate.substring(0, 4);
     const month = icalDate.substring(4, 6);
     const day = icalDate.substring(6, 8);
     
-    // Create date at noon Sri Lanka time to avoid timezone issues
-    // This ensures the date stays correct when converted to UTC
-    const sriLankaOffset = 5.5 * 60; // 5:30 in minutes
-    const date = new Date(`${year}-${month}-${day}T12:00:00+05:30`);
-    
-    // Convert to UTC date at midnight
+    // Create a UTC date at midnight for the exact date from iCal
+    // This preserves the exact date without timezone conversion issues
     const utcDate = new Date(Date.UTC(
       parseInt(year), 
       parseInt(month) - 1, 

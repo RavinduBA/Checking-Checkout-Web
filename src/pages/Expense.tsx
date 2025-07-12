@@ -222,7 +222,12 @@ export default function Expense() {
                         <SelectValue placeholder="Select account" />
                       </SelectTrigger>
                       <SelectContent>
-                        {accounts.map((account) => (
+                        {accounts
+                          .filter(account => 
+                            account.location_access.length === 0 || 
+                            account.location_access.includes(formData.locationId)
+                          )
+                          .map((account) => (
                           <SelectItem key={account.id} value={account.id}>
                             {account.name} ({account.currency})
                           </SelectItem>

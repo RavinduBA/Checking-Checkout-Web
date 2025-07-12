@@ -29,7 +29,7 @@ export default function Income() {
     dateFrom: format(new Date(), "yyyy-MM-dd"),
     dateTo: format(new Date(), "yyyy-MM-dd"),
     note: "",
-    paymentMethod: "",
+    
     bookingSource: "direct" as Database["public"]["Enums"]["booking_source"],
     isAdvance: false,
   });
@@ -98,7 +98,7 @@ export default function Income() {
         location_id: formData.locationId,
         date: formData.dateFrom,
         note: formData.note || null,
-        payment_method: formData.paymentMethod,
+        payment_method: "Cash", // Default payment method
         is_advance: formData.isAdvance,
       }]);
 
@@ -118,7 +118,6 @@ export default function Income() {
         dateFrom: format(new Date(), "yyyy-MM-dd"),
         dateTo: format(new Date(), "yyyy-MM-dd"),
         note: "",
-        paymentMethod: "",
         bookingSource: "direct",
         isAdvance: false,
       });
@@ -275,32 +274,25 @@ export default function Income() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="accountId">Account</Label>
-                    <Select value={formData.accountId} onValueChange={(value) => setFormData({...formData, accountId: value})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select account" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {accounts.map((account) => (
-                          <SelectItem key={account.id} value={account.id}>
-                            {account.name} ({account.currency})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="paymentMethod">Payment Method</Label>
-                    <Input
-                      id="paymentMethod"
-                      placeholder="Cash, Card, Bank Transfer..."
-                      value={formData.paymentMethod}
-                      onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})}
-                      required
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="accountId">Account</Label>
+                  <Select value={formData.accountId} onValueChange={(value) => setFormData({...formData, accountId: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts
+                        .filter(account => 
+                          account.location_access.length === 0 || 
+                          account.location_access.includes(formData.locationId)
+                        )
+                        .map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.name} ({account.currency})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>

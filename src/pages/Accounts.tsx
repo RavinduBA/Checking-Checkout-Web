@@ -184,6 +184,47 @@ export default function Accounts() {
                   onChange={(e) => setFormData({ ...formData, initial_balance: parseFloat(e.target.value) || 0 })}
                 />
               </div>
+              <div>
+                <Label htmlFor="location_access">Location Access</Label>
+                <div className="space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="all_locations"
+                      checked={formData.location_access.length === 0}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData({ ...formData, location_access: [] });
+                        }
+                      }}
+                    />
+                    <Label htmlFor="all_locations" className="text-sm">All Locations</Label>
+                  </div>
+                  {locations.map((location) => (
+                    <div key={location.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={location.id}
+                        checked={formData.location_access.includes(location.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({
+                              ...formData,
+                              location_access: [...formData.location_access, location.id]
+                            });
+                          } else {
+                            setFormData({
+                              ...formData,
+                              location_access: formData.location_access.filter(id => id !== location.id)
+                            });
+                          }
+                        }}
+                      />
+                      <Label htmlFor={location.id} className="text-sm">{location.name}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="flex gap-2">
                 <Button type="submit">
                   {editingAccount ? "Update Account" : "Add Account"}
@@ -226,6 +267,16 @@ export default function Accounts() {
                 </div>
                 <div>
                   <span className="font-medium">Initial Balance:</span> {account.currency === "LKR" ? "Rs." : "$"}{account.initial_balance.toLocaleString()}
+                </div>
+                <div className="col-span-2">
+                  <span className="font-medium">Location Access:</span> {
+                    account.location_access.length === 0 
+                      ? "All Locations" 
+                      : locations
+                          .filter(loc => account.location_access.includes(loc.id))
+                          .map(loc => loc.name)
+                          .join(", ")
+                  }
                 </div>
               </div>
             </CardContent>
