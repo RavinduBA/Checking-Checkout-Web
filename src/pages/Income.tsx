@@ -115,44 +115,6 @@ export default function Income() {
               </Select>
             </div>
 
-            {/* Amount */}
-            <div className="space-y-2">
-              <Label htmlFor="amount">Amount</Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="0.00"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                  className="pl-10"
-                  required
-                />
-              </div>
-              {selectedAccount && (
-                <p className="text-xs text-muted-foreground">
-                  Will be added to {selectedAccount.name} ({selectedAccount.currency})
-                </p>
-              )}
-            </div>
-
-            {/* Date */}
-            <div className="space-y-2">
-              <Label htmlFor="date">Date</Label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({...formData, date: e.target.value})}
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-
             {/* Payment Method */}
             <div className="space-y-2">
               <Label htmlFor="paymentMethod">Payment Method</Label>
@@ -196,6 +158,44 @@ export default function Income() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Amount */}
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount</Label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="amount"
+                  type="number"
+                  placeholder="0.00"
+                  value={formData.amount}
+                  onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                  className="pl-10"
+                  required
+                />
+              </div>
+              {selectedAccount && (
+                <p className="text-xs text-muted-foreground">
+                  Will be added to {selectedAccount.name} ({selectedAccount.currency})
+                </p>
+              )}
+            </div>
+
+            {/* Date */}
+            <div className="space-y-2">
+              <Label htmlFor="date">Date</Label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({...formData, date: e.target.value})}
+                  className="pl-10"
+                  required
+                />
+              </div>
             </div>
 
             {/* Advance Payment Checkbox */}
