@@ -185,6 +185,136 @@ export default function Reports() {
     return `Rs. ${amount.toLocaleString()}`;
   };
 
+  const generateHTMLReport = () => {
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Financial Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; border-bottom: 3px solid #333; padding-bottom: 20px; }
+          .summary { background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px; }
+          .section { margin: 30px 0; }
+          .section h2 { color: #333; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+          .item { margin: 10px 0; padding: 10px; background: #f9f9f9; border-left: 4px solid #007bff; }
+          .total { font-weight: bold; color: #007bff; }
+          .profit { color: green; }
+          .loss { color: red; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+          th { background-color: #f2f2f2; }
+          .positive { color: #059669; }
+          .negative { color: #dc2626; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Financial Report</h1>
+          <p>Generated on: ${new Date().toLocaleDateString()}</p>
+          <p>Period: ${startDate || 'All time'} ${endDate ? `to ${endDate}` : ''}</p>
+          <p>Location: ${selectedLocation === 'all' ? 'All Locations' : locations.find(l => l.id === selectedLocation)?.name || 'Unknown'}</p>
+        </div>
+
+        <div class="summary">
+          <h2>Executive Summary</h2>
+          <table>
+            <tr><th>Period</th><th>Income</th><th>Expenses</th><th>Net Profit</th></tr>
+            <tr>
+              <td>Today</td>
+              <td class="positive">${formatCurrency(incomeTotal.today)}</td>
+              <td class="negative">${formatCurrency(expenseTotal.today)}</td>
+              <td class="${profit.today >= 0 ? 'positive' : 'negative'}">${formatCurrency(profit.today)}</td>
+            </tr>
+            <tr>
+              <td>This Month</td>
+              <td class="positive">${formatCurrency(incomeTotal.thisMonth)}</td>
+              <td class="negative">${formatCurrency(expenseTotal.thisMonth)}</td>
+              <td class="${profit.thisMonth >= 0 ? 'positive' : 'negative'}">${formatCurrency(profit.thisMonth)}</td>
+            </tr>
+            <tr>
+              <td>This Year</td>
+              <td class="positive">${formatCurrency(incomeTotal.thisYear)}</td>
+              <td class="negative">${formatCurrency(expenseTotal.thisYear)}</td>
+              <td class="${profit.thisYear >= 0 ? 'positive' : 'negative'}">${formatCurrency(profit.thisYear)}</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="section">
+          <h2>Account Balances</h2>
+          <table>
+            <tr><th>Account</th><th>Currency</th><th>Balance</th></tr>
+            ${Object.entries(accountBalances).map(([accountId, balance]) => {
+              const account = accounts.find(a => a.id === accountId);
+              return account ? `
+                <tr>
+                  <td>${account.name}</td>
+                  <td>${account.currency}</td>
+                  <td class="${balance >= 0 ? 'positive' : 'negative'}">${formatCurrency(balance, account.currency)}</td>
+                </tr>
+              ` : '';
+            }).join('')}
+          </table>
+        </div>
+
+        <div class="section">
+          <h2>Income Breakdown</h2>
+          ${Object.entries(groupByType(filteredIncome)).map(([type, items]) => `
+            <div class="item">
+              <h3>${type.replace('_', ' ').toUpperCase()}</h3>
+              <p class="total">Total: ${formatCurrency(items.reduce((sum, item) => sum + Number(item.amount), 0))}</p>
+              ${Object.entries(groupByLocation(items)).map(([location, locationItems]) => `
+                <div style="margin-left: 20px;">
+                  <h4>${location}</h4>
+                  <p>Amount: ${formatCurrency(locationItems.reduce((sum, item) => sum + Number(item.amount), 0))}</p>
+                  <ul>
+                    ${locationItems.map((item) => `
+                      <li>${new Date(item.date).toLocaleDateString()} - ${item.accounts?.name}: ${formatCurrency(Number(item.amount))}</li>
+                    `).join('')}
+                  </ul>
+                </div>
+              `).join('')}
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="section">
+          <h2>Expense Breakdown</h2>
+          ${Object.entries(groupByType(filteredExpenses)).map(([type, items]) => `
+            <div class="item">
+              <h3>${type.replace('_', ' ').toUpperCase()}</h3>
+              <p class="total">Total: ${formatCurrency(items.reduce((sum, item) => sum + Number(item.amount), 0))}</p>
+              ${Object.entries(groupByLocation(items)).map(([location, locationItems]) => `
+                <div style="margin-left: 20px;">
+                  <h4>${location}</h4>
+                  <p>Amount: ${formatCurrency(locationItems.reduce((sum, item) => sum + Number(item.amount), 0))}</p>
+                  <ul>
+                    ${locationItems.map((item) => {
+                      const expenseItem = item as Expense;
+                      return `<li>${new Date(expenseItem.date).toLocaleDateString()} - ${expenseItem.sub_type}: ${formatCurrency(Number(expenseItem.amount))}</li>`;
+                    }).join('')}
+                  </ul>
+                </div>
+              `).join('')}
+            </div>
+          `).join('')}
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `financial-report-${new Date().toISOString().split('T')[0]}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const generatePDF = () => {
     const doc = new jsPDF();
     
@@ -360,9 +490,13 @@ export default function Reports() {
               >
                 {expandAllSections ? "Collapse All" : "Expand All"}
               </Button>
-              <Button variant="outline" className="flex-1" onClick={generatePDF}>
+              <Button variant="outline" onClick={generateHTMLReport}>
                 <Download className="h-4 w-4 mr-2" />
-                Export PDF
+                HTML Report
+              </Button>
+              <Button variant="outline" onClick={generatePDF}>
+                <Download className="h-4 w-4 mr-2" />
+                PDF
               </Button>
             </div>
           </div>

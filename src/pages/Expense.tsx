@@ -135,7 +135,7 @@ export default function Expense() {
             <Label htmlFor="locationFilter" className="text-red-800 font-medium">Select Location</Label>
             <Select value={formData.locationId} onValueChange={(value) => setFormData({...formData, locationId: value})}>
               <SelectTrigger className="bg-white border-red-200">
-                <SelectValue placeholder="All Locations" />
+                <SelectValue placeholder="Select Location" />
               </SelectTrigger>
               <SelectContent>
                 {locations.map((location) => (
@@ -149,9 +149,11 @@ export default function Expense() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-        {/* Expense Form */}
-        <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200 shadow-lg order-2 lg:order-1">
+      {/* Only show form after location is selected */}
+      {formData.locationId && (
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+          {/* Expense Form */}
+          <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200 shadow-lg order-2 lg:order-1">
           <CardHeader className="pb-3">
             <CardTitle className="text-red-800 flex items-center gap-2 text-lg">
               <Minus className="h-5 w-5" />
@@ -298,7 +300,8 @@ export default function Expense() {
             </div>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

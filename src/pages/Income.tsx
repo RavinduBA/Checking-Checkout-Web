@@ -157,46 +157,29 @@ export default function Income() {
       {/* Location Filter at Top */}
       <Card className="border-green-200 bg-green-50">
         <CardContent className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="locationFilter" className="text-green-800 font-medium">Select Location</Label>
-              <Select value={formData.locationId} onValueChange={(value) => setFormData({...formData, locationId: value})}>
-                <SelectTrigger className="bg-white border-green-200">
-                  <SelectValue placeholder="All Locations" />
-                </SelectTrigger>
-                <SelectContent>
-                  {locations.map((location) => (
-                    <SelectItem key={location.id} value={location.id}>
-                      {location.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-green-800 font-medium">Date Range</Label>
-              <div className="flex gap-2">
-                <Input
-                  type="date"
-                  value={formData.dateFrom}
-                  onChange={(e) => setFormData({...formData, dateFrom: e.target.value})}
-                  className="bg-white border-green-200"
-                />
-                <Input
-                  type="date"
-                  value={formData.dateTo}
-                  onChange={(e) => setFormData({...formData, dateTo: e.target.value})}
-                  className="bg-white border-green-200"
-                />
-              </div>
-            </div>
+          <div>
+            <Label htmlFor="locationFilter" className="text-green-800 font-medium">Select Location</Label>
+            <Select value={formData.locationId} onValueChange={(value) => setFormData({...formData, locationId: value})}>
+              <SelectTrigger className="bg-white border-green-200">
+                <SelectValue placeholder="Select Location" />
+              </SelectTrigger>
+              <SelectContent>
+                {locations.map((location) => (
+                  <SelectItem key={location.id} value={location.id}>
+                    {location.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-        {/* Income Form */}
-        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg order-2 lg:order-1">
+      {/* Only show form after location is selected */}
+      {formData.locationId && (
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+          {/* Income Form */}
+          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg order-2 lg:order-1">
           <CardHeader className="pb-3">
             <CardTitle className="text-green-800 flex items-center gap-2 text-lg">
               <Plus className="h-5 w-5" />
@@ -239,6 +222,41 @@ export default function Income() {
                 )}
               </div>
 
+              {/* Date Range Section - Check-in/Check-out for Bookings */}
+              <div className="bg-white/50 p-4 rounded-lg border border-green-100">
+                <Label className="text-green-800 font-medium mb-3 block">Booking Period</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="checkIn">Check-in Date</Label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="checkIn"
+                        type="date"
+                        value={formData.dateFrom}
+                        onChange={(e) => setFormData({...formData, dateFrom: e.target.value})}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="checkOut">Check-out Date</Label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="checkOut"
+                        type="date"
+                        value={formData.dateTo}
+                        onChange={(e) => setFormData({...formData, dateTo: e.target.value})}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <Label htmlFor="amount">Amount</Label>
                 <div className="relative">
@@ -274,18 +292,14 @@ export default function Income() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="date">Date</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="date"
-                      type="date"
-                      value={formData.dateFrom}
-                      onChange={(e) => setFormData({...formData, dateFrom: e.target.value})}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
+                  <Label htmlFor="paymentMethod">Payment Method</Label>
+                  <Input
+                    id="paymentMethod"
+                    placeholder="Cash, Card, Bank Transfer..."
+                    value={formData.paymentMethod}
+                    onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})}
+                    required
+                  />
                 </div>
               </div>
 
@@ -342,7 +356,8 @@ export default function Income() {
             </div>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
