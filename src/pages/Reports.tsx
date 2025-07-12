@@ -38,10 +38,18 @@ export default function Reports() {
   const [expandedIncomeSection, setExpandedIncomeSection] = useState<string | null>("all");
   const [expandedExpenseSection, setExpandedExpenseSection] = useState<string | null>("all");
   const [activeTab, setActiveTab] = useState("summary");
+  const [accountTransactions, setAccountTransactions] = useState<Record<string, any[]>>({});
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (accounts.length > 0 && activeTab === "balance-sheet") {
+      fetchAccountTransactions();
+    }
+  }, [accounts, activeTab]);
 
   const fetchData = async () => {
     try {
@@ -110,6 +118,107 @@ export default function Reports() {
       return `$${Math.abs(amount).toLocaleString()}`;
     }
     return `Rs.${Math.abs(amount).toLocaleString()}`;
+  };
+
+  const fetchAccountTransactions = async () => {
+    setLoadingTransactions(true);
+    try {
+      const transactions: Record<string, any[]> = {};
+      
+      for (const account of accounts) {
+        const accountTxns: any[] = [];
+        
+        // Fetch income for this account
+        const { data: incomeData } = await supabase
+          .from("income")
+          .select("*, locations(*)")
+          .eq("account_id", account.id)
+          .order("date", { ascending: false });
+        
+        // Fetch expenses for this account
+        const { data: expenseData } = await supabase
+          .from("expenses")
+          .select("*, locations(*)")
+          .eq("account_id", account.id)
+          .order("date", { ascending: false });
+        
+        // Fetch transfers FROM this account
+        const { data: transfersFrom } = await supabase
+          .from("account_transfers")
+          .select("*, from_account:accounts!from_account_id(*), to_account:accounts!to_account_id(*)")
+          .eq("from_account_id", account.id)
+          .order("created_at", { ascending: false });
+        
+        // Fetch transfers TO this account
+        const { data: transfersTo } = await supabase
+          .from("account_transfers")
+          .select("*, from_account:accounts!from_account_id(*), to_account:accounts!to_account_id(*)")
+          .eq("to_account_id", account.id)
+          .order("created_at", { ascending: false });
+        
+        // Add income transactions
+        (incomeData || []).forEach(item => {
+          accountTxns.push({
+            type: 'income',
+            date: item.date,
+            description: `${item.type} - ${item.locations?.name || 'Unknown Location'}`,
+            amount: item.amount,
+            balance_change: item.amount,
+            note: item.note,
+            created_at: item.created_at
+          });
+        });
+        
+        // Add expense transactions
+        (expenseData || []).forEach(item => {
+          accountTxns.push({
+            type: 'expense',
+            date: item.date,
+            description: `${item.main_type} - ${item.sub_type} (${item.locations?.name || 'Unknown Location'})`,
+            amount: item.amount,
+            balance_change: -item.amount,
+            note: item.note,
+            created_at: item.created_at
+          });
+        });
+        
+        // Add transfer FROM transactions
+        (transfersFrom || []).forEach(item => {
+          accountTxns.push({
+            type: 'transfer_out',
+            date: new Date(item.created_at).toISOString().split('T')[0],
+            description: `Transfer to ${item.to_account?.name || 'Unknown Account'}`,
+            amount: item.amount,
+            balance_change: -item.amount,
+            note: item.note,
+            created_at: item.created_at
+          });
+        });
+        
+        // Add transfer TO transactions
+        (transfersTo || []).forEach(item => {
+          accountTxns.push({
+            type: 'transfer_in',
+            date: new Date(item.created_at).toISOString().split('T')[0],
+            description: `Transfer from ${item.from_account?.name || 'Unknown Account'}`,
+            amount: item.amount * item.conversion_rate,
+            balance_change: item.amount * item.conversion_rate,
+            note: item.note,
+            created_at: item.created_at
+          });
+        });
+        
+        // Sort by date (newest first)
+        accountTxns.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        transactions[account.id] = accountTxns;
+      }
+      
+      setAccountTransactions(transactions);
+    } catch (error) {
+      console.error("Error fetching account transactions:", error);
+    } finally {
+      setLoadingTransactions(false);
+    }
   };
 
   const generateAdvancedPDF = () => {
@@ -275,6 +384,111 @@ export default function Reports() {
     });
     
     doc.save(`financial-report-${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+  const generateBalanceSheetPDF = () => {
+    const doc = new jsPDF();
+    let yPos = 20;
+    
+    // Professional header
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(20);
+    doc.text('BALANCE SHEET', 105, yPos, { align: 'center' });
+    yPos += 10;
+    
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 105, yPos, { align: 'center' });
+    yPos += 15;
+
+    // Assets Section with light box
+    doc.setFillColor(245, 255, 245); // Light green background
+    doc.rect(15, yPos - 5, 180, 10, 'F');
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(15, yPos - 5, 180, 10, 'S');
+    
+    doc.setFontSize(14);
+    doc.text('ASSETS', 20, yPos + 3);
+    yPos += 15;
+
+    let totalAssets = 0;
+    accounts.forEach(account => {
+      const accountTxns = accountTransactions[account.id] || [];
+      const currentBalance = account.initial_balance + 
+        accountTxns.reduce((sum, txn) => sum + txn.balance_change, 0);
+      totalAssets += currentBalance;
+      
+      // Account header with light background
+      doc.setFillColor(250, 250, 250);
+      doc.rect(20, yPos - 3, 170, 8, 'F');
+      doc.setDrawColor(220, 220, 220);
+      doc.rect(20, yPos - 3, 170, 8, 'S');
+      
+      doc.setFontSize(11);
+      doc.text(`${account.name} (${account.currency})`, 25, yPos + 2);
+      doc.text(`${formatCurrency(currentBalance, account.currency)}`, 185, yPos + 2, { align: 'right' });
+      yPos += 12;
+
+      // Recent transactions
+      const recentTxns = accountTxns.slice(0, 5);
+      recentTxns.forEach(txn => {
+        doc.setFontSize(9);
+        const date = new Date(txn.date).toLocaleDateString();
+        doc.text(`  ${date} - ${txn.description}`, 30, yPos);
+        doc.text(`${txn.balance_change >= 0 ? '+' : ''}${formatCurrency(txn.balance_change, account.currency)}`, 185, yPos, { align: 'right' });
+        yPos += 6;
+        
+        if (yPos > 270) {
+          doc.addPage();
+          yPos = 20;
+        }
+      });
+      yPos += 5;
+    });
+
+    // Total Assets
+    doc.setFillColor(240, 240, 240);
+    doc.rect(20, yPos - 3, 170, 8, 'F');
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(20, yPos - 3, 170, 8, 'S');
+    
+    doc.setFontSize(12);
+    doc.text('TOTAL ASSETS', 25, yPos + 2);
+    doc.text(`${formatCurrency(totalAssets)}`, 185, yPos + 2, { align: 'right' });
+    yPos += 20;
+
+    // Equity Section
+    doc.setFillColor(245, 245, 255); // Light blue background
+    doc.rect(15, yPos - 5, 180, 10, 'F');
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(15, yPos - 5, 180, 10, 'S');
+    
+    doc.setFontSize(14);
+    doc.text("OWNER'S EQUITY", 20, yPos + 3);
+    yPos += 15;
+
+    const netProfit = totalIncome - totalExpenses;
+    
+    doc.setFillColor(250, 250, 250);
+    doc.rect(20, yPos - 3, 170, 8, 'F');
+    doc.setDrawColor(220, 220, 220);
+    doc.rect(20, yPos - 3, 170, 8, 'S');
+    
+    doc.setFontSize(11);
+    doc.text('Net Income', 25, yPos + 2);
+    doc.text(`${formatCurrency(netProfit)}`, 185, yPos + 2, { align: 'right' });
+    yPos += 12;
+
+    // Total Equity
+    doc.setFillColor(240, 240, 240);
+    doc.rect(20, yPos - 3, 170, 8, 'F');
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(20, yPos - 3, 170, 8, 'S');
+    
+    doc.setFontSize(12);
+    doc.text('TOTAL EQUITY', 25, yPos + 2);
+    doc.text(`${formatCurrency(netProfit)}`, 185, yPos + 2, { align: 'right' });
+    
+    doc.save(`balance-sheet-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   if (loading) {
@@ -593,63 +807,186 @@ export default function Reports() {
 
         {/* Balance Sheet Tab */}
         <TabsContent value="balance-sheet" className="space-y-6 mt-6">
+          <div className="flex gap-4 mb-6">
+            <Button onClick={() => generateBalanceSheetPDF()} variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Download Balance Sheet PDF
+            </Button>
+          </div>
+          
           <Card className="bg-gradient-card border-0 shadow-elegant">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <PieChart className="h-5 w-5 text-primary" />
-                Balance Sheet Summary
+                Detailed Balance Sheet
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Assets */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-success">Assets</h3>
-                  <div className="space-y-3">
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      <h4 className="font-medium mb-2">Current Assets</h4>
-                      <div className="space-y-2 pl-4">
-                        {accounts.map((account) => (
-                          <div key={account.id} className="flex justify-between text-sm">
-                            <span>{account.name}</span>
-                            <span>{formatCurrency(account.initial_balance, account.currency)}</span>
-                          </div>
-                        ))}
+              <div className="space-y-8">
+                {/* Account Details with Transactions */}
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold text-success">Account Details</h3>
+                  {loadingTransactions ? (
+                    <div className="text-center py-8">Loading account transactions...</div>
+                  ) : (
+                    accounts.map((account) => {
+                      const accountTxns = accountTransactions[account.id] || [];
+                      const currentBalance = account.initial_balance + 
+                        accountTxns.reduce((sum, txn) => sum + txn.balance_change, 0);
+                      
+                      return (
+                        <Collapsible key={account.id} className="border rounded-lg">
+                          <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-muted/50">
+                            <div className="flex items-center gap-3">
+                              <div>
+                                <span className="font-medium">{account.name}</span>
+                                <p className="text-sm text-muted-foreground">{account.currency} Account</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold text-lg">
+                                {formatCurrency(currentBalance, account.currency)}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {accountTxns.length} transactions
+                              </p>
+                            </div>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="px-4 pb-4">
+                            <div className="space-y-4">
+                              {/* Account Summary */}
+                              <div className="bg-muted/30 p-4 rounded-lg">
+                                <h4 className="font-medium mb-3">Account Summary</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                  <div>
+                                    <span className="text-muted-foreground">Initial Balance:</span>
+                                    <div className="font-medium">{formatCurrency(account.initial_balance, account.currency)}</div>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Total Income:</span>
+                                    <div className="font-medium text-success">
+                                      {formatCurrency(
+                                        accountTxns.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
+                                        account.currency
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Total Expenses:</span>
+                                    <div className="font-medium text-destructive">
+                                      {formatCurrency(
+                                        accountTxns.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
+                                        account.currency
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Current Balance:</span>
+                                    <div className="font-medium">{formatCurrency(currentBalance, account.currency)}</div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Transaction History */}
+                              <div>
+                                <h4 className="font-medium mb-3">Transaction History</h4>
+                                <div className="space-y-2 max-h-96 overflow-y-auto">
+                                  {accountTxns.length === 0 ? (
+                                    <p className="text-muted-foreground text-center py-4">No transactions found</p>
+                                  ) : (
+                                    accountTxns.map((txn, index) => (
+                                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                                        <div className="flex-1">
+                                          <div className="flex items-center gap-2">
+                                            <Badge 
+                                              variant={
+                                                txn.type === 'income' ? 'default' :
+                                                txn.type === 'expense' ? 'destructive' :
+                                                txn.type === 'transfer_in' ? 'secondary' : 'outline'
+                                              }
+                                              className="text-xs"
+                                            >
+                                              {txn.type.replace('_', ' ').toUpperCase()}
+                                            </Badge>
+                                            <span className="text-sm">{new Date(txn.date).toLocaleDateString()}</span>
+                                            <span className="text-xs text-muted-foreground">
+                                              {new Date(txn.created_at).toLocaleTimeString()}
+                                            </span>
+                                          </div>
+                                          <p className="text-sm font-medium mt-1">{txn.description}</p>
+                                          {txn.note && (
+                                            <p className="text-xs text-muted-foreground mt-1">{txn.note}</p>
+                                          )}
+                                        </div>
+                                        <div className="text-right">
+                                          <div className={`font-medium ${
+                                            txn.balance_change >= 0 ? 'text-success' : 'text-destructive'
+                                          }`}>
+                                            {txn.balance_change >= 0 ? '+' : ''}{formatCurrency(txn.balance_change, account.currency)}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      );
+                    })
+                  )}
+                </div>
+                
+                {/* Summary Section */}
+                <div className="border-t pt-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Assets Summary */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-success">Total Assets</h3>
+                      <div className="space-y-3">
+                        {accounts.map((account) => {
+                          const accountTxns = accountTransactions[account.id] || [];
+                          const currentBalance = account.initial_balance + 
+                            accountTxns.reduce((sum, txn) => sum + txn.balance_change, 0);
+                          
+                          return (
+                            <div key={account.id} className="flex justify-between p-3 bg-muted/50 rounded-lg">
+                              <span className="font-medium">{account.name}</span>
+                              <span className="font-bold">{formatCurrency(currentBalance, account.currency)}</span>
+                            </div>
+                          );
+                        })}
+                        <div className="flex justify-between font-bold text-lg border-t pt-3">
+                          <span>Total Assets</span>
+                          <span className="text-success">
+                            {formatCurrency(
+                              accounts.reduce((sum, account) => {
+                                const accountTxns = accountTransactions[account.id] || [];
+                                return sum + account.initial_balance + 
+                                  accountTxns.reduce((txnSum, txn) => txnSum + txn.balance_change, 0);
+                              }, 0)
+                            )}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex justify-between font-semibold text-success border-t pt-2">
-                      <span>Total Assets</span>
-                      <span>
-                        {formatCurrency(
-                          accounts.reduce((sum, acc) => sum + acc.initial_balance, 0)
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Equity */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-primary">Owner's Equity</h3>
-                  <div className="space-y-3">
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      <h4 className="font-medium mb-2">Retained Earnings</h4>
-                      <div className="space-y-2 pl-4">
-                        <div className="flex justify-between text-sm">
+                    {/* Equity Summary */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-primary">Owner's Equity</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between p-3 bg-muted/50 rounded-lg">
                           <span>Net Income</span>
-                          <span className={netProfit >= 0 ? 'text-success' : 'text-destructive'}>
+                          <span className={`font-medium ${netProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
                             {formatCurrency(netProfit)}
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Previous Earnings</span>
-                          <span>{formatCurrency(0)}</span>
+                        <div className="flex justify-between font-bold text-lg border-t pt-3">
+                          <span>Total Equity</span>
+                          <span className="text-primary">{formatCurrency(netProfit)}</span>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex justify-between font-semibold text-primary border-t pt-2">
-                      <span>Total Equity</span>
-                      <span>{formatCurrency(netProfit)}</span>
                     </div>
                   </div>
                 </div>
