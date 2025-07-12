@@ -1,47 +1,70 @@
-import { useState } from "react";
-import { ArrowLeft, Calendar as CalendarIcon, Eye, Filter } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowLeft, Calendar as CalendarIcon, Eye, Filter, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
 
-const mockBookings = [
-  {
-    id: "1",
-    guestName: "John Smith",
-    checkIn: "2025-01-15T14:00:00",
-    checkOut: "2025-01-17T11:00:00",
-    source: "booking_com",
-    status: "confirmed",
-    location: "Asaliya Villa"
-  },
-  {
-    id: "2", 
-    guestName: "Sarah Johnson",
-    checkIn: "2025-01-20T14:00:00",
-    checkOut: "2025-01-23T11:00:00",
-    source: "airbnb",
-    status: "pending",
-    location: "Rusty Bunk"
-  }
-];
+type Booking = Tables<"bookings"> & {
+  locations: Tables<"locations">;
+};
 
-const locations = ["All Locations", "Asaliya Villa", "Rusty Bunk", "Antiqua Serenity"];
+type Location = Tables<"locations">;
 
 export default function Calendar() {
-  const [selectedLocation, setSelectedLocation] = useState("All Locations");
+  const [selectedLocation, setSelectedLocation] = useState("all");
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-  const getSourceBadge = (source: string) => {
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      // Fetch locations
+      const { data: locationsData } = await supabase
+        .from("locations")
+        .select("*")
+        .eq("is_active", true);
+
+      // Fetch bookings with location data
+      const { data: bookingsData } = await supabase
+        .from("bookings")
+        .select(`
+          *,
+          locations (*)
+        `)
+        .order("check_in", { ascending: true });
+
+      setLocations(locationsData || []);
+      setBookings(bookingsData || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredBookings = bookings.filter(booking => 
+    selectedLocation === "all" || booking.location_id === selectedLocation
+  );
+
+  const getSourceColor = (source: string) => {
     const colors = {
-      booking_com: "bg-blue-500",
-      airbnb: "bg-rose-500", 
-      direct: "bg-emerald-500"
+      booking_com: "bg-yellow-500", // Yellow for Booking.com
+      airbnb: "bg-blue-500",        // Blue for Airbnb
+      direct: "bg-red-500"          // Red for direct bookings
     };
     return colors[source as keyof typeof colors] || "bg-slate-500";
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusColor = (status: string) => {
     const colors = {
       confirmed: "bg-emerald-500",
       pending: "bg-amber-500",
@@ -49,6 +72,46 @@ export default function Calendar() {
     };
     return colors[status as keyof typeof colors] || "bg-slate-500";
   };
+
+  // Generate calendar grid for current month
+  const generateCalendarDays = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+    
+    const days = [];
+    
+    // Empty cells for days before month starts
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      days.push(null);
+    }
+    
+    // Days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const currentDateObj = new Date(year, month, day);
+      const dayBookings = filteredBookings.filter(booking => {
+        const checkIn = new Date(booking.check_in);
+        const checkOut = new Date(booking.check_out);
+        return currentDateObj >= checkIn && currentDateObj < checkOut;
+      });
+      
+      days.push({
+        day,
+        date: currentDateObj,
+        bookings: dayBookings,
+        isAvailable: dayBookings.length === 0
+      });
+    }
+    
+    return days;
+  };
+
+  const calendarDays = generateCalendarDays();
+
+  if (loading) {
+    return <div className="flex justify-center items-center min-h-64">Loading...</div>;
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
@@ -81,9 +144,10 @@ export default function Calendar() {
                   <SelectValue placeholder="Select location" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">All Locations</SelectItem>
                   {locations.map((location) => (
-                    <SelectItem key={location} value={location}>
-                      {location}
+                    <SelectItem key={location.id} value={location.id}>
+                      {location.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -93,6 +157,10 @@ export default function Calendar() {
               <Eye className="h-4 w-4 mr-2" />
               Sync Calendars
             </Button>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Booking
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -100,37 +168,87 @@ export default function Calendar() {
       {/* Calendar Grid - Simplified for now */}
       <Card className="bg-gradient-card border-0 shadow-elegant">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5 text-primary" />
-            January 2025
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5 text-primary" />
+              {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </CardTitle>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
+              >
+                ←
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
+              >
+                →
+              </Button>
+            </div>
+          </div>
+          
+          {/* Legend */}
+          <div className="flex gap-4 text-xs mt-2">
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-emerald-500 rounded"></div>
+              <span>Available</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-red-500 rounded"></div>
+              <span>Direct</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-yellow-500 rounded"></div>
+              <span>Booking.com</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-blue-500 rounded"></div>
+              <span>Airbnb</span>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-7 gap-2 mb-4">
+          <div className="grid grid-cols-7 gap-1 mb-4">
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-              <div key={day} className="p-2 text-center font-semibold text-muted-foreground">
+              <div key={day} className="p-2 text-center font-semibold text-muted-foreground text-xs">
                 {day}
               </div>
             ))}
           </div>
           
-          <div className="grid grid-cols-7 gap-2">
-            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-              <div key={day} className="min-h-20 p-2 border border-border rounded-md">
-                <div className="text-sm font-medium">{day}</div>
-                {day === 15 && (
-                  <div className="mt-1">
-                    <div className="text-xs bg-blue-500 text-white px-1 rounded">
-                      John S.
-                    </div>
-                  </div>
-                )}
-                {day === 20 && (
-                  <div className="mt-1">
-                    <div className="text-xs bg-rose-500 text-white px-1 rounded">
-                      Sarah J.
-                    </div>
-                  </div>
+          <div className="grid grid-cols-7 gap-1">
+            {calendarDays.map((dayData, index) => (
+              <div key={index} className="min-h-16 p-1 border border-border rounded-md">
+                {dayData && (
+                  <>
+                    <div className="text-xs font-medium mb-1">{dayData.day}</div>
+                    {dayData.isAvailable ? (
+                      <div className="w-full h-6 bg-emerald-500/20 rounded text-xs flex items-center justify-center">
+                        Available
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {dayData.bookings.slice(0, 2).map((booking) => (
+                          <div 
+                            key={booking.id} 
+                            className={`text-xs text-white px-1 py-0.5 rounded text-center ${getSourceColor(booking.source)}`}
+                            title={`${booking.guest_name} - ${booking.source}`}
+                          >
+                            {booking.guest_name.split(' ')[0]}
+                          </div>
+                        ))}
+                        {dayData.bookings.length > 2 && (
+                          <div className="text-xs text-center text-muted-foreground">
+                            +{dayData.bookings.length - 2}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             ))}
@@ -145,25 +263,33 @@ export default function Calendar() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {mockBookings.map((booking) => (
+            {filteredBookings.slice(0, 10).map((booking) => (
               <div key={booking.id} className="p-4 border border-border rounded-lg">
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <h3 className="font-semibold">{booking.guestName}</h3>
-                    <p className="text-sm text-muted-foreground">{booking.location}</p>
+                    <h3 className="font-semibold">{booking.guest_name}</h3>
+                    <p className="text-sm text-muted-foreground">{booking.locations?.name}</p>
                   </div>
                   <div className="flex gap-2">
-                    <Badge className={`text-white ${getSourceBadge(booking.source)}`}>
+                    <Badge className={`text-white ${getSourceColor(booking.source)}`}>
                       {booking.source.replace('_', '.')}
                     </Badge>
-                    <Badge className={`text-white ${getStatusBadge(booking.status)}`}>
+                    <Badge className={`text-white ${getStatusColor(booking.status)}`}>
                       {booking.status}
                     </Badge>
                   </div>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>Check-in: {new Date(booking.checkIn).toLocaleDateString()} 2:00 PM</span>
-                  <span>Check-out: {new Date(booking.checkOut).toLocaleDateString()} 11:00 AM</span>
+                  <span>Check-in: {new Date(booking.check_in).toLocaleDateString()} 2:00 PM</span>
+                  <span>Check-out: {new Date(booking.check_out).toLocaleDateString()} 11:00 AM</span>
+                </div>
+                <div className="mt-2 text-sm">
+                  <span className="font-medium">Total: LKR {booking.total_amount.toLocaleString()}</span>
+                  {booking.paid_amount > 0 && (
+                    <span className="ml-4 text-emerald-600">
+                      Paid: LKR {booking.paid_amount.toLocaleString()}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
