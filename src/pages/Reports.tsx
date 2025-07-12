@@ -429,7 +429,7 @@ export default function Reports() {
               {Object.entries(groupByMainAndSubType(filteredExpenses)).map(([mainType, subTypes]) => {
                 const mainTypeTotal = Object.values(subTypes).flat().reduce((sum, item) => sum + Number(item.amount), 0);
                 const mainTypeKey = `main-${mainType}`;
-                const isMainExpanded = expandedExpenseSection === mainTypeKey || expandedExpenseSection === "all";
+                const isMainExpanded = expandedExpenseSection === mainTypeKey || expandedExpenseSection === "all" || !expandedExpenseSection;
                 
                 return (
                   <Collapsible 
@@ -456,7 +456,7 @@ export default function Reports() {
                         {Object.entries(subTypes).map(([subType, items]) => {
                           const subTypeTotal = items.reduce((sum, item) => sum + Number(item.amount), 0);
                           const subTypeKey = `sub-${mainType}-${subType}`;
-                          const isSubExpanded = expandedExpenseSection === subTypeKey || expandedExpenseSection === "all";
+                          const isSubExpanded = expandedExpenseSection === subTypeKey || expandedExpenseSection === "all" || !expandedExpenseSection;
                           
                           return (
                             <Collapsible 

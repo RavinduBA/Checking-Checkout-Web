@@ -107,6 +107,11 @@ serve(async (req) => {
         const checkIn = parseICalDate(event.dtstart);
         const checkOut = parseICalDate(event.dtend);
         
+        // Adjust checkout date by subtracting 1 day for correct closed date identification
+        const checkOutDate = new Date(checkOut);
+        checkOutDate.setDate(checkOutDate.getDate() - 1);
+        const adjustedCheckOut = checkOutDate.toISOString();
+        
         console.log(`Processing event: ${event.summary}, Check-in: ${event.dtstart} -> ${checkIn}, Check-out: ${event.dtend} -> ${checkOut}`);
         
         // Check if booking already exists
@@ -125,7 +130,7 @@ serve(async (req) => {
               guest_name: event.summary,
               location_id: locationId,
               check_in: checkIn,
-              check_out: checkOut,
+              check_out: adjustedCheckOut,
               total_amount: 0,
               advance_amount: 0,
               paid_amount: 0,
