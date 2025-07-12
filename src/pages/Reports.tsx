@@ -687,13 +687,13 @@ export default function Reports() {
                             <span className="font-medium">{formatCurrency(sourceTotal)}</span>
                             <ChevronDown className="h-4 w-4" />
                           </div>
-                        </CollapsibleTrigger>
+                         </CollapsibleTrigger>
                          <CollapsibleContent className="px-4 pb-4">
                            <div className="space-y-2 max-h-64 overflow-y-auto">
-                             {items.map((item) => (
+                             {items.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map((item) => (
                                <div key={item.id} className="flex justify-between text-sm">
                                  <span>{new Date(item.date).toLocaleDateString()} - {item.accounts?.name}</span>
-                                  <span>{formatCurrencyDisplay(Number(item.amount), item.accounts?.currency || 'LKR')}</span>
+                                 <span>{formatCurrencyDisplay(Number(item.amount), item.accounts?.currency || 'LKR')}</span>
                                </div>
                              ))}
                            </div>
@@ -743,7 +743,7 @@ export default function Reports() {
                                     <span className="font-medium">{formatCurrency(subTypeTotal)}</span>
                                   </div>
                                    <div className="max-h-48 overflow-y-auto space-y-1">
-                                     {items.map((item) => (
+                                     {items.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map((item) => (
                                        <div key={item.id} className="flex justify-between text-xs text-muted-foreground">
                                          <span>{new Date(item.date).toLocaleDateString()} - {item.accounts?.name}</span>
                                          <span>{formatCurrencyDisplay(Number(item.amount), item.accounts?.currency || 'LKR')}</span>
