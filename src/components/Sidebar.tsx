@@ -23,8 +23,6 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Add Income", href: "/income", icon: PlusCircle },
   { name: "Add Expense", href: "/expense", icon: MinusCircle },
-  { name: "Booking Payment", href: "/booking-payment", icon: CreditCard },
-  { name: "Transfer", href: "/transfer", icon: ArrowLeftRight },
   { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Accounts", href: "/accounts", icon: Building2 },
