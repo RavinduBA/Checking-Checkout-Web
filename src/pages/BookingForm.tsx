@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { ArrowLeft, Calendar, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +17,10 @@ type Account = Tables<"accounts">;
 
 export default function BookingForm() {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const isEdit = Boolean(id);
   
   const [locations, setLocations] = useState<Location[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -30,7 +32,7 @@ export default function BookingForm() {
     location_id: searchParams.get("location") || "",
     check_in: searchParams.get("date") || "",
     check_out: "",
-    source: "direct" as const,
+    source: "direct" as "direct" | "airbnb" | "booking_com",
     total_amount: "",
     advance_amount: "",
     account_id: "",
@@ -40,7 +42,10 @@ export default function BookingForm() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+    if (isEdit && id) {
+      fetchBooking(id);
+    }
+  }, [id, isEdit]);
 
   const fetchData = async () => {
     try {
@@ -56,73 +61,122 @@ export default function BookingForm() {
     }
   };
 
+  const fetchBooking = async (bookingId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("*")
+        .eq("id", bookingId)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setFormData({
+          guest_name: data.guest_name,
+          location_id: data.location_id,
+          check_in: data.check_in.split('T')[0],
+          check_out: data.check_out.split('T')[0],
+          total_amount: data.total_amount.toString(),
+          advance_amount: data.advance_amount.toString(),
+          source: data.source,
+          account_id: "",
+          payment_method: "cash",
+          note: ""
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching booking:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load booking details",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Create booking
-      const { data: booking, error: bookingError } = await supabase
-        .from("bookings")
-        .insert({
-          guest_name: formData.guest_name,
-          location_id: formData.location_id,
-          check_in: new Date(formData.check_in).toISOString(),
-          check_out: new Date(formData.check_out).toISOString(),
-          source: formData.source,
-          total_amount: parseFloat(formData.total_amount) || 0,
-          advance_amount: parseFloat(formData.advance_amount) || 0,
-          paid_amount: parseFloat(formData.advance_amount) || 0,
-          status: "confirmed"
-        })
-        .select()
-        .single();
+      const bookingData = {
+        guest_name: formData.guest_name,
+        location_id: formData.location_id,
+        check_in: new Date(formData.check_in).toISOString(),
+        check_out: new Date(formData.check_out).toISOString(),
+        source: formData.source,
+        total_amount: parseFloat(formData.total_amount) || 0,
+        advance_amount: parseFloat(formData.advance_amount) || 0,
+        paid_amount: parseFloat(formData.advance_amount) || 0,
+        status: "confirmed" as any
+      };
 
-      if (bookingError) throw bookingError;
+      let booking;
+      if (isEdit && id) {
+        const { data, error: bookingError } = await supabase
+          .from("bookings")
+          .update(bookingData)
+          .eq("id", id)
+          .select()
+          .single();
 
-      // Create advance payment if amount > 0
-      if (parseFloat(formData.advance_amount) > 0 && formData.account_id) {
-        const { error: paymentError } = await supabase
-          .from("booking_payments")
-          .insert({
-            booking_id: booking.id,
-            account_id: formData.account_id,
-            amount: parseFloat(formData.advance_amount),
-            payment_method: formData.payment_method,
-            is_advance: true,
-            note: formData.note
-          });
+        if (bookingError) throw bookingError;
+        booking = data;
+      } else {
+        const { data, error: bookingError } = await supabase
+          .from("bookings")
+          .insert(bookingData)
+          .select()
+          .single();
 
-        if (paymentError) throw paymentError;
+        if (bookingError) throw bookingError;
+        booking = data;
 
-        // Create income record
-        const { error: incomeError } = await supabase
-          .from("income")
-          .insert({
-            booking_id: booking.id,
-            location_id: formData.location_id,
-            account_id: formData.account_id,
-            amount: parseFloat(formData.advance_amount),
-            type: "booking",
-            payment_method: formData.payment_method,
-            is_advance: true,
-            note: formData.note
-          });
+        // Create advance payment if amount > 0
+        if (parseFloat(formData.advance_amount) > 0 && formData.account_id) {
+          const { error: paymentError } = await supabase
+            .from("booking_payments")
+            .insert({
+              booking_id: booking.id,
+              account_id: formData.account_id,
+              amount: parseFloat(formData.advance_amount),
+              payment_method: formData.payment_method,
+              is_advance: true,
+              note: formData.note
+            });
 
-        if (incomeError) throw incomeError;
+          if (paymentError) throw paymentError;
+
+          // Create income record
+          const { error: incomeError } = await supabase
+            .from("income")
+            .insert({
+              booking_id: booking.id,
+              location_id: formData.location_id,
+              account_id: formData.account_id,
+              amount: parseFloat(formData.advance_amount),
+              type: "booking" as any,
+              payment_method: formData.payment_method,
+              is_advance: true,
+              note: formData.note
+            });
+
+          if (incomeError) throw incomeError;
+        }
       }
 
       toast({
         title: "Success",
-        description: "Booking created successfully"
+        description: `Booking ${isEdit ? 'updated' : 'created'} successfully`
       });
 
       navigate("/calendar");
     } catch (error: any) {
-      console.error("Error creating booking:", error);
+      console.error("Error saving booking:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create booking",
+        description: error.message || `Failed to ${isEdit ? 'update' : 'create'} booking`,
         variant: "destructive"
       });
     } finally {
@@ -140,8 +194,12 @@ export default function BookingForm() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">New Booking</h1>
-          <p className="text-muted-foreground">Create a new booking reservation</p>
+          <h1 className="text-2xl font-bold text-foreground">
+            {isEdit ? 'Edit Booking' : 'New Booking'}
+          </h1>
+          <p className="text-muted-foreground">
+            {isEdit ? 'Update booking details' : 'Create a new booking reservation'}
+          </p>
         </div>
       </div>
 
@@ -149,8 +207,8 @@ export default function BookingForm() {
       <Card className="bg-gradient-card border-0 shadow-elegant">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            Booking Details
+            <Save className="h-5 w-5 text-primary" />
+            {isEdit ? 'Update Booking Details' : 'Booking Details'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -301,7 +359,7 @@ export default function BookingForm() {
             <div className="flex gap-4 pt-4">
               <Button type="submit" disabled={loading} className="flex-1">
                 <Save className="h-4 w-4 mr-2" />
-                {loading ? "Creating..." : "Create Booking"}
+                {loading ? (isEdit ? "Updating..." : "Creating...") : (isEdit ? "Update Booking" : "Create Booking")}
               </Button>
               <Button type="button" variant="outline" onClick={() => navigate("/calendar")}>
                 Cancel

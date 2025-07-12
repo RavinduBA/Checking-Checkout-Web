@@ -6,133 +6,159 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+interface ICalEvent {
+  summary: string;
+  dtstart: string;
+  dtend: string;
+}
+
+function parseICalDate(icalDate: string): string {
+  // Handle both YYYYMMDD and YYYYMMDDTHHMMSSZ formats
+  if (icalDate.includes('T')) {
+    // Format: YYYYMMDDTHHMMSSZ
+    const year = icalDate.substring(0, 4);
+    const month = icalDate.substring(4, 6);
+    const day = icalDate.substring(6, 8);
+    const hour = icalDate.substring(9, 11);
+    const minute = icalDate.substring(11, 13);
+    const second = icalDate.substring(13, 15);
+    return `${year}-${month}-${day}T${hour}:${minute}:${second}Z`;
+  } else {
+    // Format: YYYYMMDD - treat as date only
+    const year = icalDate.substring(0, 4);
+    const month = icalDate.substring(4, 6);
+    const day = icalDate.substring(6, 8);
+    return `${year}-${month}-${day}T00:00:00Z`;
+  }
+}
+
+function parseICalData(icalData: string): ICalEvent[] {
+  const events: ICalEvent[] = [];
+  const lines = icalData.split('\n').map(line => line.trim());
+  
+  let currentEvent: Partial<ICalEvent> = {};
+  let inEvent = false;
+  
+  for (const line of lines) {
+    if (line === 'BEGIN:VEVENT') {
+      inEvent = true;
+      currentEvent = {};
+    } else if (line === 'END:VEVENT' && inEvent) {
+      if (currentEvent.summary && currentEvent.dtstart && currentEvent.dtend) {
+        events.push(currentEvent as ICalEvent);
+      }
+      inEvent = false;
+    } else if (inEvent) {
+      if (line.startsWith('SUMMARY:')) {
+        currentEvent.summary = line.substring(8);
+      } else if (line.startsWith('DTSTART:') || line.startsWith('DTSTART;')) {
+        const dateValue = line.split(':')[1];
+        currentEvent.dtstart = dateValue;
+      } else if (line.startsWith('DTEND:') || line.startsWith('DTEND;')) {
+        const dateValue = line.split(':')[1];
+        currentEvent.dtend = dateValue;
+      }
+    }
+  }
+  
+  return events;
+}
+
 serve(async (req) => {
+  console.log('iCal sync function called');
+  
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    )
-
-    const { icalUrl, locationId } = await req.json()
-
-    console.log('Syncing iCal for location:', locationId, 'URL:', icalUrl)
-
-    // Fetch iCal data
-    const icalResponse = await fetch(icalUrl)
-    const icalText = await icalResponse.text()
+    const { icalUrl, locationId } = await req.json();
     
-    console.log('iCal data length:', icalText.length)
-
-    // Parse basic iCal data (simplified parsing)
-    const events = parseICalEvents(icalText)
-    console.log('Parsed events:', events.length)
-
-    // Clear existing synced bookings for this location
-    await supabaseClient
-      .from('bookings')
-      .delete()
-      .eq('location_id', locationId)
-      .eq('source', 'booking_com')
-
-    // Insert new bookings
+    console.log('Fetching iCal from:', icalUrl);
+    console.log('Location ID:', locationId);
+    
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Fetch iCal data
+    const response = await fetch(icalUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch iCal: ${response.status} ${response.statusText}`);
+    }
+    
+    const icalData = await response.text();
+    console.log('iCal data length:', icalData.length);
+    
+    // Parse iCal events
+    const events = parseICalData(icalData);
+    console.log('Parsed events:', events.length);
+    
+    let syncedCount = 0;
+    
+    // Insert events into database
     for (const event of events) {
-      const { error } = await supabaseClient
-        .from('bookings')
-        .insert({
-          location_id: locationId,
-          guest_name: event.summary || 'Booking.com Guest',
-          check_in: event.start,
-          check_out: event.end,
-          source: 'booking_com',
-          status: 'confirmed',
-          total_amount: 0,
-          advance_amount: 0,
-          paid_amount: 0
-        })
-
-      if (error) {
-        console.error('Error inserting booking:', error)
+      try {
+        const checkIn = parseICalDate(event.dtstart);
+        const checkOut = parseICalDate(event.dtend);
+        
+        // Check if booking already exists
+        const { data: existingBooking } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('guest_name', event.summary)
+          .eq('location_id', locationId)
+          .eq('check_in', checkIn)
+          .single();
+        
+        if (!existingBooking) {
+          const { error: insertError } = await supabase
+            .from('bookings')
+            .insert({
+              guest_name: event.summary,
+              location_id: locationId,
+              check_in: checkIn,
+              check_out: checkOut,
+              total_amount: 0,
+              advance_amount: 0,
+              paid_amount: 0,
+              source: 'booking_com',
+              status: 'confirmed'
+            });
+          
+          if (insertError) {
+            console.error('Error inserting booking:', insertError);
+          } else {
+            syncedCount++;
+          }
+        }
+      } catch (eventError) {
+        console.error('Error processing event:', eventError);
       }
     }
-
-    // Update sync timestamp
-    await supabaseClient
-      .from('booking_sync_urls')
-      .update({ last_synced_at: new Date().toISOString() })
-      .eq('location_id', locationId)
-
+    
+    console.log('Synced bookings:', syncedCount);
+    
     return new Response(
-      JSON.stringify({ success: true, eventsCount: events.length }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-
+      JSON.stringify({ 
+        success: true, 
+        message: `Successfully synced ${syncedCount} bookings`,
+        eventsCount: syncedCount 
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   } catch (error) {
-    console.error('Sync error:', error)
+    console.error('iCal sync error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
-    )
+    );
   }
-})
-
-function parseICalEvents(icalText: string) {
-  const events = []
-  const lines = icalText.split('\n')
-  let currentEvent: any = null
-
-  for (const line of lines) {
-    const trimmed = line.trim()
-    
-    if (trimmed === 'BEGIN:VEVENT') {
-      currentEvent = {}
-    } else if (trimmed === 'END:VEVENT' && currentEvent) {
-      if (currentEvent.start && currentEvent.end) {
-        events.push(currentEvent)
-      }
-      currentEvent = null
-    } else if (currentEvent) {
-      if (trimmed.startsWith('SUMMARY:')) {
-        currentEvent.summary = trimmed.substring(8)
-      } else if (trimmed.startsWith('DTSTART:')) {
-        const dateStr = trimmed.substring(8)
-        currentEvent.start = parseICalDate(dateStr)
-      } else if (trimmed.startsWith('DTEND:')) {
-        const dateStr = trimmed.substring(6)
-        currentEvent.end = parseICalDate(dateStr)
-      }
-    }
-  }
-
-  return events
-}
-
-function parseICalDate(dateStr: string): string {
-  // Handle both DATE and DATETIME formats
-  const cleanDate = dateStr.replace(/[TZ]/g, '')
-  
-  if (cleanDate.length === 8) {
-    // DATE format: YYYYMMDD
-    const year = cleanDate.substring(0, 4)
-    const month = cleanDate.substring(4, 6)
-    const day = cleanDate.substring(6, 8)
-    return `${year}-${month}-${day}T00:00:00.000Z`
-  } else if (cleanDate.length >= 14) {
-    // DATETIME format: YYYYMMDDTHHMMSS
-    const year = cleanDate.substring(0, 4)
-    const month = cleanDate.substring(4, 6)
-    const day = cleanDate.substring(6, 8)
-    const hour = cleanDate.substring(8, 10) || '00'
-    const minute = cleanDate.substring(10, 12) || '00'
-    const second = cleanDate.substring(12, 14) || '00'
-    return `${year}-${month}-${day}T${hour}:${minute}:${second}.000Z`
-  }
-  
-  return new Date().toISOString()
-}
+});

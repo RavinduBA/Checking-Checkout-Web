@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ArrowLeft, Plus, DollarSign, Calendar } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowLeft, Plus, DollarSign, Calendar, Download, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
+import jsPDF from 'jspdf';
 
 const incomeTypes = [
   { value: "booking", label: "Booking Income" },
@@ -18,52 +21,127 @@ const incomeTypes = [
   { value: "other", label: "Other Income" }
 ];
 
-const accounts = [
-  { id: "1", name: "Sampath Bank", currency: "LKR" },
-  { id: "2", name: "Payoneer", currency: "USD" },
-  { id: "3", name: "Asaliya Cash", currency: "LKR" },
-  { id: "4", name: "Wishva Account", currency: "LKR" }
-];
-
 const paymentMethods = [
   { value: "cash", label: "Cash" },
   { value: "transfer", label: "Bank Transfer" },
   { value: "payoneer", label: "Payoneer" }
 ];
 
+type Location = Tables<"locations">;
+type Account = Tables<"accounts">;
+
 export default function Income() {
   const [formData, setFormData] = useState({
     type: "",
     amount: "",
     accountId: "",
+    locationId: "",
     paymentMethod: "",
     isAdvance: false,
     note: "",
     date: new Date().toISOString().split('T')[0]
   });
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In real app, this would save to Supabase
-    toast({
-      title: "Income Added Successfully",
-      description: `Rs. ${Number(formData.amount).toLocaleString()} added to ${accounts.find(a => a.id === formData.accountId)?.name}`,
-    });
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [locationsData, accountsData] = await Promise.all([
+        supabase.from("locations").select("*").eq("is_active", true),
+        supabase.from("accounts").select("*")
+      ]);
+
+      setLocations(locationsData.data || []);
+      setAccounts(accountsData.data || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    const selectedLocation = locations.find(l => l.id === formData.locationId);
+    const selectedAccount = accounts.find(a => a.id === formData.accountId);
     
-    // Reset form
-    setFormData({
-      type: "",
-      amount: "",
-      accountId: "",
-      paymentMethod: "",
-      isAdvance: false,
-      note: "",
-      date: new Date().toISOString().split('T')[0]
-    });
+    // Header
+    doc.setFontSize(20);
+    doc.text('Income Record', 20, 30);
+    
+    // Details
+    doc.setFontSize(12);
+    doc.text(`Location: ${selectedLocation?.name || 'N/A'}`, 20, 50);
+    doc.text(`Income Type: ${incomeTypes.find(t => t.value === formData.type)?.label || 'N/A'}`, 20, 60);
+    doc.text(`Amount: LKR ${Number(formData.amount).toLocaleString()}`, 20, 70);
+    doc.text(`Account: ${selectedAccount?.name || 'N/A'}`, 20, 80);
+    doc.text(`Payment Method: ${paymentMethods.find(p => p.value === formData.paymentMethod)?.label || 'N/A'}`, 20, 90);
+    doc.text(`Date: ${formData.date}`, 20, 100);
+    doc.text(`Is Advance: ${formData.isAdvance ? 'Yes' : 'No'}`, 20, 110);
+    if (formData.note) {
+      doc.text(`Note: ${formData.note}`, 20, 120);
+    }
+    
+    doc.save(`income-${formData.date}-${Date.now()}.pdf`);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const { error } = await supabase
+        .from("income")
+        .insert([{
+          type: formData.type as any,
+          amount: Number(formData.amount),
+          account_id: formData.accountId,
+          location_id: formData.locationId,
+          payment_method: formData.paymentMethod,
+          is_advance: formData.isAdvance,
+          note: formData.note || null,
+          date: formData.date
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Income Added Successfully",
+        description: `LKR ${Number(formData.amount).toLocaleString()} added to ${accounts.find(a => a.id === formData.accountId)?.name}`,
+      });
+      
+      // Reset form
+      setFormData({
+        type: "",
+        amount: "",
+        accountId: "",
+        locationId: "",
+        paymentMethod: "",
+        isAdvance: false,
+        note: "",
+        date: new Date().toISOString().split('T')[0]
+      });
+    } catch (error) {
+      console.error("Error adding income:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add income",
+        variant: "destructive"
+      });
+    }
   };
 
   const selectedAccount = accounts.find(a => a.id === formData.accountId);
+  const selectedLocation = locations.find(l => l.id === formData.locationId);
+
+  if (loading) {
+    return <div className="flex justify-center items-center min-h-64">Loading...</div>;
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
@@ -76,14 +154,17 @@ export default function Income() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold text-foreground">Add Income</h1>
-          <p className="text-muted-foreground">Record income for Asaliya Villa</p>
+          <p className="text-muted-foreground">Record income for selected location</p>
         </div>
       </div>
 
       {/* Current Location Badge */}
-      <Badge variant="outline" className="w-fit">
-        📍 Asaliya Villa
-      </Badge>
+      {selectedLocation && (
+        <Badge variant="outline" className="w-fit flex items-center gap-2">
+          <MapPin className="h-3 w-3" />
+          {selectedLocation.name}
+        </Badge>
+      )}
 
       {/* Form */}
       <Card className="bg-gradient-card border-0 shadow-elegant">
@@ -95,6 +176,26 @@ export default function Income() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Location */}
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Select 
+                value={formData.locationId} 
+                onValueChange={(value) => setFormData({...formData, locationId: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select location" />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map((location) => (
+                    <SelectItem key={location.id} value={location.id}>
+                      {location.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Income Type */}
             <div className="space-y-2">
               <Label htmlFor="type">Income Type</Label>
@@ -222,15 +323,25 @@ export default function Income() {
               />
             </div>
 
-            {/* Submit Button */}
+            {/* Submit and PDF Buttons */}
             <div className="flex gap-3 pt-4">
               <Button asChild variant="outline" className="flex-1">
                 <Link to="/">Cancel</Link>
               </Button>
               <Button 
+                type="button"
+                variant="outline"
+                onClick={generatePDF}
+                disabled={!formData.type || !formData.amount || !formData.accountId || !formData.locationId || !formData.paymentMethod}
+                className="flex-1"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download PDF
+              </Button>
+              <Button 
                 type="submit" 
                 className="flex-1"
-                disabled={!formData.type || !formData.amount || !formData.accountId || !formData.paymentMethod}
+                disabled={!formData.type || !formData.amount || !formData.accountId || !formData.locationId || !formData.paymentMethod}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Income
