@@ -13,6 +13,7 @@ import Calendar from "./pages/Calendar";
 import Reports from "./pages/Reports";
 import Accounts from "./pages/Accounts";
 import Users from "./pages/Users";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import BookingForm from "./pages/BookingForm";
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="reports" element={<Reports />} />
               <Route path="accounts" element={<Accounts />} />
               <Route path="users" element={<Users />} />
+              <Route path="settings" element={<Settings />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             </Route>
             <Route path="*" element={<NotFound />} />
