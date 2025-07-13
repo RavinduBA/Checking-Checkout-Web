@@ -310,9 +310,9 @@ export default function Reports() {
     doc.text(periodText, 105, yPos, { align: 'center' });
     yPos += 20;
 
-    // Summary section with light box
-    const totalIncome = filteredIncome.reduce((sum, item) => sum + Number(item.amount), 0);
-    const totalExpenses = filteredExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
+    // Summary section with light box - using LKR equivalent amounts
+    const totalIncome = filteredIncome.reduce((sum, item) => sum + getAmountInLkr(item), 0);
+    const totalExpenses = filteredExpenses.reduce((sum, item) => sum + getAmountInLkr(item), 0);
     const netProfit = totalIncome - totalExpenses;
 
     // Executive Summary Box
@@ -353,7 +353,7 @@ export default function Reports() {
 
     const groupedIncome = groupIncomeBySource(filteredIncome);
     Object.entries(groupedIncome).forEach(([source, items]) => {
-      const sourceTotal = items.reduce((sum, item) => sum + Number(item.amount), 0);
+      const sourceTotal = items.reduce((sum, item) => sum + getAmountInLkr(item), 0);
       
       // Source header with light background
       doc.setFillColor(250, 250, 250);
@@ -402,7 +402,7 @@ export default function Reports() {
 
     const groupedExpenses = groupByMainAndSubType(filteredExpenses);
     Object.entries(groupedExpenses).forEach(([mainType, subTypes]) => {
-      const mainTypeTotal = Object.values(subTypes).flat().reduce((sum, item) => sum + Number(item.amount), 0);
+      const mainTypeTotal = Object.values(subTypes).flat().reduce((sum, item) => sum + getAmountInLkr(item), 0);
       
       // Main type header with light background
       doc.setFillColor(250, 250, 250);
@@ -416,7 +416,7 @@ export default function Reports() {
       yPos += 12;
 
       Object.entries(subTypes).forEach(([subType, items]) => {
-        const subTypeTotal = items.reduce((sum, item) => sum + Number(item.amount), 0);
+        const subTypeTotal = items.reduce((sum, item) => sum + getAmountInLkr(item), 0);
         
         // Sub type with lighter background
         doc.setFillColor(248, 248, 248);
