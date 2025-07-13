@@ -375,7 +375,7 @@ export default function Reports() {
         const date = new Date(item.date).toLocaleDateString();
         const accountName = item.accounts?.name || 'Unknown Account';
         doc.text(`  ${date} - ${accountName}`, 30, yPos);
-        doc.text(`${formatCurrency(item.amount)}`, 185, yPos, { align: 'right' });
+        doc.text(`${formatCurrencyDisplay(item.amount, item.accounts?.currency)}`, 185, yPos, { align: 'right' });
         yPos += 6;
         
         if (yPos > 270) {
@@ -440,7 +440,7 @@ export default function Reports() {
           const date = new Date(item.date).toLocaleDateString();
           const accountName = item.accounts?.name || 'Unknown Account';
           doc.text(`    ${date} - ${accountName}`, 35, yPos);
-          doc.text(`${formatCurrency(item.amount)}`, 185, yPos, { align: 'right' });
+          doc.text(`${formatCurrencyDisplay(item.amount, item.accounts?.currency)}`, 185, yPos, { align: 'right' });
           yPos += 6;
           
           if (yPos > 270) {
