@@ -367,7 +367,10 @@ export default function Reports() {
       doc.text(`${formatCurrency(sourceTotal)}`, 185, yPos + 2, { align: 'right' });
       yPos += 12;
 
-      items.forEach(item => {
+      // Sort items by date (ascending - oldest first, newest last)
+      const sortedItems = [...items].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      
+      sortedItems.forEach(item => {
         doc.setFontSize(9);
         const date = new Date(item.date).toLocaleDateString();
         const accountName = item.accounts?.name || 'Unknown Account';
@@ -429,7 +432,10 @@ export default function Reports() {
         doc.text(`${formatCurrency(subTypeTotal)}`, 185, yPos + 2, { align: 'right' });
         yPos += 10;
 
-        items.forEach(item => {
+        // Sort items by date (ascending - oldest first, newest last)
+        const sortedExpenseItems = [...items].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        
+        sortedExpenseItems.forEach(item => {
           doc.setFontSize(9);
           const date = new Date(item.date).toLocaleDateString();
           const accountName = item.accounts?.name || 'Unknown Account';
