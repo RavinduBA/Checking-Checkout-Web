@@ -104,6 +104,28 @@ export default function Income() {
 
       if (error) throw error;
 
+      // Send SMS notification
+      try {
+        const selectedAccount = accounts.find(acc => acc.id === formData.accountId);
+        const selectedLocationData = locations.find(loc => loc.id === formData.locationId);
+        
+        await supabase.functions.invoke('send-sms-notification', {
+          body: {
+            type: 'income',
+            amount: parseFloat(formData.amount),
+            currency: selectedAccount?.currency || 'LKR',
+            category: formData.type,
+            account: selectedAccount?.name || 'Unknown',
+            location: selectedLocationData?.name || 'Unknown',
+            date: formData.dateFrom,
+            note: formData.note
+          }
+        });
+      } catch (smsError) {
+        console.error('Error sending SMS notification:', smsError);
+        // Don't show error to user, just log it
+      }
+
       toast({
         title: "Success",
         description: "Income record added successfully",

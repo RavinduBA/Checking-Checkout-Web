@@ -83,6 +83,29 @@ export default function Expense() {
 
       if (error) throw error;
 
+      // Send SMS notification
+      try {
+        const selectedAccount = accounts.find(acc => acc.id === formData.accountId);
+        const selectedLocationData = locations.find(loc => loc.id === formData.locationId);
+        const category = `${formData.mainCategory} - ${formData.subCategory}`;
+        
+        await supabase.functions.invoke('send-sms-notification', {
+          body: {
+            type: 'expense',
+            amount: parseFloat(formData.amount),
+            currency: selectedAccount?.currency || 'LKR',
+            category: category,
+            account: selectedAccount?.name || 'Unknown',
+            location: selectedLocationData?.name || 'Unknown',
+            date: formData.date,
+            note: formData.note
+          }
+        });
+      } catch (smsError) {
+        console.error('Error sending SMS notification:', smsError);
+        // Don't show error to user, just log it
+      }
+
       toast({
         title: "Success",
         description: "Expense record added successfully",
