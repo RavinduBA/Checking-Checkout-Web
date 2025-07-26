@@ -62,7 +62,7 @@ async function renewAccessToken(): Promise<string> {
   }
 
   try {
-    const response = await fetch('https://bsms.hutch.lk/api/token/accessToken', {
+    const response = await fetch('https://bsms.hutch.lk/api/login/api/token/accessToken', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -96,13 +96,13 @@ async function sendSMS(message: string): Promise<void> {
   
   const smsData = {
     campaignName: "Financial Alert",
-    mask: "FinAlert",
+    mask: "FINANCIAL",
     numbers: "94719528589",
     content: message
   };
 
   try {
-    let response = await fetch('https://bsms.hutch.lk/api/sendsms', {
+    let response = await fetch('https://bsms.hutch.lk/api/login/api/sendsms', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -116,7 +116,7 @@ async function sendSMS(message: string): Promise<void> {
     if (response.status === 401) {
       // Token expired, renew and retry
       token = await renewAccessToken();
-      response = await fetch('https://bsms.hutch.lk/api/sendsms', {
+      response = await fetch('https://bsms.hutch.lk/api/login/api/sendsms', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
