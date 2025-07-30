@@ -96,7 +96,7 @@ async function sendSMS(message: string): Promise<void> {
   
   const smsData = {
     campaignName: "Financial Alert",
-    mask: "Test",
+    mask: `'RathnaSuper'`,
     numbers: "94719528589",
     content: message
   };
