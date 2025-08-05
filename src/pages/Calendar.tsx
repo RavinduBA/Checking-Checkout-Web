@@ -230,33 +230,33 @@ export default function Calendar() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-4 space-y-4 animate-fade-in">
+    <div className="max-w-6xl mx-auto p-2 lg:p-4 space-y-3 lg:space-y-4 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button asChild variant="ghost" size="icon" className="md:hidden">
+      <div className="flex items-center gap-2 lg:gap-4">
+        <Button asChild variant="ghost" size="icon" className="md:hidden h-8 w-8">
           <Link to="/">
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
-        <div className="flex-1">
-          <h1 className="text-xl md:text-2xl font-bold text-foreground">Calendar & Bookings</h1>
-          <p className="text-sm text-muted-foreground hidden md:block">View upcoming bookings and availability</p>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-lg lg:text-xl xl:text-2xl font-bold text-foreground">Calendar & Bookings</h1>
+          <p className="text-xs lg:text-sm text-muted-foreground hidden md:block">View upcoming bookings and availability</p>
         </div>
       </div>
 
       {/* Filters */}
       <Card className="bg-gradient-card border-0 shadow-elegant">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
+        <CardHeader className="pb-2 lg:pb-3">
+          <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
             <Filter className="h-4 w-4 text-primary" />
             Filters
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="flex-1">
+        <CardContent className="pt-0">
+          <div className="flex flex-col gap-2 lg:gap-3">
+            <div className="w-full">
               <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9 lg:h-10">
                   <SelectValue placeholder="Select location" />
                 </SelectTrigger>
                 <SelectContent>
@@ -269,21 +269,24 @@ export default function Calendar() {
                 </SelectContent>
               </Select>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={syncCalendars}
-              disabled={syncing}
-              className="w-full md:w-auto"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-              {syncing ? 'Syncing...' : 'Sync Calendars'}
-            </Button>
-            <Button asChild className="w-full md:w-auto">
-              <Link to="/booking/new">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Booking
-              </Link>
-            </Button>
+            <div className="grid grid-cols-2 gap-2 lg:flex lg:gap-3">
+              <Button 
+                variant="outline" 
+                onClick={syncCalendars}
+                disabled={syncing}
+                className="h-9 lg:h-10 text-xs lg:text-sm"
+                size="sm"
+              >
+                <RefreshCw className={`h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2 ${syncing ? 'animate-spin' : ''}`} />
+                {syncing ? 'Syncing...' : 'Sync'}
+              </Button>
+              <Button asChild className="h-9 lg:h-10 text-xs lg:text-sm" size="sm">
+                <Link to="/booking/new">
+                  <Plus className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
+                  Add Booking
+                </Link>
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -335,19 +338,20 @@ export default function Calendar() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-7 gap-1 mb-2">
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+          <div className="grid grid-cols-7 gap-0.5 lg:gap-1 mb-2">
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, index) => (
               <div key={day} className="p-1 text-center font-semibold text-muted-foreground text-xs">
-                {day}
+                <span className="hidden sm:inline">{day}</span>
+                <span className="sm:hidden">{day.slice(0, 1)}</span>
               </div>
             ))}
           </div>
           
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-0.5 lg:gap-1">
             {calendarDays.map((dayData, index) => (
               <div 
                 key={index} 
-                className={`min-h-12 md:min-h-16 p-1 border border-border rounded-md transition-colors ${
+                className={`min-h-10 lg:min-h-12 xl:min-h-16 p-0.5 lg:p-1 border border-border rounded text-center transition-colors ${
                   dayData ? 'hover:bg-muted/50 cursor-pointer' : ''
                 }`}
                 onClick={() => dayData && handleDateClick(dayData.date, dayData.bookings)}
