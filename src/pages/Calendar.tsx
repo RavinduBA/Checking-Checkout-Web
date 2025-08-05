@@ -113,18 +113,49 @@ export default function Calendar() {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('sync-ical', {
+      // Sync booking.com calendar
+      const { data: bookingResult, error: bookingError } = await supabase.functions.invoke('sync-ical', {
         body: {
           icalUrl: 'https://ical.booking.com/v1/export?t=1d0bea4b-1994-40ec-a9c9-8a718b6cb06a',
-          locationId: rustyBunk.id
+          locationId: rustyBunk.id,
+          source: 'booking.com'
         }
       });
 
-      if (error) throw error;
+      if (bookingError) {
+        console.error(`Booking.com sync failed: ${bookingError.message}`);
+      }
+
+      // Sync Airbnb calendar
+      const { data: airbnbResult, error: airbnbError } = await supabase.functions.invoke('sync-ical', {
+        body: {
+          icalUrl: 'https://www.airbnb.com/calendar/ical/963663195873805668.ics?s=3e54d971266f0be2e1d214dbfe0ab1e5',
+          locationId: rustyBunk.id,
+          source: 'airbnb'
+        }
+      });
+
+      if (airbnbError) {
+        console.error(`Airbnb sync failed: ${airbnbError.message}`);
+      }
+
+      const totalEvents = (bookingResult?.eventsCount || 0) + (airbnbResult?.eventsCount || 0);
+      const syncSummary = [];
+      
+      if (bookingResult?.eventsCount) {
+        syncSummary.push(`${bookingResult.eventsCount} from Booking.com`);
+      }
+      if (airbnbResult?.eventsCount) {
+        syncSummary.push(`${airbnbResult.eventsCount} from Airbnb`);
+      }
+
+      const successMessage = totalEvents > 0 
+        ? `Synced ${totalEvents} bookings (${syncSummary.join(', ')})`
+        : 'Sync completed - no new bookings found';
 
       toast({
         title: "Success",
-        description: `Synced ${data.eventsCount} bookings from Booking.com`
+        description: successMessage
       });
 
       // Refresh data

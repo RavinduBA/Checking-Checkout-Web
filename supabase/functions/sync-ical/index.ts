@@ -76,10 +76,11 @@ serve(async (req) => {
   }
 
   try {
-    const { icalUrl, locationId } = await req.json();
+    const { icalUrl, locationId, source } = await req.json();
     
     console.log('Fetching iCal from:', icalUrl);
     console.log('Location ID:', locationId);
+    console.log('Source:', source);
     
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -134,7 +135,7 @@ serve(async (req) => {
               total_amount: 0,
               advance_amount: 0,
               paid_amount: 0,
-              source: 'booking_com',
+              source: source || 'booking_com',
               status: 'confirmed'
             });
           
