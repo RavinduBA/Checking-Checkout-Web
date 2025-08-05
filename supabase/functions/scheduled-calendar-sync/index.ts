@@ -39,26 +39,52 @@ serve(async (req) => {
     
     console.log(`Syncing calendar for location: ${rustyBunk.name}`);
 
-    // Call the sync-ical function
-    const { data: syncResult, error: syncError } = await supabase.functions.invoke('sync-ical', {
+    // Sync booking.com calendar
+    const { data: bookingResult, error: bookingError } = await supabase.functions.invoke('sync-ical', {
       body: {
         icalUrl: 'https://ical.booking.com/v1/export?t=1d0bea4b-1994-40ec-a9c9-8a718b6cb06a',
-        locationId: rustyBunk.id
+        locationId: rustyBunk.id,
+        source: 'booking.com'
       }
     });
 
-    if (syncError) {
-      throw new Error(`Sync failed: ${syncError.message}`);
+    if (bookingError) {
+      console.error(`Booking.com sync failed: ${bookingError.message}`);
     }
 
-    console.log(`Successfully synced ${syncResult?.eventsCount || 0} bookings`);
+    // Sync Airbnb calendar
+    const { data: airbnbResult, error: airbnbError } = await supabase.functions.invoke('sync-ical', {
+      body: {
+        icalUrl: 'https://www.airbnb.com/calendar/ical/963663195873805668.ics?s=3e54d971266f0be2e1d214dbfe0ab1e5',
+        locationId: rustyBunk.id,
+        source: 'airbnb'
+      }
+    });
+
+    if (airbnbError) {
+      console.error(`Airbnb sync failed: ${airbnbError.message}`);
+    }
+
+    const totalEvents = (bookingResult?.eventsCount || 0) + (airbnbResult?.eventsCount || 0);
+    const syncSummary = [];
+    
+    if (bookingResult?.eventsCount) {
+      syncSummary.push(`${bookingResult.eventsCount} from Booking.com`);
+    }
+    if (airbnbResult?.eventsCount) {
+      syncSummary.push(`${airbnbResult.eventsCount} from Airbnb`);
+    }
+
+    console.log(`Successfully synced ${totalEvents} total bookings: ${syncSummary.join(', ')}`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Successfully synced ${syncResult?.eventsCount || 0} bookings for ${rustyBunk.name}`,
+        message: `Successfully synced ${totalEvents} bookings for ${rustyBunk.name} (${syncSummary.join(', ')})`,
         location: rustyBunk.name,
-        eventsCount: syncResult?.eventsCount || 0,
+        eventsCount: totalEvents,
+        bookingcom: bookingResult?.eventsCount || 0,
+        airbnb: airbnbResult?.eventsCount || 0,
         timestamp: new Date().toISOString()
       }),
       {
