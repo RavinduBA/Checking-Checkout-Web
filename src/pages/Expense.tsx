@@ -139,16 +139,23 @@ export default function Expense() {
 
   return (
     <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
-      <div className="flex items-center gap-4">
-        <Button asChild variant="ghost" size="icon">
-          <Link to="/">
-            <ArrowLeft className="h-5 w-5" />
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button asChild variant="ghost" size="icon">
+            <Link to="/">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Add Expense</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">Record your business expenses</p>
+          </div>
+        </div>
+        <Button asChild variant="outline" className="hidden sm:flex">
+          <Link to="/financial-reports?type=expense">
+            View All Expenses
           </Link>
         </Button>
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Add Expense</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">Record your business expenses</p>
-        </div>
       </div>
 
       {/* Location Filter at Top */}
