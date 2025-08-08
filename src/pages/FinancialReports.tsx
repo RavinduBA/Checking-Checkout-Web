@@ -148,18 +148,18 @@ export default function FinancialReports() {
   );
 
   // Calendar data preparation
-  const calendarData = {};
+  const calendarData: Record<string, { income: number; expense: number; accounts: Set<string> }> = {};
   filteredIncomes.forEach(income => {
     const date = income.date;
     if (!calendarData[date]) calendarData[date] = { income: 0, expense: 0, accounts: new Set() };
     calendarData[date].income += parseFloat(income.amount.toString());
-    calendarData[date].accounts.add(income.accounts?.name);
+    if (income.accounts?.name) calendarData[date].accounts.add(income.accounts.name);
   });
   filteredExpenses.forEach(expense => {
     const date = expense.date;
     if (!calendarData[date]) calendarData[date] = { income: 0, expense: 0, accounts: new Set() };
     calendarData[date].expense += parseFloat(expense.amount.toString());
-    calendarData[date].accounts.add(expense.accounts?.name);
+    if (expense.accounts?.name) calendarData[date].accounts.add(expense.accounts.name);
   });
 
   // Account color mapping
@@ -233,13 +233,14 @@ export default function FinancialReports() {
 
       {/* Controls */}
       <Card>
-        <CardContent className="p-4 space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex gap-2">
+        <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4">
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant={reportType === 'both' ? 'default' : 'outline'}
                 onClick={() => setReportType('both')}
                 size="sm"
+                className="flex-1 sm:flex-none min-w-0"
               >
                 Both
               </Button>
@@ -247,6 +248,7 @@ export default function FinancialReports() {
                 variant={reportType === 'income' ? 'default' : 'outline'}
                 onClick={() => setReportType('income')}
                 size="sm"
+                className="flex-1 sm:flex-none min-w-0"
               >
                 Income
               </Button>
@@ -254,6 +256,7 @@ export default function FinancialReports() {
                 variant={reportType === 'expense' ? 'default' : 'outline'}
                 onClick={() => setReportType('expense')}
                 size="sm"
+                className="flex-1 sm:flex-none min-w-0"
               >
                 Expenses
               </Button>
@@ -263,23 +266,25 @@ export default function FinancialReports() {
                 variant={viewMode === 'list' ? 'default' : 'outline'}
                 onClick={() => setViewMode('list')}
                 size="sm"
+                className="flex-1 sm:flex-none"
               >
-                <Eye className="h-4 w-4 mr-1" />
-                List
+                <Eye className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">List</span>
               </Button>
               <Button
                 variant={viewMode === 'calendar' ? 'default' : 'outline'}
                 onClick={() => setViewMode('calendar')}
                 size="sm"
+                className="flex-1 sm:flex-none"
               >
-                <CalendarIcon className="h-4 w-4 mr-1" />
-                Calendar
+                <CalendarIcon className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Calendar</span>
               </Button>
             </div>
           </div>
 
           {/* Filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <Label>Location</Label>
               <Select value={filters.locationId} onValueChange={(value) => setFilters({...filters, locationId: value})}>
@@ -408,77 +413,169 @@ export default function FinancialReports() {
         </Card>
       ) : (
         <Card>
-          <CardHeader>
-            <CardTitle>Calendar View</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg sm:text-xl">Calendar View</CardTitle>
           </CardHeader>
-          <CardContent>
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              className="rounded-md border"
-              components={{
-                Day: ({ day, ...props }) => {
-                  const dateStr = format(day.date, 'yyyy-MM-dd');
-                  const data = calendarData[dateStr];
-                  const hasData = data && (data.income > 0 || data.expense > 0);
-                  
-                  return (
-                    <div 
-                      className={cn(
-                        "relative p-1 text-center cursor-pointer rounded",
-                        hasData && "font-bold",
-                        isSameDay(day.date, selectedDate || new Date()) && "bg-primary text-primary-foreground"
-                      )}
-                      onClick={() => setSelectedDate(day.date)}
-                      {...props}
-                    >
-                      <div>{day.date.getDate()}</div>
-                      {hasData && (
-                        <div className="text-xs mt-1 space-y-1">
-                          {data.income > 0 && (
-                            <div className="text-green-600 text-[10px]">
-                              +{data.income.toLocaleString()}
-                            </div>
-                          )}
-                          {data.expense > 0 && (
-                            <div className="text-red-600 text-[10px]">
-                              -{data.expense.toLocaleString()}
-                            </div>
-                          )}
-                          <div className="flex justify-center gap-1">
-                            {Array.from(data.accounts).slice(0, 3).map((accountName, idx) => (
-                              <div 
-                                key={idx}
-                                className={cn("w-1 h-1 rounded-full", getAccountColor(accountName as string))}
-                              />
-                            ))}
-                          </div>
+          <CardContent className="p-3 sm:p-6">
+            {/* Account Legend */}
+            <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+              <h4 className="text-sm font-medium mb-2">Account Colors</h4>
+              <div className="flex flex-wrap gap-2">
+                {accounts.map((account, index) => (
+                  <div key={account.id} className="flex items-center gap-2 text-xs">
+                    <div className={cn("w-3 h-3 rounded-full", getAccountColor(account.name))}></div>
+                    <span className="text-muted-foreground">{account.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="w-full overflow-x-auto">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                className="rounded-md border mx-auto"
+                classNames={{
+                  months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                  month: "space-y-4 w-full",
+                  caption: "flex justify-center pt-1 relative items-center",
+                  caption_label: "text-sm font-medium",
+                  nav: "space-x-1 flex items-center",
+                  nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+                  nav_button_previous: "absolute left-1",
+                  nav_button_next: "absolute right-1",
+                  table: "w-full border-collapse space-y-1",
+                  head_row: "flex",
+                  head_cell: "text-muted-foreground rounded-md w-8 sm:w-9 font-normal text-[0.8rem]",
+                  row: "flex w-full mt-2",
+                  cell: "text-center text-sm relative p-0 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 h-8 sm:h-9 w-8 sm:w-9",
+                  day: "h-8 sm:h-9 w-8 sm:w-9 p-0 font-normal aria-selected:opacity-100",
+                  day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                  day_today: "bg-accent text-accent-foreground",
+                  day_outside: "text-muted-foreground opacity-50",
+                  day_disabled: "text-muted-foreground opacity-50",
+                  day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                  day_hidden: "invisible",
+                }}
+                components={{
+                  Day: ({ day, ...props }) => {
+                    const dateStr = format(day.date, 'yyyy-MM-dd');
+                    const data = calendarData[dateStr];
+                    const hasData = data && (data.income > 0 || data.expense > 0);
+                    const netAmount = hasData ? data.income - data.expense : 0;
+                    
+                    return (
+                      <div 
+                        className={cn(
+                          "relative w-8 sm:w-9 h-8 sm:h-9 text-center cursor-pointer rounded-md hover:bg-accent transition-colors",
+                          hasData && "font-semibold border-2",
+                          netAmount > 0 && hasData && "border-green-300 bg-green-50",
+                          netAmount < 0 && hasData && "border-red-300 bg-red-50",
+                          netAmount === 0 && hasData && "border-blue-300 bg-blue-50",
+                          isSameDay(day.date, selectedDate || new Date()) && "bg-primary text-primary-foreground"
+                        )}
+                        onClick={() => setSelectedDate(day.date)}
+                        {...props}
+                      >
+                        <div className="text-xs sm:text-sm leading-none mt-1">
+                          {day.date.getDate()}
                         </div>
-                      )}
-                    </div>
-                  );
-                }
-              }}
-            />
+                        {hasData && (
+                          <div className="absolute bottom-0 left-0 right-0 space-y-0">
+                            {data.income > 0 && (
+                              <div className="text-[8px] sm:text-[9px] text-green-700 font-bold leading-none">
+                                +{data.income > 999 ? `${(data.income/1000).toFixed(0)}k` : data.income.toFixed(0)}
+                              </div>
+                            )}
+                            {data.expense > 0 && (
+                              <div className="text-[8px] sm:text-[9px] text-red-700 font-bold leading-none">
+                                -{data.expense > 999 ? `${(data.expense/1000).toFixed(0)}k` : data.expense.toFixed(0)}
+                              </div>
+                            )}
+                            {/* Account color dots */}
+                            <div className="flex justify-center gap-0.5 mt-0.5">
+                              {Array.from(data.accounts).slice(0, 3).map((accountName, idx) => (
+                                <div 
+                                  key={idx}
+                                  className={cn("w-1 h-1 rounded-full", getAccountColor(accountName as string))}
+                                />
+                              ))}
+                              {data.accounts.size > 3 && (
+                                <div className="w-1 h-1 rounded-full bg-gray-400" />
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                }}
+              />
+            </div>
             
+            {/* Selected Date Details */}
             {selectedDate && calendarData[format(selectedDate, 'yyyy-MM-dd')] && (
               <div className="mt-4 p-4 bg-muted rounded-lg">
-                <h3 className="font-bold mb-2">{format(selectedDate, "MMMM dd, yyyy")}</h3>
-                <div className="space-y-2">
-                  {calendarData[format(selectedDate, 'yyyy-MM-dd')].income > 0 && (
-                    <div className="text-green-600">
-                      Income: Rs. {calendarData[format(selectedDate, 'yyyy-MM-dd')].income.toLocaleString()}
+                <h3 className="font-bold mb-3 text-lg">{format(selectedDate, "MMMM dd, yyyy")}</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    {calendarData[format(selectedDate, 'yyyy-MM-dd')].income > 0 && (
+                      <div className="flex justify-between items-center p-2 bg-green-50 rounded">
+                        <span className="text-green-800 font-medium">Total Income:</span>
+                        <span className="text-green-900 font-bold">
+                          Rs. {calendarData[format(selectedDate, 'yyyy-MM-dd')].income.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                    {calendarData[format(selectedDate, 'yyyy-MM-dd')].expense > 0 && (
+                      <div className="flex justify-between items-center p-2 bg-red-50 rounded">
+                        <span className="text-red-800 font-medium">Total Expenses:</span>
+                        <span className="text-red-900 font-bold">
+                          Rs. {calendarData[format(selectedDate, 'yyyy-MM-dd')].expense.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center p-2 bg-blue-50 rounded">
+                      <span className="text-blue-800 font-medium">Net Amount:</span>
+                      <span className={cn("font-bold", 
+                        calendarData[format(selectedDate, 'yyyy-MM-dd')].income - calendarData[format(selectedDate, 'yyyy-MM-dd')].expense >= 0 
+                          ? "text-green-900" : "text-red-900"
+                      )}>
+                        Rs. {(calendarData[format(selectedDate, 'yyyy-MM-dd')].income - calendarData[format(selectedDate, 'yyyy-MM-dd')].expense).toLocaleString()}
+                      </span>
                     </div>
-                  )}
-                  {calendarData[format(selectedDate, 'yyyy-MM-dd')].expense > 0 && (
-                    <div className="text-red-600">
-                      Expenses: Rs. {calendarData[format(selectedDate, 'yyyy-MM-dd')].expense.toLocaleString()}
-                    </div>
-                  )}
-                  <div className="text-sm text-muted-foreground">
-                    Accounts: {Array.from(calendarData[format(selectedDate, 'yyyy-MM-dd')].accounts).join(', ')}
                   </div>
+                  <div>
+                    <h4 className="font-medium mb-2 text-muted-foreground">Accounts Involved:</h4>
+                    <div className="space-y-1">
+                      {Array.from(calendarData[format(selectedDate, 'yyyy-MM-dd')].accounts).map((accountName, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-sm">
+                          <div className={cn("w-3 h-3 rounded-full", getAccountColor(accountName as string))}></div>
+                          <span>{accountName}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Quick filter button */}
+                <div className="mt-3 pt-3 border-t border-border">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setFilters({
+                        ...filters,
+                        dateFrom: format(selectedDate, 'yyyy-MM-dd'),
+                        dateTo: format(selectedDate, 'yyyy-MM-dd')
+                      });
+                      setViewMode('list');
+                    }}
+                    className="w-full sm:w-auto"
+                  >
+                    View Day's Transactions
+                  </Button>
                 </div>
               </div>
             )}
