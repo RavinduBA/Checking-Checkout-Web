@@ -43,8 +43,8 @@ export default function FinancialReports() {
   const [loading, setLoading] = useState(true);
   
   const [filters, setFilters] = useState({
-    locationId: '',
-    accountId: '',
+    locationId: 'all',
+    accountId: 'all',
     category: '',
     dateFrom: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
     dateTo: format(endOfMonth(new Date()), 'yyyy-MM-dd'),
@@ -76,11 +76,11 @@ export default function FinancialReports() {
       let expenseQuery = supabase.from("expenses").select("*, accounts(*), locations(*)");
 
       // Apply filters
-      if (filters.locationId) {
+      if (filters.locationId && filters.locationId !== 'all') {
         incomeQuery = incomeQuery.eq('location_id', filters.locationId);
         expenseQuery = expenseQuery.eq('location_id', filters.locationId);
       }
-      if (filters.accountId) {
+      if (filters.accountId && filters.accountId !== 'all') {
         incomeQuery = incomeQuery.eq('account_id', filters.accountId);
         expenseQuery = expenseQuery.eq('account_id', filters.accountId);
       }
@@ -287,7 +287,7 @@ export default function FinancialReports() {
                   <SelectValue placeholder="All Locations" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Locations</SelectItem>
+                  <SelectItem value="all">All Locations</SelectItem>
                   {locations.map((location) => (
                     <SelectItem key={location.id} value={location.id}>
                       {location.name}
@@ -303,7 +303,7 @@ export default function FinancialReports() {
                   <SelectValue placeholder="All Accounts" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Accounts</SelectItem>
+                  <SelectItem value="all">All Accounts</SelectItem>
                   {accounts.map((account) => (
                     <SelectItem key={account.id} value={account.id}>
                       {account.name} ({account.currency})
