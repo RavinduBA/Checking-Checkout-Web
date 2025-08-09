@@ -430,89 +430,172 @@ export default function FinancialReports() {
               </div>
             </div>
 
-            <div className="w-full overflow-x-auto">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                className="rounded-md border mx-auto"
-                classNames={{
-                  months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                  month: "space-y-4 w-full",
-                  caption: "flex justify-center pt-1 relative items-center",
-                  caption_label: "text-sm font-medium",
-                  nav: "space-x-1 flex items-center",
-                  nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-                  nav_button_previous: "absolute left-1",
-                  nav_button_next: "absolute right-1",
-                  table: "w-full border-collapse space-y-1",
-                  head_row: "flex",
-                  head_cell: "text-muted-foreground rounded-md w-8 sm:w-9 font-normal text-[0.8rem]",
-                  row: "flex w-full mt-2",
-                  cell: "text-center text-sm relative p-0 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 h-8 sm:h-9 w-8 sm:w-9",
-                  day: "h-8 sm:h-9 w-8 sm:w-9 p-0 font-normal aria-selected:opacity-100",
-                  day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                  day_today: "bg-accent text-accent-foreground",
-                  day_outside: "text-muted-foreground opacity-50",
-                  day_disabled: "text-muted-foreground opacity-50",
-                  day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
-                  day_hidden: "invisible",
-                }}
-                components={{
-                  Day: ({ day, ...props }) => {
-                    const dateStr = format(day.date, 'yyyy-MM-dd');
+            {/* Custom Calendar Grid */}
+            <div className="border border-border rounded-lg overflow-hidden bg-background">
+              {/* Calendar Header */}
+              <div className="flex items-center justify-between p-3 sm:p-4 bg-muted/30 border-b">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    const prevMonth = new Date(selectedDate || new Date());
+                    prevMonth.setMonth(prevMonth.getMonth() - 1);
+                    setSelectedDate(prevMonth);
+                  }}
+                >
+                  ←
+                </Button>
+                <h3 className="text-lg font-semibold">
+                  {format(selectedDate || new Date(), 'MMMM yyyy')}
+                </h3>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    const nextMonth = new Date(selectedDate || new Date());
+                    nextMonth.setMonth(nextMonth.getMonth() + 1);
+                    setSelectedDate(nextMonth);
+                  }}
+                >
+                  →
+                </Button>
+              </div>
+
+              {/* Day Headers */}
+              <div className="grid grid-cols-7 bg-muted/20">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                  <div key={day} className="p-2 sm:p-3 text-center font-semibold text-muted-foreground text-xs sm:text-sm border-r border-border last:border-r-0">
+                    <span className="hidden sm:inline">{day}</span>
+                    <span className="sm:hidden">{day.slice(0, 1)}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7">
+                {(() => {
+                  const currentMonth = selectedDate || new Date();
+                  const year = currentMonth.getFullYear();
+                  const month = currentMonth.getMonth();
+                  const daysInMonth = new Date(year, month + 1, 0).getDate();
+                  const firstDayOfMonth = new Date(year, month, 1).getDay();
+                  const days = [];
+
+                  // Previous month's trailing days
+                  const prevMonth = new Date(year, month, 0);
+                  const prevMonthDays = prevMonth.getDate();
+                  for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+                    const day = prevMonthDays - i;
+                    const date = new Date(year, month - 1, day);
+                    days.push({ day, date, isCurrentMonth: false });
+                  }
+
+                  // Current month days
+                  for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(year, month, day);
+                    days.push({ day, date, isCurrentMonth: true });
+                  }
+
+                  // Next month's leading days
+                  const totalCells = Math.ceil(days.length / 7) * 7;
+                  let nextMonthDay = 1;
+                  while (days.length < totalCells) {
+                    const date = new Date(year, month + 1, nextMonthDay);
+                    days.push({ day: nextMonthDay, date, isCurrentMonth: false });
+                    nextMonthDay++;
+                  }
+
+                  return days.map((dayInfo, index) => {
+                    const dateStr = format(dayInfo.date, 'yyyy-MM-dd');
                     const data = calendarData[dateStr];
                     const hasData = data && (data.income > 0 || data.expense > 0);
                     const netAmount = hasData ? data.income - data.expense : 0;
-                    
+                    const isSelected = selectedDate && isSameDay(dayInfo.date, selectedDate);
+                    const isToday = isSameDay(dayInfo.date, new Date());
+
                     return (
                       <div 
+                        key={index}
                         className={cn(
-                          "relative w-8 sm:w-9 h-8 sm:h-9 text-center cursor-pointer rounded-md hover:bg-accent transition-colors",
-                          hasData && "font-semibold border-2",
-                          netAmount > 0 && hasData && "border-green-300 bg-green-50",
-                          netAmount < 0 && hasData && "border-red-300 bg-red-50",
-                          netAmount === 0 && hasData && "border-blue-300 bg-blue-50",
-                          isSameDay(day.date, selectedDate || new Date()) && "bg-primary text-primary-foreground"
+                          "min-h-16 sm:min-h-20 md:min-h-24 lg:min-h-28 p-1 sm:p-2 border-r border-b border-border last:border-r-0 transition-all duration-200 cursor-pointer relative",
+                          dayInfo.isCurrentMonth ? "bg-background hover:bg-muted/30" : "bg-muted/10 hover:bg-muted/20",
+                          hasData && dayInfo.isCurrentMonth && "shadow-sm",
+                          isSelected && "bg-primary/10 border-primary",
+                          isToday && "ring-2 ring-primary ring-inset"
                         )}
-                        onClick={() => setSelectedDate(day.date)}
-                        {...props}
+                        onClick={() => dayInfo.isCurrentMonth && setSelectedDate(dayInfo.date)}
                       >
-                        <div className="text-xs sm:text-sm leading-none mt-1">
-                          {day.date.getDate()}
-                        </div>
-                        {hasData && (
-                          <div className="absolute bottom-0 left-0 right-0 space-y-0">
-                            {data.income > 0 && (
-                              <div className="text-[8px] sm:text-[9px] text-green-700 font-bold leading-none">
-                                +{data.income > 999 ? `${(data.income/1000).toFixed(0)}k` : data.income.toFixed(0)}
-                              </div>
-                            )}
-                            {data.expense > 0 && (
-                              <div className="text-[8px] sm:text-[9px] text-red-700 font-bold leading-none">
-                                -{data.expense > 999 ? `${(data.expense/1000).toFixed(0)}k` : data.expense.toFixed(0)}
-                              </div>
-                            )}
-                            {/* Account color dots */}
-                            <div className="flex justify-center gap-0.5 mt-0.5">
-                              {Array.from(data.accounts).slice(0, 3).map((accountName, idx) => (
-                                <div 
-                                  key={idx}
-                                  className={cn("w-1 h-1 rounded-full", getAccountColor(accountName as string))}
-                                />
-                              ))}
-                              {data.accounts.size > 3 && (
-                                <div className="w-1 h-1 rounded-full bg-gray-400" />
-                              )}
-                            </div>
+                        <div className="h-full flex flex-col">
+                          {/* Day number */}
+                          <div className={cn(
+                            "text-xs sm:text-sm font-medium mb-1 text-center",
+                            !dayInfo.isCurrentMonth && "text-muted-foreground",
+                            isSelected && "text-primary font-bold",
+                            isToday && "text-primary"
+                          )}>
+                            {dayInfo.day}
                           </div>
-                        )}
+
+                          {/* Financial data - only show for current month */}
+                          {dayInfo.isCurrentMonth && hasData && (
+                            <div className="flex-1 space-y-1">
+                              {/* Income */}
+                              {data.income > 0 && (
+                                <div className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded text-center font-medium border border-green-200">
+                                  +{data.income > 999 ? `${(data.income/1000).toFixed(0)}k` : data.income.toLocaleString()}
+                                </div>
+                              )}
+                              
+                              {/* Expense */}
+                              {data.expense > 0 && (
+                                <div className="text-xs bg-red-100 text-red-800 px-1.5 py-0.5 rounded text-center font-medium border border-red-200">
+                                  -{data.expense > 999 ? `${(data.expense/1000).toFixed(0)}k` : data.expense.toLocaleString()}
+                                </div>
+                              )}
+                              
+                              {/* Net amount */}
+                              <div className={cn(
+                                "text-xs px-1.5 py-0.5 rounded text-center font-bold border",
+                                netAmount >= 0 
+                                  ? "bg-blue-100 text-blue-800 border-blue-200" 
+                                  : "bg-orange-100 text-orange-800 border-orange-200"
+                              )}>
+                                {netAmount >= 0 ? '+' : ''}{netAmount > 999 || netAmount < -999 
+                                  ? `${(netAmount/1000).toFixed(0)}k` 
+                                  : netAmount.toLocaleString()}
+                              </div>
+
+                              {/* Account indicators */}
+                              <div className="flex flex-wrap gap-0.5 justify-center mt-1">
+                                {Array.from(data.accounts).slice(0, 4).map((accountName, idx) => (
+                                  <div 
+                                    key={idx}
+                                    className={cn("w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full border border-white shadow-sm", getAccountColor(accountName as string))}
+                                    title={accountName as string}
+                                  />
+                                ))}
+                                {data.accounts.size > 4 && (
+                                  <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-gray-400 border border-white" title={`+${data.accounts.size - 4} more accounts`} />
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Empty state for current month days without data */}
+                          {dayInfo.isCurrentMonth && !hasData && (
+                            <div className="flex-1 flex items-center justify-center text-muted-foreground text-xs">
+                              <span className="hidden sm:inline">No data</span>
+                              <span className="sm:hidden text-center">-</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
-                  }
-                }}
-              />
+                  });
+                })()}
+              </div>
             </div>
+
             
             {/* Selected Date Details */}
             {selectedDate && calendarData[format(selectedDate, 'yyyy-MM-dd')] && (

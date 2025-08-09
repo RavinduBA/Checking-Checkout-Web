@@ -151,9 +151,10 @@ export default function Expense() {
             <p className="text-sm sm:text-base text-muted-foreground">Record your business expenses</p>
           </div>
         </div>
-        <Button asChild variant="outline" className="hidden sm:flex">
+        <Button asChild variant="outline" className="text-xs sm:text-sm px-2 sm:px-4">
           <Link to="/financial-reports?type=expense">
-            View All Expenses
+            <span className="hidden sm:inline">View All Expenses</span>
+            <span className="sm:hidden">View All</span>
           </Link>
         </Button>
       </div>

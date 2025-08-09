@@ -175,9 +175,10 @@ export default function Income() {
             <p className="text-sm sm:text-base text-muted-foreground">Record your income transactions</p>
           </div>
         </div>
-        <Button asChild variant="outline" className="hidden sm:flex">
+        <Button asChild variant="outline" className="text-xs sm:text-sm px-2 sm:px-4">
           <Link to="/financial-reports?type=income">
-            View All Income
+            <span className="hidden sm:inline">View All Income</span>
+            <span className="sm:hidden">View All</span>
           </Link>
         </Button>
       </div>
