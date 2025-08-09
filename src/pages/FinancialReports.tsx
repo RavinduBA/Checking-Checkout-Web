@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { format, startOfMonth, endOfMonth, isSameDay } from "date-fns";
-import { ArrowLeft, Filter, CalendarIcon, Download, Eye, Search } from "lucide-react";
+import { ArrowLeft, Filter, CalendarIcon, Download, Eye, Search, MapPin } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -53,6 +54,7 @@ export default function FinancialReports() {
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showDateDetails, setShowDateDetails] = useState(false);
   
   const { toast } = useToast();
 
@@ -357,7 +359,8 @@ export default function FinancialReports() {
             <CardTitle>Transaction Details</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -403,12 +406,67 @@ export default function FinancialReports() {
                   ))}
                 </TableBody>
               </Table>
-              {filteredIncomes.length === 0 && filteredExpenses.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  No transactions found for the selected filters.
-                </div>
-              )}
             </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+              {[...filteredIncomes.map(income => ({
+                ...income,
+                transactionType: 'income',
+                category: income.type,
+                color: 'text-green-600'
+              })), ...filteredExpenses.map(expense => ({
+                ...expense,
+                transactionType: 'expense',
+                category: `${expense.main_type} - ${expense.sub_type}`,
+                color: 'text-red-600'
+              }))].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((transaction, index) => (
+                <div key={`${transaction.transactionType}-${transaction.id}`} className="p-4 border border-border rounded-lg bg-background">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="space-y-1">
+                      <div className="font-medium text-sm">
+                        {transaction.category}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {format(new Date(transaction.date), "MMM dd, yyyy")}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className={cn("font-bold text-lg", transaction.color)}>
+                        {transaction.accounts?.currency === "USD" ? "$" : "Rs."}{transaction.amount.toLocaleString()}
+                      </div>
+                      <Badge variant={transaction.transactionType === 'income' ? 'default' : 'destructive'} className="text-xs">
+                        {transaction.transactionType}
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <div className={cn("w-3 h-3 rounded-full", getAccountColor(transaction.accounts?.name || ''))}></div>
+                      <span>{transaction.accounts?.name} ({transaction.accounts?.currency})</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-3 w-3" />
+                      <span>{transaction.locations?.name}</span>
+                    </div>
+                    
+                    {transaction.note && (
+                      <div className="text-xs italic bg-muted/50 p-2 rounded">
+                        "{transaction.note}"
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {filteredIncomes.length === 0 && filteredExpenses.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No transactions found for the selected filters.
+              </div>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -597,53 +655,70 @@ export default function FinancialReports() {
             </div>
 
             
-            {/* Selected Date Details */}
+            {/* Selected Date Details - Simplified */}
             {selectedDate && calendarData[format(selectedDate, 'yyyy-MM-dd')] && (
               <div className="mt-4 p-4 bg-muted rounded-lg">
                 <h3 className="font-bold mb-3 text-lg">{format(selectedDate, "MMMM dd, yyyy")}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    {calendarData[format(selectedDate, 'yyyy-MM-dd')].income > 0 && (
-                      <div className="flex justify-between items-center p-2 bg-green-50 rounded">
-                        <span className="text-green-800 font-medium">Total Income:</span>
-                        <span className="text-green-900 font-bold">
-                          Rs. {calendarData[format(selectedDate, 'yyyy-MM-dd')].income.toLocaleString()}
-                        </span>
-                      </div>
-                    )}
-                    {calendarData[format(selectedDate, 'yyyy-MM-dd')].expense > 0 && (
-                      <div className="flex justify-between items-center p-2 bg-red-50 rounded">
-                        <span className="text-red-800 font-medium">Total Expenses:</span>
-                        <span className="text-red-900 font-bold">
-                          Rs. {calendarData[format(selectedDate, 'yyyy-MM-dd')].expense.toLocaleString()}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex justify-between items-center p-2 bg-blue-50 rounded">
-                      <span className="text-blue-800 font-medium">Net Amount:</span>
-                      <span className={cn("font-bold", 
-                        calendarData[format(selectedDate, 'yyyy-MM-dd')].income - calendarData[format(selectedDate, 'yyyy-MM-dd')].expense >= 0 
-                          ? "text-green-900" : "text-red-900"
-                      )}>
-                        Rs. {(calendarData[format(selectedDate, 'yyyy-MM-dd')].income - calendarData[format(selectedDate, 'yyyy-MM-dd')].expense).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="font-medium mb-2 text-muted-foreground">Accounts Involved:</h4>
-                    <div className="space-y-1">
-                      {Array.from(calendarData[format(selectedDate, 'yyyy-MM-dd')].accounts).map((accountName, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-sm">
-                          <div className={cn("w-3 h-3 rounded-full", getAccountColor(accountName as string))}></div>
-                          <span>{accountName}</span>
+                
+                {/* Main Total Display */}
+                <div className="mb-4">
+                  {(() => {
+                    const data = calendarData[format(selectedDate, 'yyyy-MM-dd')];
+                    const hasIncome = data.income > 0;
+                    const hasExpense = data.expense > 0;
+                    const netAmount = data.income - data.expense;
+                    
+                    if (hasIncome && hasExpense) {
+                      return (
+                        <div 
+                          className="p-4 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+                          onClick={() => setShowDateDetails(true)}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="text-blue-800 font-medium">Net Amount:</span>
+                            <span className={cn("font-bold text-xl", netAmount >= 0 ? "text-green-900" : "text-red-900")}>
+                              Rs. {netAmount.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="text-xs text-blue-600 mt-1">Click to see breakdown</div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      );
+                    } else if (hasIncome) {
+                      return (
+                        <div 
+                          className="p-4 bg-green-50 rounded-lg cursor-pointer hover:bg-green-100 transition-colors"
+                          onClick={() => setShowDateDetails(true)}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="text-green-800 font-medium">Total Income:</span>
+                            <span className="text-green-900 font-bold text-xl">
+                              Rs. {data.income.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="text-xs text-green-600 mt-1">Click to see breakdown</div>
+                        </div>
+                      );
+                    } else if (hasExpense) {
+                      return (
+                        <div 
+                          className="p-4 bg-red-50 rounded-lg cursor-pointer hover:bg-red-100 transition-colors"
+                          onClick={() => setShowDateDetails(true)}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="text-red-800 font-medium">Total Expense:</span>
+                            <span className="text-red-900 font-bold text-xl">
+                              Rs. {data.expense.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="text-xs text-red-600 mt-1">Click to see breakdown</div>
+                        </div>
+                      );
+                    }
+                  })()}
                 </div>
                 
                 {/* Quick filter button */}
-                <div className="mt-3 pt-3 border-t border-border">
+                <div className="pt-3 border-t border-border">
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -665,6 +740,61 @@ export default function FinancialReports() {
           </CardContent>
         </Card>
       )}
+
+      {/* Date Details Dialog */}
+      <Dialog open={showDateDetails} onOpenChange={setShowDateDetails}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Transaction Breakdown</DialogTitle>
+            <DialogDescription>
+              {selectedDate && format(selectedDate, "MMMM dd, yyyy")}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedDate && calendarData[format(selectedDate, 'yyyy-MM-dd')] && (
+            <div className="space-y-4">
+              {(() => {
+                const data = calendarData[format(selectedDate, 'yyyy-MM-dd')];
+                return (
+                  <>
+                    {data.income > 0 && (
+                      <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                        <span className="text-green-800 font-medium">Total Income</span>
+                        <span className="text-green-900 font-bold">Rs. {data.income.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {data.expense > 0 && (
+                      <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                        <span className="text-red-800 font-medium">Total Expense</span>
+                        <span className="text-red-900 font-bold">Rs. {data.expense.toLocaleString()}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                      <span className="text-blue-800 font-medium">Net Amount</span>
+                      <span className={cn("font-bold", 
+                        (data.income - data.expense) >= 0 ? "text-green-900" : "text-red-900"
+                      )}>
+                        Rs. {(data.income - data.expense).toLocaleString()}
+                      </span>
+                    </div>
+                    
+                    <div className="pt-3 border-t">
+                      <h4 className="font-medium mb-2 text-muted-foreground">Accounts Involved</h4>
+                      <div className="space-y-2">
+                        {Array.from(data.accounts).map((accountName, idx) => (
+                          <div key={idx} className="flex items-center gap-2 text-sm">
+                            <div className={cn("w-3 h-3 rounded-full", getAccountColor(accountName as string))}></div>
+                            <span>{accountName}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
