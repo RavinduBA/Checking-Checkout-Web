@@ -34,7 +34,7 @@ export default function FinancialReports() {
   const initialType = searchParams.get('type') || 'both';
   
   const [reportType, setReportType] = useState<'income' | 'expense' | 'both'>(initialType as any);
-  const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'table'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [filterMode, setFilterMode] = useState<'date' | 'category' | 'account' | 'location'>('date');
   
   const [locations, setLocations] = useState<Location[]>([]);
@@ -261,6 +261,26 @@ export default function FinancialReports() {
                 className="flex-1 sm:flex-none min-w-0"
               >
                 Expenses
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                onClick={() => setViewMode('list')}
+                size="sm"
+                className="flex-1 sm:flex-none"
+              >
+                <Eye className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">List</span>
+              </Button>
+              <Button
+                variant={viewMode === 'calendar' ? 'default' : 'outline'}
+                onClick={() => setViewMode('calendar')}
+                size="sm"
+                className="flex-1 sm:flex-none"
+              >
+                <CalendarIcon className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Calendar</span>
               </Button>
             </div>
           </div>
