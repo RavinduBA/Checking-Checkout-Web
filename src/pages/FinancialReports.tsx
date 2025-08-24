@@ -227,7 +227,9 @@ export default function FinancialReports() {
       // For income records, we need to check if they have booking period data
       // This would need to be added to the income table structure
       // For now, we'll use the income date as a single day booking
+      if (!income.date) return false;
       const incomeDate = new Date(income.date);
+      if (isNaN(incomeDate.getTime())) return false;
       return incomeDate.toDateString() === date.toDateString();
     });
 
@@ -485,9 +487,9 @@ export default function FinancialReports() {
               onSelect={setSelectedDate}
               className="rounded-md border"
               components={{
-                Day: ({ date, ...props }) => (
+                Day: ({ day, ...props }) => (
                   <div className="relative w-full h-full">
-                    {renderDay(date)}
+                    {renderDay(day.date)}
                   </div>
                 )
               }}
