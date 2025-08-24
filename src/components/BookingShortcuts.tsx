@@ -9,6 +9,11 @@ import { Calendar, MapPin, User, DollarSign, Zap } from "lucide-react";
 
 type Booking = Tables<"bookings"> & {
   locations: Tables<"locations">;
+  booking_payments: Array<{
+    amount: number;
+    is_advance: boolean;
+    account_id: string;
+  }>;
 };
 
 type Account = Tables<"accounts">;
@@ -46,7 +51,12 @@ export function BookingShortcuts({ locationId, accounts, onQuickFill }: BookingS
         .from("bookings")
         .select(`
           *,
-          locations (*)
+          locations (*),
+          booking_payments (
+            amount,
+            is_advance,
+            account_id
+          )
         `)
         .eq("location_id", locationId)
         .lte("check_in", today)
@@ -102,21 +112,56 @@ export function BookingShortcuts({ locationId, accounts, onQuickFill }: BookingS
     return colors[source as keyof typeof colors] || "border-gray-300 bg-gray-50";
   };
 
+  const getAdvancePaid = (booking: Booking): number => {
+    return booking.booking_payments
+      ?.filter(payment => payment.is_advance)
+      .reduce((total, payment) => total + payment.amount, 0) || 0;
+  };
+
+  const getRemainingAmount = (booking: Booking): number => {
+    const totalAmount = booking.total_amount || 25000; // Default to 25000 if no total set
+    const advancePaid = getAdvancePaid(booking);
+    return Math.max(0, totalAmount - advancePaid);
+  };
+
+  const formatBookingDetails = (booking: Booking): string => {
+    const totalAmount = booking.total_amount || 25000;
+    const advancePaid = getAdvancePaid(booking);
+    const remaining = getRemainingAmount(booking);
+    const checkIn = format(new Date(booking.check_in), "MMM dd, yyyy");
+    const checkOut = format(new Date(booking.check_out), "MMM dd, yyyy");
+    
+    let details = `Guest: ${booking.guest_name}\n`;
+    details += `Check-in: ${checkIn} | Check-out: ${checkOut}\n`;
+    details += `Total Booking: Rs.${totalAmount.toLocaleString()}\n`;
+    
+    if (advancePaid > 0) {
+      details += `Advance Paid: Rs.${advancePaid.toLocaleString()}\n`;
+      details += `Remaining Balance: Rs.${remaining.toLocaleString()}\n`;
+    }
+    
+    details += `Source: ${booking.source === "booking_com" ? "Booking.com" : 
+                       booking.source === "airbnb" ? "Airbnb" : "Direct"}`;
+    
+    return details;
+  };
+
   const handleQuickFill = (booking: Booking) => {
     const account = getAccountForBooking(booking);
     if (!account) return;
 
     const checkInDate = format(new Date(booking.check_in), "yyyy-MM-dd");
     const checkOutDate = format(new Date(booking.check_out), "yyyy-MM-dd");
+    const remainingAmount = getRemainingAmount(booking);
 
     onQuickFill({
       type: "booking",
-      amount: "25000",
+      amount: remainingAmount.toString(),
       accountId: account.id,
       dateFrom: checkInDate,
       dateTo: checkOutDate,
       bookingSource: booking.source,
-      guestName: booking.guest_name,
+      guestName: formatBookingDetails(booking),
     });
   };
 
@@ -145,6 +190,9 @@ export function BookingShortcuts({ locationId, accounts, onQuickFill }: BookingS
           {todaysBookings.map((booking) => {
             const account = getAccountForBooking(booking);
             const currencySymbol = account?.currency === "USD" ? "$" : "Rs.";
+            const totalAmount = booking.total_amount || 25000;
+            const advancePaid = getAdvancePaid(booking);
+            const remainingAmount = getRemainingAmount(booking);
             
             return (
               <Button
@@ -161,9 +209,16 @@ export function BookingShortcuts({ locationId, accounts, onQuickFill }: BookingS
                        booking.source === "airbnb" ? "Airbnb" : "Direct"}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-1 text-sm font-medium">
-                    <DollarSign className="h-3 w-3" />
-                    {currencySymbol}25,000
+                  <div className="flex flex-col items-end text-sm">
+                    <div className="flex items-center gap-1 font-medium">
+                      <DollarSign className="h-3 w-3" />
+                      {currencySymbol}{remainingAmount.toLocaleString()}
+                    </div>
+                    {advancePaid > 0 && (
+                      <div className="text-xs text-muted-foreground">
+                        Total: {currencySymbol}{totalAmount.toLocaleString()}
+                      </div>
+                    )}
                   </div>
                 </div>
                 
@@ -172,6 +227,12 @@ export function BookingShortcuts({ locationId, accounts, onQuickFill }: BookingS
                     <User className="h-3 w-3" />
                     <span className="font-medium">{booking.guest_name}</span>
                   </div>
+                  
+                  {advancePaid > 0 && (
+                    <div className="flex items-center gap-2 text-xs text-green-600 font-medium">
+                      <span>💰 Advance: {currencySymbol}{advancePaid.toLocaleString()}</span>
+                    </div>
+                  )}
                   
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3" />

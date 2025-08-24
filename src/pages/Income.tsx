@@ -192,7 +192,7 @@ export default function Income() {
       dateFrom: data.dateFrom,
       dateTo: data.dateTo,
       bookingSource: data.bookingSource,
-      note: `Guest: ${data.guestName}`,
+      note: data.guestName, // This now contains detailed booking information
     });
   };
 
