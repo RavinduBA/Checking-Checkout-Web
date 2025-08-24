@@ -149,22 +149,70 @@ export default function FinancialReports() {
     expense.locations?.name.toLowerCase().includes(filters.searchText.toLowerCase())
   );
 
-  // Calendar data preparation
-  const calendarData: Record<string, { income: number; expense: number; accounts: Set<string> }> = {};
+  // Calendar data preparation with booking periods
+  const calendarData: Record<string, { income: number; expense: number; accounts: Set<string>; bookings: Array<{source: string; amount: number; note?: string}> }> = {};
+  
+  // Booking source color mapping
+  const bookingSourceColors = {
+    'direct': 'bg-blue-100 border-blue-300',
+    'airbnb': 'bg-pink-100 border-pink-300', 
+    'booking_com': 'bg-green-100 border-green-300'
+  };
+
+  const getBookingSourceColor = (source: string) => {
+    return bookingSourceColors[source] || 'bg-gray-100 border-gray-300';
+  };
+
+  // Generate booking periods from income records
+  const bookingPeriods: Record<string, {source: string; amount: number; note?: string}> = {};
+  
   filteredIncomes.forEach(income => {
+    // Add to regular calendar data
     const date = income.date;
-    if (!calendarData[date]) calendarData[date] = { income: 0, expense: 0, accounts: new Set() };
+    if (!calendarData[date]) calendarData[date] = { income: 0, expense: 0, accounts: new Set(), bookings: [] };
     calendarData[date].income += parseFloat(income.amount.toString());
     if (income.accounts?.name) calendarData[date].accounts.add(income.accounts.name);
+    
+    // If it's a booking with source and has date range, color the entire period
+    if (income.type === 'booking' && income.booking_source) {
+      const checkIn = new Date(income.check_in_date || income.date);
+      const checkOut = new Date(income.check_out_date || income.date);
+      
+      // Generate all dates in the booking period
+      const currentDate = new Date(checkIn);
+      while (currentDate <= checkOut) {
+        const dateStr = format(currentDate, 'yyyy-MM-dd');
+        
+        if (!calendarData[dateStr]) {
+          calendarData[dateStr] = { income: 0, expense: 0, accounts: new Set(), bookings: [] };
+        }
+        
+        // Store booking info for this date
+        calendarData[dateStr].bookings.push({
+          source: income.booking_source,
+          amount: parseFloat(income.amount.toString()),
+          note: income.note || undefined
+        });
+        
+        bookingPeriods[dateStr] = {
+          source: income.booking_source,
+          amount: parseFloat(income.amount.toString()),
+          note: income.note || undefined
+        };
+        
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    }
   });
+  
   filteredExpenses.forEach(expense => {
     const date = expense.date;
-    if (!calendarData[date]) calendarData[date] = { income: 0, expense: 0, accounts: new Set() };
+    if (!calendarData[date]) calendarData[date] = { income: 0, expense: 0, accounts: new Set(), bookings: [] };
     calendarData[date].expense += parseFloat(expense.amount.toString());
     if (expense.accounts?.name) calendarData[date].accounts.add(expense.accounts.name);
   });
 
-  // Account color mapping
+  // Account color mapping  
   const accountColors = {
     0: 'bg-blue-500',
     1: 'bg-green-500', 

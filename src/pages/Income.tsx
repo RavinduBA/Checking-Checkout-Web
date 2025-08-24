@@ -100,6 +100,9 @@ export default function Income() {
         note: formData.note || null,
         payment_method: "Cash", // Default payment method
         is_advance: formData.isAdvance,
+        booking_source: formData.type === 'booking' ? formData.bookingSource : null,
+        check_in_date: formData.type === 'booking' ? formData.dateFrom : null,
+        check_out_date: formData.type === 'booking' ? formData.dateTo : null,
       }]);
 
       if (error) throw error;
