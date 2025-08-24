@@ -201,7 +201,7 @@ export default function Income() {
   const sendTestReminder = async () => {
     try {
       const { data, error } = await supabase.functions.invoke('booking-reminders', {
-        body: { test: true },
+        body: { test: true, to: '94719528589' },
       });
       if (error) throw error;
       toast({ title: 'SMS sent', description: 'Test booking reminder sent.' });

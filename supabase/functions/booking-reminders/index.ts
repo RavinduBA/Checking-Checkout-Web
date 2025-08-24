@@ -54,14 +54,14 @@ async function renewAccessToken(): Promise<string> {
   return accessToken!;
 }
 
-async function sendSMS(message: string): Promise<void> {
+async function sendSMS(message: string, numbers?: string): Promise<void> {
   let token = accessToken || await getAccessToken();
 
-  // Send to both numbers, comma-separated as per Hutch API
+  // Send to provided number(s) or both defaults, comma-separated as per Hutch API
   const smsData = {
     campaignName: "Daily Bookings",
     mask: "RathnaSuper",
-    numbers: "94719528589,94760898589",
+    numbers: numbers && numbers.trim().length > 0 ? numbers : "94719528589,94760898589",
     content: message
   };
 
@@ -120,7 +120,7 @@ serve(async (req) => {
   }
 
   try {
-    const { test } = (await req.json().catch(() => ({}))) as { test?: boolean };
+    const { test, to } = (await req.json().catch(() => ({}))) as { test?: boolean; to?: string };
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -163,7 +163,7 @@ serve(async (req) => {
     const body = list.length ? list.join('\n') : 'No bookings today';
     const message = `${header}\n${body}`;
 
-    await sendSMS(message);
+    await sendSMS(message, to);
 
     return new Response(JSON.stringify({ success: true, sent: true, count: list.length }), {
       status: 200,
