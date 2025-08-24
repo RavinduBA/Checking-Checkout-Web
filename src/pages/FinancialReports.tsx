@@ -162,7 +162,7 @@ export default function FinancialReports() {
     income: number; 
     expense: number; 
     accounts: Set<string>;
-    bookings: Array<{ source: string; type: 'checkin' | 'checkout'; guest_name: string; id: string }>;
+    bookings: Array<{ source: string; type: 'checkin' | 'checkout' | 'stay'; guest_name: string; id: string }>;
   }> = {};
   
   filteredIncomes.forEach(income => {
@@ -179,28 +179,38 @@ export default function FinancialReports() {
     if (expense.accounts?.name) calendarData[date].accounts.add(expense.accounts.name);
   });
 
-  // Add booking data to calendar
+  // Add booking data to calendar - including all stay dates
   bookings.forEach(booking => {
-    const checkInDate = format(new Date(booking.check_in), 'yyyy-MM-dd');
-    const checkOutDate = format(new Date(booking.check_out), 'yyyy-MM-dd');
+    const checkInDate = new Date(booking.check_in);
+    const checkOutDate = new Date(booking.check_out);
     
-    // Add check-in data
-    if (!calendarData[checkInDate]) calendarData[checkInDate] = { income: 0, expense: 0, accounts: new Set(), bookings: [] };
-    calendarData[checkInDate].bookings.push({
-      source: booking.source,
-      type: 'checkin',
-      guest_name: booking.guest_name,
-      id: booking.id
-    });
-    
-    // Add check-out data  
-    if (!calendarData[checkOutDate]) calendarData[checkOutDate] = { income: 0, expense: 0, accounts: new Set(), bookings: [] };
-    calendarData[checkOutDate].bookings.push({
-      source: booking.source,
-      type: 'checkout', 
-      guest_name: booking.guest_name,
-      id: booking.id
-    });
+    // Add booking data for each date in the stay period
+    const currentDate = new Date(checkInDate);
+    while (currentDate <= checkOutDate) {
+      const dateStr = format(currentDate, 'yyyy-MM-dd');
+      
+      if (!calendarData[dateStr]) {
+        calendarData[dateStr] = { income: 0, expense: 0, accounts: new Set(), bookings: [] };
+      }
+      
+      // Determine booking type for this specific date
+      const isCheckIn = format(currentDate, 'yyyy-MM-dd') === format(checkInDate, 'yyyy-MM-dd');
+      const isCheckOut = format(currentDate, 'yyyy-MM-dd') === format(checkOutDate, 'yyyy-MM-dd');
+      
+      let bookingType: 'checkin' | 'checkout' | 'stay' = 'stay';
+      if (isCheckIn) bookingType = 'checkin';
+      else if (isCheckOut) bookingType = 'checkout';
+      
+      calendarData[dateStr].bookings.push({
+        source: booking.source,
+        type: bookingType,
+        guest_name: booking.guest_name,
+        id: booking.id
+      });
+      
+      // Move to next day
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
   });
 
   // Account color mapping
@@ -226,12 +236,43 @@ export default function FinancialReports() {
     'other': 'bg-purple-500'
   };
 
+  const bookingSourceBgColors = {
+    'direct': 'bg-green-50 border-green-200',
+    'booking.com': 'bg-blue-50 border-blue-200', 
+    'airbnb': 'bg-red-50 border-red-200',
+    'other': 'bg-purple-50 border-purple-200'
+  };
+
   const getBookingSourceColor = (source: string) => {
     const lowerSource = source.toLowerCase();
     if (lowerSource.includes('direct')) return bookingSourceColors.direct;
     if (lowerSource.includes('booking')) return bookingSourceColors['booking.com'];
     if (lowerSource.includes('airbnb')) return bookingSourceColors.airbnb;
     return bookingSourceColors.other;
+  };
+
+  const getBookingSourceBgColor = (source: string) => {
+    const lowerSource = source.toLowerCase();
+    if (lowerSource.includes('direct')) return bookingSourceBgColors.direct;
+    if (lowerSource.includes('booking')) return bookingSourceBgColors['booking.com'];
+    if (lowerSource.includes('airbnb')) return bookingSourceBgColors.airbnb;
+    return bookingSourceBgColors.other;
+  };
+
+  // Helper function to get dominant booking source for a date
+  const getDominantBookingSource = (bookings: any[]) => {
+    if (bookings.length === 0) return null;
+    
+    // Count occurrences of each source
+    const sourceCounts = {};
+    bookings.forEach(booking => {
+      sourceCounts[booking.source] = (sourceCounts[booking.source] || 0) + 1;
+    });
+    
+    // Return the source with highest count
+    return Object.keys(sourceCounts).reduce((a, b) => 
+      sourceCounts[a] > sourceCounts[b] ? a : b
+    );
   };
 
   // Totals calculation
@@ -649,15 +690,23 @@ export default function FinancialReports() {
                     const netAmount = hasData ? data.income - data.expense : 0;
                     const isSelected = selectedDate && isSameDay(dayInfo.date, selectedDate);
                     const isToday = isSameDay(dayInfo.date, new Date());
+                    
+                    // Get booking background color if there are bookings
+                    const dominantBookingSource = data ? getDominantBookingSource(data.bookings) : null;
+                    const hasBookings = dominantBookingSource !== null;
 
                     return (
                       <div 
                         key={index}
                         className={cn(
                           "min-h-16 sm:min-h-20 md:min-h-24 lg:min-h-28 p-1 sm:p-2 border-r border-b border-border last:border-r-0 transition-all duration-200 cursor-pointer relative",
+                          // Base background
                           dayInfo.isCurrentMonth ? "bg-background hover:bg-muted/30" : "bg-muted/10 hover:bg-muted/20",
+                          // Booking source background color
+                          dayInfo.isCurrentMonth && hasBookings && getBookingSourceBgColor(dominantBookingSource),
+                          // Other states
                           hasData && dayInfo.isCurrentMonth && "shadow-sm",
-                          isSelected && "bg-primary/10 border-primary",
+                          isSelected && "ring-2 ring-primary",
                           isToday && "ring-2 ring-primary ring-inset"
                         )}
                         onClick={() => {
@@ -726,17 +775,25 @@ export default function FinancialReports() {
                               {/* Booking indicators */}
                               {data.bookings.length > 0 && (
                                 <div className="flex flex-wrap gap-0.5 justify-center mt-1">
-                                  {data.bookings.slice(0, 3).map((booking, idx) => (
-                                    <div 
-                                      key={idx}
-                                      className={cn(
-                                        "w-2 h-2 sm:w-2.5 sm:h-2.5 border border-white shadow-sm",
-                                        booking.type === 'checkin' ? 'rounded-full' : 'rounded-sm',
-                                        getBookingSourceColor(booking.source)
-                                      )}
-                                      title={`${booking.type === 'checkin' ? 'Check-in' : 'Check-out'}: ${booking.guest_name} (${booking.source})`}
-                                    />
-                                  ))}
+                                  {/* Show unique bookings by guest name to avoid duplicates */}
+                                  {Array.from(new Set(data.bookings.map(b => b.guest_name)))
+                                    .slice(0, 3)
+                                    .map((guestName, idx) => {
+                                      const booking = data.bookings.find(b => b.guest_name === guestName);
+                                      return (
+                                        <div 
+                                          key={idx}
+                                          className={cn(
+                                            "w-2 h-2 sm:w-2.5 sm:h-2.5 border border-white shadow-sm",
+                                            booking.type === 'checkin' ? 'rounded-full' : 
+                                            booking.type === 'checkout' ? 'rounded-sm' : 'rounded',
+                                            getBookingSourceColor(booking.source)
+                                          )}
+                                          title={`${booking.type === 'checkin' ? 'Check-in' : 
+                                                   booking.type === 'checkout' ? 'Check-out' : 'Stay'}: ${booking.guest_name} (${booking.source})`}
+                                        />
+                                      );
+                                    })}
                                   {data.bookings.length > 3 && (
                                     <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-gray-600 border border-white" title={`+${data.bookings.length - 3} more bookings`} />
                                   )}
