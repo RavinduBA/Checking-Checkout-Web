@@ -78,10 +78,9 @@ export default function Expense() {
     note: string;
   }) => {
     console.log('Expense page - handleQuickFill received exact data:', data);
-    console.log('Expense page - current formData before update:', formData);
     
-    // Set the form data in one go to avoid any conflicts
-    const newFormData = {
+    // Update form data immediately with exact values from shortcut
+    setFormData({
       ...formData,
       mainCategory: data.mainCategory,
       subCategory: data.subCategory,
@@ -89,21 +88,9 @@ export default function Expense() {
       accountId: data.accountId,
       date: data.date,
       note: data.note,
-    };
+    });
     
-    setFormData(newFormData);
-    
-    console.log('Expense page - form updated to exact values:', newFormData);
-    
-    // Force a small delay to ensure UI updates
-    setTimeout(() => {
-      console.log('Expense page - final form state after delay:', {
-        mainCategory: newFormData.mainCategory,
-        subCategory: newFormData.subCategory,
-        amount: newFormData.amount,
-        accountId: newFormData.accountId,
-      });
-    }, 100);
+    console.log('Expense page - Auto-filled form with shortcut data');
   };
 
   const handleMainCategoryChange = (value: string) => {
@@ -262,7 +249,7 @@ export default function Expense() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="mainCategory">Main Category</Label>
-                    <Select value={formData.mainCategory} onValueChange={handleMainCategoryChange}>
+                    <Select key={`main-${formData.mainCategory}`} value={formData.mainCategory} onValueChange={handleMainCategoryChange}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select main category" />
                       </SelectTrigger>
@@ -278,7 +265,7 @@ export default function Expense() {
 
                   <div>
                     <Label htmlFor="subCategory">Sub Category</Label>
-                    <Select value={formData.subCategory} onValueChange={(value) => setFormData({...formData, subCategory: value})} disabled={!formData.mainCategory}>
+                    <Select key={`sub-${formData.subCategory}`} value={formData.subCategory} onValueChange={(value) => setFormData({...formData, subCategory: value})} disabled={!formData.mainCategory}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select sub category" />
                       </SelectTrigger>
@@ -314,7 +301,7 @@ export default function Expense() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="accountId">Pay From Account</Label>
-                    <Select value={formData.accountId} onValueChange={(value) => setFormData({...formData, accountId: value})}>
+                    <Select key={`account-${formData.accountId}`} value={formData.accountId} onValueChange={(value) => setFormData({...formData, accountId: value})}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select account" />
                       </SelectTrigger>
