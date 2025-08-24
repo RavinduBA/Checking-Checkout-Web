@@ -20,6 +20,9 @@ import { cn } from "@/lib/utils";
 
 type Location = Tables<"locations">;
 type Account = Tables<"accounts">;
+type Booking = Tables<"bookings"> & {
+  locations?: Location;
+};
 type Income = Tables<"income"> & {
   locations?: Location;
   accounts?: Account;
@@ -41,6 +44,7 @@ export default function FinancialReports() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [filters, setFilters] = useState({
@@ -65,13 +69,17 @@ export default function FinancialReports() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [locationsData, accountsData] = await Promise.all([
+      const [locationsData, accountsData, bookingsData] = await Promise.all([
         supabase.from("locations").select("*").eq("is_active", true),
-        supabase.from("accounts").select("*")
+        supabase.from("accounts").select("*"),
+        supabase.from("bookings").select("*, locations(*)")
+          .gte('check_in', filters.dateFrom)
+          .lte('check_out', filters.dateTo)
       ]);
 
       setLocations(locationsData.data || []);
       setAccounts(accountsData.data || []);
+      setBookings(bookingsData.data || []);
 
       // Build dynamic query conditions
       let incomeQuery = supabase.from("income").select("*, accounts(*), locations(*)");
@@ -150,18 +158,49 @@ export default function FinancialReports() {
   );
 
   // Calendar data preparation
-  const calendarData: Record<string, { income: number; expense: number; accounts: Set<string> }> = {};
+  const calendarData: Record<string, { 
+    income: number; 
+    expense: number; 
+    accounts: Set<string>;
+    bookings: Array<{ source: string; type: 'checkin' | 'checkout'; guest_name: string; id: string }>;
+  }> = {};
+  
   filteredIncomes.forEach(income => {
     const date = income.date;
-    if (!calendarData[date]) calendarData[date] = { income: 0, expense: 0, accounts: new Set() };
+    if (!calendarData[date]) calendarData[date] = { income: 0, expense: 0, accounts: new Set(), bookings: [] };
     calendarData[date].income += parseFloat(income.amount.toString());
     if (income.accounts?.name) calendarData[date].accounts.add(income.accounts.name);
   });
+  
   filteredExpenses.forEach(expense => {
     const date = expense.date;
-    if (!calendarData[date]) calendarData[date] = { income: 0, expense: 0, accounts: new Set() };
+    if (!calendarData[date]) calendarData[date] = { income: 0, expense: 0, accounts: new Set(), bookings: [] };
     calendarData[date].expense += parseFloat(expense.amount.toString());
     if (expense.accounts?.name) calendarData[date].accounts.add(expense.accounts.name);
+  });
+
+  // Add booking data to calendar
+  bookings.forEach(booking => {
+    const checkInDate = format(new Date(booking.check_in), 'yyyy-MM-dd');
+    const checkOutDate = format(new Date(booking.check_out), 'yyyy-MM-dd');
+    
+    // Add check-in data
+    if (!calendarData[checkInDate]) calendarData[checkInDate] = { income: 0, expense: 0, accounts: new Set(), bookings: [] };
+    calendarData[checkInDate].bookings.push({
+      source: booking.source,
+      type: 'checkin',
+      guest_name: booking.guest_name,
+      id: booking.id
+    });
+    
+    // Add check-out data  
+    if (!calendarData[checkOutDate]) calendarData[checkOutDate] = { income: 0, expense: 0, accounts: new Set(), bookings: [] };
+    calendarData[checkOutDate].bookings.push({
+      source: booking.source,
+      type: 'checkout', 
+      guest_name: booking.guest_name,
+      id: booking.id
+    });
   });
 
   // Account color mapping
@@ -177,6 +216,22 @@ export default function FinancialReports() {
   const getAccountColor = (accountName: string) => {
     const index = accounts.findIndex(acc => acc.name === accountName);
     return accountColors[index % 6] || 'bg-gray-500';
+  };
+
+  // Booking source color mapping
+  const bookingSourceColors = {
+    'direct': 'bg-green-500',
+    'booking.com': 'bg-blue-500', 
+    'airbnb': 'bg-red-500',
+    'other': 'bg-purple-500'
+  };
+
+  const getBookingSourceColor = (source: string) => {
+    const lowerSource = source.toLowerCase();
+    if (lowerSource.includes('direct')) return bookingSourceColors.direct;
+    if (lowerSource.includes('booking')) return bookingSourceColors['booking.com'];
+    if (lowerSource.includes('airbnb')) return bookingSourceColors.airbnb;
+    return bookingSourceColors.other;
   };
 
   // Totals calculation
@@ -475,16 +530,40 @@ export default function FinancialReports() {
             <CardTitle className="text-lg sm:text-xl">Calendar View</CardTitle>
           </CardHeader>
           <CardContent className="p-3 sm:p-6">
-            {/* Account Legend */}
-            <div className="mb-4 p-3 bg-muted/50 rounded-lg">
-              <h4 className="text-sm font-medium mb-2">Account Colors</h4>
-              <div className="flex flex-wrap gap-2">
-                {accounts.map((account, index) => (
-                  <div key={account.id} className="flex items-center gap-2 text-xs">
-                    <div className={cn("w-3 h-3 rounded-full", getAccountColor(account.name))}></div>
-                    <span className="text-muted-foreground">{account.name}</span>
+            {/* Legends */}
+            <div className="mb-4 space-y-3">
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <h4 className="text-sm font-medium mb-2">Account Colors</h4>
+                <div className="flex flex-wrap gap-2">
+                  {accounts.map((account, index) => (
+                    <div key={account.id} className="flex items-center gap-2 text-xs">
+                      <div className={cn("w-3 h-3 rounded-full", getAccountColor(account.name))}></div>
+                      <span className="text-muted-foreground">{account.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <h4 className="text-sm font-medium mb-2">Booking Sources</h4>
+                <div className="flex flex-wrap gap-3">
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span className="text-muted-foreground">Direct</span>
                   </div>
-                ))}
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                    <span className="text-muted-foreground">Booking.com</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                    <span className="text-muted-foreground">Airbnb</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                    <span className="text-muted-foreground">Other</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -643,6 +722,26 @@ export default function FinancialReports() {
                                   <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-gray-400 border border-white" title={`+${data.accounts.size - 4} more accounts`} />
                                 )}
                               </div>
+
+                              {/* Booking indicators */}
+                              {data.bookings.length > 0 && (
+                                <div className="flex flex-wrap gap-0.5 justify-center mt-1">
+                                  {data.bookings.slice(0, 3).map((booking, idx) => (
+                                    <div 
+                                      key={idx}
+                                      className={cn(
+                                        "w-2 h-2 sm:w-2.5 sm:h-2.5 border border-white shadow-sm",
+                                        booking.type === 'checkin' ? 'rounded-full' : 'rounded-sm',
+                                        getBookingSourceColor(booking.source)
+                                      )}
+                                      title={`${booking.type === 'checkin' ? 'Check-in' : 'Check-out'}: ${booking.guest_name} (${booking.source})`}
+                                    />
+                                  ))}
+                                  {data.bookings.length > 3 && (
+                                    <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-gray-600 border border-white" title={`+${data.bookings.length - 3} more bookings`} />
+                                  )}
+                                </div>
+                              )}
                             </div>
                           )}
 
@@ -821,6 +920,48 @@ export default function FinancialReports() {
                     </CardContent>
                   </Card>
                 </div>
+                
+                {/* Booking Details */}
+                {(() => {
+                  const dateStr = format(selectedDate, 'yyyy-MM-dd');
+                  const dayBookings = calendarData[dateStr]?.bookings || [];
+                  
+                  if (dayBookings.length > 0) {
+                    return (
+                      <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
+                        <CardContent className="p-4">
+                          <h3 className="text-lg font-semibold text-purple-800 mb-3 flex items-center gap-2">
+                            <CalendarIcon className="h-4 w-4" />
+                            Bookings ({dayBookings.length})
+                          </h3>
+                          <div className="space-y-3">
+                            {dayBookings.map((booking, idx) => (
+                              <div key={idx} className="bg-white/70 p-3 rounded-lg border border-purple-200">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <div className={cn(
+                                      "w-3 h-3 border border-white shadow-sm",
+                                      booking.type === 'checkin' ? 'rounded-full' : 'rounded-sm',
+                                      getBookingSourceColor(booking.source)
+                                    )}></div>
+                                    <span className="font-medium text-purple-900">{booking.guest_name}</span>
+                                  </div>
+                                  <Badge variant={booking.type === 'checkin' ? 'default' : 'secondary'}>
+                                    {booking.type === 'checkin' ? 'Check-in' : 'Check-out'}
+                                  </Badge>
+                                </div>
+                                <div className="text-sm text-purple-700">
+                                  <strong>Source:</strong> {booking.source}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  }
+                  return null;
+                })()}
                 
                 {/* Account Breakdown */}
                 {Object.keys(accountBreakdown).length > 0 && (
