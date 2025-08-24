@@ -638,6 +638,7 @@ export default function FinancialReports() {
                     const netAmount = hasData ? data.income - data.expense : 0;
                     const isSelected = selectedDate && isSameDay(dayInfo.date, selectedDate);
                     const isToday = isSameDay(dayInfo.date, new Date());
+                    const bookingPeriod = bookingPeriods[dateStr];
 
                     return (
                       <div 
@@ -647,7 +648,9 @@ export default function FinancialReports() {
                           dayInfo.isCurrentMonth ? "bg-background hover:bg-muted/30" : "bg-muted/10 hover:bg-muted/20",
                           hasData && dayInfo.isCurrentMonth && "shadow-sm",
                           isSelected && "bg-primary/10 border-primary",
-                          isToday && "ring-2 ring-primary ring-inset"
+                          isToday && "ring-2 ring-primary ring-inset",
+                          // Apply booking source background color
+                          bookingPeriod && dayInfo.isCurrentMonth && getBookingSourceColor(bookingPeriod.source)
                         )}
                         onClick={() => {
                           if (dayInfo.isCurrentMonth) {
