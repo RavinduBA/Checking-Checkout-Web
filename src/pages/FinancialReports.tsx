@@ -230,9 +230,26 @@ export default function FinancialReports() {
     return accountColors[index % 6] || 'bg-gray-500';
   };
 
-  // Totals calculation
-  const totalIncome = filteredIncomes.reduce((sum, income) => sum + parseFloat(income.amount.toString()), 0);
-  const totalExpense = filteredExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount.toString()), 0);
+  // Get USD to LKR conversion rate from localStorage
+  const usdToLkrRate = parseFloat(localStorage.getItem('usdToLkrRate') || '300');
+
+  // Totals calculation with currency conversion
+  const totalIncome = filteredIncomes.reduce((sum, income) => {
+    const amount = parseFloat(income.amount.toString());
+    const currency = income.accounts?.currency || 'LKR';
+    // Convert USD to LKR, keep LKR as is
+    const convertedAmount = currency === 'USD' ? amount * usdToLkrRate : amount;
+    return sum + convertedAmount;
+  }, 0);
+
+  const totalExpense = filteredExpenses.reduce((sum, expense) => {
+    const amount = parseFloat(expense.amount.toString());
+    const currency = expense.accounts?.currency || 'LKR';
+    // Convert USD to LKR, keep LKR as is
+    const convertedAmount = currency === 'USD' ? amount * usdToLkrRate : amount;
+    return sum + convertedAmount;
+  }, 0);
+
   const netAmount = totalIncome - totalExpense;
 
   if (loading) {
