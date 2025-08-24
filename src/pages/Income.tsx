@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import jsPDF from "jspdf";
 import { ArrowLeft, Plus, Calendar, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { BookingShortcuts } from "@/components/BookingShortcuts";
 
 type Location = Tables<"locations">;
 type Account = Tables<"accounts">;
@@ -150,12 +151,12 @@ export default function Income() {
         });
       }
 
-      // Reset form
+      // Reset form but keep location
       setFormData({
         type: "booking",
         amount: "",
         accountId: "",
-        locationId: "",
+        locationId: formData.locationId, // Keep location selected
         dateFrom: format(new Date(), "yyyy-MM-dd"),
         dateTo: format(new Date(), "yyyy-MM-dd"),
         note: "",
@@ -172,6 +173,27 @@ export default function Income() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleQuickFill = (data: {
+    type: Database["public"]["Enums"]["income_type"];
+    amount: string;
+    accountId: string;
+    dateFrom: string;
+    dateTo: string;
+    bookingSource: Database["public"]["Enums"]["booking_source"];
+    guestName: string;
+  }) => {
+    setFormData({
+      ...formData,
+      type: data.type,
+      amount: data.amount,
+      accountId: data.accountId,
+      dateFrom: data.dateFrom,
+      dateTo: data.dateTo,
+      bookingSource: data.bookingSource,
+      note: `Guest: ${data.guestName}`,
+    });
   };
 
   // Remove delete function - deletion should be done from settings page
@@ -226,6 +248,13 @@ export default function Income() {
       {/* Only show content after location is selected */}
       {formData.locationId && (
         <div className="space-y-4 sm:space-y-6">
+          {/* Booking Shortcuts */}
+          <BookingShortcuts 
+            locationId={formData.locationId}
+            accounts={accounts}
+            onQuickFill={handleQuickFill}
+          />
+
           {/* Income Form - Show First */}
           <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg">
             <CardHeader className="pb-3">
