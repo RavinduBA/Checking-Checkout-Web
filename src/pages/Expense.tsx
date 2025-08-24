@@ -11,6 +11,7 @@ import { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
 import { ArrowLeft, Minus, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
+import { ExpenseShortcuts } from "@/components/ExpenseShortcuts";
 
 type Location = Tables<"locations">;
 type Account = Tables<"accounts">;
@@ -67,6 +68,25 @@ export default function Expense() {
 
   const mainCategories = [...new Set(expenseTypes.map(et => et.main_type))];
   const subCategories = expenseTypes.filter(et => et.main_type === formData.mainCategory).map(et => et.sub_type);
+
+  const handleQuickFill = (data: {
+    mainCategory: string;
+    subCategory: string;
+    amount: string;
+    accountId: string;
+    date: string;
+    note: string;
+  }) => {
+    setFormData({
+      ...formData,
+      mainCategory: data.mainCategory,
+      subCategory: data.subCategory,
+      amount: data.amount,
+      accountId: data.accountId,
+      date: data.date,
+      note: data.note,
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,13 +146,13 @@ export default function Expense() {
         });
       }
 
-      // Reset form
+      // Reset form but keep locationId
       setFormData({
         mainCategory: "",
         subCategory: "",
         amount: "",
         accountId: "",
-        locationId: "",
+        locationId: formData.locationId, // Keep selected location
         date: format(new Date(), "yyyy-MM-dd"),
         note: "",
       });
@@ -198,7 +218,14 @@ export default function Expense() {
       {/* Only show content after location is selected */}
       {formData.locationId && (
         <div className="space-y-4 sm:space-y-6">
-          {/* Expense Form - Show First */}
+          {/* Expense Shortcuts - Show First */}
+          <ExpenseShortcuts 
+            locationId={formData.locationId} 
+            accounts={accounts} 
+            onQuickFill={handleQuickFill} 
+          />
+
+          {/* Expense Form - Show Second */}
           <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200 shadow-lg">
             <CardHeader className="pb-3">
               <CardTitle className="text-red-800 flex items-center gap-2 text-lg">

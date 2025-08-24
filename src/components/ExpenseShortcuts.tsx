@@ -1,0 +1,207 @@
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
+import { format } from "date-fns";
+import { User, DollarSign, Zap, Briefcase, Shirt } from "lucide-react";
+
+type Booking = Tables<"bookings"> & {
+  locations: Tables<"locations">;
+};
+
+type Account = Tables<"accounts">;
+
+interface ExpenseShortcutsProps {
+  locationId: string;
+  accounts: Account[];
+  onQuickFill: (data: {
+    mainCategory: string;
+    subCategory: string;
+    amount: string;
+    accountId: string;
+    date: string;
+    note: string;
+  }) => void;
+}
+
+export function ExpenseShortcuts({ locationId, accounts, onQuickFill }: ExpenseShortcutsProps) {
+  const [todaysBookings, setTodaysBookings] = useState<Booking[]>([]);
+  const [usedShortcuts, setUsedShortcuts] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (locationId) {
+      fetchTodaysBookings();
+    }
+  }, [locationId]);
+
+  const fetchTodaysBookings = async () => {
+    try {
+      const today = format(new Date(), "yyyy-MM-dd");
+      
+      // Check for bookings where today is between check-in and check-out dates
+      const { data: bookingsData } = await supabase
+        .from("bookings")
+        .select(`
+          *,
+          locations (*)
+        `)
+        .eq("location_id", locationId)
+        .lte("check_in", today)
+        .gt("check_out", today); // Check-out is after today (guests still here)
+
+      setTodaysBookings(bookingsData || []);
+    } catch (error) {
+      console.error("Error fetching today's bookings:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getAccountForExpense = (locationName: string, expenseType: 'staff' | 'laundry'): Account | undefined => {
+    if (locationName === "Rusty Bunk") {
+      return accounts.find(acc => acc.name === "RB-CASH ON HAND-LKR");
+    } else if (locationName === "Asaliya Villa") {
+      return accounts.find(acc => acc.name === "Asaliya Cash-LKR");
+    }
+    return accounts[0]; // Fallback to first account
+  };
+
+  const getExpenseShortcuts = () => {
+    if (todaysBookings.length === 0) return [];
+    
+    const location = todaysBookings[0]?.locations;
+    const shortcuts = [];
+    
+    // Staff - Caretaker shortcut
+    const staffAccount = getAccountForExpense(location.name, 'staff');
+    if (staffAccount) {
+      const amount = location.name === "Rusty Bunk" ? "1500" : "2000";
+      const staffName = location.name === "Rusty Bunk" ? "Nilu" : "Tharanga";
+      const shortcutId = `staff-${locationId}-${format(new Date(), "yyyy-MM-dd")}`;
+      
+      if (!usedShortcuts.has(shortcutId)) {
+        shortcuts.push({
+          id: shortcutId,
+          type: 'staff',
+          icon: <Briefcase className="h-4 w-4" />,
+          title: "Staff - Caretaker",
+          amount,
+          currency: staffAccount.currency === "USD" ? "$" : "Rs.",
+          account: staffAccount,
+          note: `${staffName} sallery - ${format(new Date(), "MMM dd, yyyy")} + Rs.${amount}`,
+          mainCategory: "Staff",
+          subCategory: "Caretaker"
+        });
+      }
+    }
+    
+    // Laundry shortcut (only for Rusty Bunk)
+    if (location.name === "Rusty Bunk") {
+      const laundryAccount = getAccountForExpense(location.name, 'laundry');
+      if (laundryAccount) {
+        const shortcutId = `laundry-${locationId}-${format(new Date(), "yyyy-MM-dd")}`;
+        
+        if (!usedShortcuts.has(shortcutId)) {
+          shortcuts.push({
+            id: shortcutId,
+            type: 'laundry',
+            icon: <Shirt className="h-4 w-4" />,
+            title: "Laundry - External Service",
+            amount: "2000",
+            currency: "Rs.",
+            account: laundryAccount,
+            note: `Laundry service - ${format(new Date(), "MMM dd, yyyy")}`,
+            mainCategory: "Laundry",
+            subCategory: "External Service"
+          });
+        }
+      }
+    }
+    
+    return shortcuts;
+  };
+
+  const handleQuickFill = (shortcut: any) => {
+    onQuickFill({
+      mainCategory: shortcut.mainCategory,
+      subCategory: shortcut.subCategory,
+      amount: shortcut.amount,
+      accountId: shortcut.account.id,
+      date: format(new Date(), "yyyy-MM-dd"),
+      note: shortcut.note,
+    });
+    
+    // Hide this shortcut after using
+    setUsedShortcuts(prev => new Set([...prev, shortcut.id]));
+  };
+
+  if (loading) {
+    return (
+      <div className="animate-pulse">
+        <div className="h-20 bg-gray-200 rounded-lg"></div>
+      </div>
+    );
+  }
+
+  const shortcuts = getExpenseShortcuts();
+
+  if (shortcuts.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card className="border-orange-200 bg-orange-50">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-orange-800 flex items-center gap-2 text-base">
+          <Zap className="h-4 w-4" />
+          Today's Expense Shortcuts
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 space-y-3">
+        <div className="grid grid-cols-1 gap-3">
+          {shortcuts.map((shortcut) => (
+            <Button
+              key={shortcut.id}
+              variant="outline"
+              className="w-full p-4 h-auto flex flex-col items-start gap-2 hover:shadow-md transition-all border-orange-300 bg-orange-50 hover:bg-orange-100"
+              onClick={() => handleQuickFill(shortcut)}
+            >
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  {shortcut.icon}
+                  <Badge variant="secondary" className="text-xs">
+                    {shortcut.title}
+                  </Badge>
+                </div>
+                <div className="flex flex-col items-end text-sm">
+                  <div className="flex items-center gap-1 font-medium">
+                    <DollarSign className="h-3 w-3" />
+                    {shortcut.currency}{parseInt(shortcut.amount).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="w-full text-left space-y-1">
+                <div className="flex items-center gap-2 text-sm">
+                  <User className="h-3 w-3" />
+                  <span className="font-medium">{shortcut.account.name} ({shortcut.account.currency})</span>
+                </div>
+                
+                <div className="text-xs text-muted-foreground">
+                  <span>{shortcut.note}</span>
+                </div>
+              </div>
+            </Button>
+          ))}
+        </div>
+        
+        <div className="text-xs text-orange-600 text-center mt-2 italic">
+          Tap any expense to auto-fill the form
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

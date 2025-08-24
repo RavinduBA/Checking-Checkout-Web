@@ -34,6 +34,7 @@ interface BookingShortcutsProps {
 
 export function BookingShortcuts({ locationId, accounts, onQuickFill }: BookingShortcutsProps) {
   const [todaysBookings, setTodaysBookings] = useState<Booking[]>([]);
+  const [usedShortcuts, setUsedShortcuts] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -163,6 +164,9 @@ export function BookingShortcuts({ locationId, accounts, onQuickFill }: BookingS
       bookingSource: booking.source,
       guestName: formatBookingDetails(booking),
     });
+
+    // Hide this shortcut after using
+    setUsedShortcuts(prev => new Set([...prev, booking.id]));
   };
 
   if (loading) {
@@ -187,7 +191,7 @@ export function BookingShortcuts({ locationId, accounts, onQuickFill }: BookingS
       </CardHeader>
       <CardContent className="p-4 space-y-3">
         <div className="grid grid-cols-1 gap-3">
-          {todaysBookings.map((booking) => {
+          {todaysBookings.filter(booking => !usedShortcuts.has(booking.id)).map((booking) => {
             const account = getAccountForBooking(booking);
             const currencySymbol = account?.currency === "USD" ? "$" : "Rs.";
             const totalAmount = booking.total_amount || 25000;
