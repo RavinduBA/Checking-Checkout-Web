@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +65,46 @@ export default function Income() {
       setLoading(false);
     }
   };
+
+  const didPrefill = useRef(false);
+  const getAccountForParams = (locationName: string, source: Database["public"]["Enums"]["booking_source"]) => {
+    if (locationName === "Rusty Bunk") {
+      if (source === "airbnb") return accounts.find(acc => acc.name === "Payoneer jayathu");
+      return accounts.find(acc => acc.name === "RB-CASH ON HAND-LKR");
+    } else if (locationName === "Asaliya Villa") {
+      if (source === "airbnb") return accounts.find(acc => acc.name === "Payoneer jayathu");
+      return accounts.find(acc => acc.name === "Asaliya Cash-LKR");
+    }
+    return accounts[0];
+  };
+
+  // Prefill form from URL params (used by SMS deep link)
+  useEffect(() => {
+    if (didPrefill.current) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("prefill") !== "1") return;
+
+    const src = (params.get("src") as Database["public"]["Enums"]["booking_source"]) || "direct";
+    const locName = params.get("loc") || "";
+    const rest = params.get("rest") || "";
+
+    const matchedLoc = locations.find(l => l.name.toLowerCase() === locName.toLowerCase());
+    const matchedAcc = getAccountForParams(locName, src);
+    const today = format(new Date(), "yyyy-MM-dd");
+
+    setFormData(prev => ({
+      ...prev,
+      type: "booking",
+      bookingSource: src,
+      locationId: matchedLoc?.id || prev.locationId,
+      accountId: matchedAcc?.id || prev.accountId,
+      amount: rest,
+      dateFrom: today,
+      dateTo: today,
+    }));
+
+    didPrefill.current = true;
+  }, [locations, accounts]);
 
   const selectedAccount = accounts.find(a => a.id === formData.accountId);
   const currencySymbol = selectedAccount?.currency === "USD" ? "$" : "Rs.";
