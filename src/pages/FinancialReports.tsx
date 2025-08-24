@@ -174,9 +174,12 @@ export default function FinancialReports() {
     if (income.accounts?.name) calendarData[date].accounts.add(income.accounts.name);
     
     // If it's a booking with source and has date range, color the entire period
-    if (income.type === 'booking' && income.booking_source) {
-      const checkIn = new Date(income.check_in_date || income.date);
-      const checkOut = new Date(income.check_out_date || income.date);
+    const bookingSource = (income as any).booking_source;
+    if (income.type === 'booking' && bookingSource) {
+      const checkInDate = (income as any).check_in_date;
+      const checkOutDate = (income as any).check_out_date;
+      const checkIn = new Date(checkInDate || income.date);
+      const checkOut = new Date(checkOutDate || income.date);
       
       // Generate all dates in the booking period
       const currentDate = new Date(checkIn);
@@ -189,13 +192,13 @@ export default function FinancialReports() {
         
         // Store booking info for this date
         calendarData[dateStr].bookings.push({
-          source: income.booking_source,
+          source: bookingSource,
           amount: parseFloat(income.amount.toString()),
           note: income.note || undefined
         });
         
         bookingPeriods[dateStr] = {
-          source: income.booking_source,
+          source: bookingSource,
           amount: parseFloat(income.amount.toString()),
           note: income.note || undefined
         };
