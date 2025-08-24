@@ -78,15 +78,18 @@ export default function Expense() {
     note: string;
   }) => {
     console.log('Expense page - handleQuickFill received:', data);
-    setFormData({
-      ...formData,
+    
+    // Set the form data without triggering the mainCategory onChange that clears subCategory
+    setFormData(prev => ({
+      ...prev,
       mainCategory: data.mainCategory,
       subCategory: data.subCategory,
       amount: data.amount,
       accountId: data.accountId,
       date: data.date,
       note: data.note,
-    });
+    }));
+    
     console.log('Expense page - form updated to:', {
       ...formData,
       mainCategory: data.mainCategory,
@@ -96,6 +99,12 @@ export default function Expense() {
       date: data.date,
       note: data.note,
     });
+  };
+
+  const handleMainCategoryChange = (value: string) => {
+    // Only clear subCategory if this is a manual user selection, not from shortcut
+    const newSubCategory = formData.subCategory && subCategories.includes(formData.subCategory) ? formData.subCategory : "";
+    setFormData({...formData, mainCategory: value, subCategory: newSubCategory});
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -248,7 +257,7 @@ export default function Expense() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="mainCategory">Main Category</Label>
-                    <Select value={formData.mainCategory} onValueChange={(value) => setFormData({...formData, mainCategory: value, subCategory: ""})}>
+                    <Select value={formData.mainCategory} onValueChange={handleMainCategoryChange}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select main category" />
                       </SelectTrigger>
