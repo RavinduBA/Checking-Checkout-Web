@@ -103,8 +103,9 @@ function ymdInTZ(date: Date, tz: string) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
 
-function dayMonInTZ(date: Date, tz: string) {
-  return new Intl.DateTimeFormat('en-GB', { timeZone: tz, day: '2-digit', month: 'short' }).format(date);
+function shortDateInTZ(date: Date, tz: string) {
+  const d = new Date(date.toLocaleString("en-US", { timeZone: tz }));
+  return `${d.getDate()}-${d.getMonth() + 1}`;
 }
 
 function sourceLabel(src: string) {
@@ -129,13 +130,17 @@ serve(async (req) => {
     const tz = 'Asia/Colombo';
     const today = new Date();
     const todayYMD = ymdInTZ(today, tz);
-    const todayLabel = dayMonInTZ(today, tz);
+    const todayLabel = shortDateInTZ(today, tz);
 
     console.log('Preparing booking reminders for', { todayYMD, tz });
 
     const { data: bookings, error } = await supabase
       .from('bookings')
-      .select('id, check_in, check_out, source, guest_name, locations(name)')
+      .select(`
+        id, check_in, check_out, source, guest_name, total_amount, advance_amount,
+        locations(name),
+        booking_payments(amount, is_advance)
+      `)
       .lte('check_in', todayYMD)
       .gt('check_out', todayYMD);
 
@@ -144,10 +149,23 @@ serve(async (req) => {
     const list = (bookings || []).map((b: any) => {
       const loc = b.locations?.name || 'Unknown';
       const src = sourceLabel(b.source);
-      const gi = dayMonInTZ(new Date(b.check_in), tz);
-      const go = dayMonInTZ(new Date(b.check_out), tz);
-      const guest = b.guest_name || '';
-      return `- ${loc} | ${src} | ${guest} | ${gi}-${go}`;
+      const dateRange = `${shortDateInTZ(new Date(b.check_in), tz)}-${shortDateInTZ(new Date(b.check_out), tz)}`;
+      
+      // For direct bookings, include payment details
+      if (b.source === 'direct') {
+        const totalAmount = b.total_amount || 0;
+        const advancePaid = (b.booking_payments || [])
+          .filter((p: any) => p.is_advance)
+          .reduce((sum: number, p: any) => sum + p.amount, 0);
+        const remaining = totalAmount - advancePaid;
+        
+        if (totalAmount > 0) {
+          return `${loc},${src},TOTAL-${totalAmount},ADVANCE-${advancePaid},Rest ${remaining},${dateRange}`;
+        }
+      }
+      
+      // For other bookings, simple format
+      return `${loc},${src},${dateRange}`;
     });
 
     if (!list.length && !test) {
@@ -159,7 +177,7 @@ serve(async (req) => {
     }
 
     const prefix = test ? '[TEST] ' : '';
-    const header = `${prefix}Bookings ${todayLabel} (LKT)`;
+    const header = `${prefix}${todayLabel}`;
     const body = list.length ? list.join('\n') : 'No bookings today';
     const message = `${header}\n${body}`;
 
