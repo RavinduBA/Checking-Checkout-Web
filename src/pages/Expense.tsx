@@ -83,33 +83,48 @@ export default function Expense() {
 
       if (error) throw error;
 
-      // Send SMS notification
-      try {
-        const selectedAccount = accounts.find(acc => acc.id === formData.accountId);
-        const selectedLocationData = locations.find(loc => loc.id === formData.locationId);
-        const category = `${formData.mainCategory} - ${formData.subCategory}`;
-        
-        await supabase.functions.invoke('send-sms-notification', {
-          body: {
-            type: 'expense',
-            amount: parseFloat(formData.amount),
-            currency: selectedAccount?.currency || 'LKR',
-            category: category,
-            account: selectedAccount?.name || 'Unknown',
-            location: selectedLocationData?.name || 'Unknown',
-            date: formData.date,
-            note: formData.note
-          }
-        });
-      } catch (smsError) {
-        console.error('Error sending SMS notification:', smsError);
-        // Don't show error to user, just log it
-      }
+      // Calculate new account balance
+      const selectedAccount = accounts.find(acc => acc.id === formData.accountId);
+      if (selectedAccount) {
+        // Fetch current account transactions to calculate balance
+        const [incomesRes, expensesRes, outgoingTransfersRes, incomingTransfersRes] = await Promise.all([
+          supabase.from("income").select("amount").eq("account_id", formData.accountId),
+          supabase.from("expenses").select("amount").eq("account_id", formData.accountId),
+          supabase.from("account_transfers").select("amount").eq("from_account_id", formData.accountId),
+          supabase.from("account_transfers").select("amount, conversion_rate").eq("to_account_id", formData.accountId)
+        ]);
 
-      toast({
-        title: "Success",
-        description: "Expense record added successfully",
-      });
+        let currentBalance = selectedAccount.initial_balance;
+        
+        // Add all income
+        const totalIncome = (incomesRes.data || []).reduce((sum, item) => sum + parseFloat(item.amount.toString()), 0);
+        currentBalance += totalIncome;
+        
+        // Subtract all expenses (including the new one we just added)
+        const totalExpenses = (expensesRes.data || []).reduce((sum, item) => sum + parseFloat(item.amount.toString()), 0);
+        currentBalance -= totalExpenses;
+        
+        // Subtract outgoing transfers
+        const totalOutgoingTransfers = (outgoingTransfersRes.data || []).reduce((sum, item) => sum + parseFloat(item.amount.toString()), 0);
+        currentBalance -= totalOutgoingTransfers;
+        
+        // Add incoming transfers (with conversion rate)
+        const totalIncomingTransfers = (incomingTransfersRes.data || []).reduce((sum, item) => 
+          sum + (parseFloat(item.amount.toString()) * item.conversion_rate), 0);
+        currentBalance += totalIncomingTransfers;
+
+        const currencySymbol = selectedAccount.currency === "USD" ? "$" : "Rs.";
+        
+        toast({
+          title: "Success",
+          description: `Expense record added successfully\n${selectedAccount.name} - ${currencySymbol}${currentBalance.toLocaleString()}`,
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Expense record added successfully",
+        });
+      }
 
       // Reset form
       setFormData({
