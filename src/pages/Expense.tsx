@@ -77,20 +77,11 @@ export default function Expense() {
     date: string;
     note: string;
   }) => {
-    console.log('Expense page - handleQuickFill received:', data);
+    console.log('Expense page - handleQuickFill received exact data:', data);
+    console.log('Expense page - current formData before update:', formData);
     
-    // Set the form data without triggering the mainCategory onChange that clears subCategory
-    setFormData(prev => ({
-      ...prev,
-      mainCategory: data.mainCategory,
-      subCategory: data.subCategory,
-      amount: data.amount,
-      accountId: data.accountId,
-      date: data.date,
-      note: data.note,
-    }));
-    
-    console.log('Expense page - form updated to:', {
+    // Set the form data in one go to avoid any conflicts
+    const newFormData = {
       ...formData,
       mainCategory: data.mainCategory,
       subCategory: data.subCategory,
@@ -98,7 +89,21 @@ export default function Expense() {
       accountId: data.accountId,
       date: data.date,
       note: data.note,
-    });
+    };
+    
+    setFormData(newFormData);
+    
+    console.log('Expense page - form updated to exact values:', newFormData);
+    
+    // Force a small delay to ensure UI updates
+    setTimeout(() => {
+      console.log('Expense page - final form state after delay:', {
+        mainCategory: newFormData.mainCategory,
+        subCategory: newFormData.subCategory,
+        amount: newFormData.amount,
+        accountId: newFormData.accountId,
+      });
+    }, 100);
   };
 
   const handleMainCategoryChange = (value: string) => {

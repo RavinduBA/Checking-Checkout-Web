@@ -126,7 +126,7 @@ export function ExpenseShortcuts({ locationId, accounts, onQuickFill }: ExpenseS
 
   const handleQuickFill = (shortcut: any) => {
     console.log('ExpenseShortcuts - handleQuickFill called with:', shortcut);
-    console.log('ExpenseShortcuts - sending data:', {
+    console.log('ExpenseShortcuts - exact data being sent:', {
       mainCategory: shortcut.mainCategory,
       subCategory: shortcut.subCategory,
       amount: shortcut.amount,
