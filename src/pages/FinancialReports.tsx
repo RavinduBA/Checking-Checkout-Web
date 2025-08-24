@@ -4,51 +4,53 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
-import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import { format, addDays, isWithinInterval, parseISO, differenceInDays } from "date-fns";
-import { ArrowLeft, Calendar as CalendarIcon, FileText, Download, Filter, Search, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
-import { Link } from "react-router-dom";
+import { format, startOfMonth, endOfMonth, isSameDay } from "date-fns";
+import { ArrowLeft, Filter, CalendarIcon, Download, Eye, Search, MapPin } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import jsPDF from 'jspdf';
-
-type Income = Tables<"income"> & {
-  locations: Tables<"locations">;
-  accounts: Tables<"accounts">;
-};
-
-type Expense = Tables<"expenses"> & {
-  locations: Tables<"locations">;
-  accounts: Tables<"accounts">;
-};
-
-type Booking = Tables<"bookings"> & {
-  locations: Tables<"locations">;
-};
 
 type Location = Tables<"locations">;
 type Account = Tables<"accounts">;
+type Income = Tables<"income"> & {
+  locations?: Location;
+  accounts?: Account;
+};
+type Expense = Tables<"expenses"> & {
+  locations?: Location;
+  accounts?: Account;
+};
 
 export default function FinancialReports() {
-  const [income, setIncome] = useState<Income[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [searchParams] = useSearchParams();
+  const initialType = searchParams.get('type') || 'both';
+  
+  const [reportType, setReportType] = useState<'income' | 'expense' | 'both'>(initialType as any);
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [filterMode, setFilterMode] = useState<'date' | 'category' | 'account' | 'location'>('date');
+  
   const [locations, setLocations] = useState<Location[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [incomes, setIncomes] = useState<Income[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
+  
   const [filters, setFilters] = useState({
     locationId: 'all',
     accountId: 'all',
-    type: 'all',
-    startDate: '',
-    endDate: '',
+    category: '',
+    dateFrom: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
+    dateTo: format(endOfMonth(new Date()), 'yyyy-MM-dd'),
     searchText: ''
   });
-
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
@@ -56,331 +58,240 @@ export default function FinancialReports() {
   
   const { toast } = useToast();
 
-  // Currency conversion rates (should come from settings in real app)
-  const conversionRates = {
-    USD: 300, // 1 USD = 300 LKR
-    EUR: 320, // 1 EUR = 320 LKR  
-    LKR: 1    // Base currency
-  };
-
-  // Helper function to convert amount to LKR
-  const convertToLKR = (amount: number, currency: string) => {
-    const rate = conversionRates[currency] || 1;
-    return amount * rate;
-  };
-
-  // Helper function to format currency in LKR
-  const formatLKR = (amount: number) => {
-    return `Rs. ${amount.toLocaleString()}`;
-  };
-
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [filters, reportType]);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      const [incomeData, expenseData, bookingData, locationData, accountData] = await Promise.all([
-        supabase.from("income").select("*, locations(*), accounts(*)").order("created_at", { ascending: false }),
-        supabase.from("expenses").select("*, locations(*), accounts(*)").order("created_at", { ascending: false }),
-        supabase.from("bookings").select("*, locations(*)").order("created_at", { ascending: false }),
+      const [locationsData, accountsData] = await Promise.all([
         supabase.from("locations").select("*").eq("is_active", true),
         supabase.from("accounts").select("*")
       ]);
 
-      setIncome(incomeData.data || []);
-      setExpenses(expenseData.data || []);
-      setBookings(bookingData.data || []);
-      setLocations(locationData.data || []);
-      setAccounts(accountData.data || []);
+      setLocations(locationsData.data || []);
+      setAccounts(accountsData.data || []);
+
+      // Build dynamic query conditions
+      let incomeQuery = supabase.from("income").select("*, accounts(*), locations(*)");
+      let expenseQuery = supabase.from("expenses").select("*, accounts(*), locations(*)");
+
+      // Apply filters
+      if (filters.locationId && filters.locationId !== 'all') {
+        incomeQuery = incomeQuery.eq('location_id', filters.locationId);
+        expenseQuery = expenseQuery.eq('location_id', filters.locationId);
+      }
+      if (filters.accountId && filters.accountId !== 'all') {
+        incomeQuery = incomeQuery.eq('account_id', filters.accountId);
+        expenseQuery = expenseQuery.eq('account_id', filters.accountId);
+      }
+      if (filters.dateFrom) {
+        incomeQuery = incomeQuery.gte('date', filters.dateFrom);
+        expenseQuery = expenseQuery.gte('date', filters.dateFrom);
+      }
+      if (filters.dateTo) {
+        incomeQuery = incomeQuery.lte('date', filters.dateTo);
+        expenseQuery = expenseQuery.lte('date', filters.dateTo);
+      }
+
+      const promises = [];
+      if (reportType === 'income' || reportType === 'both') {
+        promises.push(incomeQuery.order('date', { ascending: false }));
+      }
+      if (reportType === 'expense' || reportType === 'both') {
+        promises.push(expenseQuery.order('date', { ascending: false }));
+      }
+
+      const results = await Promise.all(promises);
+      
+      if (reportType === 'income' || reportType === 'both') {
+        const incomeData = reportType === 'both' ? results[0].data : results[0].data;
+        setIncomes(incomeData || []);
+      }
+      if (reportType === 'expense' || reportType === 'both') {
+        const expenseData = reportType === 'both' ? results[1].data : results[0].data;
+        setExpenses(expenseData || []);
+      }
+      if (reportType === 'income') {
+        setExpenses([]);
+      }
+      if (reportType === 'expense') {
+        setIncomes([]);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch data",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // Filter data based on current filters
-  const getFilteredData = (data: any[], type: 'income' | 'expense' | 'booking') => {
-    return data.filter(item => {
-      // Location filter
-      if (filters.locationId !== 'all' && item.location_id !== filters.locationId) {
-        return false;
-      }
-      
-      // Account filter (only for income/expense)
-      if (type !== 'booking' && filters.accountId !== 'all' && item.account_id !== filters.accountId) {
-        return false;
-      }
-      
-      // Type filter
-      if (filters.type !== 'all') {
-        if (type === 'income' && filters.type !== 'income') return false;
-        if (type === 'expense' && filters.type !== 'expense') return false;
-        if (type === 'booking' && filters.type !== 'booking') return false;
-      }
-      
-      // Date filter
-      const itemDate = new Date(item.date || item.created_at);
-      if (filters.startDate && itemDate < new Date(filters.startDate)) return false;
-      if (filters.endDate && itemDate > new Date(filters.endDate)) return false;
-      
-      // Search filter
-      if (filters.searchText) {
-        const searchLower = filters.searchText.toLowerCase();
-        const searchFields = [
-          item.type || '',
-          item.main_type || '',
-          item.sub_type || '',
-          item.note || '',
-          item.guest_name || '',
-          item.locations?.name || '',
-          item.accounts?.name || ''
-        ];
-        return searchFields.some(field => 
-          field.toString().toLowerCase().includes(searchLower)
-        );
-      }
-      
-      return true;
-    });
+  // Filter by search text
+  const filteredIncomes = incomes.filter(income => 
+    !filters.searchText || 
+    income.type.toLowerCase().includes(filters.searchText.toLowerCase()) ||
+    income.note?.toLowerCase().includes(filters.searchText.toLowerCase()) ||
+    income.accounts?.name.toLowerCase().includes(filters.searchText.toLowerCase()) ||
+    income.locations?.name.toLowerCase().includes(filters.searchText.toLowerCase())
+  );
+
+  const filteredExpenses = expenses.filter(expense => 
+    !filters.searchText || 
+    expense.main_type.toLowerCase().includes(filters.searchText.toLowerCase()) ||
+    expense.sub_type.toLowerCase().includes(filters.searchText.toLowerCase()) ||
+    expense.note?.toLowerCase().includes(filters.searchText.toLowerCase()) ||
+    expense.accounts?.name.toLowerCase().includes(filters.searchText.toLowerCase()) ||
+    expense.locations?.name.toLowerCase().includes(filters.searchText.toLowerCase())
+  );
+
+  // Calendar data preparation
+  const calendarData: Record<string, { income: number; expense: number; accounts: Set<string> }> = {};
+  filteredIncomes.forEach(income => {
+    const date = income.date;
+    if (!calendarData[date]) calendarData[date] = { income: 0, expense: 0, accounts: new Set() };
+    calendarData[date].income += parseFloat(income.amount.toString());
+    if (income.accounts?.name) calendarData[date].accounts.add(income.accounts.name);
+  });
+  filteredExpenses.forEach(expense => {
+    const date = expense.date;
+    if (!calendarData[date]) calendarData[date] = { income: 0, expense: 0, accounts: new Set() };
+    calendarData[date].expense += parseFloat(expense.amount.toString());
+    if (expense.accounts?.name) calendarData[date].accounts.add(expense.accounts.name);
+  });
+
+  // Account color mapping
+  const accountColors = {
+    0: 'bg-blue-500',
+    1: 'bg-green-500', 
+    2: 'bg-purple-500',
+    3: 'bg-orange-500',
+    4: 'bg-pink-500',
+    5: 'bg-yellow-500'
   };
 
-  const filteredIncome = getFilteredData(income, 'income');
-  const filteredExpenses = getFilteredData(expenses, 'expense');
-  const filteredBookings = getFilteredData(bookings, 'booking');
-
-  // Calculate totals in LKR
-  const totalIncome = filteredIncome.reduce((sum, item) => {
-    const amountInLKR = convertToLKR(item.amount, item.accounts?.currency || 'LKR');
-    return sum + amountInLKR;
-  }, 0);
-
-  const totalExpenses = filteredExpenses.reduce((sum, item) => {
-    const amountInLKR = convertToLKR(item.amount, item.accounts?.currency || 'LKR');
-    return sum + amountInLKR;
-  }, 0);
-
-  const netProfit = totalIncome - totalExpenses;
-
-  // Generate PDF report
-  const generatePDF = () => {
-    const doc = new jsPDF();
-    
-    doc.setFontSize(20);
-    doc.text('Financial Report', 20, 20);
-    
-    doc.setFontSize(12);
-    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 40);
-    doc.text(`Total Income: ${formatLKR(totalIncome)}`, 20, 60);
-    doc.text(`Total Expenses: ${formatLKR(totalExpenses)}`, 20, 80);
-    doc.text(`Net Profit: ${formatLKR(netProfit)}`, 20, 100);
-    
-    let yPos = 120;
-    
-    // Income details
-    doc.text('Income Details:', 20, yPos);
-    yPos += 20;
-    
-    filteredIncome.forEach((item, index) => {
-      const amountInLKR = convertToLKR(item.amount, item.accounts?.currency || 'LKR');
-      doc.text(`${item.type} - ${formatLKR(amountInLKR)} - ${item.locations?.name}`, 20, yPos);
-      yPos += 10;
-      
-      if (yPos > 280) {
-        doc.addPage();
-        yPos = 20;
-      }
-    });
-    
-    doc.save(`financial-report-${new Date().toISOString().split('T')[0]}.pdf`);
+  const getAccountColor = (accountName: string) => {
+    const index = accounts.findIndex(acc => acc.name === accountName);
+    return accountColors[index % 6] || 'bg-gray-500';
   };
 
-  // Booking source background colors with higher opacity
-  const bookingSourceBgColors = {
-    direct: 'rgba(34, 197, 94, 0.4)', // Stronger green
-    airbnb: 'rgba(239, 68, 68, 0.4)', // Stronger red  
-    booking_com: 'rgba(59, 130, 246, 0.4)', // Stronger blue
-    other: 'rgba(156, 163, 175, 0.3)' // Gray
-  };
-
-  // Get background color for booking source
-  const getBookingSourceBgColor = (source: string) => {
-    switch (source) {
-      case 'direct':
-        return bookingSourceBgColors.direct;
-      case 'airbnb':
-        return bookingSourceBgColors.airbnb;
-      case 'booking_com':
-        return bookingSourceBgColors.booking_com;
-      default:
-        return bookingSourceBgColors.other;
-    }
-  };
-
-  // Get booking details for a specific date from income records
-  const getBookingDetailsForDate = (date: Date) => {
-    const bookingIncomes = filteredIncome.filter(income => {
-      if (income.type !== 'booking') return false;
-      
-      // Check if the date falls within the booking period
-      // For income records, we need to check if they have booking period data
-      // This would need to be added to the income table structure
-      // For now, we'll use the income date as a single day booking
-      if (!income.date) return false;
-      const incomeDate = new Date(income.date);
-      if (isNaN(incomeDate.getTime())) return false;
-      return incomeDate.toDateString() === date.toDateString();
-    });
-
-    return bookingIncomes;
-  };
-
-  // Get day modifiers for booking source colors
-  const getDayModifiers = () => {
-    const modifiers: Record<string, Date[]> = {
-      direct: [],
-      airbnb: [],
-      booking_com: [],
-      other: []
-    };
-
-    // Build modifiers from income records
-    filteredIncome.forEach(income => {
-      if (income.type === 'booking' && income.date) {
-        const incomeDate = new Date(income.date);
-        if (isNaN(incomeDate.getTime())) return;
-        
-        // Extract booking source from income record
-        let source = 'direct';
-        if (income.note?.toLowerCase().includes('airbnb')) {
-          source = 'airbnb';
-        } else if (income.note?.toLowerCase().includes('booking.com')) {
-          source = 'booking_com';
-        }
-        
-        modifiers[source].push(incomeDate);
-      }
-    });
-
-    return modifiers;
-  };
-
-  const dayModifiers = getDayModifiers();
-
-  // Get details for selected date
-  const getSelectedDateDetails = () => {
-    if (!selectedDate) return null;
-    
-    const bookingDetails = getBookingDetailsForDate(selectedDate);
-    const dayIncome = filteredIncome.filter(item => 
-      new Date(item.date).toDateString() === selectedDate.toDateString()
-    );
-    const dayExpenses = filteredExpenses.filter(item => 
-      new Date(item.date).toDateString() === selectedDate.toDateString()
-    );
-
-    const dayIncomeTotal = dayIncome.reduce((sum, item) => 
-      sum + convertToLKR(item.amount, item.accounts?.currency || 'LKR'), 0
-    );
-    const dayExpenseTotal = dayExpenses.reduce((sum, item) => 
-      sum + convertToLKR(item.amount, item.accounts?.currency || 'LKR'), 0
-    );
-
-    return {
-      bookings: bookingDetails,
-      income: dayIncome,
-      expenses: dayExpenses,
-      totalIncome: dayIncomeTotal,
-      totalExpenses: dayExpenseTotal,
-      netProfit: dayIncomeTotal - dayExpenseTotal
-    };
-  };
+  // Totals calculation
+  const totalIncome = filteredIncomes.reduce((sum, income) => sum + parseFloat(income.amount.toString()), 0);
+  const totalExpense = filteredExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount.toString()), 0);
+  const netAmount = totalIncome - totalExpense;
 
   if (loading) {
-    return <div className="container mx-auto p-4 sm:p-6">Loading...</div>;
+    return <div className="container mx-auto p-4 sm:p-6">Loading financial reports...</div>;
   }
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Button asChild variant="ghost" size="icon">
-            <Link to="/">
+            <Link to={reportType === 'income' ? '/income' : reportType === 'expense' ? '/expense' : '/'}>
               <ArrowLeft className="h-5 w-5" />
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Financial Reports</h1>
-            <p className="text-muted-foreground">Track income, expenses, and bookings</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Financial Reports</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">Detailed view of all transactions</p>
           </div>
         </div>
-        <Button onClick={generatePDF} variant="outline" className="gap-2">
-          <Download className="h-4 w-4" />
-          Export PDF
-        </Button>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{formatLKR(totalIncome)}</div>
-            <p className="text-xs text-muted-foreground">
-              {filteredIncome.length} transactions
-            </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+          <CardContent className="p-4">
+            <div className="text-green-800 font-medium">Total Income</div>
+            <div className="text-2xl font-bold text-green-900">Rs. {totalIncome.toLocaleString()}</div>
+            <div className="text-sm text-green-600">{filteredIncomes.length} transactions</div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{formatLKR(totalExpenses)}</div>
-            <p className="text-xs text-muted-foreground">
-              {filteredExpenses.length} transactions
-            </p>
+        <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200">
+          <CardContent className="p-4">
+            <div className="text-red-800 font-medium">Total Expenses</div>
+            <div className="text-2xl font-bold text-red-900">Rs. {totalExpense.toLocaleString()}</div>
+            <div className="text-sm text-red-600">{filteredExpenses.length} transactions</div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {formatLKR(netProfit)}
+        <Card className={cn("bg-gradient-to-br border-2", netAmount >= 0 ? "from-blue-50 to-indigo-50 border-blue-200" : "from-orange-50 to-red-50 border-orange-200")}>
+          <CardContent className="p-4">
+            <div className={cn("font-medium", netAmount >= 0 ? "text-blue-800" : "text-orange-800")}>Net Amount</div>
+            <div className={cn("text-2xl font-bold", netAmount >= 0 ? "text-blue-900" : "text-orange-900")}>
+              Rs. {Math.abs(netAmount).toLocaleString()}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Current period
-            </p>
+            <div className={cn("text-sm", netAmount >= 0 ? "text-blue-600" : "text-orange-600")}>
+              {netAmount >= 0 ? "Profit" : "Loss"}
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
+      {/* Controls */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4">
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={reportType === 'both' ? 'default' : 'outline'}
+                onClick={() => setReportType('both')}
+                size="sm"
+                className="flex-1 sm:flex-none min-w-0"
+              >
+                Both
+              </Button>
+              <Button
+                variant={reportType === 'income' ? 'default' : 'outline'}
+                onClick={() => setReportType('income')}
+                size="sm"
+                className="flex-1 sm:flex-none min-w-0"
+              >
+                Income
+              </Button>
+              <Button
+                variant={reportType === 'expense' ? 'default' : 'outline'}
+                onClick={() => setReportType('expense')}
+                size="sm"
+                className="flex-1 sm:flex-none min-w-0"
+              >
+                Expenses
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                onClick={() => setViewMode('list')}
+                size="sm"
+                className="flex-1 sm:flex-none"
+              >
+                <Eye className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">List</span>
+              </Button>
+              <Button
+                variant={viewMode === 'calendar' ? 'default' : 'outline'}
+                onClick={() => setViewMode('calendar')}
+                size="sm"
+                className="flex-1 sm:flex-none"
+              >
+                <CalendarIcon className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Calendar</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <Label>Location</Label>
-              <Select value={filters.locationId} onValueChange={(value) => setFilters(prev => ({...prev, locationId: value}))}>
+              <Select value={filters.locationId} onValueChange={(value) => setFilters({...filters, locationId: value})}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="All Locations" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Locations</SelectItem>
@@ -392,249 +303,653 @@ export default function FinancialReports() {
                 </SelectContent>
               </Select>
             </div>
-
             <div>
               <Label>Account</Label>
-              <Select value={filters.accountId} onValueChange={(value) => setFilters(prev => ({...prev, accountId: value}))}>
+              <Select value={filters.accountId} onValueChange={(value) => setFilters({...filters, accountId: value})}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="All Accounts" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Accounts</SelectItem>
                   {accounts.map((account) => (
                     <SelectItem key={account.id} value={account.id}>
-                      {account.name}
+                      {account.name} ({account.currency})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
             <div>
-              <Label>Type</Label>
-              <Select value={filters.type} onValueChange={(value) => setFilters(prev => ({...prev, type: value}))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="income">Income Only</SelectItem>
-                  <SelectItem value="expense">Expenses Only</SelectItem>
-                  <SelectItem value="booking">Bookings Only</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Start Date</Label>
+              <Label>From Date</Label>
               <Input
                 type="date"
-                value={filters.startDate}
-                onChange={(e) => setFilters(prev => ({...prev, startDate: e.target.value}))}
+                value={filters.dateFrom}
+                onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
               />
             </div>
-
             <div>
-              <Label>End Date</Label>
+              <Label>To Date</Label>
               <Input
                 type="date"
-                value={filters.endDate}
-                onChange={(e) => setFilters(prev => ({...prev, endDate: e.target.value}))}
+                value={filters.dateTo}
+                onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
               />
             </div>
+          </div>
 
-            <div>
-              <Label>Search</Label>
+          <div>
+            <Label>Search</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search transactions..."
+                placeholder="Search by category, note, account, or location..."
                 value={filters.searchText}
-                onChange={(e) => setFilters(prev => ({...prev, searchText: e.target.value}))}
+                onChange={(e) => setFilters({...filters, searchText: e.target.value})}
+                className="pl-9"
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Calendar and Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Calendar */}
+      {/* Content */}
+      {viewMode === 'list' ? (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5" />
-              Booking Calendar
-            </CardTitle>
-            <div className="flex gap-2 text-xs">
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: bookingSourceBgColors.direct }}></div>
-                <span>Direct</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: bookingSourceBgColors.airbnb }}></div>
-                <span>Airbnb</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: bookingSourceBgColors.booking_com }}></div>
-                <span>Booking.com</span>
-              </div>
+            <CardTitle>Transaction Details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Account</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Note</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[...filteredIncomes.map(income => ({
+                    ...income,
+                    transactionType: 'income',
+                    category: income.type,
+                    color: 'text-green-600'
+                  })), ...filteredExpenses.map(expense => ({
+                    ...expense,
+                    transactionType: 'expense',
+                    category: `${expense.main_type} - ${expense.sub_type}`,
+                    color: 'text-red-600'
+                  }))].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((transaction, index) => (
+                    <TableRow key={`${transaction.transactionType}-${transaction.id}`}>
+                      <TableCell>{format(new Date(transaction.date), "MMM dd, yyyy")}</TableCell>
+                      <TableCell>
+                        <Badge variant={transaction.transactionType === 'income' ? 'default' : 'destructive'}>
+                          {transaction.transactionType}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{transaction.category}</TableCell>
+                      <TableCell className={transaction.color}>
+                        {transaction.accounts?.currency === "USD" ? "$" : "Rs."}{transaction.amount.toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <div className={cn("inline-block w-3 h-3 rounded-full mr-2", getAccountColor(transaction.accounts?.name || ''))}></div>
+                        {transaction.accounts?.name} ({transaction.accounts?.currency})
+                      </TableCell>
+                      <TableCell>{transaction.locations?.name}</TableCell>
+                      <TableCell className="max-w-xs truncate">{transaction.note || '-'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
-          </CardHeader>
-          <CardContent>
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              className="rounded-md border"
-              modifiers={dayModifiers}
-              modifiersStyles={{
-                direct: { backgroundColor: bookingSourceBgColors.direct },
-                airbnb: { backgroundColor: bookingSourceBgColors.airbnb },
-                booking_com: { backgroundColor: bookingSourceBgColors.booking_com },
-                other: { backgroundColor: bookingSourceBgColors.other }
-              }}
-            />
-          </CardContent>
-        </Card>
 
-        {/* Date Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Select a Date"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {selectedDate && (() => {
-              const details = getSelectedDateDetails();
-              if (!details) return <p className="text-muted-foreground">No data for this date</p>;
-              
-              return (
-                <div className="space-y-4">
-                  {/* Summary */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <div className="text-sm text-muted-foreground">Income</div>
-                      <div className="text-lg font-bold text-green-600">{formatLKR(details.totalIncome)}</div>
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+              {[...filteredIncomes.map(income => ({
+                ...income,
+                transactionType: 'income',
+                category: income.type,
+                color: 'text-green-600'
+              })), ...filteredExpenses.map(expense => ({
+                ...expense,
+                transactionType: 'expense',
+                category: `${expense.main_type} - ${expense.sub_type}`,
+                color: 'text-red-600'
+              }))].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((transaction, index) => (
+                <div key={`${transaction.transactionType}-${transaction.id}`} className="p-4 border border-border rounded-lg bg-background">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="space-y-1">
+                      <div className="font-medium text-sm">
+                        {transaction.category}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {format(new Date(transaction.date), "MMM dd, yyyy")}
+                      </div>
                     </div>
-                    <div className="text-center p-3 bg-red-50 rounded-lg">
-                      <div className="text-sm text-muted-foreground">Expenses</div>
-                      <div className="text-lg font-bold text-red-600">{formatLKR(details.totalExpenses)}</div>
+                    <div className="text-right">
+                      <div className={cn("font-bold text-lg", transaction.color)}>
+                        {transaction.accounts?.currency === "USD" ? "$" : "Rs."}{transaction.amount.toLocaleString()}
+                      </div>
+                      <Badge variant={transaction.transactionType === 'income' ? 'default' : 'destructive'} className="text-xs">
+                        {transaction.transactionType}
+                      </Badge>
                     </div>
                   </div>
+                  
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <div className={cn("w-3 h-3 rounded-full", getAccountColor(transaction.accounts?.name || ''))}></div>
+                      <span>{transaction.accounts?.name} ({transaction.accounts?.currency})</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-3 w-3" />
+                      <span>{transaction.locations?.name}</span>
+                    </div>
+                    
+                    {transaction.note && (
+                      <div className="text-xs italic bg-muted/50 p-2 rounded">
+                        "{transaction.note}"
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
 
-                  {/* Bookings */}
-                  {details.bookings.length > 0 && (
-                    <div>
-                      <h4 className="font-medium mb-2">Booking Income</h4>
-                      <div className="space-y-2">
-                        {details.bookings.map((booking) => (
-                          <div key={booking.id} className="p-2 bg-muted rounded text-sm">
-                            <div className="font-medium">{booking.type}</div>
-                            <div className="text-muted-foreground">
-                              {formatLKR(convertToLKR(booking.amount, booking.accounts?.currency || 'LKR'))} - {booking.locations?.name}
-                            </div>
+            {filteredIncomes.length === 0 && filteredExpenses.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No transactions found for the selected filters.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg sm:text-xl">Calendar View</CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 sm:p-6">
+            {/* Account Legend */}
+            <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+              <h4 className="text-sm font-medium mb-2">Account Colors</h4>
+              <div className="flex flex-wrap gap-2">
+                {accounts.map((account, index) => (
+                  <div key={account.id} className="flex items-center gap-2 text-xs">
+                    <div className={cn("w-3 h-3 rounded-full", getAccountColor(account.name))}></div>
+                    <span className="text-muted-foreground">{account.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Calendar Grid */}
+            <div className="border border-border rounded-lg overflow-hidden bg-background">
+              {/* Calendar Header */}
+              <div className="flex items-center justify-between p-3 sm:p-4 bg-muted/30 border-b">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    const prevMonth = new Date(selectedDate || new Date());
+                    prevMonth.setMonth(prevMonth.getMonth() - 1);
+                    setSelectedDate(prevMonth);
+                  }}
+                >
+                  ←
+                </Button>
+                <h3 className="text-lg font-semibold">
+                  {format(selectedDate || new Date(), 'MMMM yyyy')}
+                </h3>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    const nextMonth = new Date(selectedDate || new Date());
+                    nextMonth.setMonth(nextMonth.getMonth() + 1);
+                    setSelectedDate(nextMonth);
+                  }}
+                >
+                  →
+                </Button>
+              </div>
+
+              {/* Day Headers */}
+              <div className="grid grid-cols-7 bg-muted/20">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                  <div key={day} className="p-2 sm:p-3 text-center font-semibold text-muted-foreground text-xs sm:text-sm border-r border-border last:border-r-0">
+                    <span className="hidden sm:inline">{day}</span>
+                    <span className="sm:hidden">{day.slice(0, 1)}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7">
+                {(() => {
+                  const currentMonth = selectedDate || new Date();
+                  const year = currentMonth.getFullYear();
+                  const month = currentMonth.getMonth();
+                  const daysInMonth = new Date(year, month + 1, 0).getDate();
+                  const firstDayOfMonth = new Date(year, month, 1).getDay();
+                  const days = [];
+
+                  // Previous month's trailing days
+                  const prevMonth = new Date(year, month, 0);
+                  const prevMonthDays = prevMonth.getDate();
+                  for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+                    const day = prevMonthDays - i;
+                    const date = new Date(year, month - 1, day);
+                    days.push({ day, date, isCurrentMonth: false });
+                  }
+
+                  // Current month days
+                  for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(year, month, day);
+                    days.push({ day, date, isCurrentMonth: true });
+                  }
+
+                  // Next month's leading days
+                  const totalCells = Math.ceil(days.length / 7) * 7;
+                  let nextMonthDay = 1;
+                  while (days.length < totalCells) {
+                    const date = new Date(year, month + 1, nextMonthDay);
+                    days.push({ day: nextMonthDay, date, isCurrentMonth: false });
+                    nextMonthDay++;
+                  }
+
+                  return days.map((dayInfo, index) => {
+                    const dateStr = format(dayInfo.date, 'yyyy-MM-dd');
+                    const data = calendarData[dateStr];
+                    const hasData = data && (data.income > 0 || data.expense > 0);
+                    const netAmount = hasData ? data.income - data.expense : 0;
+                    const isSelected = selectedDate && isSameDay(dayInfo.date, selectedDate);
+                    const isToday = isSameDay(dayInfo.date, new Date());
+
+                    return (
+                      <div 
+                        key={index}
+                        className={cn(
+                          "min-h-16 sm:min-h-20 md:min-h-24 lg:min-h-28 p-1 sm:p-2 border-r border-b border-border last:border-r-0 transition-all duration-200 cursor-pointer relative",
+                          dayInfo.isCurrentMonth ? "bg-background hover:bg-muted/30" : "bg-muted/10 hover:bg-muted/20",
+                          hasData && dayInfo.isCurrentMonth && "shadow-sm",
+                          isSelected && "bg-primary/10 border-primary",
+                          isToday && "ring-2 ring-primary ring-inset"
+                        )}
+                        onClick={() => {
+                          if (dayInfo.isCurrentMonth) {
+                            setSelectedDate(dayInfo.date);
+                            if (hasData) {
+                              setShowDateDetails(true);
+                            }
+                          }
+                        }}
+                      >
+                        <div className="h-full flex flex-col">
+                          {/* Day number */}
+                          <div className={cn(
+                            "text-xs sm:text-sm font-medium mb-1 text-center",
+                            !dayInfo.isCurrentMonth && "text-muted-foreground",
+                            isSelected && "text-primary font-bold",
+                            isToday && "text-primary"
+                          )}>
+                            {dayInfo.day}
                           </div>
+
+                          {/* Financial data - only show for current month */}
+                          {dayInfo.isCurrentMonth && hasData && (
+                            <div className="flex-1 space-y-1">
+                              {/* Income */}
+                              {data.income > 0 && (
+                                <div className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded text-center font-medium border border-green-200">
+                                  +{data.income > 999 ? `${(data.income/1000).toFixed(0)}k` : data.income.toLocaleString()}
+                                </div>
+                              )}
+                              
+                              {/* Expense */}
+                              {data.expense > 0 && (
+                                <div className="text-xs bg-red-100 text-red-800 px-1.5 py-0.5 rounded text-center font-medium border border-red-200">
+                                  -{data.expense > 999 ? `${(data.expense/1000).toFixed(0)}k` : data.expense.toLocaleString()}
+                                </div>
+                              )}
+                              
+                              {/* Net amount */}
+                              <div className={cn(
+                                "text-xs px-1.5 py-0.5 rounded text-center font-bold border",
+                                netAmount >= 0 
+                                  ? "bg-blue-100 text-blue-800 border-blue-200" 
+                                  : "bg-orange-100 text-orange-800 border-orange-200"
+                              )}>
+                                {netAmount >= 0 ? '+' : ''}{netAmount > 999 || netAmount < -999 
+                                  ? `${(netAmount/1000).toFixed(0)}k` 
+                                  : netAmount.toLocaleString()}
+                              </div>
+
+                              {/* Account indicators */}
+                              <div className="flex flex-wrap gap-0.5 justify-center mt-1">
+                                {Array.from(data.accounts).slice(0, 4).map((accountName, idx) => (
+                                  <div 
+                                    key={idx}
+                                    className={cn("w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full border border-white shadow-sm", getAccountColor(accountName as string))}
+                                    title={accountName as string}
+                                  />
+                                ))}
+                                {data.accounts.size > 4 && (
+                                  <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-gray-400 border border-white" title={`+${data.accounts.size - 4} more accounts`} />
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Empty state for current month days without data */}
+                          {dayInfo.isCurrentMonth && !hasData && (
+                            <div className="flex-1 flex items-center justify-center text-muted-foreground text-xs">
+                              <span className="hidden sm:inline">No data</span>
+                              <span className="sm:hidden text-center">-</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+
+            
+            {/* Selected Date Details - Simplified */}
+            {selectedDate && calendarData[format(selectedDate, 'yyyy-MM-dd')] && (
+              <div className="mt-4 p-4 bg-muted rounded-lg">
+                <h3 className="font-bold mb-3 text-lg">{format(selectedDate, "MMMM dd, yyyy")}</h3>
+                
+                {/* Main Total Display */}
+                <div className="mb-4">
+                  {(() => {
+                    const data = calendarData[format(selectedDate, 'yyyy-MM-dd')];
+                    const hasIncome = data.income > 0;
+                    const hasExpense = data.expense > 0;
+                    const netAmount = data.income - data.expense;
+                    
+                    if (hasIncome && hasExpense) {
+                      return (
+                        <div 
+                          className="p-4 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+                          onClick={() => setShowDateDetails(true)}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="text-blue-800 font-medium">Net Amount:</span>
+                            <span className={cn("font-bold text-xl", netAmount >= 0 ? "text-green-900" : "text-red-900")}>
+                              Rs. {netAmount.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="text-xs text-blue-600 mt-1">Click to see breakdown</div>
+                        </div>
+                      );
+                    } else if (hasIncome) {
+                      return (
+                        <div 
+                          className="p-4 bg-green-50 rounded-lg cursor-pointer hover:bg-green-100 transition-colors"
+                          onClick={() => setShowDateDetails(true)}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="text-green-800 font-medium">Total Income:</span>
+                            <span className="text-green-900 font-bold text-xl">
+                              Rs. {data.income.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="text-xs text-green-600 mt-1">Click to see breakdown</div>
+                        </div>
+                      );
+                    } else if (hasExpense) {
+                      return (
+                        <div 
+                          className="p-4 bg-red-50 rounded-lg cursor-pointer hover:bg-red-100 transition-colors"
+                          onClick={() => setShowDateDetails(true)}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="text-red-800 font-medium">Total Expense:</span>
+                            <span className="text-red-900 font-bold text-xl">
+                              Rs. {data.expense.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="text-xs text-red-600 mt-1">Click to see breakdown</div>
+                        </div>
+                      );
+                    }
+                  })()}
+                </div>
+                
+                {/* Quick filter button */}
+                <div className="pt-3 border-t border-border">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setFilters({
+                        ...filters,
+                        dateFrom: format(selectedDate, 'yyyy-MM-dd'),
+                        dateTo: format(selectedDate, 'yyyy-MM-dd')
+                      });
+                      setViewMode('list');
+                    }}
+                    className="w-full sm:w-auto"
+                  >
+                    View Day's Transactions
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Date Details Dialog */}
+      <Dialog open={showDateDetails} onOpenChange={setShowDateDetails}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5" />
+              Transaction Details - {selectedDate && format(selectedDate, "EEEE, MMMM dd, yyyy")}
+            </DialogTitle>
+            <DialogDescription>
+              Complete breakdown of all transactions for this date
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedDate && (() => {
+            const dateStr = format(selectedDate, 'yyyy-MM-dd');
+            const dayIncomes = filteredIncomes.filter(income => income.date === dateStr);
+            const dayExpenses = filteredExpenses.filter(expense => expense.date === dateStr);
+            const dayData = calendarData[dateStr];
+            const netAmount = (dayData?.income || 0) - (dayData?.expense || 0);
+            
+            // Group by accounts for better visualization
+            const accountBreakdown = {};
+            
+            dayIncomes.forEach(income => {
+              const accountName = income.accounts?.name || 'Unknown';
+              if (!accountBreakdown[accountName]) {
+                accountBreakdown[accountName] = { income: 0, expense: 0, currency: income.accounts?.currency || 'LKR', color: getAccountColor(accountName) };
+              }
+              accountBreakdown[accountName].income += parseFloat(income.amount.toString());
+            });
+            
+            dayExpenses.forEach(expense => {
+              const accountName = expense.accounts?.name || 'Unknown';
+              if (!accountBreakdown[accountName]) {
+                accountBreakdown[accountName] = { income: 0, expense: 0, currency: expense.accounts?.currency || 'LKR', color: getAccountColor(accountName) };
+              }
+              accountBreakdown[accountName].expense += parseFloat(expense.amount.toString());
+            });
+            
+            return (
+              <div className="space-y-6">
+                {/* Summary Cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+                    <CardContent className="p-4 text-center">
+                      <div className="text-sm text-green-600 font-medium">Total Income</div>
+                      <div className="text-2xl font-bold text-green-700">
+                        Rs. {(dayData?.income || 0).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-green-600">{dayIncomes.length} transactions</div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200">
+                    <CardContent className="p-4 text-center">
+                      <div className="text-sm text-red-600 font-medium">Total Expenses</div>
+                      <div className="text-2xl font-bold text-red-700">
+                        Rs. {(dayData?.expense || 0).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-red-600">{dayExpenses.length} transactions</div>
+                    </CardContent>
+                  </Card>
+                  <Card className={cn("bg-gradient-to-br col-span-2", netAmount >= 0 ? "from-blue-50 to-indigo-50 border-blue-200" : "from-orange-50 to-red-50 border-orange-200")}>
+                    <CardContent className="p-4 text-center">
+                      <div className={cn("text-sm font-medium", netAmount >= 0 ? "text-blue-600" : "text-orange-600")}>Net Amount</div>
+                      <div className={cn("text-2xl font-bold", netAmount >= 0 ? "text-blue-700" : "text-orange-700")}>
+                        {netAmount >= 0 ? '+' : ''}Rs. {Math.abs(netAmount).toLocaleString()}
+                      </div>
+                      <div className={cn("text-xs", netAmount >= 0 ? "text-blue-600" : "text-orange-600")}>
+                        {netAmount >= 0 ? "Profit" : "Loss"} for the day
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                {/* Account Breakdown */}
+                {Object.keys(accountBreakdown).length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                      <div className="w-4 h-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded"></div>
+                      Account Breakdown
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {Object.entries(accountBreakdown).map(([accountName, data]: [string, any]) => (
+                        <Card key={accountName} className="p-4">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className={cn("w-4 h-4 rounded-full", data.color)}></div>
+                            <div className="font-semibold">{accountName}</div>
+                            <Badge variant="outline" className="text-xs">{data.currency}</Badge>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            {data.income > 0 && (
+                              <div className="bg-green-50 p-3 rounded-lg">
+                                <div className="text-xs text-green-600">Income</div>
+                                <div className="font-bold text-green-700">+Rs. {data.income.toLocaleString()}</div>
+                              </div>
+                            )}
+                            {data.expense > 0 && (
+                              <div className="bg-red-50 p-3 rounded-lg">
+                                <div className="text-xs text-red-600">Expenses</div>
+                                <div className="font-bold text-red-700">-Rs. {data.expense.toLocaleString()}</div>
+                              </div>
+                            )}
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Detailed Transactions */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {dayIncomes.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-lg text-green-700 mb-3 flex items-center gap-2">
+                        <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                        Income Transactions ({dayIncomes.length})
+                      </h4>
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {dayIncomes.map((income) => (
+                          <Card key={income.id} className="p-4 bg-green-50/50 border-green-200">
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="flex-1">
+                                <div className="font-semibold text-green-800">{income.type}</div>
+                                <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                                  <span className={cn("inline-block w-3 h-3 rounded-full", getAccountColor(income.accounts?.name || ''))}></span>
+                                  <span className="font-medium">{income.accounts?.name}</span>
+                                  <span>•</span>
+                                  <MapPin className="h-3 w-3" />
+                                  <span>{income.locations?.name}</span>
+                                </div>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  <Badge variant="outline" className="text-xs">{income.payment_method}</Badge>
+                                  {income.is_advance && <Badge variant="secondary" className="ml-1 text-xs">Advance</Badge>}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-bold text-green-600 text-lg">
+                                  +{income.accounts?.currency === "USD" ? "$" : "Rs."}{income.amount.toLocaleString()}
+                                </div>
+                              </div>
+                            </div>
+                            {income.note && (
+                              <div className="text-sm text-muted-foreground bg-white/50 p-2 rounded mt-2">
+                                <strong>Note:</strong> {income.note}
+                              </div>
+                            )}
+                          </Card>
                         ))}
                       </div>
                     </div>
                   )}
-
-                  {/* Other Income */}
-                  {details.income.filter(i => i.type !== 'booking').length > 0 && (
+                  
+                  {dayExpenses.length > 0 && (
                     <div>
-                      <h4 className="font-medium mb-2">Other Income</h4>
-                      <div className="space-y-2">
-                        {details.income.filter(i => i.type !== 'booking').map((income) => (
-                          <div key={income.id} className="p-2 bg-muted rounded text-sm">
-                            <div className="font-medium">{income.type}</div>
-                            <div className="text-muted-foreground">
-                              {formatLKR(convertToLKR(income.amount, income.accounts?.currency || 'LKR'))} - {income.locations?.name}
+                      <h4 className="font-semibold text-lg text-red-700 mb-3 flex items-center gap-2">
+                        <div className="w-4 h-4 bg-red-500 rounded-full"></div>
+                        Expense Transactions ({dayExpenses.length})
+                      </h4>
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {dayExpenses.map((expense) => (
+                          <Card key={expense.id} className="p-4 bg-red-50/50 border-red-200">
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="flex-1">
+                                <div className="font-semibold text-red-800">{expense.main_type}</div>
+                                <div className="text-sm text-red-600 font-medium">{expense.sub_type}</div>
+                                <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                                  <span className={cn("inline-block w-3 h-3 rounded-full", getAccountColor(expense.accounts?.name || ''))}></span>
+                                  <span className="font-medium">{expense.accounts?.name}</span>
+                                  <span>•</span>
+                                  <MapPin className="h-3 w-3" />
+                                  <span>{expense.locations?.name}</span>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-bold text-red-600 text-lg">
+                                  -{expense.accounts?.currency === "USD" ? "$" : "Rs."}{expense.amount.toLocaleString()}
+                                </div>
+                              </div>
                             </div>
-                          </div>
+                            {expense.note && (
+                              <div className="text-sm text-muted-foreground bg-white/50 p-2 rounded mt-2">
+                                <strong>Note:</strong> {expense.note}
+                              </div>
+                            )}
+                          </Card>
                         ))}
                       </div>
                     </div>
-                  )}
-
-                  {/* Expenses */}
-                  {details.expenses.length > 0 && (
-                    <div>
-                      <h4 className="font-medium mb-2">Expenses</h4>
-                      <div className="space-y-2">
-                        {details.expenses.map((expense) => (
-                          <div key={expense.id} className="p-2 bg-muted rounded text-sm">
-                            <div className="font-medium">{expense.main_type} - {expense.sub_type}</div>
-                            <div className="text-muted-foreground">
-                              {formatLKR(convertToLKR(expense.amount, expense.accounts?.currency || 'LKR'))} - {expense.locations?.name}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {details.income.length === 0 && details.expenses.length === 0 && (
-                    <p className="text-muted-foreground text-center py-4">No transactions for this date</p>
                   )}
                 </div>
-              );
-            })()}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Transactions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Recent Transactions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Income */}
-            <div>
-              <h3 className="font-medium text-green-600 mb-2">Income ({filteredIncome.length})</h3>
-              <div className="space-y-2 max-h-40 overflow-y-auto">
-                {filteredIncome.slice(0, 5).map((item) => (
-                  <div key={item.id} className="flex justify-between items-center p-2 bg-green-50 rounded">
-                    <div>
-                      <div className="font-medium">{item.type}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {item.locations?.name} • {format(new Date(item.date), "MMM d, yyyy")}
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="bg-green-100">
-                      {formatLKR(convertToLKR(item.amount, item.accounts?.currency || 'LKR'))}
-                    </Badge>
+                
+                {dayIncomes.length === 0 && dayExpenses.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No transactions found for this date.</p>
                   </div>
-                ))}
+                )}
               </div>
-            </div>
-
-            {/* Expenses */}
-            <div>
-              <h3 className="font-medium text-red-600 mb-2">Expenses ({filteredExpenses.length})</h3>
-              <div className="space-y-2 max-h-40 overflow-y-auto">
-                {filteredExpenses.slice(0, 5).map((item) => (
-                  <div key={item.id} className="flex justify-between items-center p-2 bg-red-50 rounded">
-                    <div>
-                      <div className="font-medium">{item.main_type} - {item.sub_type}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {item.locations?.name} • {format(new Date(item.date), "MMM d, yyyy")}
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="bg-red-100">
-                      {formatLKR(convertToLKR(item.amount, item.accounts?.currency || 'LKR'))}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
