@@ -238,19 +238,6 @@ export default function Income() {
 
 // Remove delete function - deletion should be done from settings page
 
-  const sendTestReminder = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('booking-reminders', {
-        body: { test: true, to: '94719528589' },
-      });
-      if (error) throw error;
-      toast({ title: 'SMS sent', description: 'Test booking reminder sent.' });
-    } catch (e: any) {
-      console.error('Test SMS failed', e);
-      toast({ title: 'SMS failed', description: e.message || 'Could not send test reminder', variant: 'destructive' });
-    }
-  };
-
   if (loading) {
     return <div className="container mx-auto p-4 sm:p-6">Loading...</div>;
   }
@@ -269,17 +256,12 @@ export default function Income() {
             <p className="text-sm sm:text-base text-muted-foreground">Record your income transactions</p>
           </div>
         </div>
-<div className="flex items-center gap-2">
-          <Button variant="outline" className="text-xs sm:text-sm px-2 sm:px-4" onClick={sendTestReminder}>
-            Send Test SMS
-          </Button>
-          <Button asChild variant="outline" className="text-xs sm:text-sm px-2 sm:px-4">
-            <Link to="/financial-reports?type=income">
-              <span className="hidden sm:inline">View All Income</span>
-              <span className="sm:hidden">View All</span>
-            </Link>
-          </Button>
-        </div>
+        <Button asChild variant="outline" className="text-xs sm:text-sm px-2 sm:px-4">
+          <Link to="/financial-reports?type=income">
+            <span className="hidden sm:inline">View All Income</span>
+            <span className="sm:hidden">View All</span>
+          </Link>
+        </Button>
       </div>
 
       {/* Location Filter at Top */}

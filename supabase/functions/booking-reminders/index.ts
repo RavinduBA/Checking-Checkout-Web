@@ -159,12 +159,12 @@ serve(async (req) => {
         const remaining = totalAmount - advancePaid;
         
         if (totalAmount > 0) {
-          return `${loc},${src},TOTAL-${totalAmount},ADVANCE-${advancePaid},Rest ${remaining},${todayLabel}`;
+          return `${loc},${src},TOTAL-${totalAmount},ADVANCE-${advancePaid},Rest ${remaining}`;
         }
       }
       
       // For other bookings, simple format
-      return `${loc},${src},${todayLabel}`;
+      return `${loc},${src}`;
     });
 
     if (!list.length && !test) {
@@ -178,34 +178,7 @@ serve(async (req) => {
     const prefix = test ? '[TEST] ' : '';
     const header = `${prefix}${todayLabel}`;
     const body = list.length ? list.join('\n') : 'No bookings today';
-    let message = `${header}\n${body}`;
-
-    // Optional deep link to open Income page with prefill
-    const appBase = Deno.env.get('APP_BASE_URL');
-    if (appBase && bookings && bookings.length > 0) {
-      const b0: any = bookings[0];
-      const locName: string = b0.locations?.name || '';
-      const srcCode: string = b0.source;
-      let remaining = '';
-      let total = '';
-      let advance = '';
-      if (srcCode === 'direct') {
-        const totalAmount = b0.total_amount || 0;
-        const advancePaid = (b0.booking_payments || [])
-          .filter((p: any) => p.is_advance)
-          .reduce((sum: number, p: any) => sum + p.amount, 0);
-        const rest = totalAmount - advancePaid;
-        remaining = rest > 0 ? String(rest) : '';
-        total = String(totalAmount);
-        advance = String(advancePaid);
-      }
-      const params = new URLSearchParams({ prefill: '1', src: srcCode, loc: locName, date: todayLabel });
-      if (remaining) params.set('rest', remaining);
-      if (total) params.set('total', total);
-      if (advance) params.set('advance', advance);
-      const url = `${appBase.replace(/\/$/, '')}/income?${params.toString()}`;
-      message += `\nOpen: ${url}`;
-    }
+    const message = `${header}\n${body}`;
 
     await sendSMS(message, to);
 
