@@ -60,11 +60,11 @@ export function ExpenseShortcuts({ locationId, accounts, onQuickFill }: ExpenseS
     }
   };
 
-  const getAccountForExpense = (locationName: string, expenseType: 'staff' | 'laundry'): Account | undefined => {
+  const getAccountForExpense = (locationName: string): Account | undefined => {
     if (locationName === "Rusty Bunk") {
       return accounts.find(acc => acc.name === "RB-CASH ON HAND-LKR");
     } else if (locationName === "Asaliya Villa") {
-      return accounts.find(acc => acc.name === "Asaliya Cash-LKR");
+      return accounts.find(acc => acc.name === "Asaliya Cash-LKR");  
     }
     return accounts[0]; // Fallback to first account
   };
@@ -76,7 +76,7 @@ export function ExpenseShortcuts({ locationId, accounts, onQuickFill }: ExpenseS
     const shortcuts = [];
     
     // Staff - Caretaker shortcut
-    const staffAccount = getAccountForExpense(location.name, 'staff');
+    const staffAccount = getAccountForExpense(location.name);
     if (staffAccount) {
       const amount = location.name === "Rusty Bunk" ? "1500" : "2000";
       const staffName = location.name === "Rusty Bunk" ? "Nilu" : "Tharanga";
@@ -89,7 +89,7 @@ export function ExpenseShortcuts({ locationId, accounts, onQuickFill }: ExpenseS
           icon: <Briefcase className="h-4 w-4" />,
           title: "Staff - Caretaker",
           amount,
-          currency: staffAccount.currency === "USD" ? "$" : "Rs.",
+          currency: "Rs.", // Always LKR for these shortcuts
           account: staffAccount,
           note: `${staffName} sallery - ${format(new Date(), "MMM dd, yyyy")} + Rs.${amount}`,
           mainCategory: "Staff",
@@ -100,7 +100,7 @@ export function ExpenseShortcuts({ locationId, accounts, onQuickFill }: ExpenseS
     
     // Laundry shortcut (only for Rusty Bunk)
     if (location.name === "Rusty Bunk") {
-      const laundryAccount = getAccountForExpense(location.name, 'laundry');
+      const laundryAccount = getAccountForExpense(location.name);
       if (laundryAccount) {
         const shortcutId = `laundry-${locationId}-${format(new Date(), "yyyy-MM-dd")}`;
         
@@ -109,11 +109,11 @@ export function ExpenseShortcuts({ locationId, accounts, onQuickFill }: ExpenseS
             id: shortcutId,
             type: 'laundry',
             icon: <Shirt className="h-4 w-4" />,
-            title: "Laundry - External Service",
+            title: "Laundry - External Service", 
             amount: "2000",
-            currency: "Rs.",
+            currency: "Rs.", // Always LKR
             account: laundryAccount,
-            note: `Laundry service - ${format(new Date(), "MMM dd, yyyy")}`,
+            note: `Laundry service - ${format(new Date(), "MMM dd, yyyy")} + Rs.2000`,
             mainCategory: "Laundry",
             subCategory: "External Service"
           });
@@ -125,6 +125,16 @@ export function ExpenseShortcuts({ locationId, accounts, onQuickFill }: ExpenseS
   };
 
   const handleQuickFill = (shortcut: any) => {
+    console.log('ExpenseShortcuts - handleQuickFill called with:', shortcut);
+    console.log('ExpenseShortcuts - sending data:', {
+      mainCategory: shortcut.mainCategory,
+      subCategory: shortcut.subCategory,
+      amount: shortcut.amount,
+      accountId: shortcut.account.id,
+      date: format(new Date(), "yyyy-MM-dd"),
+      note: shortcut.note,
+    });
+    
     onQuickFill({
       mainCategory: shortcut.mainCategory,
       subCategory: shortcut.subCategory,

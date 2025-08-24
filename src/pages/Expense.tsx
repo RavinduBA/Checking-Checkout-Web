@@ -77,7 +77,17 @@ export default function Expense() {
     date: string;
     note: string;
   }) => {
+    console.log('Expense page - handleQuickFill received:', data);
     setFormData({
+      ...formData,
+      mainCategory: data.mainCategory,
+      subCategory: data.subCategory,
+      amount: data.amount,
+      accountId: data.accountId,
+      date: data.date,
+      note: data.note,
+    });
+    console.log('Expense page - form updated to:', {
       ...formData,
       mainCategory: data.mainCategory,
       subCategory: data.subCategory,
