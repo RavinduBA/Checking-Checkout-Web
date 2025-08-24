@@ -236,38 +236,37 @@ export default function FinancialReports() {
     return bookingIncomes;
   };
 
-  // Custom day renderer for calendar with booking source colors
-  const renderDay = (day: Date) => {
-    const bookingDetails = getBookingDetailsForDate(day);
-    
-    if (bookingDetails.length === 0) {
-      return null;
-    }
+  // Get day modifiers for booking source colors
+  const getDayModifiers = () => {
+    const modifiers: Record<string, Date[]> = {
+      direct: [],
+      airbnb: [],
+      booking_com: [],
+      other: []
+    };
 
-    // Get the dominant booking source for this date
-    const bookingSources = bookingDetails.map(income => {
-      // Extract booking source from income record
-      // This assumes booking source is stored in the income record
-      // You may need to adjust based on your actual data structure
-      return income.note?.includes('airbnb') ? 'airbnb' : 
-             income.note?.includes('booking.com') ? 'booking_com' : 'direct';
+    // Build modifiers from income records
+    filteredIncome.forEach(income => {
+      if (income.type === 'booking' && income.date) {
+        const incomeDate = new Date(income.date);
+        if (isNaN(incomeDate.getTime())) return;
+        
+        // Extract booking source from income record
+        let source = 'direct';
+        if (income.note?.toLowerCase().includes('airbnb')) {
+          source = 'airbnb';
+        } else if (income.note?.toLowerCase().includes('booking.com')) {
+          source = 'booking_com';
+        }
+        
+        modifiers[source].push(incomeDate);
+      }
     });
 
-    const dominantSource = bookingSources[0] || 'direct';
-    const backgroundColor = getBookingSourceBgColor(dominantSource);
-
-    return (
-      <div 
-        className="w-full h-full flex items-center justify-center relative"
-        style={{ backgroundColor }}
-      >
-        <span>{day.getDate()}</span>
-        {bookingDetails.length > 0 && (
-          <div className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-primary"></div>
-        )}
-      </div>
-    );
+    return modifiers;
   };
+
+  const dayModifiers = getDayModifiers();
 
   // Get details for selected date
   const getSelectedDateDetails = () => {
@@ -486,12 +485,12 @@ export default function FinancialReports() {
               selected={selectedDate}
               onSelect={setSelectedDate}
               className="rounded-md border"
-              components={{
-                Day: ({ day, ...props }) => (
-                  <div className="relative w-full h-full">
-                    {renderDay(day.date)}
-                  </div>
-                )
+              modifiers={dayModifiers}
+              modifiersStyles={{
+                direct: { backgroundColor: bookingSourceBgColors.direct },
+                airbnb: { backgroundColor: bookingSourceBgColors.airbnb },
+                booking_com: { backgroundColor: bookingSourceBgColors.booking_com },
+                other: { backgroundColor: bookingSourceBgColors.other }
               }}
             />
           </CardContent>
