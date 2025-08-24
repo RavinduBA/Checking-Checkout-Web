@@ -55,6 +55,13 @@ export default function FinancialReports() {
     dateTo: format(endOfMonth(new Date()), 'yyyy-MM-dd'),
     searchText: ''
   });
+
+  // Currency conversion rates (should come from settings in real app)
+  const conversionRates = {
+    USD: 300, // 1 USD = 300 LKR
+    EUR: 320, // 1 EUR = 320 LKR  
+    LKR: 1    // Base currency
+  };
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
@@ -168,14 +175,16 @@ export default function FinancialReports() {
   filteredIncomes.forEach(income => {
     const date = income.date;
     if (!calendarData[date]) calendarData[date] = { income: 0, expense: 0, accounts: new Set(), bookings: [] };
-    calendarData[date].income += parseFloat(income.amount.toString());
+    const convertedAmount = convertToLKR(parseFloat(income.amount.toString()), income.accounts?.currency || 'LKR');
+    calendarData[date].income += convertedAmount;
     if (income.accounts?.name) calendarData[date].accounts.add(income.accounts.name);
   });
   
   filteredExpenses.forEach(expense => {
     const date = expense.date;
     if (!calendarData[date]) calendarData[date] = { income: 0, expense: 0, accounts: new Set(), bookings: [] };
-    calendarData[date].expense += parseFloat(expense.amount.toString());
+    const convertedAmount = convertToLKR(parseFloat(expense.amount.toString()), expense.accounts?.currency || 'LKR');
+    calendarData[date].expense += convertedAmount;
     if (expense.accounts?.name) calendarData[date].accounts.add(expense.accounts.name);
   });
 
@@ -237,10 +246,10 @@ export default function FinancialReports() {
   };
 
   const bookingSourceBgColors = {
-    'direct': 'bg-green-50 border-green-200',
-    'booking.com': 'bg-blue-50 border-blue-200', 
-    'airbnb': 'bg-red-50 border-red-200',
-    'other': 'bg-purple-50 border-purple-200'
+    'direct': 'bg-green-200 border-green-300',
+    'booking.com': 'bg-blue-200 border-blue-300', 
+    'airbnb': 'bg-red-200 border-red-300',
+    'other': 'bg-purple-200 border-purple-300'
   };
 
   const getBookingSourceColor = (source: string) => {
@@ -259,6 +268,17 @@ export default function FinancialReports() {
     return bookingSourceBgColors.other;
   };
 
+  // Helper function to convert amount to LKR
+  const convertToLKR = (amount: number, currency: string) => {
+    const rate = conversionRates[currency] || 1;
+    return amount * rate;
+  };
+
+  // Helper function to format currency in LKR
+  const formatLKR = (amount: number) => {
+    return `Rs. ${amount.toLocaleString()}`;
+  };
+
   // Helper function to get dominant booking source for a date
   const getDominantBookingSource = (bookings: any[]) => {
     if (bookings.length === 0) return null;
@@ -275,9 +295,17 @@ export default function FinancialReports() {
     );
   };
 
-  // Totals calculation
-  const totalIncome = filteredIncomes.reduce((sum, income) => sum + parseFloat(income.amount.toString()), 0);
-  const totalExpense = filteredExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount.toString()), 0);
+  // Totals calculation with currency conversion
+  const totalIncome = filteredIncomes.reduce((sum, income) => {
+    const convertedAmount = convertToLKR(parseFloat(income.amount.toString()), income.accounts?.currency || 'LKR');
+    return sum + convertedAmount;
+  }, 0);
+  
+  const totalExpense = filteredExpenses.reduce((sum, expense) => {
+    const convertedAmount = convertToLKR(parseFloat(expense.amount.toString()), expense.accounts?.currency || 'LKR');
+    return sum + convertedAmount;
+  }, 0);
+  
   const netAmount = totalIncome - totalExpense;
 
   if (loading) {
@@ -305,14 +333,14 @@ export default function FinancialReports() {
         <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
           <CardContent className="p-4">
             <div className="text-green-800 font-medium">Total Income</div>
-            <div className="text-2xl font-bold text-green-900">Rs. {totalIncome.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-green-900">{formatLKR(totalIncome)}</div>
             <div className="text-sm text-green-600">{filteredIncomes.length} transactions</div>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200">
           <CardContent className="p-4">
             <div className="text-red-800 font-medium">Total Expenses</div>
-            <div className="text-2xl font-bold text-red-900">Rs. {totalExpense.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-red-900">{formatLKR(totalExpense)}</div>
             <div className="text-sm text-red-600">{filteredExpenses.length} transactions</div>
           </CardContent>
         </Card>
@@ -320,7 +348,7 @@ export default function FinancialReports() {
           <CardContent className="p-4">
             <div className={cn("font-medium", netAmount >= 0 ? "text-blue-800" : "text-orange-800")}>Net Amount</div>
             <div className={cn("text-2xl font-bold", netAmount >= 0 ? "text-blue-900" : "text-orange-900")}>
-              Rs. {Math.abs(netAmount).toLocaleString()}
+              {formatLKR(Math.abs(netAmount))}
             </div>
             <div className={cn("text-sm", netAmount >= 0 ? "text-blue-600" : "text-orange-600")}>
               {netAmount >= 0 ? "Profit" : "Loss"}
@@ -490,7 +518,7 @@ export default function FinancialReports() {
                       </TableCell>
                       <TableCell>{transaction.category}</TableCell>
                       <TableCell className={transaction.color}>
-                        {transaction.accounts?.currency === "USD" ? "$" : "Rs."}{transaction.amount.toLocaleString()}
+                        {formatLKR(convertToLKR(parseFloat(transaction.amount.toString()), transaction.accounts?.currency || 'LKR'))}
                       </TableCell>
                       <TableCell>
                         <div className={cn("inline-block w-3 h-3 rounded-full mr-2", getAccountColor(transaction.accounts?.name || ''))}></div>
@@ -837,12 +865,12 @@ export default function FinancialReports() {
                           className="p-4 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
                           onClick={() => setShowDateDetails(true)}
                         >
-                          <div className="flex justify-between items-center">
-                            <span className="text-blue-800 font-medium">Net Amount:</span>
-                            <span className={cn("font-bold text-xl", netAmount >= 0 ? "text-green-900" : "text-red-900")}>
-                              Rs. {netAmount.toLocaleString()}
-                            </span>
-                          </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-blue-800 font-medium">Net Amount:</span>
+                              <span className={cn("font-bold text-xl", netAmount >= 0 ? "text-green-900" : "text-red-900")}>
+                                {formatLKR(netAmount)}
+                              </span>
+                            </div>
                           <div className="text-xs text-blue-600 mt-1">Click to see breakdown</div>
                         </div>
                       );
@@ -852,12 +880,12 @@ export default function FinancialReports() {
                           className="p-4 bg-green-50 rounded-lg cursor-pointer hover:bg-green-100 transition-colors"
                           onClick={() => setShowDateDetails(true)}
                         >
-                          <div className="flex justify-between items-center">
-                            <span className="text-green-800 font-medium">Total Income:</span>
-                            <span className="text-green-900 font-bold text-xl">
-                              Rs. {data.income.toLocaleString()}
-                            </span>
-                          </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-green-800 font-medium">Total Income:</span>
+                              <span className="text-green-900 font-bold text-xl">
+                                {formatLKR(data.income)}
+                              </span>
+                            </div>
                           <div className="text-xs text-green-600 mt-1">Click to see breakdown</div>
                         </div>
                       );
@@ -867,12 +895,12 @@ export default function FinancialReports() {
                           className="p-4 bg-red-50 rounded-lg cursor-pointer hover:bg-red-100 transition-colors"
                           onClick={() => setShowDateDetails(true)}
                         >
-                          <div className="flex justify-between items-center">
-                            <span className="text-red-800 font-medium">Total Expense:</span>
-                            <span className="text-red-900 font-bold text-xl">
-                              Rs. {data.expense.toLocaleString()}
-                            </span>
-                          </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-red-800 font-medium">Total Expense:</span>
+                              <span className="text-red-900 font-bold text-xl">
+                                {formatLKR(data.expense)}
+                              </span>
+                            </div>
                           <div className="text-xs text-red-600 mt-1">Click to see breakdown</div>
                         </div>
                       );
@@ -930,17 +958,19 @@ export default function FinancialReports() {
             dayIncomes.forEach(income => {
               const accountName = income.accounts?.name || 'Unknown';
               if (!accountBreakdown[accountName]) {
-                accountBreakdown[accountName] = { income: 0, expense: 0, currency: income.accounts?.currency || 'LKR', color: getAccountColor(accountName) };
+                accountBreakdown[accountName] = { income: 0, expense: 0, currency: 'LKR', color: getAccountColor(accountName) };
               }
-              accountBreakdown[accountName].income += parseFloat(income.amount.toString());
+              const convertedAmount = convertToLKR(parseFloat(income.amount.toString()), income.accounts?.currency || 'LKR');
+              accountBreakdown[accountName].income += convertedAmount;
             });
             
             dayExpenses.forEach(expense => {
               const accountName = expense.accounts?.name || 'Unknown';
               if (!accountBreakdown[accountName]) {
-                accountBreakdown[accountName] = { income: 0, expense: 0, currency: expense.accounts?.currency || 'LKR', color: getAccountColor(accountName) };
+                accountBreakdown[accountName] = { income: 0, expense: 0, currency: 'LKR', color: getAccountColor(accountName) };
               }
-              accountBreakdown[accountName].expense += parseFloat(expense.amount.toString());
+              const convertedAmount = convertToLKR(parseFloat(expense.amount.toString()), expense.accounts?.currency || 'LKR');
+              accountBreakdown[accountName].expense += convertedAmount;
             });
             
             return (
@@ -951,7 +981,7 @@ export default function FinancialReports() {
                     <CardContent className="p-4 text-center">
                       <div className="text-sm text-green-600 font-medium">Total Income</div>
                       <div className="text-2xl font-bold text-green-700">
-                        Rs. {(dayData?.income || 0).toLocaleString()}
+                        {formatLKR(dayData?.income || 0)}
                       </div>
                       <div className="text-xs text-green-600">{dayIncomes.length} transactions</div>
                     </CardContent>
@@ -960,7 +990,7 @@ export default function FinancialReports() {
                     <CardContent className="p-4 text-center">
                       <div className="text-sm text-red-600 font-medium">Total Expenses</div>
                       <div className="text-2xl font-bold text-red-700">
-                        Rs. {(dayData?.expense || 0).toLocaleString()}
+                        {formatLKR(dayData?.expense || 0)}
                       </div>
                       <div className="text-xs text-red-600">{dayExpenses.length} transactions</div>
                     </CardContent>
@@ -969,7 +999,7 @@ export default function FinancialReports() {
                     <CardContent className="p-4 text-center">
                       <div className={cn("text-sm font-medium", netAmount >= 0 ? "text-blue-600" : "text-orange-600")}>Net Amount</div>
                       <div className={cn("text-2xl font-bold", netAmount >= 0 ? "text-blue-700" : "text-orange-700")}>
-                        {netAmount >= 0 ? '+' : ''}Rs. {Math.abs(netAmount).toLocaleString()}
+                        {netAmount >= 0 ? '+' : ''}{formatLKR(Math.abs(netAmount))}
                       </div>
                       <div className={cn("text-xs", netAmount >= 0 ? "text-blue-600" : "text-orange-600")}>
                         {netAmount >= 0 ? "Profit" : "Loss"} for the day
@@ -1039,13 +1069,13 @@ export default function FinancialReports() {
                             {data.income > 0 && (
                               <div className="bg-green-50 p-3 rounded-lg">
                                 <div className="text-xs text-green-600">Income</div>
-                                <div className="font-bold text-green-700">+Rs. {data.income.toLocaleString()}</div>
+                                <div className="font-bold text-green-700">+{formatLKR(data.income)}</div>
                               </div>
                             )}
                             {data.expense > 0 && (
                               <div className="bg-red-50 p-3 rounded-lg">
                                 <div className="text-xs text-red-600">Expenses</div>
-                                <div className="font-bold text-red-700">-Rs. {data.expense.toLocaleString()}</div>
+                                <div className="font-bold text-red-700">-{formatLKR(data.expense)}</div>
                               </div>
                             )}
                           </div>
