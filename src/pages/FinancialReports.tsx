@@ -56,18 +56,30 @@ export default function FinancialReports() {
     searchText: ''
   });
 
-  // Currency conversion rates (should come from settings in real app)
-  const conversionRates = {
-    USD: 300, // 1 USD = 300 LKR
-    EUR: 320, // 1 EUR = 320 LKR  
-    LKR: 1    // Base currency
-  };
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
   const [showDateDetails, setShowDateDetails] = useState(false);
   
   const { toast } = useToast();
+
+  // Currency conversion rates (should come from settings in real app)
+  const conversionRates = {
+    USD: 300, // 1 USD = 300 LKR
+    EUR: 320, // 1 EUR = 320 LKR  
+    LKR: 1    // Base currency
+  };
+
+  // Helper function to convert amount to LKR
+  const convertToLKR = (amount: number, currency: string) => {
+    const rate = conversionRates[currency] || 1;
+    return amount * rate;
+  };
+
+  // Helper function to format currency in LKR
+  const formatLKR = (amount: number) => {
+    return `Rs. ${amount.toLocaleString()}`;
+  };
 
   useEffect(() => {
     fetchData();
@@ -268,16 +280,6 @@ export default function FinancialReports() {
     return bookingSourceBgColors.other;
   };
 
-  // Helper function to convert amount to LKR
-  const convertToLKR = (amount: number, currency: string) => {
-    const rate = conversionRates[currency] || 1;
-    return amount * rate;
-  };
-
-  // Helper function to format currency in LKR
-  const formatLKR = (amount: number) => {
-    return `Rs. ${amount.toLocaleString()}`;
-  };
 
   // Helper function to get dominant booking source for a date
   const getDominantBookingSource = (bookings: any[]) => {
