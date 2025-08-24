@@ -152,11 +152,11 @@ export default function FinancialReports() {
   // Calendar data preparation with booking periods
   const calendarData: Record<string, { income: number; expense: number; accounts: Set<string>; bookings: Array<{source: string; amount: number; note?: string}> }> = {};
   
-  // Booking source color mapping
+  // Booking source color mapping - avoiding green (income) and red (expense) colors
   const bookingSourceColors = {
-    'direct': 'bg-blue-100 border-blue-300',
-    'airbnb': 'bg-pink-100 border-pink-300', 
-    'booking_com': 'bg-green-100 border-green-300'
+    'direct': 'bg-orange-50 border-orange-200',
+    'airbnb': 'bg-purple-50 border-purple-200', 
+    'booking_com': 'bg-cyan-50 border-cyan-200'
   };
 
   const getBookingSourceColor = (source: string) => {
