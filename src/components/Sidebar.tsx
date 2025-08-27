@@ -9,7 +9,9 @@ import {
   Calendar,
   Building2,
   Users,
-  Settings
+  Settings,
+  Bed,
+  FolderOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -21,9 +23,11 @@ interface SidebarProps {
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
+  { name: "Calendar", href: "/calendar", icon: Calendar },
+  { name: "Master Files", href: "/master-files", icon: FolderOpen },
+  { name: "Room Management", href: "/rooms", icon: Bed },
   { name: "Add Income", href: "/income", icon: PlusCircle },
   { name: "Add Expense", href: "/expense", icon: MinusCircle },
-  { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Accounts", href: "/accounts", icon: Building2 },
   { name: "Users", href: "/users", icon: Users },
@@ -43,7 +47,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
               <Building2 className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-lg text-foreground">Villa Manager</span>
+            <span className="font-bold text-lg text-foreground">Hotel Manager</span>
           </div>
 
           {/* Navigation */}
@@ -83,7 +87,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
               <Building2 className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-lg text-foreground">Villa Manager</span>
+            <span className="font-bold text-lg text-foreground">Hotel Manager</span>
           </div>
 
           {/* Navigation */}

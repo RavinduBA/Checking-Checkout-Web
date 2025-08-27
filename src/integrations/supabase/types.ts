@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_transfers: {
+        Row: {
+          amount: number
+          conversion_rate: number
+          created_at: string
+          from_account_id: string
+          id: string
+          note: string | null
+          to_account_id: string
+        }
+        Insert: {
+          amount: number
+          conversion_rate?: number
+          created_at?: string
+          from_account_id: string
+          id?: string
+          note?: string | null
+          to_account_id: string
+        }
+        Update: {
+          amount?: number
+          conversion_rate?: number
+          created_at?: string
+          from_account_id?: string
+          id?: string
+          note?: string | null
+          to_account_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_transfers_from_account_id_fkey"
+            columns: ["from_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_transfers_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       accounts: {
         Row: {
           created_at: string

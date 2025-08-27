@@ -18,6 +18,8 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import BookingForm from "./pages/BookingForm";
+import MasterFiles from "./pages/MasterFiles";
+import RoomManagement from "./pages/RoomManagement";
 
 const queryClient = new QueryClient();
 
@@ -36,9 +38,11 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={<Dashboard />} />
+              <Route path="calendar" element={<Calendar />} />
+              <Route path="master-files" element={<MasterFiles />} />
+              <Route path="rooms" element={<RoomManagement />} />
               <Route path="income" element={<Income />} />
               <Route path="expense" element={<Expense />} />
-              <Route path="calendar" element={<Calendar />} />
               <Route path="booking/new" element={<BookingForm />} />
               <Route path="booking/edit/:id" element={<BookingForm />} />
               <Route path="reports" element={<Reports />} />
