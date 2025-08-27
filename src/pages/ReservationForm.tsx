@@ -1,18 +1,22 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
-import { ArrowLeft, Save, Calendar, MapPin, User, CreditCard } from "lucide-react";
+import { ArrowLeft, Save, Calendar, MapPin, User, CreditCard, UserCheck, Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 
 type Location = Tables<"locations">;
 type Room = Tables<"rooms">;
+type Guide = Tables<"guides">;
+type Agent = Tables<"agents">;
 
 export default function ReservationForm() {
   const { id } = useParams<{ id: string }>();
@@ -23,8 +27,12 @@ export default function ReservationForm() {
 
   const [locations, setLocations] = useState<Location[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [guides, setGuides] = useState<Guide[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showGuideDialog, setShowGuideDialog] = useState(false);
+  const [showAgentDialog, setShowAgentDialog] = useState(false);
 
   const [formData, setFormData] = useState({
     location_id: searchParams.get('location') || '',
@@ -45,7 +53,28 @@ export default function ReservationForm() {
     special_requests: '',
     status: 'tentative' as any,
     paid_amount: 0,
-    balance_amount: 0
+    balance_amount: 0,
+    has_guide: false,
+    has_agent: false,
+    guide_id: '',
+    agent_id: '',
+    guide_commission: 0,
+    agent_commission: 0,
+  });
+
+  const [newGuide, setNewGuide] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    commission_rate: 10
+  });
+
+  const [newAgent, setNewAgent] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    agency_name: '',
+    commission_rate: 15
   });
 
   useEffect(() => {
@@ -61,13 +90,17 @@ export default function ReservationForm() {
 
   const fetchInitialData = async () => {
     try {
-      const [locationsRes, roomsRes] = await Promise.all([
+      const [locationsRes, roomsRes, guidesRes, agentsRes] = await Promise.all([
         supabase.from("locations").select("*").eq("is_active", true),
-        supabase.from("rooms").select("*").eq("is_active", true).order("room_number")
+        supabase.from("rooms").select("*").eq("is_active", true).order("room_number"),
+        supabase.from("guides").select("*").eq("is_active", true).order("name"),
+        supabase.from("agents").select("*").eq("is_active", true).order("name")
       ]);
 
       setLocations(locationsRes.data || []);
       setRooms(roomsRes.data || []);
+      setGuides(guidesRes.data || []);
+      setAgents(agentsRes.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -103,7 +136,13 @@ export default function ReservationForm() {
         special_requests: data.special_requests || '',
         status: data.status,
         paid_amount: data.paid_amount || 0,
-        balance_amount: data.balance_amount || 0
+        balance_amount: data.balance_amount || 0,
+        has_guide: Boolean(data.guide_id),
+        has_agent: Boolean(data.agent_id),
+        guide_id: data.guide_id || '',
+        agent_id: data.agent_id || '',
+        guide_commission: data.guide_commission || 0,
+        agent_commission: data.agent_commission || 0,
       });
     } catch (error) {
       console.error("Error fetching reservation:", error);
@@ -147,9 +186,104 @@ export default function ReservationForm() {
           updated.room_rate = selectedRoom.base_price;
         }
       }
+
+      // Calculate commissions when guide or agent is selected
+      if (field === 'guide_id' && value) {
+        const selectedGuide = guides.find(guide => guide.id === value);
+        if (selectedGuide) {
+          updated.guide_commission = (updated.total_amount * selectedGuide.commission_rate) / 100;
+        }
+      }
+
+      if (field === 'agent_id' && value) {
+        const selectedAgent = agents.find(agent => agent.id === value);
+        if (selectedAgent) {
+          updated.agent_commission = (updated.total_amount * selectedAgent.commission_rate) / 100;
+        }
+      }
+
+      // Reset related fields when checkboxes are unchecked
+      if (field === 'has_guide' && !value) {
+        updated.guide_id = '';
+        updated.guide_commission = 0;
+      }
+
+      if (field === 'has_agent' && !value) {
+        updated.agent_id = '';
+        updated.agent_commission = 0;
+      }
       
       return updated;
     });
+  };
+
+  const createGuide = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("guides")
+        .insert([{
+          name: newGuide.name,
+          phone: newGuide.phone,
+          email: newGuide.email,
+          commission_rate: newGuide.commission_rate,
+          is_active: true
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setGuides(prev => [...prev, data]);
+      handleInputChange('guide_id', data.id);
+      setShowGuideDialog(false);
+      setNewGuide({ name: '', phone: '', email: '', commission_rate: 10 });
+      
+      toast({
+        title: "Success",
+        description: "Guide created successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create guide",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const createAgent = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("agents")
+        .insert([{
+          name: newAgent.name,
+          phone: newAgent.phone,
+          email: newAgent.email,
+          agency_name: newAgent.agency_name,
+          commission_rate: newAgent.commission_rate,
+          is_active: true
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setAgents(prev => [...prev, data]);
+      handleInputChange('agent_id', data.id);
+      setShowAgentDialog(false);
+      setNewAgent({ name: '', phone: '', email: '', agency_name: '', commission_rate: 15 });
+      
+      toast({
+        title: "Success",
+        description: "Agent created successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create agent",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -159,7 +293,7 @@ export default function ReservationForm() {
     try {
       const currentYear = new Date().getFullYear();
       
-      // Calculate balance amount and remove extra fields
+      // Calculate balance amount and prepare data
       const calculatedData: any = {
         location_id: formData.location_id,
         room_id: formData.room_id,
@@ -179,7 +313,11 @@ export default function ReservationForm() {
         special_requests: formData.special_requests || null,
         status: formData.status,
         paid_amount: formData.advance_amount,
-        balance_amount: formData.total_amount - formData.advance_amount
+        balance_amount: formData.total_amount - formData.advance_amount,
+        guide_id: formData.has_guide ? formData.guide_id : null,
+        agent_id: formData.has_agent ? formData.agent_id : null,
+        guide_commission: formData.has_guide ? formData.guide_commission : 0,
+        agent_commission: formData.has_agent ? formData.agent_commission : 0
       };
 
       if (isEdit) {
@@ -243,7 +381,7 @@ export default function ReservationForm() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-6">
+    <div className="max-w-6xl mx-auto p-4 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button asChild variant="ghost" size="icon">
@@ -262,7 +400,7 @@ export default function ReservationForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {/* Guest Information */}
           <Card>
             <CardHeader>
@@ -304,6 +442,7 @@ export default function ReservationForm() {
                   id="guest_address"
                   value={formData.guest_address}
                   onChange={(e) => handleInputChange('guest_address', e.target.value)}
+                  rows={3}
                 />
               </div>
               <div>
@@ -420,6 +559,224 @@ export default function ReservationForm() {
             </CardContent>
           </Card>
 
+          {/* Guides & Agents */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserCheck className="h-5 w-5" />
+                Guide & Agent
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Guide Section */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="has_guide"
+                    checked={formData.has_guide}
+                    onCheckedChange={(checked) => handleInputChange('has_guide', checked)}
+                  />
+                  <Label htmlFor="has_guide">Include Guide</Label>
+                </div>
+                
+                {formData.has_guide && (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Select value={formData.guide_id} onValueChange={(value) => handleInputChange('guide_id', value)}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Select guide" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {guides.map((guide) => (
+                            <SelectItem key={guide.id} value={guide.id}>
+                              {guide.name} ({guide.commission_rate}%)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Dialog open={showGuideDialog} onOpenChange={setShowGuideDialog}>
+                        <DialogTrigger asChild>
+                          <Button size="sm" variant="outline">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Add New Guide</DialogTitle>
+                            <DialogDescription>Create a new guide profile</DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <Label htmlFor="guide_name">Name</Label>
+                              <Input
+                                id="guide_name"
+                                value={newGuide.name}
+                                onChange={(e) => setNewGuide({ ...newGuide, name: e.target.value })}
+                                placeholder="Guide name"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="guide_phone">Phone</Label>
+                              <Input
+                                id="guide_phone"
+                                value={newGuide.phone}
+                                onChange={(e) => setNewGuide({ ...newGuide, phone: e.target.value })}
+                                placeholder="Phone number"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="guide_email">Email</Label>
+                              <Input
+                                id="guide_email"
+                                type="email"
+                                value={newGuide.email}
+                                onChange={(e) => setNewGuide({ ...newGuide, email: e.target.value })}
+                                placeholder="Email address"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="guide_commission">Commission Rate (%)</Label>
+                              <Input
+                                id="guide_commission"
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                value={newGuide.commission_rate}
+                                onChange={(e) => setNewGuide({ ...newGuide, commission_rate: parseFloat(e.target.value) || 0 })}
+                              />
+                            </div>
+                            <div className="flex justify-end gap-2">
+                              <Button type="button" variant="outline" onClick={() => setShowGuideDialog(false)}>
+                                Cancel
+                              </Button>
+                              <Button type="button" onClick={createGuide}>
+                                Create Guide
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                    {formData.guide_commission > 0 && (
+                      <div className="text-sm text-muted-foreground">
+                        Commission: LKR {formData.guide_commission.toFixed(2)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Agent Section */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="has_agent"
+                    checked={formData.has_agent}
+                    onCheckedChange={(checked) => handleInputChange('has_agent', checked)}
+                  />
+                  <Label htmlFor="has_agent">Include Agent</Label>
+                </div>
+                
+                {formData.has_agent && (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Select value={formData.agent_id} onValueChange={(value) => handleInputChange('agent_id', value)}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Select agent" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {agents.map((agent) => (
+                            <SelectItem key={agent.id} value={agent.id}>
+                              {agent.name} ({agent.commission_rate}%)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Dialog open={showAgentDialog} onOpenChange={setShowAgentDialog}>
+                        <DialogTrigger asChild>
+                          <Button size="sm" variant="outline">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Add New Agent</DialogTitle>
+                            <DialogDescription>Create a new agent profile</DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <Label htmlFor="agent_name">Name</Label>
+                              <Input
+                                id="agent_name"
+                                value={newAgent.name}
+                                onChange={(e) => setNewAgent({ ...newAgent, name: e.target.value })}
+                                placeholder="Agent name"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="agent_agency">Agency</Label>
+                              <Input
+                                id="agent_agency"
+                                value={newAgent.agency_name}
+                                onChange={(e) => setNewAgent({ ...newAgent, agency_name: e.target.value })}
+                                placeholder="Agency name"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="agent_phone">Phone</Label>
+                              <Input
+                                id="agent_phone"
+                                value={newAgent.phone}
+                                onChange={(e) => setNewAgent({ ...newAgent, phone: e.target.value })}
+                                placeholder="Phone number"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="agent_email">Email</Label>
+                              <Input
+                                id="agent_email"
+                                type="email"
+                                value={newAgent.email}
+                                onChange={(e) => setNewAgent({ ...newAgent, email: e.target.value })}
+                                placeholder="Email address"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="agent_commission">Commission Rate (%)</Label>
+                              <Input
+                                id="agent_commission"
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                value={newAgent.commission_rate}
+                                onChange={(e) => setNewAgent({ ...newAgent, commission_rate: parseFloat(e.target.value) || 0 })}
+                              />
+                            </div>
+                            <div className="flex justify-end gap-2">
+                              <Button type="button" variant="outline" onClick={() => setShowAgentDialog(false)}>
+                                Cancel
+                              </Button>
+                              <Button type="button" onClick={createAgent}>
+                                Create Agent
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                    {formData.agent_commission > 0 && (
+                      <div className="text-sm text-muted-foreground">
+                        Commission: LKR {formData.agent_commission.toFixed(2)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Pricing */}
           <Card>
             <CardHeader>
@@ -469,7 +826,7 @@ export default function ReservationForm() {
           </Card>
 
           {/* Special Requests */}
-          <Card>
+          <Card className="xl:col-span-2">
             <CardHeader>
               <CardTitle>Special Requests</CardTitle>
             </CardHeader>

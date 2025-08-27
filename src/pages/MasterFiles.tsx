@@ -1,291 +1,128 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { Building2, MapPin, Plus, Edit, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { 
+  Building2, 
+  MapPin, 
+  Bed, 
+  Users, 
+  UserCheck, 
+  Percent 
+} from "lucide-react";
+import LocationsTab from "@/components/master-files/LocationsTab";
+import RoomsTab from "@/components/master-files/RoomsTab";
+import GuidesTab from "@/components/master-files/GuidesTab";
+import AgentsTab from "@/components/master-files/AgentsTab";
+import CommissionsTab from "@/components/master-files/CommissionsTab";
 
-type Location = {
-  id: string;
-  name: string;
-  is_active: boolean;
-  created_at: string;
-};
+const masterFilesTabs = [
+  { 
+    id: "locations", 
+    name: "Locations", 
+    icon: MapPin, 
+    description: "Manage hotel locations" 
+  },
+  { 
+    id: "rooms", 
+    name: "Rooms", 
+    icon: Bed, 
+    description: "Manage hotel rooms" 
+  },
+  { 
+    id: "guides", 
+    name: "Guides", 
+    icon: UserCheck, 
+    description: "Manage tour guides" 
+  },
+  { 
+    id: "agents", 
+    name: "Agents", 
+    icon: Users, 
+    description: "Manage travel agents" 
+  },
+  { 
+    id: "commissions", 
+    name: "Commissions", 
+    icon: Percent, 
+    description: "Commission settings" 
+  },
+];
 
 export default function MasterFiles() {
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingLocation, setEditingLocation] = useState<Location | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    is_active: true,
-  });
-  const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "locations";
 
-  useEffect(() => {
-    fetchLocations();
-  }, []);
+  const setActiveTab = (tab: string) => {
+    setSearchParams({ tab });
+  };
 
-  const fetchLocations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("locations")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setLocations(data || []);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch locations",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "locations":
+        return <LocationsTab />;
+      case "rooms":
+        return <RoomsTab />;
+      case "guides":
+        return <GuidesTab />;
+      case "agents":
+        return <AgentsTab />;
+      case "commissions":
+        return <CommissionsTab />;
+      default:
+        return <LocationsTab />;
     }
   };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      if (editingLocation) {
-        const { error } = await supabase
-          .from("locations")
-          .update(formData)
-          .eq("id", editingLocation.id);
-
-        if (error) throw error;
-        
-        toast({
-          title: "Success",
-          description: "Location updated successfully",
-        });
-      } else {
-        const { error } = await supabase
-          .from("locations")
-          .insert([formData]);
-
-        if (error) throw error;
-        
-        toast({
-          title: "Success",
-          description: "Location created successfully",
-        });
-      }
-
-      setIsDialogOpen(false);
-      setEditingLocation(null);
-      setFormData({ name: "", is_active: true });
-      fetchLocations();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save location",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleEdit = (location: Location) => {
-    setEditingLocation(location);
-    setFormData({
-      name: location.name,
-      is_active: location.is_active,
-    });
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this location?")) return;
-
-    try {
-      const { error } = await supabase
-        .from("locations")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Location deleted successfully",
-      });
-      fetchLocations();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete location",
-        variant: "destructive",
-      });
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
-  }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Master Files</h1>
-          <p className="text-muted-foreground">Manage hotel locations and configurations</p>
+    <div className="flex h-full">
+      {/* Sidebar */}
+      <div className="w-64 bg-card border-r border-border">
+        <div className="p-6 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-6 w-6 text-primary" />
+            <h1 className="text-xl font-bold text-foreground">Master Files</h1>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage system configurations
+          </p>
         </div>
+        
+        <nav className="p-4">
+          <div className="space-y-2">
+            {masterFilesTabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-left",
+                    isActive
+                      ? "bg-gradient-primary text-primary-foreground shadow-glow"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  )}
+                >
+                  <tab.icon className="h-4 w-4" />
+                  <div>
+                    <div>{tab.name}</div>
+                    <div className="text-xs opacity-75">{tab.description}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
       </div>
 
-      <Tabs defaultValue="locations" className="w-full">
-        <TabsList className="grid w-full grid-cols-1">
-          <TabsTrigger value="locations">Hotel Locations</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="locations" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Building2 className="h-5 w-5" />
-                    Hotel Locations
-                  </CardTitle>
-                  <CardDescription>
-                    Manage your hotel buildings and locations
-                  </CardDescription>
-                </div>
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => {
-                      setEditingLocation(null);
-                      setFormData({ name: "", is_active: true });
-                    }}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Location
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>
-                        {editingLocation ? "Edit Location" : "Add New Location"}
-                      </DialogTitle>
-                      <DialogDescription>
-                        {editingLocation 
-                          ? "Update the location details below." 
-                          : "Enter the details for the new hotel location."
-                        }
-                      </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      <div>
-                        <Label htmlFor="name">Location Name</Label>
-                        <Input
-                          id="name"
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          placeholder="e.g., Main Building, Annex, Pool Villa"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="status">Status</Label>
-                        <Select
-                          value={formData.is_active ? "active" : "inactive"}
-                          onValueChange={(value) => 
-                            setFormData({ ...formData, is_active: value === "active" })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="inactive">Inactive</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setIsDialogOpen(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button type="submit">
-                          {editingLocation ? "Update" : "Create"} Location
-                        </Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Location Name</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Created Date</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {locations.map((location) => (
-                    <TableRow key={location.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-muted-foreground" />
-                          {location.name}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={location.is_active ? "default" : "secondary"}>
-                          {location.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(location.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEdit(location)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDelete(location.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Main Content */}
+      <div className="flex-1 p-6">
+        <Card className="h-full">
+          <CardContent className="p-6 h-full">
+            {renderTabContent()}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

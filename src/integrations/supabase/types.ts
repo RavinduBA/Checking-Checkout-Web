@@ -136,6 +136,45 @@ export type Database = {
           },
         ]
       }
+      agents: {
+        Row: {
+          address: string | null
+          agency_name: string | null
+          commission_rate: number
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          agency_name?: string | null
+          commission_rate?: number
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          agency_name?: string | null
+          commission_rate?: number
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       booking_payments: {
         Row: {
           account_id: string
@@ -350,6 +389,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      guides: {
+        Row: {
+          address: string | null
+          commission_rate: number
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          license_number: string | null
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          commission_rate?: number
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          license_number?: string | null
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          commission_rate?: number
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          license_number?: string | null
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       income: {
         Row: {
@@ -593,6 +671,8 @@ export type Database = {
         Row: {
           adults: number
           advance_amount: number | null
+          agent_commission: number | null
+          agent_id: string | null
           arrival_time: string | null
           balance_amount: number | null
           check_in_date: string
@@ -609,6 +689,8 @@ export type Database = {
           guest_name: string
           guest_nationality: string | null
           guest_phone: string | null
+          guide_commission: number | null
+          guide_id: string | null
           id: string
           location_id: string
           nights: number
@@ -624,6 +706,8 @@ export type Database = {
         Insert: {
           adults?: number
           advance_amount?: number | null
+          agent_commission?: number | null
+          agent_id?: string | null
           arrival_time?: string | null
           balance_amount?: number | null
           check_in_date: string
@@ -640,6 +724,8 @@ export type Database = {
           guest_name: string
           guest_nationality?: string | null
           guest_phone?: string | null
+          guide_commission?: number | null
+          guide_id?: string | null
           id?: string
           location_id: string
           nights: number
@@ -655,6 +741,8 @@ export type Database = {
         Update: {
           adults?: number
           advance_amount?: number | null
+          agent_commission?: number | null
+          agent_id?: string | null
           arrival_time?: string | null
           balance_amount?: number | null
           check_in_date?: string
@@ -671,6 +759,8 @@ export type Database = {
           guest_name?: string
           guest_nationality?: string | null
           guest_phone?: string | null
+          guide_commission?: number | null
+          guide_id?: string | null
           id?: string
           location_id?: string
           nights?: number
@@ -684,6 +774,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "reservations_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: false
+            referencedRelation: "guides"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reservations_location_id_fkey"
             columns: ["location_id"]
