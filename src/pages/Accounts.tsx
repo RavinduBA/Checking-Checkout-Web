@@ -176,7 +176,7 @@ export default function Accounts() {
   const startEdit = (account: Account) => {
     setFormData({
       name: account.name,
-      currency: account.currency,
+      currency: account.currency as "LKR" | "USD",
       initial_balance: account.initial_balance,
       location_access: account.location_access
     });

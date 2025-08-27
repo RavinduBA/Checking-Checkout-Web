@@ -1,104 +1,42 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Plus, 
-  Calendar, 
-  User, 
-  CreditCard, 
-  Edit, 
-  Eye, 
-  CheckCircle, 
-  XCircle,
-  Clock,
-  UserCheck,
-  Settings,
-  Receipt,
-  Banknote
-} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Calendar, Plus, Eye, Edit, CreditCard, Printer } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import SignatureCanvas from 'react-signature-canvas';
 
-type Location = {
-  id: string;
-  name: string;
-};
+type Database = any;
 
-type Room = {
-  id: string;
-  room_number: string;
-  room_type: string;
-  base_price: number;
-  location_id: string;
-};
+type Reservation = Database['public']['Tables']['reservations']['Row'];
+type Payment = Database['public']['Tables']['payments']['Row'];
+type Location = Database['public']['Tables']['locations']['Row'];
+type Room = Database['public']['Tables']['rooms']['Row'];
+type Account = Database['public']['Tables']['accounts']['Row'];
 
-type Account = {
-  id: string;
-  name: string;
-  currency: string;
-};
-
-type Reservation = {
-  id: string;
-  reservation_number: string;
-  location_id: string;
-  room_id: string;
-  guest_name: string;
-  guest_email: string;
-  guest_phone: string;
-  guest_address: string;
-  guest_id_number: string;
-  guest_nationality: string;
-  adults: number;
-  children: number;
-  check_in_date: string;
-  check_out_date: string;
-  nights: number;
-  room_rate: number;
-  total_amount: number;
-  advance_amount: number;
-  paid_amount: number;
-  balance_amount: number;
-  status: 'tentative' | 'confirmed' | 'checked_in' | 'checked_out' | 'cancelled' | 'pending';
-  special_requests: string;
-  arrival_time: string;
-  grc_approved: boolean;
-  created_at: string;
-  locations?: Location;
-  rooms?: Room;
-};
-
-type Payment = {
-  id: string;
-  payment_number: string;
-  reservation_id: string;
-  amount: number;
-  payment_method: string;
-  account_id: string;
-  payment_type: string;
-  reference_number: string;
-  notes: string;
-  created_at: string;
-};
-
-export default function Income() {
+const Income = () => {
+  const { toast } = useToast();
+  const sigCanvas = useRef<SignatureCanvas | null>(null);
+  
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
+  
   const [isReservationDialogOpen, setIsReservationDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
-  const [selectedTab, setSelectedTab] = useState("reservations");
   
   const [reservationForm, setReservationForm] = useState({
     location_id: "",
@@ -107,27 +45,22 @@ export default function Income() {
     guest_email: "",
     guest_phone: "",
     guest_address: "",
-    guest_id_number: "",
     guest_nationality: "",
     adults: 1,
     children: 0,
     check_in_date: "",
     check_out_date: "",
     special_requests: "",
-    arrival_time: "",
     advance_amount: 0,
   });
 
   const [paymentForm, setPaymentForm] = useState({
-    amount: 0,
+    payment_type: "room_payment",
     payment_method: "",
+    amount: 0,
     account_id: "",
-    payment_type: "advance",
-    reference_number: "",
     notes: "",
   });
-
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchData();
@@ -135,14 +68,11 @@ export default function Income() {
 
   const fetchData = async () => {
     try {
-      const [reservationsRes, locationsRes, roomsRes, accountsRes] = await Promise.all([
+      setLoading(true);
+      const [reservationsRes, locationsRes, roomsRes, accountsRes, paymentsRes] = await Promise.all([
         supabase
           .from("reservations")
-          .select(`
-            *,
-            locations (id, name),
-            rooms (id, room_number, room_type, base_price, location_id)
-          `)
+          .select("*, rooms(room_number, room_type), locations(name)")
           .order("created_at", { ascending: false }),
         supabase
           .from("locations")
@@ -154,18 +84,24 @@ export default function Income() {
           .eq("is_active", true),
         supabase
           .from("accounts")
-          .select("*")
+          .select("*"),
+        supabase
+          .from("payments")
+          .select("*, reservations(guest_name, reservation_number)")
+          .order("created_at", { ascending: false })
       ]);
 
       if (reservationsRes.error) throw reservationsRes.error;
       if (locationsRes.error) throw locationsRes.error;
       if (roomsRes.error) throw roomsRes.error;
       if (accountsRes.error) throw accountsRes.error;
+      if (paymentsRes.error) throw paymentsRes.error;
 
       setReservations(reservationsRes.data || []);
       setLocations(locationsRes.data || []);
       setRooms(roomsRes.data || []);
       setAccounts(accountsRes.data || []);
+      setPayments(paymentsRes.data || []);
     } catch (error) {
       toast({
         title: "Error",
@@ -194,9 +130,8 @@ export default function Income() {
 
       const nights = calculateNights(reservationForm.check_in_date, reservationForm.check_out_date);
       const totalAmount = nights * selectedRoom.base_price;
-      const balanceAmount = totalAmount - reservationForm.advance_amount;
 
-      // Generate reservation number by getting count and creating unique number
+      // Get count for reservation number
       const { data: existingReservations, error: countError } = await supabase
         .from('reservations')
         .select('id');
@@ -207,19 +142,31 @@ export default function Income() {
       const reservationNumber = `RES${currentYear}${String((existingReservations?.length || 0) + 1).padStart(4, '0')}`;
 
       const reservationData = {
-        ...reservationForm,
-        reservation_number: reservationNumber,
+        location_id: reservationForm.location_id,
+        room_id: reservationForm.room_id,
+        guest_name: reservationForm.guest_name,
+        guest_email: reservationForm.guest_email || null,
+        guest_phone: reservationForm.guest_phone || null,
+        guest_address: reservationForm.guest_address || null,
+        guest_nationality: reservationForm.guest_nationality || null,
+        adults: reservationForm.adults,
+        children: reservationForm.children,
+        check_in_date: reservationForm.check_in_date,
+        check_out_date: reservationForm.check_out_date,
+        special_requests: reservationForm.special_requests || null,
+        advance_amount: reservationForm.advance_amount || 0,
         nights,
         room_rate: selectedRoom.base_price,
         total_amount: totalAmount,
-        paid_amount: reservationForm.advance_amount,
-        balance_amount: balanceAmount,
+        paid_amount: reservationForm.advance_amount || 0,
+        balance_amount: totalAmount - (reservationForm.advance_amount || 0),
         status: 'tentative' as const,
+        reservation_number: reservationNumber,
       };
 
       const { error } = await supabase
         .from("reservations")
-        .insert([reservationData]);
+        .insert(reservationData);
 
       if (error) throw error;
 
@@ -229,25 +176,10 @@ export default function Income() {
       });
 
       setIsReservationDialogOpen(false);
-      setReservationForm({
-        location_id: "",
-        room_id: "",
-        guest_name: "",
-        guest_email: "",
-        guest_phone: "",
-        guest_address: "",
-        guest_id_number: "",
-        guest_nationality: "",
-        adults: 1,
-        children: 0,
-        check_in_date: "",
-        check_out_date: "",
-        special_requests: "",
-        arrival_time: "",
-        advance_amount: 0,
-      });
+      resetReservationForm();
       fetchData();
     } catch (error) {
+      console.error('Reservation creation error:', error);
       toast({
         title: "Error",
         description: "Failed to create reservation",
@@ -256,13 +188,31 @@ export default function Income() {
     }
   };
 
+  const resetReservationForm = () => {
+    setReservationForm({
+      location_id: "",
+      room_id: "",
+      guest_name: "",
+      guest_email: "",
+      guest_phone: "",
+      guest_address: "",
+      guest_nationality: "",
+      adults: 1,
+      children: 0,
+      check_in_date: "",
+      check_out_date: "",
+      special_requests: "",
+      advance_amount: 0,
+    });
+  };
+
   const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedReservation) return;
 
     try {
-      // Generate payment number
+      // Get count for payment number
       const { data: existingPayments, error: countError } = await supabase
         .from('payments')
         .select('id');
@@ -273,14 +223,18 @@ export default function Income() {
       const paymentNumber = `PAY${currentYear}${String((existingPayments?.length || 0) + 1).padStart(4, '0')}`;
 
       const paymentData = {
-        ...paymentForm,
-        payment_number: paymentNumber,
         reservation_id: selectedReservation.id,
+        payment_type: paymentForm.payment_type,
+        payment_method: paymentForm.payment_method,
+        amount: paymentForm.amount,
+        account_id: paymentForm.account_id,
+        notes: paymentForm.notes || null,
+        payment_number: paymentNumber,
       };
 
       const { error } = await supabase
         .from("payments")
-        .insert([paymentData]);
+        .insert(paymentData);
 
       if (error) throw error;
 
@@ -290,9 +244,10 @@ export default function Income() {
 
       await supabase
         .from("reservations")
-        .update({ 
+        .update({
           paid_amount: newPaidAmount,
-          balance_amount: newBalanceAmount 
+          balance_amount: newBalanceAmount,
+          status: newBalanceAmount <= 0 ? 'confirmed' : 'tentative'
         })
         .eq("id", selectedReservation.id);
 
@@ -303,16 +258,10 @@ export default function Income() {
 
       setIsPaymentDialogOpen(false);
       setSelectedReservation(null);
-      setPaymentForm({
-        amount: 0,
-        payment_method: "",
-        account_id: "",
-        payment_type: "advance",
-        reference_number: "",
-        notes: "",
-      });
+      resetPaymentForm();
       fetchData();
     } catch (error) {
+      console.error('Payment error:', error);
       toast({
         title: "Error",
         description: "Failed to process payment",
@@ -321,363 +270,331 @@ export default function Income() {
     }
   };
 
-  const updateReservationStatus = async (id: string, status: string, grcApproved?: boolean) => {
-    try {
-      const updateData: any = { status };
-      if (grcApproved !== undefined) {
-        updateData.grc_approved = grcApproved;
-        updateData.grc_approved_at = new Date().toISOString();
-      }
+  const resetPaymentForm = () => {
+    setPaymentForm({
+      payment_type: "room_payment",
+      payment_method: "",
+      amount: 0,
+      account_id: "",
+      notes: "",
+    });
+  };
 
-      const { error } = await supabase
-        .from("reservations")
-        .update(updateData)
-        .eq("id", id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Reservation status updated",
-      });
-      fetchData();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update status",
-        variant: "destructive",
-      });
+  const handlePrint = () => {
+    const signature = sigCanvas.current?.toDataURL();
+    const printWindow = window.open('', '_blank');
+    if (printWindow && selectedReservation) {
+      const room = rooms.find(r => r.id === selectedReservation.room_id);
+      const location = locations.find(l => l.id === selectedReservation.location_id);
+      
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Reservation Details - ${selectedReservation.reservation_number}</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              .header { text-align: center; margin-bottom: 30px; }
+              .details { margin: 20px 0; }
+              .signature { margin-top: 50px; }
+              .row { display: flex; justify-content: space-between; margin: 10px 0; }
+              .label { font-weight: bold; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>Hotel Management System</h1>
+              <h2>Reservation Details</h2>
+            </div>
+            
+            <div class="details">
+              <div class="row">
+                <span class="label">Reservation Number:</span>
+                <span>${selectedReservation.reservation_number}</span>
+              </div>
+              <div class="row">
+                <span class="label">Guest Name:</span>
+                <span>${selectedReservation.guest_name}</span>
+              </div>
+              <div class="row">
+                <span class="label">Location:</span>
+                <span>${location?.name || 'N/A'}</span>
+              </div>
+              <div class="row">
+                <span class="label">Room:</span>
+                <span>${room?.room_number} - ${room?.room_type}</span>
+              </div>
+              <div class="row">
+                <span class="label">Check-in:</span>
+                <span>${new Date(selectedReservation.check_in_date).toLocaleDateString()}</span>
+              </div>
+              <div class="row">
+                <span class="label">Check-out:</span>
+                <span>${new Date(selectedReservation.check_out_date).toLocaleDateString()}</span>
+              </div>
+              <div class="row">
+                <span class="label">Nights:</span>
+                <span>${selectedReservation.nights}</span>
+              </div>
+              <div class="row">
+                <span class="label">Total Amount:</span>
+                <span>LKR ${selectedReservation.total_amount.toLocaleString()}</span>
+              </div>
+              <div class="row">
+                <span class="label">Paid Amount:</span>
+                <span>LKR ${selectedReservation.paid_amount.toLocaleString()}</span>
+              </div>
+              <div class="row">
+                <span class="label">Balance Amount:</span>
+                <span>LKR ${selectedReservation.balance_amount.toLocaleString()}</span>
+              </div>
+              <div class="row">
+                <span class="label">Status:</span>
+                <span>${selectedReservation.status.toUpperCase()}</span>
+              </div>
+            </div>
+            
+            <div class="signature">
+              <p><strong>Guest Signature:</strong></p>
+              ${signature ? `<img src="${signature}" style="border: 1px solid #ccc; max-width: 300px; height: 100px;" />` : '<div style="border: 1px solid #ccc; width: 300px; height: 100px;"></div>'}
+              <p>Date: ${new Date().toLocaleDateString()}</p>
+            </div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'tentative': return 'secondary';
-      case 'confirmed': return 'default';
-      case 'checked_in': return 'default';
-      case 'checked_out': return 'outline';
-      case 'cancelled': return 'destructive';
-      default: return 'secondary';
-    }
-  };
-
-  const getFilteredRooms = () => {
-    return rooms.filter(room => room.location_id === reservationForm.location_id);
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
+      tentative: "secondary",
+      confirmed: "default",
+      checked_in: "secondary",
+      checked_out: "outline",
+      cancelled: "destructive",
+    };
+    return <Badge variant={variants[status] || "secondary"}>{status}</Badge>;
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
+    return <div className="p-6">Loading...</div>;
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Reservations & Payments</h1>
-          <p className="text-muted-foreground">Manage hotel reservations and process payments</p>
-        </div>
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Reservations & Payments</h1>
+        <Dialog open={isReservationDialogOpen} onOpenChange={setIsReservationDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              New Reservation
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create New Reservation</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleReservationSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="location">Location</Label>
+                  <Select value={reservationForm.location_id} onValueChange={(value) => setReservationForm({...reservationForm, location_id: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {locations.map((location) => (
+                        <SelectItem key={location.id} value={location.id}>
+                          {location.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="room">Room</Label>
+                  <Select value={reservationForm.room_id} onValueChange={(value) => setReservationForm({...reservationForm, room_id: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select room" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {rooms.filter(room => room.location_id === reservationForm.location_id).map((room) => (
+                        <SelectItem key={room.id} value={room.id}>
+                          {room.room_number} - {room.room_type} (LKR {room.base_price}/night)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="guest_name">Guest Name*</Label>
+                  <Input
+                    id="guest_name"
+                    value={reservationForm.guest_name}
+                    onChange={(e) => setReservationForm({...reservationForm, guest_name: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="guest_email">Guest Email</Label>
+                  <Input
+                    id="guest_email"
+                    type="email"
+                    value={reservationForm.guest_email}
+                    onChange={(e) => setReservationForm({...reservationForm, guest_email: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="guest_phone">Phone Number</Label>
+                  <Input
+                    id="guest_phone"
+                    value={reservationForm.guest_phone}
+                    onChange={(e) => setReservationForm({...reservationForm, guest_phone: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="guest_nationality">Nationality</Label>
+                  <Input
+                    id="guest_nationality"
+                    value={reservationForm.guest_nationality}
+                    onChange={(e) => setReservationForm({...reservationForm, guest_nationality: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="guest_address">Address</Label>
+                <Textarea
+                  id="guest_address"
+                  value={reservationForm.guest_address}
+                  onChange={(e) => setReservationForm({...reservationForm, guest_address: e.target.value})}
+                />
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
+                <div>
+                  <Label htmlFor="adults">Adults</Label>
+                  <Input
+                    id="adults"
+                    type="number"
+                    min="1"
+                    value={reservationForm.adults}
+                    onChange={(e) => setReservationForm({...reservationForm, adults: parseInt(e.target.value)})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="children">Children</Label>
+                  <Input
+                    id="children"
+                    type="number"
+                    min="0"
+                    value={reservationForm.children}
+                    onChange={(e) => setReservationForm({...reservationForm, children: parseInt(e.target.value)})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="check_in_date">Check-in Date</Label>
+                  <Input
+                    id="check_in_date"
+                    type="date"
+                    value={reservationForm.check_in_date}
+                    onChange={(e) => setReservationForm({...reservationForm, check_in_date: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="check_out_date">Check-out Date</Label>
+                  <Input
+                    id="check_out_date"
+                    type="date"
+                    value={reservationForm.check_out_date}
+                    onChange={(e) => setReservationForm({...reservationForm, check_out_date: e.target.value})}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="advance_amount">Advance Payment (LKR)</Label>
+                  <Input
+                    id="advance_amount"
+                    type="number"
+                    min="0"
+                    value={reservationForm.advance_amount}
+                    onChange={(e) => setReservationForm({...reservationForm, advance_amount: parseFloat(e.target.value)})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="special_requests">Special Requests</Label>
+                  <Textarea
+                    id="special_requests"
+                    value={reservationForm.special_requests}
+                    onChange={(e) => setReservationForm({...reservationForm, special_requests: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={() => setIsReservationDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Create Reservation</Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+      <Tabs defaultValue="reservations" className="space-y-4">
+        <TabsList>
           <TabsTrigger value="reservations">Reservations</TabsTrigger>
-          <TabsTrigger value="payments">Payment History</TabsTrigger>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="reservations" className="space-y-4">
+        <TabsContent value="reservations">
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    Hotel Reservations
-                  </CardTitle>
-                  <CardDescription>
-                    Manage guest reservations and bookings
-                  </CardDescription>
-                </div>
-                <Dialog open={isReservationDialogOpen} onOpenChange={setIsReservationDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Reservation
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-4xl">
-                    <DialogHeader>
-                      <DialogTitle>Create New Reservation</DialogTitle>
-                      <DialogDescription>
-                        Enter guest details and booking information
-                      </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleReservationSubmit} className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="location_id">Location</Label>
-                          <Select
-                            value={reservationForm.location_id}
-                            onValueChange={(value) => 
-                              setReservationForm({ ...reservationForm, location_id: value, room_id: "" })
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select location" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {locations.map((location) => (
-                                <SelectItem key={location.id} value={location.id}>
-                                  {location.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor="room_id">Room</Label>
-                          <Select
-                            value={reservationForm.room_id}
-                            onValueChange={(value) => 
-                              setReservationForm({ ...reservationForm, room_id: value })
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select room" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getFilteredRooms().map((room) => (
-                                <SelectItem key={room.id} value={room.id}>
-                                  {room.room_number} - {room.room_type} (LKR {room.base_price}/night)
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="guest_name">Guest Name</Label>
-                          <Input
-                            id="guest_name"
-                            value={reservationForm.guest_name}
-                            onChange={(e) => setReservationForm({ ...reservationForm, guest_name: e.target.value })}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="guest_email">Guest Email</Label>
-                          <Input
-                            id="guest_email"
-                            type="email"
-                            value={reservationForm.guest_email}
-                            onChange={(e) => setReservationForm({ ...reservationForm, guest_email: e.target.value })}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="guest_phone">Phone Number</Label>
-                          <Input
-                            id="guest_phone"
-                            value={reservationForm.guest_phone}
-                            onChange={(e) => setReservationForm({ ...reservationForm, guest_phone: e.target.value })}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="guest_nationality">Nationality</Label>
-                          <Input
-                            id="guest_nationality"
-                            value={reservationForm.guest_nationality}
-                            onChange={(e) => setReservationForm({ ...reservationForm, guest_nationality: e.target.value })}
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="guest_address">Address</Label>
-                        <Textarea
-                          id="guest_address"
-                          value={reservationForm.guest_address}
-                          onChange={(e) => setReservationForm({ ...reservationForm, guest_address: e.target.value })}
-                          rows={2}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-4 gap-4">
-                        <div>
-                          <Label htmlFor="adults">Adults</Label>
-                          <Input
-                            id="adults"
-                            type="number"
-                            min="1"
-                            value={reservationForm.adults}
-                            onChange={(e) => setReservationForm({ ...reservationForm, adults: parseInt(e.target.value) })}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="children">Children</Label>
-                          <Input
-                            id="children"
-                            type="number"
-                            min="0"
-                            value={reservationForm.children}
-                            onChange={(e) => setReservationForm({ ...reservationForm, children: parseInt(e.target.value) })}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="check_in_date">Check-in Date</Label>
-                          <Input
-                            id="check_in_date"
-                            type="date"
-                            value={reservationForm.check_in_date}
-                            onChange={(e) => setReservationForm({ ...reservationForm, check_in_date: e.target.value })}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="check_out_date">Check-out Date</Label>
-                          <Input
-                            id="check_out_date"
-                            type="date"
-                            value={reservationForm.check_out_date}
-                            onChange={(e) => setReservationForm({ ...reservationForm, check_out_date: e.target.value })}
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="arrival_time">Expected Arrival Time</Label>
-                          <Input
-                            id="arrival_time"
-                            type="time"
-                            value={reservationForm.arrival_time}
-                            onChange={(e) => setReservationForm({ ...reservationForm, arrival_time: e.target.value })}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="advance_amount">Advance Payment (LKR)</Label>
-                          <Input
-                            id="advance_amount"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={reservationForm.advance_amount}
-                            onChange={(e) => setReservationForm({ ...reservationForm, advance_amount: parseFloat(e.target.value) || 0 })}
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="special_requests">Special Requests</Label>
-                        <Textarea
-                          id="special_requests"
-                          value={reservationForm.special_requests}
-                          onChange={(e) => setReservationForm({ ...reservationForm, special_requests: e.target.value })}
-                          rows={3}
-                        />
-                      </div>
-
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setIsReservationDialogOpen(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button type="submit">
-                          Create Reservation
-                        </Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </div>
+              <CardTitle>Reservations</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Reservation #</TableHead>
-                    <TableHead>Guest Name</TableHead>
+                    <TableHead>Guest</TableHead>
                     <TableHead>Room</TableHead>
-                    <TableHead>Dates</TableHead>
+                    <TableHead>Check-in</TableHead>
+                    <TableHead>Check-out</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>GRC</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {reservations.map((reservation) => (
-                    <TableRow key={reservation.id}>
-                      <TableCell className="font-medium">
-                        {reservation.reservation_number}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{reservation.guest_name}</div>
-                          <div className="text-sm text-muted-foreground">{reservation.guest_email}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{reservation.rooms?.room_number}</div>
-                          <div className="text-sm text-muted-foreground">{reservation.locations?.name}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div>{new Date(reservation.check_in_date).toLocaleDateString()} - {new Date(reservation.check_out_date).toLocaleDateString()}</div>
-                          <div className="text-muted-foreground">{reservation.nights} nights</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div>Total: LKR {reservation.total_amount.toLocaleString()}</div>
-                          <div className="text-green-600">Paid: LKR {reservation.paid_amount.toLocaleString()}</div>
-                          <div className="text-red-600">Balance: LKR {reservation.balance_amount.toLocaleString()}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusColor(reservation.status)}>
-                          {reservation.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {reservation.grc_approved ? (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-red-600" />
-                          )}
-                          <span className="text-sm">
-                            {reservation.grc_approved ? "Approved" : "Pending"}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          {!reservation.grc_approved && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => updateReservationStatus(reservation.id, reservation.status, true)}
-                            >
-                              <UserCheck className="h-4 w-4" />
-                            </Button>
-                          )}
+                  {reservations.map((reservation) => {
+                    const room = rooms.find(r => r.id === reservation.room_id);
+                    return (
+                      <TableRow key={reservation.id}>
+                        <TableCell className="font-medium">{reservation.reservation_number}</TableCell>
+                        <TableCell>{reservation.guest_name}</TableCell>
+                        <TableCell>{room?.room_number} - {room?.room_type}</TableCell>
+                        <TableCell>{new Date(reservation.check_in_date).toLocaleDateString()}</TableCell>
+                        <TableCell>{new Date(reservation.check_out_date).toLocaleDateString()}</TableCell>
+                        <TableCell>LKR {reservation.total_amount.toLocaleString()}</TableCell>
+                        <TableCell>{getStatusBadge(reservation.status)}</TableCell>
+                        <TableCell className="space-x-2">
                           <Button
-                            size="sm"
                             variant="outline"
+                            size="sm"
                             onClick={() => {
                               setSelectedReservation(reservation);
                               setPaymentForm({
@@ -689,46 +606,54 @@ export default function Income() {
                           >
                             <CreditCard className="h-4 w-4" />
                           </Button>
-                          <Select
-                            value={reservation.status}
-                            onValueChange={(value) => updateReservationStatus(reservation.id, value)}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedReservation(reservation);
+                              setIsPrintDialogOpen(true);
+                            }}
                           >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="tentative">Tentative</SelectItem>
-                              <SelectItem value="confirmed">Confirmed</SelectItem>
-                              <SelectItem value="checked_in">Checked In</SelectItem>
-                              <SelectItem value="checked_out">Checked Out</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                            <Printer className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="payments" className="space-y-4">
+        <TabsContent value="payments">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Receipt className="h-5 w-5" />
-                Payment History
-              </CardTitle>
-              <CardDescription>
-                View all payment transactions
-              </CardDescription>
+              <CardTitle>Payment History</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                Payment history will be displayed here
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Payment #</TableHead>
+                    <TableHead>Reservation</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead>Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {payments.map((payment) => (
+                    <TableRow key={payment.id}>
+                      <TableCell className="font-medium">{payment.payment_number}</TableCell>
+                      <TableCell>{payment.reservations?.guest_name} ({payment.reservations?.reservation_number})</TableCell>
+                      <TableCell>LKR {payment.amount.toLocaleString()}</TableCell>
+                      <TableCell>{payment.payment_method}</TableCell>
+                      <TableCell>{new Date(payment.created_at).toLocaleDateString()}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
@@ -739,129 +664,122 @@ export default function Income() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Process Payment</DialogTitle>
-            <DialogDescription>
-              Process payment for reservation {selectedReservation?.reservation_number}
-            </DialogDescription>
           </DialogHeader>
-          {selectedReservation && (
-            <form onSubmit={handlePaymentSubmit} className="space-y-4">
-              <div className="bg-muted p-4 rounded-lg">
-                <div className="text-sm">
-                  <div>Guest: {selectedReservation.guest_name}</div>
-                  <div>Room: {selectedReservation.rooms?.room_number}</div>
-                  <div>Total Amount: LKR {selectedReservation.total_amount.toLocaleString()}</div>
-                  <div>Paid Amount: LKR {selectedReservation.paid_amount.toLocaleString()}</div>
-                  <div className="font-medium text-red-600">Balance: LKR {selectedReservation.balance_amount.toLocaleString()}</div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="amount">Payment Amount (LKR)</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={paymentForm.amount}
-                    onChange={(e) => setPaymentForm({ ...paymentForm, amount: parseFloat(e.target.value) || 0 })}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="payment_method">Payment Method</Label>
-                  <Select
-                    value={paymentForm.payment_method}
-                    onValueChange={(value) => setPaymentForm({ ...paymentForm, payment_method: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="card">Credit/Debit Card</SelectItem>
-                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                      <SelectItem value="cheque">Cheque</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+          <form onSubmit={handlePaymentSubmit} className="space-y-4">
+            <div>
+              <Label>Reservation: {selectedReservation?.guest_name} ({selectedReservation?.reservation_number})</Label>
+              <p className="text-sm text-muted-foreground">
+                Balance Amount: LKR {selectedReservation?.balance_amount.toLocaleString()}
+              </p>
+            </div>
+            
+            <div>
+              <Label htmlFor="payment_method">Payment Method</Label>
+              <Select value={paymentForm.payment_method} onValueChange={(value) => setPaymentForm({...paymentForm, payment_method: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="card">Credit/Debit Card</SelectItem>
+                  <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                  <SelectItem value="online">Online Payment</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="account_id">Account</Label>
-                  <Select
-                    value={paymentForm.account_id}
-                    onValueChange={(value) => setPaymentForm({ ...paymentForm, account_id: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select account" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          {account.name} ({account.currency})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="payment_type">Payment Type</Label>
-                  <Select
-                    value={paymentForm.payment_type}
-                    onValueChange={(value) => setPaymentForm({ ...paymentForm, payment_type: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="advance">Advance</SelectItem>
-                      <SelectItem value="balance">Balance</SelectItem>
-                      <SelectItem value="full">Full Payment</SelectItem>
-                      <SelectItem value="extra">Extra Charges</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+            <div>
+              <Label htmlFor="account_id">Account</Label>
+              <Select value={paymentForm.account_id} onValueChange={(value) => setPaymentForm({...paymentForm, account_id: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select account" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.name} ({account.currency})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div>
-                <Label htmlFor="reference_number">Reference Number</Label>
-                <Input
-                  id="reference_number"
-                  value={paymentForm.reference_number}
-                  onChange={(e) => setPaymentForm({ ...paymentForm, reference_number: e.target.value })}
-                  placeholder="Transaction reference"
+            <div>
+              <Label htmlFor="amount">Amount (LKR)</Label>
+              <Input
+                id="amount"
+                type="number"
+                min="0"
+                value={paymentForm.amount}
+                onChange={(e) => setPaymentForm({...paymentForm, amount: parseFloat(e.target.value)})}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={paymentForm.notes}
+                onChange={(e) => setPaymentForm({...paymentForm, notes: e.target.value})}
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setIsPaymentDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Process Payment</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Print Dialog */}
+      <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Print Reservation Details</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Guest Signature</Label>
+              <div className="border border-gray-300 rounded mt-2">
+                <SignatureCanvas
+                  ref={sigCanvas}
+                  canvasProps={{
+                    width: 400,
+                    height: 200,
+                    className: 'signature-canvas w-full'
+                  }}
                 />
               </div>
-
-              <div>
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={paymentForm.notes}
-                  onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex justify-end gap-2">
+              <div className="flex space-x-2 mt-2">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsPaymentDialogOpen(false)}
+                  size="sm"
+                  onClick={() => sigCanvas.current?.clear()}
                 >
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  <Banknote className="h-4 w-4 mr-2" />
-                  Process Payment
+                  Clear
                 </Button>
               </div>
-            </form>
-          )}
+            </div>
+            
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setIsPrintDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handlePrint}>
+                <Printer className="mr-2 h-4 w-4" />
+                Print
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
   );
-}
+};
+
+export default Income;
