@@ -1,32 +1,31 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Calendar as CalendarIcon, Eye, Filter, Plus, RefreshCw, Edit, MapPin, User, DollarSign } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, Filter, Plus, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 
-type Booking = Tables<"bookings"> & {
+type Reservation = Tables<"reservations"> & {
   locations: Tables<"locations">;
+  rooms: Tables<"rooms">;
 };
 
+type Room = Tables<"rooms">;
 type Location = Tables<"locations">;
 
 export default function Calendar() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedLocation, setSelectedLocation] = useState("all");
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [showBookingDetails, setShowBookingDetails] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -40,17 +39,26 @@ export default function Calendar() {
         .select("*")
         .eq("is_active", true);
 
-      // Fetch bookings with location data
-      const { data: bookingsData } = await supabase
-        .from("bookings")
+      // Fetch rooms with location data
+      const { data: roomsData } = await supabase
+        .from("rooms")
+        .select("*")
+        .eq("is_active", true)
+        .order("room_number");
+
+      // Fetch reservations with location and room data
+      const { data: reservationsData } = await supabase
+        .from("reservations")
         .select(`
           *,
-          locations (*)
+          locations (*),
+          rooms (*)
         `)
-        .order("check_in", { ascending: true });
+        .order("check_in_date", { ascending: true });
 
       setLocations(locationsData || []);
-      setBookings(bookingsData || []);
+      setRooms(roomsData || []);
+      setReservations(reservationsData || []);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -58,179 +66,61 @@ export default function Calendar() {
     }
   };
 
-  const filteredBookings = bookings.filter(booking => 
-    selectedLocation === "all" || booking.location_id === selectedLocation
+  const filteredRooms = rooms.filter(room => 
+    selectedLocation === "all" || room.location_id === selectedLocation
   );
 
-  const getSourceColor = (source: string) => {
-    const colors = {
-      booking_com: "bg-yellow-500", // Yellow for Booking.com
-      airbnb: "bg-blue-500",        // Blue for Airbnb
-      direct: "bg-red-500"          // Red for direct bookings
-    };
-    return colors[source as keyof typeof colors] || "bg-slate-500";
-  };
-
-  const getSourceBorder = (source: string) => {
-    const colors = {
-      booking_com: "border-yellow-600", // Yellow border for Booking.com
-      airbnb: "border-blue-600",        // Blue border for Airbnb
-      direct: "border-red-600"          // Red border for direct bookings
-    };
-    return colors[source as keyof typeof colors] || "border-slate-600";
-  };
+  const filteredReservations = reservations.filter(reservation => 
+    selectedLocation === "all" || reservation.location_id === selectedLocation
+  );
 
   const getStatusColor = (status: string) => {
     const colors = {
-      confirmed: "bg-emerald-500",
-      pending: "bg-amber-500",
-      settled: "bg-blue-500"
+      confirmed: "bg-emerald-100 text-emerald-800 border-emerald-200",
+      tentative: "bg-amber-100 text-amber-800 border-amber-200",
+      completed: "bg-blue-100 text-blue-800 border-blue-200",
+      cancelled: "bg-red-100 text-red-800 border-red-200"
     };
-    return colors[status as keyof typeof colors] || "bg-slate-500";
+    return colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800 border-gray-200";
   };
 
-  const handleDateClick = (date: Date, bookings: Booking[]) => {
-    if (bookings.length > 0) {
-      setSelectedBooking(bookings[0]);
-      setShowBookingDetails(true);
-    } else {
-      const dateStr = date.toISOString().split('T')[0];
-      navigate(`/booking/new?date=${dateStr}&location=${selectedLocation !== 'all' ? selectedLocation : ''}`);
-    }
+  const getRoomStatus = (room: Room) => {
+    // Simple room status logic - can be enhanced
+    return "Ready";
   };
 
-  const syncCalendars = async () => {
-    setSyncing(true);
-    try {
-      // Get Rusty Bunk location
-      const rustyBunk = locations.find(loc => loc.name.toLowerCase().includes('rusty'));
-      if (!rustyBunk) {
-        toast({
-          title: "Error",
-          description: "Rusty Bunk location not found",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Sync booking.com calendar
-      const { data: bookingResult, error: bookingError } = await supabase.functions.invoke('sync-ical', {
-        body: {
-          icalUrl: 'https://ical.booking.com/v1/export?t=1d0bea4b-1994-40ec-a9c9-8a718b6cb06a',
-          locationId: rustyBunk.id,
-          source: 'booking.com'
-        }
-      });
-
-      if (bookingError) {
-        console.error(`Booking.com sync failed: ${bookingError.message}`);
-      }
-
-      // Sync Airbnb calendar
-      const { data: airbnbResult, error: airbnbError } = await supabase.functions.invoke('sync-ical', {
-        body: {
-          icalUrl: 'https://www.airbnb.com/calendar/ical/963663195873805668.ics?s=3e54d971266f0be2e1d214dbfe0ab1e5',
-          locationId: rustyBunk.id,
-          source: 'airbnb'
-        }
-      });
-
-      if (airbnbError) {
-        console.error(`Airbnb sync failed: ${airbnbError.message}`);
-      }
-
-      const totalEvents = (bookingResult?.eventsCount || 0) + (airbnbResult?.eventsCount || 0);
-      const syncSummary = [];
-      
-      if (bookingResult?.eventsCount) {
-        syncSummary.push(`${bookingResult.eventsCount} from Booking.com`);
-      }
-      if (airbnbResult?.eventsCount) {
-        syncSummary.push(`${airbnbResult.eventsCount} from Airbnb`);
-      }
-
-      const successMessage = totalEvents > 0 
-        ? `Synced ${totalEvents} bookings (${syncSummary.join(', ')})`
-        : 'Sync completed - no new bookings found';
-
-      toast({
-        title: "Success",
-        description: successMessage
-      });
-
-      // Refresh data
-      fetchData();
-    } catch (error: any) {
-      console.error('Sync error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to sync calendars",
-        variant: "destructive"
-      });
-    } finally {
-      setSyncing(false);
-    }
-  };
-
-  // Generate calendar grid for current month
-  const generateCalendarDays = () => {
+  // Generate dates for calendar header
+  const generateCalendarDates = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDayOfMonth = new Date(year, month, 1).getDay();
     
-    const days = [];
-    
-    // Empty cells for days before month starts
-    for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(null);
-    }
-    
-    // Days of the month
+    const dates = [];
     for (let day = 1; day <= daysInMonth; day++) {
-      const currentDateObj = new Date(year, month, day);
-      // Set to start of day for accurate comparison
-      currentDateObj.setHours(0, 0, 0, 0);
-      
-      const dayBookings = filteredBookings.filter(booking => {
-        const checkIn = new Date(booking.check_in);
-        const checkOut = new Date(booking.check_out);
-        
-        // Set to start of day for accurate comparison
-        checkIn.setHours(0, 0, 0, 0);
-        checkOut.setHours(0, 0, 0, 0);
-        
-        // Include booking if current date is between check-in and check-out
-        // For single day bookings (check-in = check-out), include that day
-        // For multi-day bookings, include from check-in up to but not including check-out
-        if (checkIn.getTime() === checkOut.getTime()) {
-          // Single day booking
-          return currentDateObj.getTime() === checkIn.getTime();
-        } else {
-          // Multi-day booking: include check-in date, exclude check-out date
-          return currentDateObj.getTime() >= checkIn.getTime() && currentDateObj.getTime() < checkOut.getTime();
-        }
-      });
-      
-      days.push({
-        day,
-        date: currentDateObj,
-        bookings: dayBookings,
-        isAvailable: dayBookings.length === 0
-      });
+      dates.push(new Date(year, month, day));
     }
-    
-    return days;
+    return dates;
   };
 
-  const calendarDays = generateCalendarDays();
+  // Get reservations for a specific room and date
+  const getReservationsForRoomAndDate = (roomId: string, date: Date) => {
+    return filteredReservations.filter(reservation => {
+      const checkIn = new Date(reservation.check_in_date);
+      const checkOut = new Date(reservation.check_out_date);
+      
+      // Check if date falls within reservation period
+      return date >= checkIn && date < checkOut && reservation.room_id === roomId;
+    });
+  };
+
+  const calendarDates = generateCalendarDates();
 
   if (loading) {
     return <div className="flex justify-center items-center min-h-64">Loading...</div>;
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-2 lg:p-4 space-y-3 lg:space-y-4 animate-fade-in">
+    <div className="max-w-full mx-auto p-2 lg:p-4 space-y-3 lg:space-y-4 animate-fade-in overflow-x-auto">
       {/* Header */}
       <div className="flex items-center gap-2 lg:gap-4">
         <Button asChild variant="ghost" size="icon" className="md:hidden h-8 w-8">
@@ -239,285 +129,134 @@ export default function Calendar() {
           </Link>
         </Button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg lg:text-xl xl:text-2xl font-bold text-foreground">Calendar & Bookings</h1>
-          <p className="text-xs lg:text-sm text-muted-foreground hidden md:block">View upcoming bookings and availability</p>
+          <h1 className="text-lg lg:text-xl xl:text-2xl font-bold text-foreground">Reservation Calendar</h1>
+          <p className="text-xs lg:text-sm text-muted-foreground hidden md:block">Room-based calendar view</p>
         </div>
       </div>
 
-      {/* Filters */}
-      <Card className="bg-gradient-card border-0 shadow-elegant">
-        <CardHeader className="pb-2 lg:pb-3">
-          <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
-            <Filter className="h-4 w-4 text-primary" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="flex flex-col gap-2 lg:gap-3">
-            <div className="w-full">
-              <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                <SelectTrigger className="h-9 lg:h-10">
-                  <SelectValue placeholder="Select location" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Locations</SelectItem>
-                  {locations.map((location) => (
-                    <SelectItem key={location.id} value={location.id}>
-                      {location.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-2 lg:flex lg:gap-3">
-              <Button 
-                variant="outline" 
-                onClick={syncCalendars}
-                disabled={syncing}
-                className="h-9 lg:h-10 text-xs lg:text-sm"
-                size="sm"
-              >
-                <RefreshCw className={`h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2 ${syncing ? 'animate-spin' : ''}`} />
-                {syncing ? 'Syncing...' : 'Sync'}
-              </Button>
-              <Button asChild className="h-9 lg:h-10 text-xs lg:text-sm" size="sm">
-                <Link to="/booking/new">
-                  <Plus className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
-                  Add Booking
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filters & Controls */}
+      <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Select location" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Locations</SelectItem>
+              {locations.map((location) => (
+                <SelectItem key={location.id} value={location.id}>
+                  {location.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm font-medium px-3">
+            {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </span>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
 
       {/* Calendar Grid */}
       <Card className="bg-gradient-card border-0 shadow-elegant">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <CalendarIcon className="h-4 w-4 text-primary" />
-              {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-            </CardTitle>
-            <div className="flex gap-1">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
-              >
-                ←
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
-              >
-                →
-              </Button>
-            </div>
-          </div>
-          
-          {/* Legend */}
-          <div className="flex flex-wrap gap-3 text-xs mt-3">
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-emerald-500 rounded"></div>
-              <span>Available</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-red-500 rounded"></div>
-              <span>Direct</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-              <span>Booking.com</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-blue-500 rounded"></div>
-              <span>Airbnb</span>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-7 gap-0.5 lg:gap-1 mb-2">
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, index) => (
-              <div key={day} className="p-1 text-center font-semibold text-muted-foreground text-xs">
-                <span className="hidden sm:inline">{day}</span>
-                <span className="sm:hidden">{day.slice(0, 1)}</span>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <div className="min-w-[800px]">
+              {/* Header with dates */}
+              <div className="grid" style={{ gridTemplateColumns: `200px repeat(${calendarDates.length}, 50px)` }}>
+                <div className="border-b border-r p-2 bg-muted font-semibold text-sm">
+                  <div>Room</div>
+                  <div className="text-xs text-muted-foreground mt-1">Type | Status</div>
+                </div>
+                {calendarDates.map((date, index) => (
+                  <div key={index} className="border-b border-r p-1 text-center bg-muted">
+                    <div className="text-xs font-medium">{date.getDate()}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {date.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 2)}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          
-          <div className="grid grid-cols-7 gap-0.5 lg:gap-1">
-            {calendarDays.map((dayData, index) => (
-              <div 
-                key={index} 
-                className={`min-h-10 lg:min-h-12 xl:min-h-16 p-0.5 lg:p-1 border border-border rounded text-center transition-colors ${
-                  dayData ? 'hover:bg-muted/50 cursor-pointer' : ''
-                }`}
-                onClick={() => dayData && handleDateClick(dayData.date, dayData.bookings)}
-              >
-                {dayData && (
-                  <>
-                    <div className="text-xs font-medium mb-1">{dayData.day}</div>
-                    {dayData.isAvailable ? (
-                      <div className="w-full h-4 md:h-6 bg-emerald-500/20 rounded text-xs flex items-center justify-center text-emerald-700">
-                        <span className="hidden md:inline">Available</span>
-                        <span className="md:hidden">✓</span>
-                      </div>
-                    ) : (
-                      <div className="space-y-1">
-                        {dayData.bookings.slice(0, 1).map((booking) => (
+
+              {/* Room rows */}
+              {filteredRooms.map((room) => (
+                <div key={room.id} className="grid" style={{ gridTemplateColumns: `200px repeat(${calendarDates.length}, 50px)` }}>
+                  {/* Room info column */}
+                  <div className="border-b border-r p-2 bg-background">
+                    <div className="font-medium text-sm">{room.room_number}</div>
+                    <div className="text-xs text-muted-foreground">{room.room_type}</div>
+                    <div className="text-xs text-emerald-600 mt-1">{getRoomStatus(room)}</div>
+                  </div>
+                  
+                  {/* Date columns */}
+                  {calendarDates.map((date, dateIndex) => {
+                    const reservations = getReservationsForRoomAndDate(room.id, date);
+                    const reservation = reservations[0];
+                    
+                    return (
+                      <div key={dateIndex} className="border-b border-r min-h-[60px] p-1 relative">
+                        {reservation ? (
                           <div 
-                            key={booking.id} 
-                            className={`text-xs text-white px-1 py-0.5 rounded text-center ${getSourceColor(booking.source)}`}
-                            title={`${booking.guest_name} - ${booking.source}`}
+                            className={`text-xs p-1 rounded text-center cursor-pointer ${getStatusColor(reservation.status)}`}
+                            onClick={() => navigate(`/reservations/${reservation.id}`)}
+                            title={`${reservation.guest_name} - ${reservation.status}`}
                           >
-                            <span className="hidden md:inline">{booking.guest_name.split(' ')[0]}</span>
-                            <span className="md:hidden">•</span>
+                            <div className="font-medium">{reservation.guest_name.split(' ')[0]}</div>
+                            <div className="text-xs opacity-75">
+                              {new Date(reservation.check_in_date).getDate()}-{new Date(reservation.check_out_date).getDate()}
+                            </div>
                           </div>
-                        ))}
-                        {dayData.bookings.length > 1 && (
-                          <div className="text-xs text-center text-muted-foreground">
-                            +{dayData.bookings.length - 1}
-                          </div>
+                        ) : (
+                          <div 
+                            className="h-full hover:bg-muted/50 cursor-pointer rounded"
+                            onClick={() => navigate(`/reservations/new?room=${room.id}&date=${date.toISOString().split('T')[0]}`)}
+                          />
                         )}
                       </div>
-                    )}
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Upcoming Bookings */}
-      <Card className="bg-gradient-card border-0 shadow-elegant">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Upcoming Bookings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {filteredBookings.slice(0, 10).map((booking) => (
-              <div key={booking.id} className="p-3 md:p-4 border border-border rounded-lg">
-                <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 mb-2">
-                  <div>
-                    <h3 className="font-semibold">{booking.guest_name}</h3>
-                    <p className="text-sm text-muted-foreground">{booking.locations?.name}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Badge className={`text-white text-xs ${getSourceColor(booking.source)}`}>
-                      {booking.source.replace('_', '.')}
-                    </Badge>
-                    <Badge className={`text-white text-xs ${getStatusColor(booking.status)}`}>
-                      {booking.status}
-                    </Badge>
-                  </div>
+                    );
+                  })}
                 </div>
-                <div className="flex flex-col md:flex-row md:justify-between text-sm gap-1">
-                  <span>Check-in: {new Date(booking.check_in).toLocaleDateString()}</span>
-                  <span>Check-out: {new Date(booking.check_out).toLocaleDateString()}</span>
-                </div>
-                <div className="mt-2 text-sm">
-                  <span className="font-medium">Total: LKR {booking.total_amount.toLocaleString()}</span>
-                  {booking.paid_amount > 0 && (
-                    <span className="ml-2 md:ml-4 text-emerald-600">
-                      Paid: LKR {booking.paid_amount.toLocaleString()}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Booking Details Sheet */}
-      <Sheet open={showBookingDetails} onOpenChange={setShowBookingDetails}>
-        <SheetContent className="w-full sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5" />
-              Booking Details
-            </SheetTitle>
-            <SheetDescription>
-              View and manage booking information
-            </SheetDescription>
-          </SheetHeader>
-          
-          {selectedBooking && (
-            <div className="space-y-6 mt-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <User className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-semibold">{selectedBooking.guest_name}</p>
-                    <p className="text-sm text-muted-foreground">Guest</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <MapPin className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-semibold">{selectedBooking.locations?.name}</p>
-                    <p className="text-sm text-muted-foreground">Location</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Check-in</p>
-                    <p className="font-semibold">{new Date(selectedBooking.check_in).toLocaleDateString()}</p>
-                  </div>
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Check-out</p>
-                    <p className="font-semibold">{new Date(selectedBooking.check_out).toLocaleDateString()}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <DollarSign className="h-5 w-5 text-primary" />
-                  <div className="flex-1">
-                    <p className="font-semibold">LKR {selectedBooking.total_amount.toLocaleString()}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Paid: LKR {selectedBooking.paid_amount.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex gap-2">
-                  <Badge className={`${getSourceColor(selectedBooking.source)} text-white`}>
-                    {selectedBooking.source.replace('_', '.')}
-                  </Badge>
-                  <Badge className={`${getStatusColor(selectedBooking.status)} text-white`}>
-                    {selectedBooking.status}
-                  </Badge>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <Button 
-                  onClick={() => {
-                    navigate(`/booking/edit/${selectedBooking.id}`);
-                    setShowBookingDetails(false);
-                  }}
-                  className="w-full"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Booking
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowBookingDetails(false)}
-                  className="w-full"
-                >
-                  Close
-                </Button>
-              </div>
+              ))}
             </div>
-          )}
-        </SheetContent>
-      </Sheet>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-4 text-xs">
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 bg-emerald-100 border border-emerald-200 rounded"></div>
+          <span>Confirmed</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 bg-amber-100 border border-amber-200 rounded"></div>
+          <span>Tentative</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 bg-blue-100 border border-blue-200 rounded"></div>
+          <span>Completed</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 bg-red-100 border border-red-200 rounded"></div>
+          <span>Cancelled</span>
+        </div>
+      </div>
     </div>
   );
 }
