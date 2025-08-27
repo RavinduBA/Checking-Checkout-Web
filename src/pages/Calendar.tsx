@@ -177,18 +177,18 @@ export default function Calendar() {
       <Card className="bg-gradient-card border-0 shadow-elegant">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <div className="min-w-[800px]">
+            <div className="min-w-full">
               {/* Header with dates */}
-              <div className="grid" style={{ gridTemplateColumns: `200px repeat(${calendarDates.length}, 50px)` }}>
-                <div className="border-b border-r p-2 bg-muted font-semibold text-sm">
+              <div className="grid" style={{ gridTemplateColumns: `120px repeat(${calendarDates.length}, 32px)` }}>
+                <div className="border-b border-r p-1 bg-muted font-semibold text-xs">
                   <div>Room</div>
-                  <div className="text-xs text-muted-foreground mt-1">Type | Status</div>
+                  <div className="text-xs text-muted-foreground">Type</div>
                 </div>
                 {calendarDates.map((date, index) => (
-                  <div key={index} className="border-b border-r p-1 text-center bg-muted">
+                  <div key={index} className="border-b border-r p-0.5 text-center bg-muted">
                     <div className="text-xs font-medium">{date.getDate()}</div>
                     <div className="text-xs text-muted-foreground">
-                      {date.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 2)}
+                      {date.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 1)}
                     </div>
                   </div>
                 ))}
@@ -196,12 +196,11 @@ export default function Calendar() {
 
               {/* Room rows */}
               {filteredRooms.map((room) => (
-                <div key={room.id} className="grid" style={{ gridTemplateColumns: `200px repeat(${calendarDates.length}, 50px)` }}>
+                <div key={room.id} className="grid" style={{ gridTemplateColumns: `120px repeat(${calendarDates.length}, 32px)` }}>
                   {/* Room info column */}
-                  <div className="border-b border-r p-2 bg-background">
-                    <div className="font-medium text-sm">{room.room_number}</div>
-                    <div className="text-xs text-muted-foreground">{room.room_type}</div>
-                    <div className="text-xs text-emerald-600 mt-1">{getRoomStatus(room)}</div>
+                  <div className="border-b border-r p-1 bg-background">
+                    <div className="font-medium text-xs">{room.room_number}</div>
+                    <div className="text-xs text-muted-foreground truncate">{room.room_type}</div>
                   </div>
                   
                   {/* Date columns */}
@@ -210,15 +209,17 @@ export default function Calendar() {
                     const reservation = reservations[0];
                     
                     return (
-                      <div key={dateIndex} className="border-b border-r min-h-[60px] p-1 relative">
+                      <div key={dateIndex} className="border-b border-r min-h-[45px] p-0.5 relative">
                         {reservation ? (
                           <div 
-                            className={`text-xs p-1 rounded text-center cursor-pointer ${getStatusColor(reservation.status)}`}
+                            className={`text-xs p-0.5 rounded text-center cursor-pointer ${getStatusColor(reservation.status)} overflow-hidden`}
                             onClick={() => navigate(`/reservations/${reservation.id}`)}
                             title={`${reservation.guest_name} - ${reservation.status}`}
                           >
-                            <div className="font-medium">{reservation.guest_name.split(' ')[0]}</div>
-                            <div className="text-xs opacity-75">
+                            <div className="font-medium text-xs leading-tight truncate">
+                              {reservation.guest_name.split(' ')[0].slice(0, 4)}
+                            </div>
+                            <div className="text-xs opacity-75 leading-tight">
                               {new Date(reservation.check_in_date).getDate()}-{new Date(reservation.check_out_date).getDate()}
                             </div>
                           </div>
