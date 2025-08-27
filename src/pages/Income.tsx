@@ -1,45 +1,132 @@
-import { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { Tables, Database } from "@/integrations/supabase/types";
-import { format } from "date-fns";
-import jsPDF from "jspdf";
-import { ArrowLeft, Plus, Calendar, Trash2 } from "lucide-react";
-import { Link } from "react-router-dom";
-import { BookingShortcuts } from "@/components/BookingShortcuts";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  Plus, 
+  Calendar, 
+  User, 
+  CreditCard, 
+  Edit, 
+  Eye, 
+  CheckCircle, 
+  XCircle,
+  Clock,
+  UserCheck,
+  Settings,
+  Receipt,
+  Banknote
+} from "lucide-react";
 
-type Location = Tables<"locations">;
-type Account = Tables<"accounts">;
-type Income = Tables<"income"> & {
+type Location = {
+  id: string;
+  name: string;
+};
+
+type Room = {
+  id: string;
+  room_number: string;
+  room_type: string;
+  base_price: number;
+  location_id: string;
+};
+
+type Account = {
+  id: string;
+  name: string;
+  currency: string;
+};
+
+type Reservation = {
+  id: string;
+  reservation_number: string;
+  location_id: string;
+  room_id: string;
+  guest_name: string;
+  guest_email: string;
+  guest_phone: string;
+  guest_address: string;
+  guest_id_number: string;
+  guest_nationality: string;
+  adults: number;
+  children: number;
+  check_in_date: string;
+  check_out_date: string;
+  nights: number;
+  room_rate: number;
+  total_amount: number;
+  advance_amount: number;
+  paid_amount: number;
+  balance_amount: number;
+  status: 'tentative' | 'confirmed' | 'checked_in' | 'checked_out' | 'cancelled' | 'pending';
+  special_requests: string;
+  arrival_time: string;
+  grc_approved: boolean;
+  created_at: string;
   locations?: Location;
-  accounts?: Account;
+  rooms?: Room;
+};
+
+type Payment = {
+  id: string;
+  payment_number: string;
+  reservation_id: string;
+  amount: number;
+  payment_method: string;
+  account_id: string;
+  payment_type: string;
+  reference_number: string;
+  notes: string;
+  created_at: string;
 };
 
 export default function Income() {
-  const [formData, setFormData] = useState({
-    type: "booking" as Database["public"]["Enums"]["income_type"],
-    amount: "",
-    accountId: "",
-    locationId: "",
-    dateFrom: format(new Date(), "yyyy-MM-dd"),
-    dateTo: format(new Date(), "yyyy-MM-dd"),
-    note: "",
-    
-    bookingSource: "direct" as Database["public"]["Enums"]["booking_source"],
-    isAdvance: false,
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isReservationDialogOpen, setIsReservationDialogOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+  const [selectedTab, setSelectedTab] = useState("reservations");
+  
+  const [reservationForm, setReservationForm] = useState({
+    location_id: "",
+    room_id: "",
+    guest_name: "",
+    guest_email: "",
+    guest_phone: "",
+    guest_address: "",
+    guest_id_number: "",
+    guest_nationality: "",
+    adults: 1,
+    children: 0,
+    check_in_date: "",
+    check_out_date: "",
+    special_requests: "",
+    arrival_time: "",
+    advance_amount: 0,
   });
 
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [incomeTypes, setIncomeTypes] = useState<any[]>([]);
-  const [recentIncomes, setRecentIncomes] = useState<Income[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [paymentForm, setPaymentForm] = useState({
+    amount: 0,
+    payment_method: "",
+    account_id: "",
+    payment_type: "advance",
+    reference_number: "",
+    notes: "",
+  });
+
   const { toast } = useToast();
 
   useEffect(() => {
@@ -48,330 +135,670 @@ export default function Income() {
 
   const fetchData = async () => {
     try {
-      const [locationsData, accountsData, recentIncomeData, incomeTypesData] = await Promise.all([
-        supabase.from("locations").select("*").eq("is_active", true),
-        supabase.from("accounts").select("*"),
-        supabase.from("income").select("*, accounts(*), locations(*)").order("created_at", { ascending: false }).limit(10),
-        supabase.from("income_types").select("*").order("type_name")
+      const [reservationsRes, locationsRes, roomsRes, accountsRes] = await Promise.all([
+        supabase
+          .from("reservations")
+          .select(`
+            *,
+            locations (id, name),
+            rooms (id, room_number, room_type, base_price, location_id)
+          `)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("locations")
+          .select("*")
+          .eq("is_active", true),
+        supabase
+          .from("rooms")
+          .select("*")
+          .eq("is_active", true),
+        supabase
+          .from("accounts")
+          .select("*")
       ]);
 
-      setLocations(locationsData.data || []);
-      setAccounts(accountsData.data || []);
-      setRecentIncomes(recentIncomeData.data || []);
-      setIncomeTypes(incomeTypesData.data || []);
+      if (reservationsRes.error) throw reservationsRes.error;
+      if (locationsRes.error) throw locationsRes.error;
+      if (roomsRes.error) throw roomsRes.error;
+      if (accountsRes.error) throw accountsRes.error;
+
+      setReservations(reservationsRes.data || []);
+      setLocations(locationsRes.data || []);
+      setRooms(roomsRes.data || []);
+      setAccounts(accountsRes.data || []);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch data",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const didPrefill = useRef(false);
-  const getAccountForParams = (locationName: string, source: Database["public"]["Enums"]["booking_source"]) => {
-    if (locationName === "Rusty Bunk") {
-      if (source === "airbnb") return accounts.find(acc => acc.name === "Payoneer jayathu");
-      return accounts.find(acc => acc.name === "RB-CASH ON HAND-LKR");
-    } else if (locationName === "Asaliya Villa") {
-      if (source === "airbnb") return accounts.find(acc => acc.name === "Payoneer jayathu");
-      return accounts.find(acc => acc.name === "Asaliya Cash-LKR");
-    }
-    return accounts[0];
+  const calculateNights = (checkIn: string, checkOut: string) => {
+    if (!checkIn || !checkOut) return 0;
+    const start = new Date(checkIn);
+    const end = new Date(checkOut);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  // Prefill form from URL params (used by SMS deep link)
-  useEffect(() => {
-    if (didPrefill.current) return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("prefill") !== "1") return;
-
-    const src = (params.get("src") as Database["public"]["Enums"]["booking_source"]) || "direct";
-    const locName = params.get("loc") || "";
-    const rest = params.get("rest") || "";
-
-    const matchedLoc = locations.find(l => l.name.toLowerCase() === locName.toLowerCase());
-    const matchedAcc = getAccountForParams(locName, src);
-    const today = format(new Date(), "yyyy-MM-dd");
-
-    setFormData(prev => ({
-      ...prev,
-      type: "booking",
-      bookingSource: src,
-      locationId: matchedLoc?.id || prev.locationId,
-      accountId: matchedAcc?.id || prev.accountId,
-      amount: rest,
-      dateFrom: today,
-      dateTo: today,
-    }));
-
-    didPrefill.current = true;
-  }, [locations, accounts]);
-
-  const selectedAccount = accounts.find(a => a.id === formData.accountId);
-  const currencySymbol = selectedAccount?.currency === "USD" ? "$" : "Rs.";
-
-  const generatePDF = () => {
-    const doc = new jsPDF();
-    const selectedLocation = locations.find(l => l.id === formData.locationId);
-    const selectedAccount = accounts.find(a => a.id === formData.accountId);
-    const currencySymbol = selectedAccount?.currency === "USD" ? "$" : "Rs. ";
-
-    doc.setFontSize(20);
-    doc.text("Income Record", 20, 20);
-    
-    doc.setFontSize(12);
-    doc.text(`Type: ${formData.type}`, 20, 40);
-    doc.text(`Amount: ${currencySymbol}${formData.amount}`, 20, 50);
-    doc.text(`Account: ${selectedAccount?.name || "N/A"}`, 20, 60);
-    doc.text(`Location: ${selectedLocation?.name || "N/A"}`, 20, 70);
-    doc.text(`Date: ${formData.dateFrom}`, 20, 80);
-    if (formData.note) doc.text(`Note: ${formData.note}`, 20, 90);
-    
-    doc.save(`income-record-${formData.dateFrom}.pdf`);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleReservationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     try {
-      const { error } = await supabase.from("income").insert([{
-        type: formData.type,
-        amount: parseFloat(formData.amount),
-        account_id: formData.accountId,
-        location_id: formData.locationId,
-        date: formData.dateFrom,
-        note: formData.note || null,
-        payment_method: "Cash", // Default payment method
-        is_advance: formData.isAdvance,
-        booking_source: formData.type === 'booking' ? formData.bookingSource : null,
-        check_in_date: formData.type === 'booking' ? formData.dateFrom : null,
-        check_out_date: formData.type === 'booking' ? formData.dateTo : null,
-      }]);
+      const selectedRoom = rooms.find(r => r.id === reservationForm.room_id);
+      if (!selectedRoom) throw new Error("Room not found");
+
+      const nights = calculateNights(reservationForm.check_in_date, reservationForm.check_out_date);
+      const totalAmount = nights * selectedRoom.base_price;
+      const balanceAmount = totalAmount - reservationForm.advance_amount;
+
+      // Generate reservation number by getting count and creating unique number
+      const { data: existingReservations, error: countError } = await supabase
+        .from('reservations')
+        .select('id');
+      
+      if (countError) throw countError;
+      
+      const currentYear = new Date().getFullYear();
+      const reservationNumber = `RES${currentYear}${String((existingReservations?.length || 0) + 1).padStart(4, '0')}`;
+
+      const reservationData = {
+        ...reservationForm,
+        reservation_number: reservationNumber,
+        nights,
+        room_rate: selectedRoom.base_price,
+        total_amount: totalAmount,
+        paid_amount: reservationForm.advance_amount,
+        balance_amount: balanceAmount,
+        status: 'tentative' as const,
+      };
+
+      const { error } = await supabase
+        .from("reservations")
+        .insert([reservationData]);
 
       if (error) throw error;
 
-      // Calculate new account balance
-      const selectedAccount = accounts.find(acc => acc.id === formData.accountId);
-      if (selectedAccount) {
-        // Fetch current account transactions to calculate balance
-        const [incomesRes, expensesRes, outgoingTransfersRes, incomingTransfersRes] = await Promise.all([
-          supabase.from("income").select("amount").eq("account_id", formData.accountId),
-          supabase.from("expenses").select("amount").eq("account_id", formData.accountId),
-          supabase.from("account_transfers").select("amount").eq("from_account_id", formData.accountId),
-          supabase.from("account_transfers").select("amount, conversion_rate").eq("to_account_id", formData.accountId)
-        ]);
-
-        let currentBalance = selectedAccount.initial_balance;
-        
-        // Add all income (including the new one we just added)
-        const totalIncome = (incomesRes.data || []).reduce((sum, item) => sum + parseFloat(item.amount.toString()), 0);
-        currentBalance += totalIncome;
-        
-        // Subtract all expenses
-        const totalExpenses = (expensesRes.data || []).reduce((sum, item) => sum + parseFloat(item.amount.toString()), 0);
-        currentBalance -= totalExpenses;
-        
-        // Subtract outgoing transfers
-        const totalOutgoingTransfers = (outgoingTransfersRes.data || []).reduce((sum, item) => sum + parseFloat(item.amount.toString()), 0);
-        currentBalance -= totalOutgoingTransfers;
-        
-        // Add incoming transfers (with conversion rate)
-        const totalIncomingTransfers = (incomingTransfersRes.data || []).reduce((sum, item) => 
-          sum + (parseFloat(item.amount.toString()) * item.conversion_rate), 0);
-        currentBalance += totalIncomingTransfers;
-
-        const currencySymbol = selectedAccount.currency === "USD" ? "$" : "Rs.";
-        
-        toast({
-          title: "Success",
-          description: `Income record added successfully\n${selectedAccount.name} - ${currencySymbol}${currentBalance.toLocaleString()}`,
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: "Income record added successfully",
-        });
-      }
-
-      // Reset form but keep location
-      setFormData({
-        type: "booking",
-        amount: "",
-        accountId: "",
-        locationId: formData.locationId, // Keep location selected
-        dateFrom: format(new Date(), "yyyy-MM-dd"),
-        dateTo: format(new Date(), "yyyy-MM-dd"),
-        note: "",
-        bookingSource: "direct",
-        isAdvance: false,
+      toast({
+        title: "Success",
+        description: "Reservation created successfully",
       });
 
-      fetchData(); // Refresh recent incomes
+      setIsReservationDialogOpen(false);
+      setReservationForm({
+        location_id: "",
+        room_id: "",
+        guest_name: "",
+        guest_email: "",
+        guest_phone: "",
+        guest_address: "",
+        guest_id_number: "",
+        guest_nationality: "",
+        adults: 1,
+        children: 0,
+        check_in_date: "",
+        check_out_date: "",
+        special_requests: "",
+        arrival_time: "",
+        advance_amount: 0,
+      });
+      fetchData();
     } catch (error) {
-      console.error("Error adding income:", error);
       toast({
         title: "Error",
-        description: "Failed to add income record",
+        description: "Failed to create reservation",
         variant: "destructive",
       });
     }
   };
 
-  const handleQuickFill = (data: {
-    type: Database["public"]["Enums"]["income_type"];
-    amount: string;
-    accountId: string;
-    dateFrom: string;
-    dateTo: string;
-    bookingSource: Database["public"]["Enums"]["booking_source"];
-    guestName: string;
-  }) => {
-    setFormData({
-      ...formData,
-      type: data.type,
-      amount: data.amount,
-      accountId: data.accountId,
-      dateFrom: data.dateFrom,
-      dateTo: data.dateTo,
-      bookingSource: data.bookingSource,
-      note: data.guestName, // This now contains detailed booking information
-    });
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedReservation) return;
+
+    try {
+      // Generate payment number
+      const { data: existingPayments, error: countError } = await supabase
+        .from('payments')
+        .select('id');
+      
+      if (countError) throw countError;
+      
+      const currentYear = new Date().getFullYear();
+      const paymentNumber = `PAY${currentYear}${String((existingPayments?.length || 0) + 1).padStart(4, '0')}`;
+
+      const paymentData = {
+        ...paymentForm,
+        payment_number: paymentNumber,
+        reservation_id: selectedReservation.id,
+      };
+
+      const { error } = await supabase
+        .from("payments")
+        .insert([paymentData]);
+
+      if (error) throw error;
+
+      // Update reservation paid amount
+      const newPaidAmount = selectedReservation.paid_amount + paymentForm.amount;
+      const newBalanceAmount = selectedReservation.total_amount - newPaidAmount;
+
+      await supabase
+        .from("reservations")
+        .update({ 
+          paid_amount: newPaidAmount,
+          balance_amount: newBalanceAmount 
+        })
+        .eq("id", selectedReservation.id);
+
+      toast({
+        title: "Success",
+        description: "Payment processed successfully",
+      });
+
+      setIsPaymentDialogOpen(false);
+      setSelectedReservation(null);
+      setPaymentForm({
+        amount: 0,
+        payment_method: "",
+        account_id: "",
+        payment_type: "advance",
+        reference_number: "",
+        notes: "",
+      });
+      fetchData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to process payment",
+        variant: "destructive",
+      });
+    }
   };
 
-// Remove delete function - deletion should be done from settings page
+  const updateReservationStatus = async (id: string, status: string, grcApproved?: boolean) => {
+    try {
+      const updateData: any = { status };
+      if (grcApproved !== undefined) {
+        updateData.grc_approved = grcApproved;
+        updateData.grc_approved_at = new Date().toISOString();
+      }
+
+      const { error } = await supabase
+        .from("reservations")
+        .update(updateData)
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Reservation status updated",
+      });
+      fetchData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'tentative': return 'secondary';
+      case 'confirmed': return 'default';
+      case 'checked_in': return 'default';
+      case 'checked_out': return 'outline';
+      case 'cancelled': return 'destructive';
+      default: return 'secondary';
+    }
+  };
+
+  const getFilteredRooms = () => {
+    return rooms.filter(room => room.location_id === reservationForm.location_id);
+  };
 
   if (loading) {
-    return <div className="container mx-auto p-4 sm:p-6">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Button asChild variant="ghost" size="icon">
-            <Link to="/">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Add Income</h1>
-            <p className="text-sm sm:text-base text-muted-foreground">Record your income transactions</p>
-          </div>
+    <div className="container mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Reservations & Payments</h1>
+          <p className="text-muted-foreground">Manage hotel reservations and process payments</p>
         </div>
-        <Button asChild variant="outline" className="text-xs sm:text-sm px-2 sm:px-4">
-          <Link to="/financial-reports?type=income">
-            <span className="hidden sm:inline">View All Income</span>
-            <span className="sm:hidden">View All</span>
-          </Link>
-        </Button>
       </div>
 
-      {/* Location Filter at Top */}
-      <Card className="border-green-200 bg-green-50">
-        <CardContent className="p-4">
-          <div>
-            <Label htmlFor="locationFilter" className="text-green-800 font-medium">Select Location</Label>
-            <Select value={formData.locationId} onValueChange={(value) => setFormData({...formData, locationId: value})}>
-              <SelectTrigger className="bg-white border-green-200">
-                <SelectValue placeholder="Select Location" />
-              </SelectTrigger>
-              <SelectContent>
-                {locations.map((location) => (
-                  <SelectItem key={location.id} value={location.id}>
-                    {location.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="reservations">Reservations</TabsTrigger>
+          <TabsTrigger value="payments">Payment History</TabsTrigger>
+        </TabsList>
 
-      {/* Only show content after location is selected */}
-      {formData.locationId && (
-        <div className="space-y-4 sm:space-y-6">
-          {/* Booking Shortcuts */}
-          <BookingShortcuts 
-            locationId={formData.locationId}
-            accounts={accounts}
-            onQuickFill={handleQuickFill}
-          />
+        <TabsContent value="reservations" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Hotel Reservations
+                  </CardTitle>
+                  <CardDescription>
+                    Manage guest reservations and bookings
+                  </CardDescription>
+                </div>
+                <Dialog open={isReservationDialogOpen} onOpenChange={setIsReservationDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Reservation
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl">
+                    <DialogHeader>
+                      <DialogTitle>Create New Reservation</DialogTitle>
+                      <DialogDescription>
+                        Enter guest details and booking information
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleReservationSubmit} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="location_id">Location</Label>
+                          <Select
+                            value={reservationForm.location_id}
+                            onValueChange={(value) => 
+                              setReservationForm({ ...reservationForm, location_id: value, room_id: "" })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select location" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {locations.map((location) => (
+                                <SelectItem key={location.id} value={location.id}>
+                                  {location.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="room_id">Room</Label>
+                          <Select
+                            value={reservationForm.room_id}
+                            onValueChange={(value) => 
+                              setReservationForm({ ...reservationForm, room_id: value })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select room" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getFilteredRooms().map((room) => (
+                                <SelectItem key={room.id} value={room.id}>
+                                  {room.room_number} - {room.room_type} (LKR {room.base_price}/night)
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
 
-          {/* Income Form - Show First */}
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-green-800 flex items-center gap-2 text-lg">
-                <Plus className="h-5 w-5" />
-                New Income Record
-              </CardTitle>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="guest_name">Guest Name</Label>
+                          <Input
+                            id="guest_name"
+                            value={reservationForm.guest_name}
+                            onChange={(e) => setReservationForm({ ...reservationForm, guest_name: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="guest_email">Guest Email</Label>
+                          <Input
+                            id="guest_email"
+                            type="email"
+                            value={reservationForm.guest_email}
+                            onChange={(e) => setReservationForm({ ...reservationForm, guest_email: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="guest_phone">Phone Number</Label>
+                          <Input
+                            id="guest_phone"
+                            value={reservationForm.guest_phone}
+                            onChange={(e) => setReservationForm({ ...reservationForm, guest_phone: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="guest_nationality">Nationality</Label>
+                          <Input
+                            id="guest_nationality"
+                            value={reservationForm.guest_nationality}
+                            onChange={(e) => setReservationForm({ ...reservationForm, guest_nationality: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="guest_address">Address</Label>
+                        <Textarea
+                          id="guest_address"
+                          value={reservationForm.guest_address}
+                          onChange={(e) => setReservationForm({ ...reservationForm, guest_address: e.target.value })}
+                          rows={2}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-4">
+                        <div>
+                          <Label htmlFor="adults">Adults</Label>
+                          <Input
+                            id="adults"
+                            type="number"
+                            min="1"
+                            value={reservationForm.adults}
+                            onChange={(e) => setReservationForm({ ...reservationForm, adults: parseInt(e.target.value) })}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="children">Children</Label>
+                          <Input
+                            id="children"
+                            type="number"
+                            min="0"
+                            value={reservationForm.children}
+                            onChange={(e) => setReservationForm({ ...reservationForm, children: parseInt(e.target.value) })}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="check_in_date">Check-in Date</Label>
+                          <Input
+                            id="check_in_date"
+                            type="date"
+                            value={reservationForm.check_in_date}
+                            onChange={(e) => setReservationForm({ ...reservationForm, check_in_date: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="check_out_date">Check-out Date</Label>
+                          <Input
+                            id="check_out_date"
+                            type="date"
+                            value={reservationForm.check_out_date}
+                            onChange={(e) => setReservationForm({ ...reservationForm, check_out_date: e.target.value })}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="arrival_time">Expected Arrival Time</Label>
+                          <Input
+                            id="arrival_time"
+                            type="time"
+                            value={reservationForm.arrival_time}
+                            onChange={(e) => setReservationForm({ ...reservationForm, arrival_time: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="advance_amount">Advance Payment (LKR)</Label>
+                          <Input
+                            id="advance_amount"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={reservationForm.advance_amount}
+                            onChange={(e) => setReservationForm({ ...reservationForm, advance_amount: parseFloat(e.target.value) || 0 })}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="special_requests">Special Requests</Label>
+                        <Textarea
+                          id="special_requests"
+                          value={reservationForm.special_requests}
+                          onChange={(e) => setReservationForm({ ...reservationForm, special_requests: e.target.value })}
+                          rows={3}
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setIsReservationDialogOpen(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button type="submit">
+                          Create Reservation
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
-            <CardContent className="p-4 sm:p-6">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="type">Income Type</Label>
-                    <Select value={formData.type} onValueChange={(value: Database["public"]["Enums"]["income_type"]) => setFormData({ ...formData, type: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {incomeTypes.map((type) => (
-                          <SelectItem key={type.id} value={type.type_name}>
-                            {type.type_name.charAt(0).toUpperCase() + type.type_name.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Reservation #</TableHead>
+                    <TableHead>Guest Name</TableHead>
+                    <TableHead>Room</TableHead>
+                    <TableHead>Dates</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>GRC</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {reservations.map((reservation) => (
+                    <TableRow key={reservation.id}>
+                      <TableCell className="font-medium">
+                        {reservation.reservation_number}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{reservation.guest_name}</div>
+                          <div className="text-sm text-muted-foreground">{reservation.guest_email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{reservation.rooms?.room_number}</div>
+                          <div className="text-sm text-muted-foreground">{reservation.locations?.name}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div>{new Date(reservation.check_in_date).toLocaleDateString()} - {new Date(reservation.check_out_date).toLocaleDateString()}</div>
+                          <div className="text-muted-foreground">{reservation.nights} nights</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div>Total: LKR {reservation.total_amount.toLocaleString()}</div>
+                          <div className="text-green-600">Paid: LKR {reservation.paid_amount.toLocaleString()}</div>
+                          <div className="text-red-600">Balance: LKR {reservation.balance_amount.toLocaleString()}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusColor(reservation.status)}>
+                          {reservation.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {reservation.grc_approved ? (
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-red-600" />
+                          )}
+                          <span className="text-sm">
+                            {reservation.grc_approved ? "Approved" : "Pending"}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          {!reservation.grc_approved && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateReservationStatus(reservation.id, reservation.status, true)}
+                            >
+                              <UserCheck className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedReservation(reservation);
+                              setPaymentForm({
+                                ...paymentForm,
+                                amount: reservation.balance_amount
+                              });
+                              setIsPaymentDialogOpen(true);
+                            }}
+                          >
+                            <CreditCard className="h-4 w-4" />
+                          </Button>
+                          <Select
+                            value={reservation.status}
+                            onValueChange={(value) => updateReservationStatus(reservation.id, value)}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="tentative">Tentative</SelectItem>
+                              <SelectItem value="confirmed">Confirmed</SelectItem>
+                              <SelectItem value="checked_in">Checked In</SelectItem>
+                              <SelectItem value="checked_out">Checked Out</SelectItem>
+                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-                  {formData.type === "booking" && (
-                    <div>
-                      <Label htmlFor="bookingSource">Booking Source</Label>
-                      <Select value={formData.bookingSource} onValueChange={(value: Database["public"]["Enums"]["booking_source"]) => setFormData({ ...formData, bookingSource: value })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="direct">Direct</SelectItem>
-                          <SelectItem value="airbnb">Airbnb</SelectItem>
-                          <SelectItem value="booking_com">Booking.com</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
+        <TabsContent value="payments" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Receipt className="h-5 w-5" />
+                Payment History
+              </CardTitle>
+              <CardDescription>
+                View all payment transactions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-muted-foreground">
+                Payment history will be displayed here
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Payment Dialog */}
+      <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Process Payment</DialogTitle>
+            <DialogDescription>
+              Process payment for reservation {selectedReservation?.reservation_number}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedReservation && (
+            <form onSubmit={handlePaymentSubmit} className="space-y-4">
+              <div className="bg-muted p-4 rounded-lg">
+                <div className="text-sm">
+                  <div>Guest: {selectedReservation.guest_name}</div>
+                  <div>Room: {selectedReservation.rooms?.room_number}</div>
+                  <div>Total Amount: LKR {selectedReservation.total_amount.toLocaleString()}</div>
+                  <div>Paid Amount: LKR {selectedReservation.paid_amount.toLocaleString()}</div>
+                  <div className="font-medium text-red-600">Balance: LKR {selectedReservation.balance_amount.toLocaleString()}</div>
                 </div>
-
-                {/* Amount Field - First */}
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="amount">Amount</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
-                      {currencySymbol}
-                    </span>
-                    <Input
-                      id="amount"
-                      type="number"
-                      placeholder="0.00"
-                      value={formData.amount}
-                      onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
+                  <Label htmlFor="amount">Payment Amount (LKR)</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={paymentForm.amount}
+                    onChange={(e) => setPaymentForm({ ...paymentForm, amount: parseFloat(e.target.value) || 0 })}
+                    required
+                  />
                 </div>
-
-                {/* Account Field - Second */}
                 <div>
-                  <Label htmlFor="accountId">Account</Label>
-                  <Select value={formData.accountId} onValueChange={(value) => setFormData({...formData, accountId: value})}>
+                  <Label htmlFor="payment_method">Payment Method</Label>
+                  <Select
+                    value={paymentForm.payment_method}
+                    onValueChange={(value) => setPaymentForm({ ...paymentForm, payment_method: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="card">Credit/Debit Card</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="cheque">Cheque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="account_id">Account</Label>
+                  <Select
+                    value={paymentForm.account_id}
+                    onValueChange={(value) => setPaymentForm({ ...paymentForm, account_id: value })}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select account" />
                     </SelectTrigger>
                     <SelectContent>
-                      {accounts
-                        .filter(account => 
-                          account.location_access.length === 0 || 
-                          account.location_access.includes(formData.locationId)
-                        )
-                        .map((account) => (
+                      {accounts.map((account) => (
                         <SelectItem key={account.id} value={account.id}>
                           {account.name} ({account.currency})
                         </SelectItem>
@@ -379,97 +806,62 @@ export default function Income() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Date Range Section - Check-in/Check-out for Bookings */}
-                <div className="bg-white/50 p-4 rounded-lg border border-green-100">
-                  <Label className="text-green-800 font-medium mb-3 block">Booking Period</Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="checkIn">Check-in Date</Label>
-                      <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="checkIn"
-                          type="date"
-                          value={formData.dateFrom}
-                          onChange={(e) => setFormData({...formData, dateFrom: e.target.value})}
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="checkOut">Check-out Date</Label>
-                      <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="checkOut"
-                          type="date"
-                          value={formData.dateTo}
-                          onChange={(e) => setFormData({...formData, dateTo: e.target.value})}
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 <div>
-                  <Label htmlFor="note">Note (Optional)</Label>
-                  <Textarea
-                    id="note"
-                    placeholder="Add any additional details..."
-                    value={formData.note}
-                    onChange={(e) => setFormData({...formData, note: e.target.value})}
-                    rows={3}
-                  />
+                  <Label htmlFor="payment_type">Payment Type</Label>
+                  <Select
+                    value={paymentForm.payment_type}
+                    onValueChange={(value) => setPaymentForm({ ...paymentForm, payment_type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="advance">Advance</SelectItem>
+                      <SelectItem value="balance">Balance</SelectItem>
+                      <SelectItem value="full">Full Payment</SelectItem>
+                      <SelectItem value="extra">Extra Charges</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-
-                <div className="flex gap-2 pt-4">
-                  <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700 text-white">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Income
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* Recent Income Records - Show Second */}
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-green-800 text-lg">Recent Income Records</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6">
-              <div className="space-y-2 max-h-80 sm:max-h-96 overflow-y-auto">
-                {recentIncomes.map((income) => (
-                  <div key={income.id} className="p-3 bg-white/60 rounded-lg border border-green-100">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-                      <div className="flex-1">
-                        <div className="font-medium text-green-900 text-sm sm:text-base">
-                          {income.type.charAt(0).toUpperCase() + income.type.slice(1)} - {income.accounts?.currency === "LKR" ? "Rs." : "$"}{income.amount.toLocaleString()}
-                        </div>
-                        <div className="text-xs sm:text-sm text-green-700 mt-1">
-                          <div>{income.locations?.name}</div>
-                          <div>Account: {income.accounts?.name} ({income.accounts?.currency})</div>
-                          <div>{format(new Date(income.date), "MMM dd, yyyy")}</div>
-                          {income.note && <div className="mt-1 italic">"{income.note}"</div>}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {recentIncomes.length === 0 && (
-                  <div className="text-center py-8 text-green-600">
-                    No income records yet. Add your first income above!
-                  </div>
-                )}
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+
+              <div>
+                <Label htmlFor="reference_number">Reference Number</Label>
+                <Input
+                  id="reference_number"
+                  value={paymentForm.reference_number}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, reference_number: e.target.value })}
+                  placeholder="Transaction reference"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={paymentForm.notes}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsPaymentDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  <Banknote className="h-4 w-4 mr-2" />
+                  Process Payment
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

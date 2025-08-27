@@ -26,7 +26,7 @@ const navigation = [
   { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "Master Files", href: "/master-files", icon: FolderOpen },
   { name: "Room Management", href: "/rooms", icon: Bed },
-  { name: "Add Income", href: "/income", icon: PlusCircle },
+  { name: "Reservations", href: "/income", icon: PlusCircle },
   { name: "Add Expense", href: "/expense", icon: MinusCircle },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Accounts", href: "/accounts", icon: Building2 },

@@ -86,6 +86,56 @@ export type Database = {
         }
         Relationships: []
       }
+      additional_services: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          quantity: number
+          reservation_id: string
+          service_date: string
+          service_name: string
+          service_type: string
+          total_amount: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          quantity?: number
+          reservation_id: string
+          service_date?: string
+          service_name: string
+          service_type: string
+          total_amount: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          quantity?: number
+          reservation_id?: string
+          service_date?: string
+          service_name?: string
+          service_type?: string
+          total_amount?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "additional_services_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_payments: {
         Row: {
           account_id: string
@@ -440,6 +490,63 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          account_id: string
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          payment_method: string
+          payment_number: string
+          payment_type: string
+          reference_number: string | null
+          reservation_id: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          payment_method: string
+          payment_number: string
+          payment_type: string
+          reference_number?: string | null
+          reservation_id: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          payment_number?: string
+          payment_type?: string
+          reference_number?: string | null
+          reservation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -463,6 +570,117 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
         }
         Relationships: []
+      }
+      reservations: {
+        Row: {
+          adults: number
+          advance_amount: number | null
+          arrival_time: string | null
+          balance_amount: number | null
+          check_in_date: string
+          check_out_date: string
+          children: number
+          created_at: string
+          created_by: string | null
+          grc_approved: boolean | null
+          grc_approved_at: string | null
+          grc_approved_by: string | null
+          guest_address: string | null
+          guest_email: string | null
+          guest_id_number: string | null
+          guest_name: string
+          guest_nationality: string | null
+          guest_phone: string | null
+          id: string
+          location_id: string
+          nights: number
+          paid_amount: number | null
+          reservation_number: string
+          room_id: string
+          room_rate: number
+          special_requests: string | null
+          status: Database["public"]["Enums"]["reservation_status"]
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          adults?: number
+          advance_amount?: number | null
+          arrival_time?: string | null
+          balance_amount?: number | null
+          check_in_date: string
+          check_out_date: string
+          children?: number
+          created_at?: string
+          created_by?: string | null
+          grc_approved?: boolean | null
+          grc_approved_at?: string | null
+          grc_approved_by?: string | null
+          guest_address?: string | null
+          guest_email?: string | null
+          guest_id_number?: string | null
+          guest_name: string
+          guest_nationality?: string | null
+          guest_phone?: string | null
+          id?: string
+          location_id: string
+          nights: number
+          paid_amount?: number | null
+          reservation_number: string
+          room_id: string
+          room_rate: number
+          special_requests?: string | null
+          status?: Database["public"]["Enums"]["reservation_status"]
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          adults?: number
+          advance_amount?: number | null
+          arrival_time?: string | null
+          balance_amount?: number | null
+          check_in_date?: string
+          check_out_date?: string
+          children?: number
+          created_at?: string
+          created_by?: string | null
+          grc_approved?: boolean | null
+          grc_approved_at?: string | null
+          grc_approved_by?: string | null
+          guest_address?: string | null
+          guest_email?: string | null
+          guest_id_number?: string | null
+          guest_name?: string
+          guest_nationality?: string | null
+          guest_phone?: string | null
+          id?: string
+          location_id?: string
+          nights?: number
+          paid_amount?: number | null
+          reservation_number?: string
+          room_id?: string
+          room_rate?: number
+          special_requests?: string | null
+          status?: Database["public"]["Enums"]["reservation_status"]
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       room_pricing: {
         Row: {
@@ -608,7 +826,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_payment_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_reservation_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       booking_source: "direct" | "airbnb" | "booking_com"
@@ -620,6 +845,13 @@ export type Database = {
         | "cancelled"
       currency_type: "LKR" | "USD" | "EUR" | "GBP"
       income_type: "booking" | "service" | "other"
+      reservation_status:
+        | "tentative"
+        | "confirmed"
+        | "checked_in"
+        | "checked_out"
+        | "cancelled"
+        | "pending"
       user_role: "admin" | "manager" | "staff"
     }
     CompositeTypes: {
@@ -758,6 +990,14 @@ export const Constants = {
       ],
       currency_type: ["LKR", "USD", "EUR", "GBP"],
       income_type: ["booking", "service", "other"],
+      reservation_status: [
+        "tentative",
+        "confirmed",
+        "checked_in",
+        "checked_out",
+        "cancelled",
+        "pending",
+      ],
       user_role: ["admin", "manager", "staff"],
     },
   },
