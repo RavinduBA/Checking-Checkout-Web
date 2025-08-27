@@ -134,6 +134,7 @@ export type Database = {
           id: string
           location_id: string
           paid_amount: number
+          room_id: string | null
           source: Database["public"]["Enums"]["booking_source"]
           status: Database["public"]["Enums"]["booking_status"]
           total_amount: number
@@ -147,6 +148,7 @@ export type Database = {
           id?: string
           location_id: string
           paid_amount?: number
+          room_id?: string | null
           source: Database["public"]["Enums"]["booking_source"]
           status?: Database["public"]["Enums"]["booking_status"]
           total_amount: number
@@ -160,6 +162,7 @@ export type Database = {
           id?: string
           location_id?: string
           paid_amount?: number
+          room_id?: string | null
           source?: Database["public"]["Enums"]["booking_source"]
           status?: Database["public"]["Enums"]["booking_status"]
           total_amount?: number
@@ -170,6 +173,13 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
         ]
@@ -408,6 +418,94 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
         }
         Relationships: []
+      }
+      room_pricing: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          is_available: boolean
+          price: number
+          room_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          is_available?: boolean
+          price: number
+          room_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          is_available?: boolean
+          price?: number
+          room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_pricing_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          amenities: string[] | null
+          base_price: number
+          bed_type: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          location_id: string
+          max_occupancy: number
+          room_number: string
+          room_type: string
+          updated_at: string
+        }
+        Insert: {
+          amenities?: string[] | null
+          base_price?: number
+          bed_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          location_id: string
+          max_occupancy?: number
+          room_number: string
+          room_type: string
+          updated_at?: string
+        }
+        Update: {
+          amenities?: string[] | null
+          base_price?: number
+          bed_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          location_id?: string
+          max_occupancy?: number
+          room_number?: string
+          room_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_permissions: {
         Row: {
