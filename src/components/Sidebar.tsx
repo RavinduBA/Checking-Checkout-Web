@@ -17,7 +17,9 @@ import {
   UserCheck,
   Percent,
   TrendingUp,
-  DollarSign
+  DollarSign,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -65,7 +67,17 @@ const navigation = [
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+
+  const toggleExpanded = (itemName: string) => {
+    setExpandedItems(prev => 
+      prev.includes(itemName) 
+        ? prev.filter(name => name !== itemName)
+        : [...prev, itemName]
+    );
+  };
+
+  const isExpanded = (itemName: string) => expandedItems.includes(itemName);
 
   return (
     <>
@@ -81,53 +93,56 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
+          <nav className="flex-1 px-4 py-6 space-y-1">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href || 
                              (item.subItems && item.subItems.some(sub => location.pathname + location.search === sub.href));
+              const itemExpanded = isExpanded(item.name);
+              
               return (
-                <div key={item.name} className="relative">
-                  <Link
-                    to={item.href}
-                    onMouseEnter={() => setHoveredItem(item.name)}
-                    onMouseLeave={() => setHoveredItem(null)}
+                <div key={item.name}>
+                  {/* Main Item */}
+                  <div
+                    onClick={() => item.subItems ? toggleExpanded(item.name) : null}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer",
                       isActive
                         ? "bg-gradient-primary text-primary-foreground shadow-glow"
                         : "text-muted-foreground hover:text-foreground hover:bg-accent"
                     )}
                   >
                     <item.icon className="h-5 w-5" />
-                    {item.name}
-                  </Link>
+                    <Link to={item.href} className="flex-1">
+                      {item.name}
+                    </Link>
+                    {item.subItems && (
+                      itemExpanded ? 
+                        <ChevronDown className="h-4 w-4" /> : 
+                        <ChevronRight className="h-4 w-4" />
+                    )}
+                  </div>
 
-                  {/* Hover Sub-menu */}
-                  {hoveredItem === item.name && item.subItems && (
-                    <div className="absolute left-full top-0 ml-2 z-50 animate-fade-in">
-                      <Card className="w-72 shadow-elegant border-border bg-popover">
-                        <CardContent className="p-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <item.icon className="h-4 w-4 text-primary" />
-                            <h4 className="font-semibold text-foreground">{item.name}</h4>
-                          </div>
-                          <div className="space-y-1">
-                            {item.subItems.map((subItem) => (
-                              <Link
-                                key={subItem.name}
-                                to={subItem.href}
-                                className="flex items-start gap-3 p-2 rounded-md text-sm transition-all duration-200 hover:bg-accent hover:text-foreground text-muted-foreground hover-scale"
-                              >
-                                <subItem.icon className="h-4 w-4 mt-0.5 text-primary" />
-                                <div>
-                                  <div className="font-medium text-foreground">{subItem.name}</div>
-                                  <div className="text-xs opacity-70">{subItem.description}</div>
-                                </div>
-                              </Link>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
+                  {/* Sub Items */}
+                  {item.subItems && itemExpanded && (
+                    <div className="ml-6 mt-1 space-y-1">
+                      {item.subItems.map((subItem) => {
+                        const subIsActive = location.pathname + location.search === subItem.href;
+                        return (
+                          <Link
+                            key={subItem.name}
+                            to={subItem.href}
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200",
+                              subIsActive
+                                ? "bg-accent text-primary font-medium"
+                                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                            )}
+                          >
+                            <subItem.icon className="h-4 w-4" />
+                            {subItem.name}
+                          </Link>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -154,25 +169,60 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
+          <nav className="flex-1 px-4 py-6 space-y-1">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href || 
                              (item.subItems && item.subItems.some(sub => location.pathname + location.search === sub.href));
+              const itemExpanded = isExpanded(item.name);
+              
               return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={onClose}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                    isActive
-                      ? "bg-gradient-primary text-primary-foreground shadow-glow"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                <div key={item.name}>
+                  {/* Main Item */}
+                  <div
+                    onClick={() => item.subItems ? toggleExpanded(item.name) : null}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer",
+                      isActive
+                        ? "bg-gradient-primary text-primary-foreground shadow-glow"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                    )}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    <Link to={item.href} className="flex-1" onClick={item.subItems ? undefined : onClose}>
+                      {item.name}
+                    </Link>
+                    {item.subItems && (
+                      itemExpanded ? 
+                        <ChevronDown className="h-4 w-4" /> : 
+                        <ChevronRight className="h-4 w-4" />
+                    )}
+                  </div>
+
+                  {/* Sub Items */}
+                  {item.subItems && itemExpanded && (
+                    <div className="ml-6 mt-1 space-y-1">
+                      {item.subItems.map((subItem) => {
+                        const subIsActive = location.pathname + location.search === subItem.href;
+                        return (
+                          <Link
+                            key={subItem.name}
+                            to={subItem.href}
+                            onClick={onClose}
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200",
+                              subIsActive
+                                ? "bg-accent text-primary font-medium"
+                                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                            )}
+                          >
+                            <subItem.icon className="h-4 w-4" />
+                            {subItem.name}
+                          </Link>
+                        );
+                      })}
+                    </div>
                   )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.name}
-                </Link>
+                </div>
               );
             })}
           </nav>
