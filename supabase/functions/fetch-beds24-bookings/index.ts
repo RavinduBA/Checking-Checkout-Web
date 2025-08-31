@@ -74,13 +74,19 @@ serve(async (req) => {
 
     // Map location IDs
     for (const property of properties) {
-      const location = locations?.find(loc => 
-        loc.name.includes('Rusty Bunk') && property.name.includes('Rusty Bunk') ||
-        loc.name.includes('Asaliya') && property.name.includes('Villa')
-      );
+      const location = locations?.find(loc => {
+        if (property.name.includes('Rusty Bunk')) {
+          return loc.name.includes('Rusty Bunk');
+        } else if (property.name.includes('Luxury 3 Bedroom') || property.name.includes('Villa')) {
+          return loc.name.includes('Asaliya');
+        }
+        return false;
+      });
       if (location) {
         property.locationId = location.id;
         console.log(`Mapped ${property.name} to location ${location.name} (${location.id})`);
+      } else {
+        console.log(`No location found for property: ${property.name}`);
       }
     }
 
