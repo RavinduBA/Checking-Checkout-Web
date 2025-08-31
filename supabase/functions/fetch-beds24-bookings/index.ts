@@ -97,10 +97,11 @@ serve(async (req) => {
 
         const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
-        // Fetch bookings from Beds24 API
-        const beds24Response = await fetch(`https://api.beds24.com/v2/bookings?propId=${property.id}&arrivalFrom=${formatDate(startDate)}&arrivalTo=${formatDate(endDate)}`, {
+        // Try POS API endpoint with the provided tokens
+        console.log(`Using POS token for ${property.name}: ${property.token.substring(0, 20)}...`);
+        
+        const beds24Response = await fetch(`https://api.beds24.com/v1/getbookings.php?propKey=${property.token}&arrivalFrom=${formatDate(startDate)}&arrivalTo=${formatDate(endDate)}`, {
           headers: {
-            'token': property.token,
             'Content-Type': 'application/json',
           }
         });
@@ -111,7 +112,8 @@ serve(async (req) => {
         }
 
         const bookingsData = await beds24Response.json();
-        const bookings: Beds24Booking[] = bookingsData.data || [];
+        console.log(`API Response:`, bookingsData);
+        const bookings: Beds24Booking[] = bookingsData || [];
 
         console.log(`Found ${bookings.length} bookings for ${property.name}`);
 
