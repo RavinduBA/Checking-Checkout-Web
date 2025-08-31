@@ -1,26 +1,51 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.0.0';
 
+// Beds24 API V2 base URL
+const BEDS24_API_BASE = 'https://beds24.com/api/v2';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface Beds24Booking {
-  bookId: string;
-  roomId: string;
-  arrival: string;
-  departure: string;
-  firstNight: string;
-  lastNight: string;
-  numAdult: number;
-  numChild: number;
-  guestFirstName: string;
-  guestName: string;
-  status: string;
-  price: number;
-  apiSourceId: number;
-  propId: string;
+type JsonRecord = Record<string, unknown>;
+
+interface V2Property {
+  id?: string | number;
+  name?: string;
+}
+
+interface V2Booking extends JsonRecord {
+  id?: string | number;
+  propertyId?: string | number;
+  propId?: string | number; // fallback for potential alt naming
+  roomId?: string | number;
+  roomName?: string;
+  roomType?: { name?: string };
+  arrival?: string; // v1 style
+  departure?: string; // v1 style
+  arrivalDate?: string; // possible v2 naming
+  departureDate?: string; // possible v2 naming
+  checkin?: string;
+  checkout?: string;
+  checkIn?: string;
+  checkOut?: string;
+  numAdult?: number;
+  numChild?: number;
+  adults?: number;
+  children?: number;
+  guestName?: string;
+  guestFirstName?: string;
+  name?: string;
+  primaryGuest?: { name?: string };
+  status?: string;
+  apiSourceId?: number; // 1: direct, 2: airbnb, 3: booking.com (based on v1 knowledge)
+  source?: string; // potential v2 naming
+  sourceName?: string; // potential v2 naming
+  price?: number;
+  total?: number;
+  totalAmount?: number;
 }
 
 serve(async (req) => {
@@ -30,39 +55,20 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Starting Beds24 bookings sync...');
+    console.log('Starting Beds24 (API v2) bookings sync...');
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get API tokens from secrets
-    const rustyBunkToken = Deno.env.get('BEDS24_RUSTY_BUNK_TOKEN')!;
-    const luxuryVillaToken = Deno.env.get('BEDS24_LUXURY_VILLA_TOKEN')!;
+    // Get API v2 Long Life Token from secrets
+    const beds24Token = Deno.env.get('BEDS24_V2_LONG_LIFE_TOKEN');
+    if (!beds24Token) {
+      throw new Error('Missing Beds24 API v2 token secret (BEDS24_V2_LONG_LIFE_TOKEN)');
+    }
 
-    console.log('Fetched API tokens from environment');
-
-    // Property configurations
-    const properties = [
-      {
-        id: '291492',
-        name: 'Rusty Bunk Villa',
-        token: rustyBunkToken,
-        locationId: null, // Will be fetched from database
-      },
-      {
-        id: '291496',
-        name: 'Luxury 3 Bedroom Mountain-View Villa, Sleeps 1-6',
-        token: luxuryVillaToken,
-        locationId: null, // Will be fetched from database
-      }
-    ];
-
-    let totalSynced = 0;
-    const syncResults = [];
-
-    // Get locations from database to match property names
+    // Fetch active locations from DB for mapping
     const { data: locations, error: locationsError } = await supabase
       .from('locations')
       .select('*')
@@ -72,138 +78,187 @@ serve(async (req) => {
       console.error('Failed to fetch locations:', locationsError);
     }
 
-    // Map location IDs
-    for (const property of properties) {
-      const location = locations?.find(loc => {
-        if (property.name.includes('Rusty Bunk')) {
-          return loc.name.includes('Rusty Bunk');
-        } else if (property.name.includes('Luxury 3 Bedroom') || property.name.includes('Villa')) {
-          return loc.name.includes('Asaliya');
-        }
-        return false;
-      });
-      if (location) {
-        property.locationId = location.id;
-        console.log(`Mapped ${property.name} to location ${location.name} (${location.id})`);
-      } else {
-        console.log(`No location found for property: ${property.name}`);
+    // Helper: map Beds24 property name to our location_id
+    const resolveLocationId = (propertyName?: string | null) => {
+      if (!propertyName || !locations) return null;
+      const name = propertyName.toLowerCase();
+      // Adjust these rules to your naming
+      if (name.includes('rusty') || name.includes('bunk')) {
+        return locations.find(l => l.name.toLowerCase().includes('rusty'))?.id ?? null;
+      }
+      if (name.includes('asaliya') || name.includes('luxury') || name.includes('villa')) {
+        return locations.find(l => l.name.toLowerCase().includes('asaliya'))?.id ?? null;
+      }
+      return null;
+    };
+
+    // 1) Fetch properties to build an id->name map
+    console.log('Fetching properties from Beds24 API v2...');
+    const propsRes = await fetch(`${BEDS24_API_BASE}/properties`, {
+      headers: {
+        'accept': 'application/json',
+        'token': beds24Token,
+      },
+    });
+
+    if (!propsRes.ok) {
+      const text = await propsRes.text();
+      console.error('Failed to fetch properties', propsRes.status, propsRes.statusText, text);
+      throw new Error(`Beds24 properties fetch failed: ${propsRes.status} ${propsRes.statusText}`);
+    }
+
+    const propsJson: unknown = await propsRes.json();
+    const properties: V2Property[] = Array.isArray((propsJson as any)?.data)
+      ? (propsJson as any).data
+      : (Array.isArray(propsJson) ? (propsJson as any) : []);
+
+    const propertyIdToName = new Map<string, string>();
+    for (const p of properties) {
+      if (p?.id != null) {
+        propertyIdToName.set(String(p.id), p.name ?? '');
       }
     }
 
-    // Fetch bookings for each property
-    for (const property of properties) {
-      console.log(`Fetching bookings for ${property.name} (ID: ${property.id})`);
-      
+    console.log(`Fetched ${propertyIdToName.size} properties`);
+
+    // 2) Fetch bookings
+    console.log('Fetching bookings from Beds24 API v2...');
+    const bookingsRes = await fetch(`${BEDS24_API_BASE}/bookings`, {
+      headers: {
+        'accept': 'application/json',
+        'token': beds24Token,
+      },
+    });
+
+    if (!bookingsRes.ok) {
+      const text = await bookingsRes.text();
+      console.error('Failed to fetch bookings', bookingsRes.status, bookingsRes.statusText, text);
+      throw new Error(`Beds24 bookings fetch failed: ${bookingsRes.status} ${bookingsRes.statusText}`);
+    }
+
+    const bookingsJson: unknown = await bookingsRes.json();
+    const bookings: V2Booking[] = Array.isArray((bookingsJson as any)?.data)
+      ? (bookingsJson as any).data
+      : (Array.isArray(bookingsJson) ? (bookingsJson as any) : []);
+
+    console.log(`Received ${bookings.length} bookings (pre-filter)`);
+
+    let totalSynced = 0;
+    const syncDetails: string[] = [];
+
+    // Optional: map source id to name
+    const mapSource = (b: V2Booking): string => {
+      if (typeof b.source === 'string' && b.source) return b.source.toLowerCase();
+      if (typeof b.sourceName === 'string' && b.sourceName) return b.sourceName.toLowerCase();
+      switch (b.apiSourceId) {
+        case 3: return 'booking_com';
+        case 2: return 'airbnb';
+        case 1: return 'direct';
+        default: return 'unknown';
+      }
+    };
+
+    // Helper to coerce date strings
+    const parseDate = (s?: string): Date | null => {
+      if (!s) return null;
+      // If only date provided, add time portion for consistency
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+        return new Date(`${s}T00:00:00Z`);
+      }
+      const d = new Date(s);
+      return isNaN(d.getTime()) ? null : d;
+    };
+
+    // Process each booking
+    for (const b of bookings) {
       try {
-        // Calculate date range (30 days back, 365 days forward)
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 30);
-        const endDate = new Date();
-        endDate.setDate(endDate.getDate() + 365);
-
-        const formatDate = (date: Date) => date.toISOString().split('T')[0];
-
-        // Try POS API endpoint with the provided tokens
-        console.log(`Using POS token for ${property.name}: ${property.token.substring(0, 20)}...`);
-        
-        const beds24Response = await fetch(`https://api.beds24.com/v1/getbookings.php?propKey=${property.token}&arrivalFrom=${formatDate(startDate)}&arrivalTo=${formatDate(endDate)}`, {
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
-
-        if (!beds24Response.ok) {
-          console.error(`Beds24 API error for ${property.name}: ${beds24Response.status} - ${beds24Response.statusText}`);
+        const externalId = b.id != null ? String(b.id) : undefined;
+        if (!externalId) {
+          console.warn('Skipping booking without id');
           continue;
         }
 
-        const bookingsData = await beds24Response.json();
-        console.log(`API Response:`, bookingsData);
-        const bookings: Beds24Booking[] = bookingsData || [];
-
-        console.log(`Found ${bookings.length} bookings for ${property.name}`);
-
-        let propertySync = 0;
-
-        // Process each booking
-        for (const booking of bookings) {
-          try {
-            // Determine source based on apiSourceId
-            let source = 'unknown';
-            if (booking.apiSourceId === 3) {
-              source = 'booking_com';
-            } else if (booking.apiSourceId === 2) {
-              source = 'airbnb';
-            } else if (booking.apiSourceId === 1) {
-              source = 'direct';
-            }
-
-            // Skip direct bookings as they should already be in the system
-            if (source === 'direct') {
-              continue;
-            }
-
-            // Convert dates to proper format
-            const checkIn = new Date(booking.arrival + 'T15:00:00Z'); // 3 PM check-in
-            const checkOut = new Date(booking.departure + 'T11:00:00Z'); // 11 AM check-out
-
-            // Prepare external booking data
-            const externalBookingData = {
-              external_id: booking.bookId,
-              property_id: property.id,
-              source: source,
-              guest_name: booking.guestName || booking.guestFirstName || 'Unknown Guest',
-              check_in: checkIn.toISOString(),
-              check_out: checkOut.toISOString(),
-              status: booking.status.toLowerCase(),
-              total_amount: booking.price || 0,
-              currency: 'USD',
-              location_id: property.locationId,
-              room_name: `Room ${booking.roomId}`,
-              adults: booking.numAdult || 1,
-              children: booking.numChild || 0,
-              raw_data: booking,
-              last_synced_at: new Date().toISOString()
-            };
-
-            // Insert or update external booking
-            const { error: upsertError } = await supabase
-              .from('external_bookings')
-              .upsert(externalBookingData, {
-                onConflict: 'external_id,property_id,source'
-              });
-
-            if (upsertError) {
-              console.error(`Failed to upsert booking ${booking.bookId}:`, upsertError);
-            } else {
-              propertySync++;
-              totalSynced++;
-            }
-
-          } catch (bookingError) {
-            console.error(`Error processing booking ${booking.bookId}:`, bookingError);
-          }
+        const source = mapSource(b);
+        // Skip direct/self-originated bookings to avoid duplicates
+        if (source === 'direct' || source === 'beds24') {
+          continue;
         }
 
-        if (propertySync > 0) {
-          syncResults.push(`${property.name}: ${propertySync} bookings`);
+        // Determine dates (try multiple possible fields)
+        const arrivalStr = b.arrivalDate || b.arrival || (b.checkin ?? b.checkIn);
+        const departureStr = b.departureDate || b.departure || (b.checkout ?? b.checkOut);
+        const checkInDate = parseDate(arrivalStr);
+        const checkOutDate = parseDate(departureStr);
+        if (!checkInDate || !checkOutDate) {
+          console.warn(`Skipping booking ${externalId} due to missing dates`, { arrivalStr, departureStr });
+          continue;
         }
 
-        console.log(`Synced ${propertySync} bookings for ${property.name}`);
+        // Property mapping
+        const propIdRaw = b.propertyId ?? b.propId;
+        const propId = propIdRaw != null ? String(propIdRaw) : undefined;
+        const propertyName = propId ? propertyIdToName.get(propId) ?? '' : '';
+        const locationId = resolveLocationId(propertyName);
 
-      } catch (propertyError) {
-        console.error(`Error fetching bookings for ${property.name}:`, propertyError);
-        syncResults.push(`${property.name}: Error - ${propertyError.message}`);
+        const adults = b.numAdult ?? b.adults ?? 1;
+        const children = b.numChild ?? b.children ?? 0;
+
+        const guestName = b.guestName
+          || b.name
+          || b.guestFirstName
+          || b.primaryGuest?.name
+          || 'Unknown Guest';
+
+        const roomName = b.roomName
+          || b.roomType?.name
+          || (b.roomId != null ? `Room ${b.roomId}` : null);
+
+        const totalAmount = b.totalAmount ?? b.total ?? b.price ?? 0;
+
+        const status = (b.status ?? 'unknown').toString().toLowerCase();
+
+        const externalBookingData: Record<string, unknown> = {
+          external_id: externalId,
+          property_id: propId ?? 'unknown',
+          source,
+          guest_name: guestName,
+          check_in: checkInDate.toISOString(),
+          check_out: checkOutDate.toISOString(),
+          status,
+          total_amount: totalAmount,
+          currency: 'USD', // Beds24 v2 does not guarantee currency; adjust if needed
+          location_id: locationId,
+          room_name: roomName ?? null,
+          adults,
+          children,
+          raw_data: b as JsonRecord,
+          last_synced_at: new Date().toISOString(),
+        };
+
+        const { error: upsertError } = await supabase
+          .from('external_bookings')
+          .upsert(externalBookingData, {
+            onConflict: 'external_id,property_id,source',
+          });
+
+        if (upsertError) {
+          console.error(`Failed to upsert booking ${externalId}:`, upsertError);
+        } else {
+          totalSynced++;
+          if (propertyName) syncDetails.push(`${propertyName}: 1`);
+        }
+      } catch (bookingError) {
+        console.error('Error processing booking:', bookingError);
       }
     }
 
-    const message = totalSynced > 0 
-      ? `Successfully synced ${totalSynced} external bookings`
-      : 'No new external bookings to sync';
-    
+    const message = totalSynced > 0
+      ? `Successfully synced ${totalSynced} external bookings (Beds24 v2)`
+      : 'No new external bookings to sync (Beds24 v2)';
+
     console.log(message);
-    if (syncResults.length > 0) {
-      console.log('Sync details:', syncResults.join(' | '));
+    if (syncDetails.length > 0) {
+      console.log('Sync details:', syncDetails.join(' | '));
     }
 
     return new Response(
@@ -211,28 +266,26 @@ serve(async (req) => {
         success: true,
         message,
         totalSynced,
-        properties: syncResults,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
-      }
+      },
     );
-
   } catch (error: any) {
-    console.error('Beds24 sync error:', error);
-    
+    console.error('Beds24 v2 sync error:', error);
+
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
-        timestamp: new Date().toISOString()
+        error: error?.message ?? 'Unknown error',
+        timestamp: new Date().toISOString(),
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
-      }
+      },
     );
   }
 });
