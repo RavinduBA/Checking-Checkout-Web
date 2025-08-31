@@ -1,1 +1,19 @@
 project_id = "qtlxtfkjwwhgiantimwu"
+
+[functions.booking-reminders]
+verify_jwt = false
+
+[functions.clear-bookings]
+verify_jwt = false
+
+[functions.send-sms-notification]
+verify_jwt = false
+
+[functions.scheduled-calendar-sync]
+verify_jwt = false
+
+[functions.sync-ical]
+verify_jwt = false
+
+[functions.fetch-beds24-bookings]
+verify_jwt = false

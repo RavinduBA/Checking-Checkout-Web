@@ -390,6 +390,69 @@ export type Database = {
           },
         ]
       }
+      external_bookings: {
+        Row: {
+          adults: number | null
+          check_in: string
+          check_out: string
+          children: number | null
+          created_at: string
+          currency: string | null
+          external_id: string
+          guest_name: string
+          id: string
+          last_synced_at: string | null
+          location_id: string | null
+          property_id: string
+          raw_data: Json | null
+          room_name: string | null
+          source: string
+          status: string
+          total_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          adults?: number | null
+          check_in: string
+          check_out: string
+          children?: number | null
+          created_at?: string
+          currency?: string | null
+          external_id: string
+          guest_name: string
+          id?: string
+          last_synced_at?: string | null
+          location_id?: string | null
+          property_id: string
+          raw_data?: Json | null
+          room_name?: string | null
+          source: string
+          status: string
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          adults?: number | null
+          check_in?: string
+          check_out?: string
+          children?: number | null
+          created_at?: string
+          currency?: string | null
+          external_id?: string
+          guest_name?: string
+          id?: string
+          last_synced_at?: string | null
+          location_id?: string | null
+          property_id?: string
+          raw_data?: Json | null
+          room_name?: string | null
+          source?: string
+          status?: string
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       guides: {
         Row: {
           address: string | null
