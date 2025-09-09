@@ -40,6 +40,12 @@ interface ExternalBooking {
   location?: {
     name: string;
   };
+  mappedLocation?: Location | null;
+}
+
+interface VirtualRoom extends Room {
+  isVirtual?: boolean;
+  virtualRoomName?: string;
 }
 
 interface PropertyMapping {
@@ -165,6 +171,52 @@ export default function Calendar() {
     selectedLocation === "all" || room.location_id === selectedLocation
   );
 
+  // Create virtual rooms for external bookings when no internal rooms exist for a location
+  const getVirtualRoomsForExternalBookings = (): VirtualRoom[] => {
+    const virtualRooms: VirtualRoom[] = [];
+    
+    // Group external bookings by room name and location
+    const externalRoomGroups = new Map<string, ExternalBooking[]>();
+    
+    filteredExternalBookings.forEach(booking => {
+      const roomKey = `${booking.mappedLocation?.id || 'unknown'}-${booking.room_name || 'Unknown Room'}`;
+      if (!externalRoomGroups.has(roomKey)) {
+        externalRoomGroups.set(roomKey, []);
+      }
+      externalRoomGroups.get(roomKey)!.push(booking);
+    });
+    
+    // Create virtual rooms for locations that have external bookings but no internal rooms
+    externalRoomGroups.forEach((bookings, roomKey) => {
+      const firstBooking = bookings[0];
+      const locationId = firstBooking.mappedLocation?.id;
+      
+      if (locationId && !filteredRooms.some(room => room.location_id === locationId)) {
+        virtualRooms.push({
+          id: `virtual-${roomKey}`,
+          location_id: locationId,
+          room_number: firstBooking.room_name || 'External Room',
+          room_type: firstBooking.raw_data?.channel || 'External',
+          bed_type: 'Various',
+          max_occupancy: Math.max(...bookings.map(b => b.adults + b.children)),
+          base_price: 0,
+          description: `External bookings from ${firstBooking.raw_data?.apiSource || firstBooking.source}`,
+          amenities: [],
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          isVirtual: true,
+          virtualRoomName: firstBooking.room_name || 'External Room'
+        });
+      }
+    });
+    
+    return virtualRooms;
+  };
+
+  const virtualRooms = getVirtualRoomsForExternalBookings();
+  const allDisplayRooms: VirtualRoom[] = [...filteredRooms, ...virtualRooms];
+
   const filteredReservations = reservations.filter(reservation => 
     selectedLocation === "all" || reservation.location_id === selectedLocation
   );
@@ -223,12 +275,21 @@ export default function Calendar() {
       return date >= checkIn && date < checkOut && reservation.room_id === roomId;
     });
 
-    // For external bookings, we need to match by location since they don't have room_id
-    const room = rooms.find(r => r.id === roomId);
+    // For external bookings, we need to match by location and room name
+    const room = allDisplayRooms.find(r => r.id === roomId);
     const externalReservations = filteredExternalBookings
       .filter(booking => {
         const checkIn = new Date(booking.check_in);
         const checkOut = new Date(booking.check_out);
+        
+        // For virtual rooms, match by room name and location
+        if (room?.isVirtual) {
+          const matchesRoomName = booking.room_name === room.virtualRoomName;
+          const matchesLocation = booking.mappedLocation?.id === room.location_id;
+          return date >= checkIn && date < checkOut && matchesRoomName && matchesLocation;
+        }
+        
+        // For real rooms, match by location
         const belongsToSameLocation = booking.mappedLocation?.id === room?.location_id;
         return date >= checkIn && date < checkOut && belongsToSameLocation;
       })
@@ -356,12 +417,15 @@ export default function Calendar() {
                   </div>
 
                   {/* Room rows */}
-                  {filteredRooms.map((room) => (
+                  {allDisplayRooms.map((room) => (
                     <div key={room.id} className="grid" style={{ gridTemplateColumns: `120px repeat(${calendarDates.length}, 32px)` }}>
                       {/* Room info column */}
-                      <div className="border-b border-r p-1 bg-background">
+                      <div className={`border-b border-r p-1 ${room.isVirtual ? 'bg-purple-50' : 'bg-background'}`}>
                         <div className="font-medium text-xs">{room.room_number}</div>
                         <div className="text-xs text-muted-foreground truncate">{room.room_type}</div>
+                        {room.isVirtual && (
+                          <div className="text-xs text-purple-600 font-medium">External</div>
+                        )}
                       </div>
                       
                       {/* Date columns */}
