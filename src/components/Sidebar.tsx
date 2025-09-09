@@ -19,7 +19,8 @@ import {
   TrendingUp,
   DollarSign,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Wifi
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ interface SidebarProps {
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Calendar", href: "/calendar", icon: Calendar },
+  { name: "Beds24 Integration", href: "/beds24", icon: Wifi },
   { 
     name: "Master Files", 
     href: "/master-files", 

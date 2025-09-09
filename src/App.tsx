@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Income from "./pages/Income";
 import Expense from "./pages/Expense";
 import Calendar from "./pages/Calendar";
+import Beds24Integration from "./pages/Beds24Integration";
 import Reports from "./pages/Reports";
 import FinancialReports from "./pages/FinancialReports";
 import Accounts from "./pages/Accounts";
@@ -41,6 +42,7 @@ const App = () => (
             }>
               <Route index element={<Dashboard />} />
               <Route path="calendar" element={<Calendar />} />
+              <Route path="beds24" element={<Beds24Integration />} />
               <Route path="master-files" element={<MasterFiles />} />
               <Route path="rooms" element={<RoomManagement />} />
               <Route path="income" element={<Income />} />
