@@ -71,12 +71,12 @@ export default function Beds24Integration() {
     {
       locationId: "f8ad4c1d-1fb3-4bbe-992f-f434d0b43df8", // Rusty Bunk
       locationName: "Rusty Bunk",
-      beds24Properties: ["Rusty Bunk Villa", "Three-Bedroom Apartment"]
+      beds24Properties: ["Rusty Bunk Villa", "Three-Bedroom Apartment", "Luxury 3 Bedroom Mountain-View Villa, Sleeps 1-6"]
     },
     {
       locationId: "ddbdda7c-23d4-4685-9ef3-43f5b5d989a5", // Asaliya Villa
       locationName: "Asaliya Villa", 
-      beds24Properties: ["Luxury 3 Bedroom Mountain-View Villa, Sleeps 1-6", "Luxury 4BR Bungalow Sleeps 8-10"]
+      beds24Properties: ["Luxury 4BR Bungalow Sleeps 8-10"]
     }
   ]);
 
