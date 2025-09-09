@@ -3,10 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, Calendar, Users, Bed, MapPin, DollarSign, AlertCircle, CheckCircle, Clock, Wifi } from "lucide-react";
+import { RefreshCw, Calendar, Users, Bed, MapPin, DollarSign, AlertCircle, CheckCircle, Clock, Wifi, Settings as SettingsIcon, Key } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 
 interface ExternalBooking {
@@ -48,6 +49,8 @@ export default function Beds24Integration() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [setupMode, setSetupMode] = useState(false);
+  const [exchangingToken, setExchangingToken] = useState(false);
   const [syncStats, setSyncStats] = useState<SyncStats>({
     totalBookings: 0,
     recentSync: null,
@@ -138,6 +141,31 @@ export default function Beds24Integration() {
       toast.error(`Sync failed: ${error.message || 'Unknown error'}`);
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const exchangeInviteCode = async (inviteCode: string) => {
+    setExchangingToken(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('beds24-token-exchange', {
+        body: { inviteCode }
+      });
+      
+      if (error) throw error;
+      
+      if (data.success) {
+        toast.success('Token exchange successful! You can now sync with Beds24.');
+        toast.info('Please save your refresh token in Supabase secrets as BEDS24_REFRESH_TOKEN');
+        console.log('Refresh token:', data.data.refreshToken);
+        setSetupMode(false);
+      } else {
+        throw new Error(data.error || 'Token exchange failed');
+      }
+    } catch (error: any) {
+      console.error('Token exchange error:', error);
+      toast.error(`Token exchange failed: ${error.message || 'Unknown error'}`);
+    } finally {
+      setExchangingToken(false);
     }
   };
 
@@ -439,6 +467,104 @@ export default function Beds24Integration() {
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Key className="h-5 w-5" />
+                Initial Setup
+              </CardTitle>
+              <CardDescription>
+                Exchange your Beds24 invite code for API access
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!setupMode ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <h4 className="font-medium">API Integration Status</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {syncStats.totalBookings > 0 
+                          ? 'Connected and syncing data' 
+                          : 'Ready to connect - click Setup to exchange your invite code'
+                        }
+                      </p>
+                    </div>
+                    <Button onClick={() => setSetupMode(true)} variant="outline">
+                      <SettingsIcon className="h-4 w-4 mr-2" />
+                      Setup
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Beds24 Invite Code</label>
+                    <Input
+                      id="invite-code"
+                      placeholder="Paste your Beds24 invite code here..."
+                      className="font-mono text-xs"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      This will be exchanged for a secure refresh token and stored in Supabase secrets.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={async () => {
+                        setExchangingToken(true);
+                        try {
+                          // First try the automatic setup
+                          const { data, error } = await supabase.functions.invoke('setup-beds24-integration');
+                          
+                          if (data?.success) {
+                            toast.success('Refresh token generated! Please copy it to your Supabase secrets.');
+                            console.log('=== BEDS24 REFRESH TOKEN ===');
+                            console.log(data.data.refreshToken);
+                            console.log('===========================');
+                            
+                            // Show instructions
+                            alert(`Success! Please copy this refresh token to your BEDS24_REFRESH_TOKEN secret:\n\n${data.data.refreshToken}\n\nThen try syncing again.`);
+                            setSetupMode(false);
+                          } else {
+                            // Fallback to manual input
+                            const input = document.getElementById('invite-code') as HTMLInputElement;
+                            if (input?.value) {
+                              await exchangeInviteCode(input.value);
+                            } else {
+                              toast.error('Please enter your invite code');
+                            }
+                          }
+                        } catch (error: any) {
+                          console.error('Setup error:', error);
+                          toast.error(`Setup failed: ${error.message}`);
+                        } finally {
+                          setExchangingToken(false);
+                        }
+                      }}
+                      disabled={exchangingToken}
+                    >
+                      {exchangingToken ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Exchanging...
+                        </>
+                      ) : (
+                        <>
+                          <Key className="h-4 w-4 mr-2" />
+                          Exchange Code
+                        </>
+                      )}
+                    </Button>
+                    <Button variant="outline" onClick={() => setSetupMode(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
