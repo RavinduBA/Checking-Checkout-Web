@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Calendar as CalendarIcon, Filter, Plus, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, Filter, Plus, RefreshCw, ChevronLeft, ChevronRight, MapPin, Users, DollarSign, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
-import { ExternalBookings } from "@/components/ExternalBookings";
+import { format } from "date-fns";
 
 type Reservation = Tables<"reservations"> & {
   locations: Tables<"locations">;
@@ -18,15 +19,67 @@ type Reservation = Tables<"reservations"> & {
 type Room = Tables<"rooms">;
 type Location = Tables<"locations">;
 
+interface ExternalBooking {
+  id: string;
+  external_id: string;
+  property_id: string;
+  source: string;
+  guest_name: string;
+  check_in: string;
+  check_out: string;
+  status: string;
+  total_amount: number | null;
+  currency: string;
+  location_id: string | null;
+  room_name: string | null;
+  adults: number;
+  children: number;
+  created_at: string;
+  last_synced_at: string | null;
+  raw_data?: any;
+  location?: {
+    name: string;
+  };
+}
+
+interface PropertyMapping {
+  locationId: string;
+  locationName: string;
+  beds24Properties: string[];
+}
+
 export default function Calendar() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [externalBookings, setExternalBookings] = useState<ExternalBooking[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedBooking, setSelectedBooking] = useState<ExternalBooking | null>(null);
+  const [showBookingDialog, setShowBookingDialog] = useState(false);
+
+  const propertyMappings: PropertyMapping[] = [
+    {
+      locationId: "f8ad4c1d-1fb3-4bbe-992f-f434d0b43df8", // Rusty Bunk
+      locationName: "Rusty Bunk",
+      beds24Properties: [
+        "Rusty Bunk Villa", 
+        "Three-Bedroom Apartment", 
+        "Luxury 3 Bedroom Mountain-View Villa, Sleeps 1-6",
+        "Room 609309"
+      ]
+    },
+    {
+      locationId: "ddbdda7c-23d4-4685-9ef3-43f5b5d989a5", // Asaliya Villa
+      locationName: "Asaliya Villa", 
+      beds24Properties: [
+        "Luxury 4BR Bungalow Sleeps 8-10"
+      ]
+    }
+  ];
 
   useEffect(() => {
     fetchData();
@@ -57,14 +110,55 @@ export default function Calendar() {
         `)
         .order("check_in_date", { ascending: true });
 
+      // Fetch external bookings
+      const { data: externalBookingsData } = await supabase
+        .from('external_bookings')
+        .select(`
+          *,
+          location:locations(name)
+        `)
+        .order('check_in', { ascending: true });
+
       setLocations(locationsData || []);
       setRooms(roomsData || []);
       setReservations(reservationsData || []);
+      setExternalBookings(externalBookingsData || []);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to get location from external booking based on property mappings
+  const getLocationFromExternalBooking = (booking: ExternalBooking): Location | null => {
+    // Special handling for "Room 609309" - force to Rusty Bunk
+    if (booking.room_name && booking.room_name.includes("Room 609309")) {
+      return locations.find(loc => loc.name === "Rusty Bunk") || null;
+    }
+    
+    const possiblePropertyNames = [
+      booking.raw_data?.propertyName,
+      booking.room_name,
+      booking.raw_data?.roomName,
+      booking.raw_data?.referer
+    ].filter(Boolean);
+    
+    for (const mapping of propertyMappings) {
+      for (const propertyName of possiblePropertyNames) {
+        if (propertyName && mapping.beds24Properties.some(prop => 
+          propertyName.includes(prop) || prop.includes(propertyName) || prop === propertyName
+        )) {
+          return locations.find(loc => loc.id === mapping.locationId) || null;
+        }
+      }
+    }
+    
+    if (booking.location) {
+      return locations.find(loc => loc.name === booking.location?.name) || null;
+    }
+    
+    return null;
   };
 
   const filteredRooms = rooms.filter(room => 
@@ -75,7 +169,25 @@ export default function Calendar() {
     selectedLocation === "all" || reservation.location_id === selectedLocation
   );
 
-  const getStatusColor = (status: string) => {
+  const filteredExternalBookings = externalBookings
+    .map(booking => ({
+      ...booking,
+      mappedLocation: getLocationFromExternalBooking(booking)
+    }))
+    .filter(booking => 
+      selectedLocation === "all" || booking.mappedLocation?.id === selectedLocation
+    );
+
+  const getStatusColor = (status: string, isExternal = false) => {
+    if (isExternal) {
+      const colors = {
+        confirmed: "bg-purple-100 text-purple-800 border-purple-200",
+        new: "bg-indigo-100 text-indigo-800 border-indigo-200",
+        cancelled: "bg-red-100 text-red-800 border-red-200",
+      };
+      return colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800 border-gray-200";
+    }
+    
     const colors = {
       confirmed: "bg-emerald-100 text-emerald-800 border-emerald-200",
       tentative: "bg-amber-100 text-amber-800 border-amber-200",
@@ -103,15 +215,59 @@ export default function Calendar() {
     return dates;
   };
 
-  // Get reservations for a specific room and date
-  const getReservationsForRoomAndDate = (roomId: string, date: Date) => {
-    return filteredReservations.filter(reservation => {
+  // Get reservations and external bookings for a specific room and date
+  const getBookingsForRoomAndDate = (roomId: string, date: Date) => {
+    const internalReservations = filteredReservations.filter(reservation => {
       const checkIn = new Date(reservation.check_in_date);
       const checkOut = new Date(reservation.check_out_date);
-      
-      // Check if date falls within reservation period
       return date >= checkIn && date < checkOut && reservation.room_id === roomId;
     });
+
+    // For external bookings, we need to match by location since they don't have room_id
+    const room = rooms.find(r => r.id === roomId);
+    const externalReservations = filteredExternalBookings
+      .filter(booking => {
+        const checkIn = new Date(booking.check_in);
+        const checkOut = new Date(booking.check_out);
+        const belongsToSameLocation = booking.mappedLocation?.id === room?.location_id;
+        return date >= checkIn && date < checkOut && belongsToSameLocation;
+      })
+      .slice(0, 1); // Only show one external booking per cell to avoid clutter
+
+    return { internalReservations, externalReservations };
+  };
+
+  const openBookingDetails = (booking: ExternalBooking) => {
+    setSelectedBooking(booking);
+    setShowBookingDialog(true);
+  };
+
+  const formatPrice = (booking: ExternalBooking) => {
+    if (booking.raw_data?.price) {
+      return `${booking.raw_data.price.toLocaleString()} LKR`;
+    }
+    return `${booking.total_amount?.toLocaleString() || '0'} ${booking.currency}`;
+  };
+
+  const getPaymentInfo = (booking: ExternalBooking) => {
+    if (!booking.raw_data) return null;
+    
+    const source = booking.raw_data.apiSource?.toLowerCase();
+    
+    if (source === 'airbnb') {
+      const price = booking.raw_data.price;
+      const commission = booking.raw_data.commission;
+      const expectedPayout = price - commission;
+      
+      return {
+        type: 'airbnb',
+        basePrice: price,
+        hostFee: commission,
+        payout: expectedPayout
+      };
+    }
+    
+    return null;
   };
 
   const calendarDates = generateCalendarDates();
@@ -210,25 +366,43 @@ export default function Calendar() {
                       
                       {/* Date columns */}
                       {calendarDates.map((date, dateIndex) => {
-                        const reservations = getReservationsForRoomAndDate(room.id, date);
-                        const reservation = reservations[0];
+                        const { internalReservations, externalReservations } = getBookingsForRoomAndDate(room.id, date);
+                        const internalReservation = internalReservations[0];
+                        const externalReservation = externalReservations[0];
                         
                         return (
-                          <div key={dateIndex} className="border-b border-r min-h-[45px] p-0.5 relative">
-                            {reservation ? (
+                          <div key={dateIndex} className="border-b border-r min-h-[60px] p-0.5 relative">
+                            {internalReservation && (
                               <div 
-                                className={`text-xs p-0.5 rounded text-center cursor-pointer ${getStatusColor(reservation.status)} overflow-hidden`}
-                                onClick={() => navigate(`/reservations/${reservation.id}`)}
-                                title={`${reservation.guest_name} - ${reservation.status}`}
+                                className={`text-xs p-0.5 rounded text-center cursor-pointer mb-0.5 ${getStatusColor(internalReservation.status)} overflow-hidden`}
+                                onClick={() => navigate(`/reservations/${internalReservation.id}`)}
+                                title={`${internalReservation.guest_name} - ${internalReservation.status}`}
                               >
                                 <div className="font-medium text-xs leading-tight truncate">
-                                  {reservation.guest_name.split(' ')[0].slice(0, 4)}
+                                  {internalReservation.guest_name.split(' ')[0].slice(0, 4)}
                                 </div>
                                 <div className="text-xs opacity-75 leading-tight">
-                                  {new Date(reservation.check_in_date).getDate()}-{new Date(reservation.check_out_date).getDate()}
+                                  {new Date(internalReservation.check_in_date).getDate()}-{new Date(internalReservation.check_out_date).getDate()}
                                 </div>
                               </div>
-                            ) : (
+                            )}
+                            
+                            {externalReservation && (
+                              <div 
+                                className={`text-xs p-0.5 rounded text-center cursor-pointer ${getStatusColor(externalReservation.status, true)} overflow-hidden`}
+                                onClick={() => openBookingDetails(externalReservation)}
+                                title={`External: ${externalReservation.guest_name || 'Unknown'} - ${externalReservation.source}`}
+                              >
+                                <div className="font-medium text-xs leading-tight truncate">
+                                  {(externalReservation.raw_data?.firstName || externalReservation.guest_name?.split(' ')[0] || 'Ext').slice(0, 4)}
+                                </div>
+                                <div className="text-xs opacity-75 leading-tight">
+                                  {externalReservation.source.charAt(0).toUpperCase()}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {!internalReservation && !externalReservation && (
                               <div 
                                 className="h-full hover:bg-muted/50 cursor-pointer rounded"
                                 onClick={() => navigate(`/reservations/new?room=${room.id}&date=${date.toISOString().split('T')[0]}`)}
@@ -248,15 +422,19 @@ export default function Calendar() {
           <div className="flex flex-wrap gap-4 text-xs">
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 bg-emerald-100 border border-emerald-200 rounded"></div>
-              <span>Confirmed</span>
+              <span>Internal - Confirmed</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 bg-amber-100 border border-amber-200 rounded"></div>
-              <span>Tentative</span>
+              <span>Internal - Tentative</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-blue-100 border border-blue-200 rounded"></div>
-              <span>Completed</span>
+              <div className="w-3 h-3 bg-purple-100 border border-purple-200 rounded"></div>
+              <span>External - Confirmed</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-indigo-100 border border-indigo-200 rounded"></div>
+              <span>External - New</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 bg-red-100 border border-red-200 rounded"></div>
@@ -265,12 +443,179 @@ export default function Calendar() {
           </div>
         </div>
 
-        {/* External bookings sidebar */}
-        <div className="lg:w-96">
-          <ExternalBookings 
-            locationId={selectedLocation === "all" ? undefined : selectedLocation}
-          />
-        </div>
+        {/* Booking Details Dialog */}
+        <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                External Booking Details
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedBooking && (
+              <div className="space-y-6">
+                {/* Header Info */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium text-muted-foreground">Booking ID</div>
+                    <div className="font-mono text-sm">#{selectedBooking.external_id}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium text-muted-foreground">Status</div>
+                    <Badge variant="outline" className={getStatusColor(selectedBooking.status, true)}>
+                      {selectedBooking.status}
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium text-muted-foreground">Source</div>
+                    <Badge variant="outline">
+                      {selectedBooking.raw_data?.referer || selectedBooking.source}
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Guest Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Guest Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-sm font-medium text-muted-foreground">Guest Name</div>
+                        <div className="font-medium">
+                          {selectedBooking.raw_data?.firstName && selectedBooking.raw_data?.lastName 
+                            ? `${selectedBooking.raw_data.firstName} ${selectedBooking.raw_data.lastName}`
+                            : selectedBooking.guest_name
+                          }
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-muted-foreground">Email</div>
+                        <div>{selectedBooking.raw_data?.email || 'Not available'}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-muted-foreground">Guests</div>
+                        <div>{selectedBooking.adults} adults{selectedBooking.children > 0 && `, ${selectedBooking.children} children`}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-muted-foreground">Phone</div>
+                        <div>{selectedBooking.raw_data?.phone || 'Not available'}</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Stay Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <CalendarIcon className="h-5 w-5" />
+                      Stay Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-sm font-medium text-muted-foreground">Check-in</div>
+                        <div className="font-medium">{format(new Date(selectedBooking.check_in), 'PPP')}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-muted-foreground">Check-out</div>
+                        <div className="font-medium">{format(new Date(selectedBooking.check_out), 'PPP')}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-muted-foreground">Nights</div>
+                        <div>{Math.ceil((new Date(selectedBooking.check_out).getTime() - new Date(selectedBooking.check_in).getTime()) / (1000 * 60 * 60 * 24))}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-muted-foreground">Booking Date</div>
+                        <div>
+                          {selectedBooking.raw_data?.bookingTime 
+                            ? format(new Date(selectedBooking.raw_data.bookingTime), 'PPP')
+                            : 'Not available'
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Property Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <MapPin className="h-5 w-5" />
+                      Property Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-sm font-medium text-muted-foreground">Location</div>
+                        <div className="font-medium">
+                          {getLocationFromExternalBooking(selectedBooking)?.name || selectedBooking.location?.name || 'Unknown'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-muted-foreground">Room</div>
+                        <div>{selectedBooking.room_name || 'Not specified'}</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Pricing Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <DollarSign className="h-5 w-5" />
+                      Pricing Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {(() => {
+                      const paymentInfo = getPaymentInfo(selectedBooking);
+                      
+                      if (paymentInfo?.type === 'airbnb') {
+                        return (
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <span>Base Price:</span>
+                              <span className="font-medium">{paymentInfo.basePrice.toLocaleString()} LKR</span>
+                            </div>
+                            <div className="flex justify-between text-red-600">
+                              <span>Host Fee:</span>
+                              <span>-{paymentInfo.hostFee.toLocaleString()} LKR</span>
+                            </div>
+                            <div className="border-t pt-2 flex justify-between font-medium text-green-600">
+                              <span>Expected Payout:</span>
+                              <span>{paymentInfo.payout.toLocaleString()} LKR</span>
+                            </div>
+                            <div className="text-sm text-muted-foreground mt-2">
+                              Cancel policy flexible
+                            </div>
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div className="flex justify-between font-medium">
+                            <span>Total Amount:</span>
+                            <span>{formatPrice(selectedBooking)}</span>
+                          </div>
+                        );
+                      }
+                    })()}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
