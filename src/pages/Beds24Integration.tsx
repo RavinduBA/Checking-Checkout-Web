@@ -71,12 +71,19 @@ export default function Beds24Integration() {
     {
       locationId: "f8ad4c1d-1fb3-4bbe-992f-f434d0b43df8", // Rusty Bunk
       locationName: "Rusty Bunk",
-      beds24Properties: ["Rusty Bunk Villa", "Three-Bedroom Apartment", "Luxury 3 Bedroom Mountain-View Villa, Sleeps 1-6"]
+      beds24Properties: [
+        "Rusty Bunk Villa", 
+        "Three-Bedroom Apartment", 
+        "Luxury 3 Bedroom Mountain-View Villa, Sleeps 1-6",
+        "Room 609309" // Adding room ID as fallback
+      ]
     },
     {
       locationId: "ddbdda7c-23d4-4685-9ef3-43f5b5d989a5", // Asaliya Villa
       locationName: "Asaliya Villa", 
-      beds24Properties: ["Luxury 4BR Bungalow Sleeps 8-10"]
+      beds24Properties: [
+        "Luxury 4BR Bungalow Sleeps 8-10"
+      ]
     }
   ]);
 
@@ -201,16 +208,40 @@ export default function Beds24Integration() {
 
   // Helper function to get location from booking based on property mappings
   const getLocationFromBooking = (booking: ExternalBooking): Location | null => {
-    const propertyName = booking.raw_data?.propertyName || booking.room_name || '';
-    
-    for (const mapping of propertyMappings) {
-      if (mapping.beds24Properties.some(prop => 
-        propertyName.includes(prop) || prop.includes(propertyName)
-      )) {
-        return locations.find(loc => loc.id === mapping.locationId) || null;
+    // Special handling for "Luxury 3 Bedroom Mountain-View Villa" - force to Rusty Bunk
+    if (booking.room_name && booking.room_name.includes("Room 609309")) {
+      // All Room 609309 should go to Rusty Bunk based on the Airbnb property name
+      const rustyBunkLocation = locations.find(loc => loc.name === "Rusty Bunk");
+      if (rustyBunkLocation) {
+        console.log(`Forcing booking ${booking.external_id} with Room 609309 to Rusty Bunk`);
+        return rustyBunkLocation;
       }
     }
     
+    // Check multiple possible property name fields from the raw_data
+    const possiblePropertyNames = [
+      booking.raw_data?.propertyName,
+      booking.room_name,
+      booking.raw_data?.roomName,
+      booking.raw_data?.referer // Check referer for Airbnb
+    ].filter(Boolean);
+    
+    console.log('Booking external_id:', booking.external_id, 'Property names to check:', possiblePropertyNames);
+    console.log('Raw data keys:', booking.raw_data ? Object.keys(booking.raw_data) : 'no raw_data');
+    
+    for (const mapping of propertyMappings) {
+      for (const propertyName of possiblePropertyNames) {
+        if (propertyName && mapping.beds24Properties.some(prop => 
+          propertyName.includes(prop) || prop.includes(propertyName) || 
+          prop === propertyName
+        )) {
+          console.log('Matched booking to location:', mapping.locationName);
+          return locations.find(loc => loc.id === mapping.locationId) || null;
+        }
+      }
+    }
+    
+    console.log('No mapping found, using fallback location');
     // Fallback to existing location mapping
     if (booking.location) {
       return locations.find(loc => loc.name === booking.location?.name) || null;
@@ -330,15 +361,22 @@ export default function Beds24Integration() {
   };
 
   const filteredBookings = selectedLocation === "all" 
-    ? bookings.map(booking => ({
-        ...booking,
-        mappedLocation: getLocationFromBooking(booking)
-      }))
-    : bookings
-        .map(booking => ({
+    ? bookings.map(booking => {
+        const mappedLocation = getLocationFromBooking(booking);
+        console.log(`Booking ${booking.external_id}: mapped to ${mappedLocation?.name || 'none'}`);
+        return {
           ...booking,
-          mappedLocation: getLocationFromBooking(booking)
-        }))
+          mappedLocation: mappedLocation
+        };
+      })
+    : bookings
+        .map(booking => {
+          const mappedLocation = getLocationFromBooking(booking);
+          return {
+            ...booking,
+            mappedLocation: mappedLocation
+          };
+        })
         .filter(booking => booking.mappedLocation?.id === selectedLocation);
 
   if (loading) {
