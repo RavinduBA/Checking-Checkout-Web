@@ -171,6 +171,19 @@ export default function Calendar() {
     selectedLocation === "all" || room.location_id === selectedLocation
   );
 
+  const filteredReservations = reservations.filter(reservation => 
+    selectedLocation === "all" || reservation.location_id === selectedLocation
+  );
+
+  const filteredExternalBookings = externalBookings
+    .map(booking => ({
+      ...booking,
+      mappedLocation: getLocationFromExternalBooking(booking)
+    }))
+    .filter(booking => 
+      selectedLocation === "all" || booking.mappedLocation?.id === selectedLocation
+    );
+
   // Create virtual rooms for external bookings when no internal rooms exist for a location
   const getVirtualRoomsForExternalBookings = (): VirtualRoom[] => {
     const virtualRooms: VirtualRoom[] = [];
@@ -217,18 +230,6 @@ export default function Calendar() {
   const virtualRooms = getVirtualRoomsForExternalBookings();
   const allDisplayRooms: VirtualRoom[] = [...filteredRooms, ...virtualRooms];
 
-  const filteredReservations = reservations.filter(reservation => 
-    selectedLocation === "all" || reservation.location_id === selectedLocation
-  );
-
-  const filteredExternalBookings = externalBookings
-    .map(booking => ({
-      ...booking,
-      mappedLocation: getLocationFromExternalBooking(booking)
-    }))
-    .filter(booking => 
-      selectedLocation === "all" || booking.mappedLocation?.id === selectedLocation
-    );
 
   const getStatusColor = (status: string, isExternal = false) => {
     if (isExternal) {
