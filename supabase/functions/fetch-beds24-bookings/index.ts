@@ -2,7 +2,11 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.0.0';
 
 // Beds24 API V2 base URL
-const BEDS24_API_BASE = 'https://api.beds24.com/v2';
+const BEDS24_API_BASE = 'https://beds24.com/api/v2';
+
+// Token management
+let ACCESS_TOKEN = "";
+let EXPIRES_AT = 0;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -49,6 +53,69 @@ interface V2Booking extends JsonRecord {
   totalAmount?: number;
 }
 
+// Function to refresh access token using refresh token
+async function refreshAccessToken() {
+  const refreshToken = Deno.env.get('BEDS24_REFRESH_TOKEN');
+  if (!refreshToken) {
+    throw new Error('Missing Beds24 refresh token (BEDS24_REFRESH_TOKEN)');
+  }
+
+  console.log('Refreshing Beds24 access token...');
+  const response = await fetch('https://beds24.com/api/v2/authentication/token', {
+    method: 'GET',
+    headers: {
+      'accept': 'application/json',
+      'refreshToken': refreshToken,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Token refresh failed:', response.status, errorText);
+    throw new Error(`Token refresh failed: ${response.status} ${response.statusText}`);
+  }
+
+  const tokenData = await response.json();
+  ACCESS_TOKEN = tokenData.token;
+  EXPIRES_AT = Date.now() + (tokenData.expiresIn - 60) * 1000; // Refresh 1 min early
+  console.log('Access token refreshed successfully');
+}
+
+// Function to make authenticated requests to Beds24 API
+async function beds24Request(path: string) {
+  // Check if we need to refresh the token
+  if (!ACCESS_TOKEN || Date.now() > EXPIRES_AT) {
+    await refreshAccessToken();
+  }
+
+  let response = await fetch(`${BEDS24_API_BASE}${path}`, {
+    headers: {
+      'accept': 'application/json',
+      'token': ACCESS_TOKEN,
+    },
+  });
+
+  // If we get 401, try refreshing token once more
+  if (response.status === 401) {
+    console.log('Got 401, refreshing token and retrying...');
+    await refreshAccessToken();
+    response = await fetch(`${BEDS24_API_BASE}${path}`, {
+      headers: {
+        'accept': 'application/json',
+        'token': ACCESS_TOKEN,
+      },
+    });
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Beds24 API request failed: ${response.status}`, errorText);
+    throw new Error(`Beds24 API request failed: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -62,12 +129,6 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Get API v2 Long Life Token from secrets
-    const beds24Token = Deno.env.get('BEDS24_V2_LONG_LIFE_TOKEN');
-    if (!beds24Token) {
-      throw new Error('Missing Beds24 API v2 token secret (BEDS24_V2_LONG_LIFE_TOKEN)');
-    }
 
     // Fetch active locations from DB for mapping
     const { data: locations, error: locationsError } = await supabase
@@ -95,20 +156,7 @@ serve(async (req) => {
 
     // 1) Fetch properties to build an id->name map
     console.log('Fetching properties from Beds24 API v2...');
-    const propsRes = await fetch(`${BEDS24_API_BASE}/properties`, {
-      headers: {
-        'accept': 'application/json',
-        'token': beds24Token,
-      },
-    });
-
-    if (!propsRes.ok) {
-      const text = await propsRes.text();
-      console.error('Failed to fetch properties', propsRes.status, propsRes.statusText, text);
-      throw new Error(`Beds24 properties fetch failed: ${propsRes.status} ${propsRes.statusText}`);
-    }
-
-    const propsJson: unknown = await propsRes.json();
+    const propsJson: unknown = await beds24Request('/properties');
     const properties: V2Property[] = Array.isArray((propsJson as any)?.data)
       ? (propsJson as any).data
       : (Array.isArray(propsJson) ? (propsJson as any) : []);
@@ -124,20 +172,7 @@ serve(async (req) => {
 
     // 2) Fetch bookings
     console.log('Fetching bookings from Beds24 API v2...');
-    const bookingsRes = await fetch(`${BEDS24_API_BASE}/bookings`, {
-      headers: {
-        'accept': 'application/json',
-        'token': beds24Token,
-      },
-    });
-
-    if (!bookingsRes.ok) {
-      const text = await bookingsRes.text();
-      console.error('Failed to fetch bookings', bookingsRes.status, bookingsRes.statusText, text);
-      throw new Error(`Beds24 bookings fetch failed: ${bookingsRes.status} ${bookingsRes.statusText}`);
-    }
-
-    const bookingsJson: unknown = await bookingsRes.json();
+    const bookingsJson: unknown = await beds24Request('/bookings');
     const bookings: V2Booking[] = Array.isArray((bookingsJson as any)?.data)
       ? (bookingsJson as any).data
       : (Array.isArray(bookingsJson) ? (bookingsJson as any) : []);
