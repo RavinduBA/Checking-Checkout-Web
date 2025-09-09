@@ -7,6 +7,7 @@ import { RefreshCw, Calendar, Users, Bed, MapPin, DollarSign, AlertCircle, Check
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 
@@ -29,6 +30,7 @@ interface ExternalBooking {
     name: string;
   };
   last_synced_at: string;
+  raw_data?: any;
 }
 
 interface Location {
@@ -167,6 +169,84 @@ export default function Beds24Integration() {
     } finally {
       setExchangingToken(false);
     }
+  };
+
+  // Helper functions for formatting
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'short', 
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+  };
+
+  const calculateNights = (checkIn: string, checkOut: string) => {
+    const nights = Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24));
+    return nights;
+  };
+
+  const formatBookingDate = (booking: ExternalBooking) => {
+    if (booking.raw_data?.bookingTime) {
+      const date = new Date(booking.raw_data.bookingTime);
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric' 
+      });
+    }
+    return '';
+  };
+
+  const getGuestName = (booking: ExternalBooking) => {
+    if (booking.raw_data?.firstName && booking.raw_data?.lastName) {
+      return `${booking.raw_data.firstName} ${booking.raw_data.lastName}`;
+    }
+    return booking.guest_name || 'Unknown Guest';
+  };
+
+  const getEmail = (booking: ExternalBooking) => {
+    return booking.raw_data?.email || '';
+  };
+
+  const getReferrer = (booking: ExternalBooking) => {
+    return booking.raw_data?.referer || booking.source || '';
+  };
+
+  const getPaymentInfo = (booking: ExternalBooking) => {
+    if (!booking.raw_data) return null;
+    
+    const source = booking.raw_data.apiSource?.toLowerCase();
+    
+    if (source === 'airbnb') {
+      const price = booking.raw_data.price;
+      const commission = booking.raw_data.commission;
+      const expectedPayout = price - commission;
+      
+      return {
+        type: 'airbnb',
+        lines: [
+          'Cancel policy flexible',
+          `Base Price ${price} LKR`,
+          `Host Fee -${commission}.00 LKR`,
+          `Expected Payout Amount ${expectedPayout} LKR`
+        ]
+      };
+    } else if (source === 'booking.com') {
+      const rateDesc = booking.raw_data.rateDescription;
+      if (rateDesc) {
+        // Extract rate info from description
+        const lines = rateDesc.split('\n').filter(line => line.trim());
+        return {
+          type: 'booking',
+          lines: lines
+        };
+      }
+    }
+    
+    return null;
   };
 
   const getStatusColor = (status: string) => {
@@ -342,76 +422,116 @@ export default function Beds24Integration() {
           {/* Bookings Table */}
           <Card>
             <CardHeader>
-              <CardTitle>External Bookings</CardTitle>
+              <CardTitle>Beds24.com Control Panel</CardTitle>
               <CardDescription>
                 Showing {filteredBookings.length} bookings from Beds24
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Guest</TableHead>
-                    <TableHead>Property</TableHead>
-                    <TableHead>Dates</TableHead>
-                    <TableHead>Guests</TableHead>
-                    <TableHead>Source</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Last Sync</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredBookings.map((booking) => (
-                    <TableRow key={booking.id}>
-                      <TableCell className="font-medium">
-                        <div>
-                          <div>{booking.guest_name}</div>
-                          {booking.room_name && (
-                            <div className="text-sm text-muted-foreground">{booking.room_name}</div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {booking.location?.name || 'Unknown'}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div>{format(new Date(booking.check_in), 'MMM dd, yyyy')}</div>
-                          <div className="text-muted-foreground">
-                            to {format(new Date(booking.check_out), 'MMM dd, yyyy')}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          {booking.adults} + {booking.children}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={getSourceColor(booking.source)}>
-                          {booking.source.replace('_', '.')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={getStatusColor(booking.status)}>
-                          {booking.status.replace('_', ' ')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        ${booking.total_amount?.toLocaleString() || '0'} {booking.currency}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(booking.last_synced_at), 'MMM dd HH:mm')}
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-20">Number</TableHead>
+                      <TableHead className="w-16">Bulk Action</TableHead>
+                      <TableHead className="w-20">Status</TableHead>
+                      <TableHead className="w-12">Flag</TableHead>
+                      <TableHead className="w-32">Property</TableHead>
+                      <TableHead className="w-40">Room</TableHead>
+                      <TableHead className="w-12">Unit</TableHead>
+                      <TableHead className="w-28">Check In</TableHead>
+                      <TableHead className="w-28">Check Out</TableHead>
+                      <TableHead className="w-16">Nights</TableHead>
+                      <TableHead className="w-40">Full Name</TableHead>
+                      <TableHead className="w-40">Email</TableHead>
+                      <TableHead className="w-16">Adults</TableHead>
+                      <TableHead className="w-16">Children</TableHead>
+                      <TableHead className="w-28">Referrer</TableHead>
+                      <TableHead className="w-28">Booking Date</TableHead>
+                      <TableHead className="w-20">Master Id</TableHead>
+                      <TableHead className="w-20">Invoicee Id</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredBookings.map((booking) => {
+                      const paymentInfo = getPaymentInfo(booking);
+                      
+                      return (
+                        <TableRow key={booking.id} className="hover:bg-muted/50">
+                          <TableCell className="font-mono text-sm">
+                            {booking.external_id}
+                          </TableCell>
+                          <TableCell>
+                            <Checkbox />
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant="outline" 
+                              className={`${getStatusColor(booking.status)} text-xs capitalize`}
+                            >
+                              {booking.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {/* Flag column - empty for now */}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {booking.location?.name || 'Unknown'}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            <div>
+                              {booking.room_name || 'Unknown Room'}
+                            </div>
+                            {paymentInfo && (
+                              <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                                {paymentInfo.lines.map((line, idx) => (
+                                  <div key={idx}>{line}</div>
+                                ))}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center text-sm">
+                            1
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {formatDate(booking.check_in)}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {formatDate(booking.check_out)}
+                          </TableCell>
+                          <TableCell className="text-center text-sm">
+                            {calculateNights(booking.check_in, booking.check_out)}
+                          </TableCell>
+                          <TableCell className="text-sm font-medium">
+                            {getGuestName(booking)}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {getEmail(booking)}
+                          </TableCell>
+                          <TableCell className="text-center text-sm">
+                            {booking.adults}
+                          </TableCell>
+                          <TableCell className="text-center text-sm">
+                            {booking.children}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {getReferrer(booking)}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {formatBookingDate(booking)}
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">
+                            {booking.external_id}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {/* Invoicee Id - empty for now */}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
               
               {filteredBookings.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
