@@ -39,6 +39,12 @@ interface Location {
   is_active: boolean;
 }
 
+interface PropertyMapping {
+  locationId: string;
+  locationName: string;
+  beds24Properties: string[];
+}
+
 interface SyncStats {
   totalBookings: number;
   recentSync: string | null;
@@ -61,6 +67,18 @@ export default function Beds24Integration() {
   });
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  const [propertyMappings, setPropertyMappings] = useState<PropertyMapping[]>([
+    {
+      locationId: "f8ad4c1d-1fb3-4bbe-992f-f434d0b43df8", // Rusty Bunk
+      locationName: "Rusty Bunk",
+      beds24Properties: ["Rusty Bunk Villa", "Three-Bedroom Apartment"]
+    },
+    {
+      locationId: "ddbdda7c-23d4-4685-9ef3-43f5b5d989a5", // Asaliya Villa
+      locationName: "Asaliya Villa", 
+      beds24Properties: ["Luxury 3 Bedroom Mountain-View Villa, Sleeps 1-6", "Luxury 4BR Bungalow Sleeps 8-10"]
+    }
+  ]);
 
   useEffect(() => {
     fetchData();
@@ -181,6 +199,26 @@ export default function Beds24Integration() {
     }
   };
 
+  // Helper function to get location from booking based on property mappings
+  const getLocationFromBooking = (booking: ExternalBooking): Location | null => {
+    const propertyName = booking.raw_data?.propertyName || booking.room_name || '';
+    
+    for (const mapping of propertyMappings) {
+      if (mapping.beds24Properties.some(prop => 
+        propertyName.includes(prop) || prop.includes(propertyName)
+      )) {
+        return locations.find(loc => loc.id === mapping.locationId) || null;
+      }
+    }
+    
+    // Fallback to existing location mapping
+    if (booking.location) {
+      return locations.find(loc => loc.name === booking.location?.name) || null;
+    }
+    
+    return null;
+  };
+
   // Helper functions for formatting
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -292,8 +330,16 @@ export default function Beds24Integration() {
   };
 
   const filteredBookings = selectedLocation === "all" 
-    ? bookings 
-    : bookings.filter(booking => booking.location_id === selectedLocation);
+    ? bookings.map(booking => ({
+        ...booking,
+        mappedLocation: getLocationFromBooking(booking)
+      }))
+    : bookings
+        .map(booking => ({
+          ...booking,
+          mappedLocation: getLocationFromBooking(booking)
+        }))
+        .filter(booking => booking.mappedLocation?.id === selectedLocation);
 
   if (loading) {
     return (
@@ -423,7 +469,9 @@ export default function Beds24Integration() {
                   All Locations ({bookings.length})
                 </Button>
                 {locations.map(location => {
-                  const count = bookings.filter(b => b.location_id === location.id).length;
+                  const count = bookings
+                    .map(booking => ({ ...booking, mappedLocation: getLocationFromBooking(booking) }))
+                    .filter(b => b.mappedLocation?.id === location.id).length;
                   return (
                     <Button
                       key={location.id}
@@ -517,7 +565,7 @@ export default function Beds24Integration() {
                         <div className="space-y-2">
                           <div className="text-sm font-medium flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
-                            {booking.location?.name || 'Unknown'}
+                            {booking.mappedLocation?.name || booking.location?.name || 'Unknown'}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {booking.room_name || 'Unknown Room'}
@@ -534,15 +582,15 @@ export default function Beds24Integration() {
                               {paymentInfo.type === 'airbnb' ? (
                                 <>
                                   <div className="text-sm font-medium text-green-600">
-                                    ₹{booking.raw_data?.price?.toLocaleString()} LKR
+                                    {booking.raw_data?.price?.toLocaleString()} LKR
                                   </div>
                                   <div className="text-xs space-y-0.5 text-muted-foreground">
-                                    <div>Base: ₹{booking.raw_data?.price?.toLocaleString()}</div>
+                                    <div>Base: {booking.raw_data?.price?.toLocaleString()} LKR</div>
                                     <div className="text-red-600">
-                                      Host Fee: -₹{booking.raw_data?.commission?.toLocaleString()}
+                                      Host Fee: -{booking.raw_data?.commission?.toLocaleString()} LKR
                                     </div>
                                     <div className="font-medium text-green-600">
-                                      Payout: ₹{(booking.raw_data?.price - booking.raw_data?.commission)?.toLocaleString()}
+                                      Payout: {(booking.raw_data?.price - booking.raw_data?.commission)?.toLocaleString()} LKR
                                     </div>
                                   </div>
                                   <div className="text-xs text-muted-foreground">
@@ -747,6 +795,44 @@ export default function Beds24Integration() {
                       : 'Never synced'
                     }
                   </p>
+                </div>
+              </div>
+              
+              <div className="pt-4 border-t">
+                <h4 className="font-medium mb-4">Property Mappings</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Map your locations to Beds24 property names to ensure bookings are correctly categorized
+                </p>
+                
+                <div className="space-y-4">
+                  {propertyMappings.map((mapping, index) => (
+                    <Card key={mapping.locationId} className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          <span className="font-medium">{mapping.locationName}</span>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <h5 className="text-sm font-medium">Beds24 Property Names:</h5>
+                          <div className="space-y-1">
+                            {mapping.beds24Properties.map((property, propIndex) => (
+                              <div key={propIndex} className="flex items-center gap-2 text-sm">
+                                <Badge variant="outline" className="text-xs">
+                                  {property.includes("Booking") || property.includes("Three-Bedroom") ? "Booking.com" : "Airbnb"}
+                                </Badge>
+                                <span>{property}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <div className="text-xs text-muted-foreground">
+                          Bookings from these Beds24 properties will be mapped to {mapping.locationName}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
               </div>
               
