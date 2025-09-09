@@ -95,7 +95,7 @@ export default function Auth() {
       <Card className="w-full max-w-md bg-gradient-card border-0 shadow-elegant">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-foreground">
-            Villa Management
+            Hotel Management
           </CardTitle>
           <p className="text-muted-foreground">
             {isLogin ? "Sign in to your account" : "Create a new account"}
