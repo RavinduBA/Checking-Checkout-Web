@@ -60,9 +60,18 @@ export default function Beds24Integration() {
     statusBreakdown: {}
   });
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
 
   useEffect(() => {
     fetchData();
+    setLastSyncTime(new Date());
+    
+    // Auto-sync every hour
+    const interval = setInterval(() => {
+      syncBeds24Data();
+    }, 60 * 60 * 1000); // 1 hour in milliseconds
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchData = async () => {
@@ -137,6 +146,7 @@ export default function Beds24Integration() {
       if (error) throw error;
       
       toast.success(data.message || 'Beds24 sync completed successfully');
+      setLastSyncTime(new Date());
       await fetchData(); // Refresh data
     } catch (error: any) {
       console.error('Sync error:', error);
@@ -252,17 +262,19 @@ export default function Beds24Integration() {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'confirmed':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-50 text-green-700 border-green-200';
+      case 'new':
+        return 'bg-blue-50 text-blue-700 border-blue-200';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
       case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-50 text-red-700 border-red-200';
       case 'checked_in':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-purple-50 text-purple-700 border-purple-200';
       case 'checked_out':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-50 text-gray-700 border-gray-200';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
 
@@ -304,23 +316,31 @@ export default function Beds24Integration() {
           <h1 className="text-3xl font-bold">Beds24 Integration</h1>
           <p className="text-muted-foreground">Manage and sync your Beds24 booking data</p>
         </div>
-        <Button 
-          onClick={syncBeds24Data} 
-          disabled={syncing}
-          className="bg-gradient-primary hover:opacity-90"
-        >
-          {syncing ? (
-            <>
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              Syncing...
-            </>
-          ) : (
-            <>
-              <Wifi className="h-4 w-4 mr-2" />
-              Sync Now
-            </>
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={syncBeds24Data} 
+            disabled={syncing}
+            className="bg-gradient-primary hover:opacity-90"
+          >
+            {syncing ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Syncing...
+              </>
+            ) : (
+              <>
+                <Wifi className="h-4 w-4 mr-2" />
+                Sync Now
+              </>
+            )}
+          </Button>
+          <div className="text-xs text-muted-foreground">
+            Auto-syncs every hour
+            {lastSyncTime && (
+              <div>Last sync: {format(lastSyncTime, 'MMM dd, HH:mm')}</div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -422,115 +442,129 @@ export default function Beds24Integration() {
           {/* Bookings Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Beds24.com Control Panel</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                External Bookings
+                {lastSyncTime && (
+                  <Badge variant="outline" className="ml-auto text-xs">
+                    Auto-sync every hour • Last: {format(lastSyncTime, 'HH:mm')}
+                  </Badge>
+                )}
+              </CardTitle>
               <CardDescription>
                 Showing {filteredBookings.length} bookings from Beds24
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-20">Number</TableHead>
-                      <TableHead className="w-16">Bulk Action</TableHead>
-                      <TableHead className="w-20">Status</TableHead>
-                      <TableHead className="w-12">Flag</TableHead>
-                      <TableHead className="w-32">Property</TableHead>
-                      <TableHead className="w-40">Room</TableHead>
-                      <TableHead className="w-12">Unit</TableHead>
-                      <TableHead className="w-28">Check In</TableHead>
-                      <TableHead className="w-28">Check Out</TableHead>
-                      <TableHead className="w-16">Nights</TableHead>
-                      <TableHead className="w-40">Full Name</TableHead>
-                      <TableHead className="w-40">Email</TableHead>
-                      <TableHead className="w-16">Adults</TableHead>
-                      <TableHead className="w-16">Children</TableHead>
-                      <TableHead className="w-28">Referrer</TableHead>
-                      <TableHead className="w-28">Booking Date</TableHead>
-                      <TableHead className="w-20">Master Id</TableHead>
-                      <TableHead className="w-20">Invoicee Id</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredBookings.map((booking) => {
-                      const paymentInfo = getPaymentInfo(booking);
-                      
-                      return (
-                        <TableRow key={booking.id} className="hover:bg-muted/50">
-                          <TableCell className="font-mono text-sm">
-                            {booking.external_id}
-                          </TableCell>
-                          <TableCell>
-                            <Checkbox />
-                          </TableCell>
-                          <TableCell>
+              <div className="space-y-4">
+                {filteredBookings.map((booking) => {
+                  const paymentInfo = getPaymentInfo(booking);
+                  const nights = calculateNights(booking.check_in, booking.check_out);
+                  const guestName = getGuestName(booking);
+                  const email = getEmail(booking);
+                  
+                  return (
+                    <Card key={booking.id} className="p-4 hover:shadow-md transition-shadow">
+                      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                        {/* Booking Details */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
                             <Badge 
                               variant="outline" 
                               className={`${getStatusColor(booking.status)} text-xs capitalize`}
                             >
                               {booking.status}
                             </Badge>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {/* Flag column - empty for now */}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {booking.location?.name || 'Unknown'}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            <div>
-                              {booking.room_name || 'Unknown Room'}
+                            <span className="font-mono text-sm text-muted-foreground">
+                              #{booking.external_id}
+                            </span>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-sm font-medium">
+                              {formatDate(booking.check_in)}
                             </div>
-                            {paymentInfo && (
-                              <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                                {paymentInfo.lines.map((line, idx) => (
-                                  <div key={idx}>{line}</div>
-                                ))}
-                              </div>
+                            <div className="text-sm text-muted-foreground">
+                              to {formatDate(booking.check_out)}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {nights} night{nights > 1 ? 's' : ''}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Guest Information */}
+                        <div className="space-y-2">
+                          <div className="text-sm font-medium">{guestName}</div>
+                          {email && (
+                            <div className="text-xs text-muted-foreground">{email}</div>
+                          )}
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              {booking.adults} adults
+                            </div>
+                            {booking.children > 0 && (
+                              <div>{booking.children} children</div>
                             )}
-                          </TableCell>
-                          <TableCell className="text-center text-sm">
-                            1
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {formatDate(booking.check_in)}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {formatDate(booking.check_out)}
-                          </TableCell>
-                          <TableCell className="text-center text-sm">
-                            {calculateNights(booking.check_in, booking.check_out)}
-                          </TableCell>
-                          <TableCell className="text-sm font-medium">
-                            {getGuestName(booking)}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {getEmail(booking)}
-                          </TableCell>
-                          <TableCell className="text-center text-sm">
-                            {booking.adults}
-                          </TableCell>
-                          <TableCell className="text-center text-sm">
-                            {booking.children}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {getReferrer(booking)}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {formatBookingDate(booking)}
-                          </TableCell>
-                          <TableCell className="font-mono text-sm">
-                            {booking.external_id}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {/* Invoicee Id - empty for now */}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                          </div>
+                          <div className="text-xs">
+                            <Badge variant="outline" className={getSourceColor(booking.source)}>
+                              {getReferrer(booking)}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        {/* Property & Room */}
+                        <div className="space-y-2">
+                          <div className="text-sm font-medium flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {booking.location?.name || 'Unknown'}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {booking.room_name || 'Unknown Room'}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Booked: {formatBookingDate(booking)}
+                          </div>
+                        </div>
+
+                        {/* Pricing Information */}
+                        <div className="space-y-2">
+                          {paymentInfo ? (
+                            <div className="space-y-1">
+                              {paymentInfo.type === 'airbnb' ? (
+                                <>
+                                  <div className="text-sm font-medium text-green-600">
+                                    ₹{booking.raw_data?.price?.toLocaleString()} LKR
+                                  </div>
+                                  <div className="text-xs space-y-0.5 text-muted-foreground">
+                                    <div>Base: ₹{booking.raw_data?.price?.toLocaleString()}</div>
+                                    <div className="text-red-600">
+                                      Host Fee: -₹{booking.raw_data?.commission?.toLocaleString()}
+                                    </div>
+                                    <div className="font-medium text-green-600">
+                                      Payout: ₹{(booking.raw_data?.price - booking.raw_data?.commission)?.toLocaleString()}
+                                    </div>
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    Cancel policy flexible
+                                  </div>
+                                </>
+                              ) : (
+                                <div className="text-sm font-medium">
+                                  ${booking.total_amount?.toLocaleString() || '0'} {booking.currency}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-sm font-medium">
+                              ${booking.total_amount?.toLocaleString() || '0'} {booking.currency}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
               </div>
               
               {filteredBookings.length === 0 && (
