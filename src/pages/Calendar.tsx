@@ -339,7 +339,7 @@ export default function Calendar() {
   }
 
   return (
-    <div className="max-w-full mx-auto p-2 lg:p-4 space-y-3 lg:space-y-4 animate-fade-in overflow-x-auto">
+    <div className="max-w-full mx-auto p-2 lg:p-4 space-y-3 lg:space-y-4 animate-fade-in">
       {/* Header */}
       <div className="flex items-center gap-2 lg:gap-4">
         <Button asChild variant="ghost" size="icon" className="md:hidden h-8 w-8">
@@ -353,334 +353,333 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Main content in flex layout */}
-      <div className="flex flex-col lg:flex-row gap-4">
-        {/* Main calendar section */}
-        <div className="flex-1 space-y-4">
-          {/* Filters & Controls */}
-          <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select location" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Locations</SelectItem>
-                  {locations.map((location) => (
-                    <SelectItem key={location.id} value={location.id}>
-                      {location.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-sm font-medium px-3">
-                {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </span>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+      {/* Main content */}
+      <div className="space-y-4">
+        {/* Filters & Controls */}
+        <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center justify-between">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Select location" />
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-background border shadow-lg">
+                <SelectItem value="all">All Locations</SelectItem>
+                {locations.map((location) => (
+                  <SelectItem key={location.id} value={location.id}>
+                    {location.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+          
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm font-medium px-2 sm:px-3 whitespace-nowrap">
+              {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </span>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
 
-          {/* Calendar Grid */}
-          <Card className="bg-gradient-card border-0 shadow-elegant">
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <div className="min-w-full">
-                  {/* Header with dates */}
-                  <div className="grid" style={{ gridTemplateColumns: `120px repeat(${calendarDates.length}, 32px)` }}>
-                    <div className="border-b border-r p-1 bg-muted font-semibold text-xs">
-                      <div>Room</div>
-                      <div className="text-xs text-muted-foreground">Type</div>
-                    </div>
-                    {calendarDates.map((date, index) => (
-                      <div key={index} className="border-b border-r p-0.5 text-center bg-muted">
-                        <div className="text-xs font-medium">{date.getDate()}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {date.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 1)}
-                        </div>
-                      </div>
-                    ))}
+        {/* Calendar Grid */}
+        <Card className="bg-gradient-card border-0 shadow-elegant">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto overflow-y-hidden">
+              <div className="min-w-max">
+                {/* Header with dates */}
+                <div className="grid sticky top-0 z-10 bg-background" 
+                     style={{ gridTemplateColumns: `minmax(120px, 150px) repeat(${calendarDates.length}, minmax(40px, 1fr))` }}>
+                  <div className="border-b border-r p-2 bg-muted font-semibold text-xs sticky left-0 z-20">
+                    <div>Room</div>
+                    <div className="text-xs text-muted-foreground">Type</div>
                   </div>
-
-                  {/* Room rows */}
-                  {allDisplayRooms.map((room) => (
-                    <div key={room.id} className="grid" style={{ gridTemplateColumns: `120px repeat(${calendarDates.length}, 32px)` }}>
-                      {/* Room info column */}
-                      <div className={`border-b border-r p-1 ${room.isVirtual ? 'bg-purple-50' : 'bg-background'}`}>
-                        <div className="font-medium text-xs">{room.room_number}</div>
-                        <div className="text-xs text-muted-foreground truncate">{room.room_type}</div>
-                        {room.isVirtual && (
-                          <div className="text-xs text-purple-600 font-medium">External</div>
-                        )}
+                  {calendarDates.map((date, index) => (
+                    <div key={index} className="border-b border-r p-1 text-center bg-muted min-w-[40px]">
+                      <div className="text-xs font-medium">{date.getDate()}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {date.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 1)}
                       </div>
-                      
-                      {/* Date columns */}
-                      {calendarDates.map((date, dateIndex) => {
-                        const { internalReservations, externalReservations } = getBookingsForRoomAndDate(room.id, date);
-                        const internalReservation = internalReservations[0];
-                        const externalReservation = externalReservations[0];
-                        
-                        return (
-                          <div key={dateIndex} className="border-b border-r min-h-[60px] p-0.5 relative">
-                            {internalReservation && (
-                              <div 
-                                className={`text-xs p-0.5 rounded text-center cursor-pointer mb-0.5 ${getStatusColor(internalReservation.status)} overflow-hidden`}
-                                onClick={() => navigate(`/reservations/${internalReservation.id}`)}
-                                title={`${internalReservation.guest_name} - ${internalReservation.status}`}
-                              >
-                                <div className="font-medium text-xs leading-tight truncate">
-                                  {internalReservation.guest_name.split(' ')[0].slice(0, 4)}
-                                </div>
-                                <div className="text-xs opacity-75 leading-tight">
-                                  {new Date(internalReservation.check_in_date).getDate()}-{new Date(internalReservation.check_out_date).getDate()}
-                                </div>
-                              </div>
-                            )}
-                            
-                            {externalReservation && (
-                              <div 
-                                className={`text-xs p-0.5 rounded text-center cursor-pointer ${getStatusColor(externalReservation.status, true)} overflow-hidden`}
-                                onClick={() => openBookingDetails(externalReservation)}
-                                title={`External: ${externalReservation.guest_name || 'Unknown'} - ${externalReservation.source}`}
-                              >
-                                <div className="font-medium text-xs leading-tight truncate">
-                                  {(externalReservation.raw_data?.firstName || externalReservation.guest_name?.split(' ')[0] || 'Ext').slice(0, 4)}
-                                </div>
-                                <div className="text-xs opacity-75 leading-tight">
-                                  {externalReservation.source.charAt(0).toUpperCase()}
-                                </div>
-                              </div>
-                            )}
-                            
-                            {!internalReservation && !externalReservation && (
-                              <div 
-                                className="h-full hover:bg-muted/50 cursor-pointer rounded"
-                                onClick={() => navigate(`/reservations/new?room=${room.id}&date=${date.toISOString().split('T')[0]}`)}
-                              />
-                            )}
-                          </div>
-                        );
-                      })}
                     </div>
                   ))}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Legend */}
-          <div className="flex flex-wrap gap-4 text-xs">
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-emerald-100 border border-emerald-200 rounded"></div>
-              <span>Internal - Confirmed</span>
+                {/* Room rows */}
+                {allDisplayRooms.map((room) => (
+                  <div key={room.id} className="grid" 
+                       style={{ gridTemplateColumns: `minmax(120px, 150px) repeat(${calendarDates.length}, minmax(40px, 1fr))` }}>
+                    {/* Room info column */}
+                    <div className={`border-b border-r p-2 sticky left-0 z-10 ${room.isVirtual ? 'bg-purple-50' : 'bg-background'}`}>
+                      <div className="font-medium text-xs truncate" title={room.room_number}>
+                        {room.room_number}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate" title={room.room_type}>
+                        {room.room_type}
+                      </div>
+                      {room.isVirtual && (
+                        <div className="text-xs text-purple-600 font-medium">External</div>
+                      )}
+                    </div>
+                    
+                    {/* Date columns */}
+                    {calendarDates.map((date, dateIndex) => {
+                      const { internalReservations, externalReservations } = getBookingsForRoomAndDate(room.id, date);
+                      const internalReservation = internalReservations[0];
+                      const externalReservation = externalReservations[0];
+                      
+                      return (
+                        <div key={dateIndex} className="border-b border-r min-h-[60px] p-0.5 relative min-w-[40px]">
+                          {internalReservation && (
+                            <div 
+                              className={`text-xs p-1 rounded text-center cursor-pointer mb-0.5 ${getStatusColor(internalReservation.status)} overflow-hidden`}
+                              onClick={() => navigate(`/reservations/${internalReservation.id}`)}
+                              title={`${internalReservation.guest_name} - ${internalReservation.status}`}
+                            >
+                              <div className="font-medium text-xs leading-tight truncate">
+                                {internalReservation.guest_name.split(' ')[0].slice(0, 4)}
+                              </div>
+                              <div className="text-xs opacity-75 leading-tight">
+                                {new Date(internalReservation.check_in_date).getDate()}-{new Date(internalReservation.check_out_date).getDate()}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {externalReservation && (
+                            <div 
+                              className={`text-xs p-1 rounded text-center cursor-pointer ${getStatusColor(externalReservation.status, true)} overflow-hidden`}
+                              onClick={() => openBookingDetails(externalReservation)}
+                              title={`External: ${externalReservation.guest_name || 'Unknown'} - ${externalReservation.source}`}
+                            >
+                              <div className="font-medium text-xs leading-tight truncate">
+                                {(externalReservation.raw_data?.firstName || externalReservation.guest_name?.split(' ')[0] || 'Ext').slice(0, 4)}
+                              </div>
+                              <div className="text-xs opacity-75 leading-tight">
+                                {externalReservation.source.charAt(0).toUpperCase()}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {!internalReservation && !externalReservation && (
+                            <div 
+                              className="h-full hover:bg-muted/50 cursor-pointer rounded"
+                              onClick={() => navigate(`/reservations/new?room=${room.id}&date=${date.toISOString().split('T')[0]}`)}
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-amber-100 border border-amber-200 rounded"></div>
-              <span>Internal - Tentative</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-purple-100 border border-purple-200 rounded"></div>
-              <span>External - Confirmed</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-indigo-100 border border-indigo-200 rounded"></div>
-              <span>External - New</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-red-100 border border-red-200 rounded"></div>
-              <span>Cancelled</span>
-            </div>
+          </CardContent>
+        </Card>
+
+        {/* Legend */}
+        <div className="flex flex-wrap gap-2 lg:gap-4 text-xs">
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-emerald-100 border border-emerald-200 rounded"></div>
+            <span>Internal - Confirmed</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-amber-100 border border-amber-200 rounded"></div>
+            <span>Internal - Tentative</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-purple-100 border border-purple-200 rounded"></div>
+            <span>External - Confirmed</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-indigo-100 border border-indigo-200 rounded"></div>
+            <span>External - New</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-red-100 border border-red-200 rounded"></div>
+            <span>Cancelled</span>
           </div>
         </div>
 
         {/* Booking Details Dialog */}
         <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-lg mx-auto max-h-[90vh] overflow-y-auto sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Eye className="h-5 w-5" />
-                External Booking Details
+                Booking Details #{selectedBooking?.external_id}
               </DialogTitle>
             </DialogHeader>
             
             {selectedBooking && (
-              <div className="space-y-6">
-                {/* Header Info */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium text-muted-foreground">Booking ID</div>
-                    <div className="font-mono text-sm">#{selectedBooking.external_id}</div>
+              <div className="space-y-4">
+                {/* Guest Information */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                    <Users className="h-4 w-4" />
+                    Guest Information
                   </div>
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium text-muted-foreground">Status</div>
-                    <Badge variant="outline" className={getStatusColor(selectedBooking.status, true)}>
-                      {selectedBooking.status}
-                    </Badge>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium text-muted-foreground">Source</div>
-                    <Badge variant="outline">
-                      {selectedBooking.raw_data?.referer || selectedBooking.source}
-                    </Badge>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg">
+                    <div>
+                      <div className="text-xs text-muted-foreground">Guest Name</div>
+                      <div className="font-medium text-sm">
+                        {selectedBooking.raw_data?.firstName && selectedBooking.raw_data?.lastName 
+                          ? `${selectedBooking.raw_data.firstName} ${selectedBooking.raw_data.lastName}`
+                          : selectedBooking.guest_name || 'Unknown Guest'
+                        }
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Email</div>
+                      <div className="font-medium text-sm">
+                        {selectedBooking.raw_data?.email || 'Not available'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Guests</div>
+                      <div className="font-medium text-sm">
+                        {selectedBooking.adults} adults
+                        {selectedBooking.children > 0 && `, ${selectedBooking.children} children`}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Phone</div>
+                      <div className="font-medium text-sm">
+                        {selectedBooking.raw_data?.phone || selectedBooking.raw_data?.mobile || 'Not available'}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Guest Information */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Users className="h-5 w-5" />
-                      Guest Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-sm font-medium text-muted-foreground">Guest Name</div>
-                        <div className="font-medium">
-                          {selectedBooking.raw_data?.firstName && selectedBooking.raw_data?.lastName 
-                            ? `${selectedBooking.raw_data.firstName} ${selectedBooking.raw_data.lastName}`
-                            : selectedBooking.guest_name
-                          }
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-muted-foreground">Email</div>
-                        <div>{selectedBooking.raw_data?.email || 'Not available'}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-muted-foreground">Guests</div>
-                        <div>{selectedBooking.adults} adults{selectedBooking.children > 0 && `, ${selectedBooking.children} children`}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-muted-foreground">Phone</div>
-                        <div>{selectedBooking.raw_data?.phone || 'Not available'}</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
                 {/* Stay Information */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <CalendarIcon className="h-5 w-5" />
-                      Stay Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-sm font-medium text-muted-foreground">Check-in</div>
-                        <div className="font-medium">{format(new Date(selectedBooking.check_in), 'PPP')}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-muted-foreground">Check-out</div>
-                        <div className="font-medium">{format(new Date(selectedBooking.check_out), 'PPP')}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-muted-foreground">Nights</div>
-                        <div>{Math.ceil((new Date(selectedBooking.check_out).getTime() - new Date(selectedBooking.check_in).getTime()) / (1000 * 60 * 60 * 24))}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-muted-foreground">Booking Date</div>
-                        <div>
-                          {selectedBooking.raw_data?.bookingTime 
-                            ? format(new Date(selectedBooking.raw_data.bookingTime), 'PPP')
-                            : 'Not available'
-                          }
-                        </div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                    <CalendarIcon className="h-4 w-4" />
+                    Stay Information
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg">
+                    <div>
+                      <div className="text-xs text-muted-foreground">Check-in</div>
+                      <div className="font-medium text-sm">
+                        {format(new Date(selectedBooking.check_in), 'MMMM do, yyyy')}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Check-out</div>
+                      <div className="font-medium text-sm">
+                        {format(new Date(selectedBooking.check_out), 'MMMM do, yyyy')}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Nights</div>
+                      <div className="font-medium text-sm">
+                        {Math.ceil((new Date(selectedBooking.check_out).getTime() - new Date(selectedBooking.check_in).getTime()) / (1000 * 60 * 60 * 24))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Booking Date</div>
+                      <div className="font-medium text-sm">
+                        {selectedBooking.raw_data?.bookingTime 
+                          ? format(new Date(selectedBooking.raw_data.bookingTime), 'MMMM do, yyyy')
+                          : format(new Date(selectedBooking.created_at), 'MMMM do, yyyy')
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Property Information */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <MapPin className="h-5 w-5" />
-                      Property Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-sm font-medium text-muted-foreground">Location</div>
-                        <div className="font-medium">
-                          {getLocationFromExternalBooking(selectedBooking)?.name || selectedBooking.location?.name || 'Unknown'}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-muted-foreground">Room</div>
-                        <div>{selectedBooking.room_name || 'Not specified'}</div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                    <MapPin className="h-4 w-4" />
+                    Property Information
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg">
+                    <div>
+                      <div className="text-xs text-muted-foreground">Location</div>
+                      <div className="font-medium text-sm">
+                        {selectedBooking.mappedLocation?.name || selectedBooking.location?.name || 'Unknown Location'}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Room</div>
+                      <div className="font-medium text-sm">
+                        {selectedBooking.room_name || 'Unknown Room'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-                {/* Pricing Information */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <DollarSign className="h-5 w-5" />
-                      Pricing Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {(() => {
-                      const paymentInfo = getPaymentInfo(selectedBooking);
-                      
-                      if (paymentInfo?.type === 'airbnb') {
+                {/* Payment Information */}
+                {getPaymentInfo(selectedBooking) && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                      <DollarSign className="h-4 w-4" />
+                      Payment Information
+                    </div>
+                    <div className="p-3 bg-muted/30 rounded-lg space-y-2">
+                      {(() => {
+                        const paymentInfo = getPaymentInfo(selectedBooking);
+                        if (paymentInfo?.type === 'airbnb') {
+                          return (
+                            <>
+                              <div className="flex justify-between text-sm">
+                                <span>Base Price:</span>
+                                <span className="font-medium">{paymentInfo.basePrice?.toLocaleString()} LKR</span>
+                              </div>
+                              <div className="flex justify-between text-sm text-red-600">
+                                <span>Host Fee:</span>
+                                <span className="font-medium">-{paymentInfo.hostFee?.toLocaleString()} LKR</span>
+                              </div>
+                              <div className="border-t pt-2 flex justify-between font-semibold text-sm">
+                                <span>Expected Payout:</span>
+                                <span>{paymentInfo.payout?.toLocaleString()} LKR</span>
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-2">
+                                Cancel policy flexible
+                              </div>
+                            </>
+                          );
+                        }
                         return (
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span>Base Price:</span>
-                              <span className="font-medium">{paymentInfo.basePrice.toLocaleString()} LKR</span>
-                            </div>
-                            <div className="flex justify-between text-red-600">
-                              <span>Host Fee:</span>
-                              <span>-{paymentInfo.hostFee.toLocaleString()} LKR</span>
-                            </div>
-                            <div className="border-t pt-2 flex justify-between font-medium text-green-600">
-                              <span>Expected Payout:</span>
-                              <span>{paymentInfo.payout.toLocaleString()} LKR</span>
-                            </div>
-                            <div className="text-sm text-muted-foreground mt-2">
-                              Cancel policy flexible
-                            </div>
-                          </div>
-                        );
-                      } else {
-                        return (
-                          <div className="flex justify-between font-medium">
+                          <div className="flex justify-between font-semibold text-sm">
                             <span>Total Amount:</span>
                             <span>{formatPrice(selectedBooking)}</span>
                           </div>
                         );
-                      }
-                    })()}
-                  </CardContent>
-                </Card>
+                      })()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Status and Source */}
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <Badge className={getStatusColor(selectedBooking.status, true)}>
+                    {selectedBooking.status.charAt(0).toUpperCase() + selectedBooking.status.slice(1)}
+                  </Badge>
+                  <Badge variant="outline">
+                    {selectedBooking.raw_data?.apiSource || selectedBooking.source}
+                  </Badge>
+                  {selectedBooking.raw_data?.apiReference && (
+                    <Badge variant="secondary" className="text-xs">
+                      {selectedBooking.raw_data.apiReference}
+                    </Badge>
+                  )}
+                </div>
               </div>
-            )}
-          </DialogContent>
-        </Dialog>
+             )}
+           </DialogContent>
+         </Dialog>
       </div>
     </div>
   );
