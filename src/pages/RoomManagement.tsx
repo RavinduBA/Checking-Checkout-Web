@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/utils/currency";
 import { Bed, Plus, Edit, Trash2, DollarSign, Users, Building2 } from "lucide-react";
 
 type Location = {
@@ -31,6 +32,7 @@ type Room = {
   amenities: string[];
   is_active: boolean;
   created_at: string;
+  currency: string;
   locations?: Location;
 };
 
@@ -59,6 +61,7 @@ export default function RoomManagement() {
     description: "",
     amenities: [] as string[],
     is_active: true,
+    currency: "LKR",
   });
   const { toast } = useToast();
 
@@ -110,7 +113,10 @@ export default function RoomManagement() {
       if (editingRoom) {
         const { error } = await supabase
           .from("rooms")
-          .update(formData)
+          .update({
+            ...formData,
+            currency: formData.currency as "LKR" | "USD" | "EUR" | "GBP"
+          })
           .eq("id", editingRoom.id);
 
         if (error) throw error;
@@ -122,7 +128,10 @@ export default function RoomManagement() {
       } else {
         const { error } = await supabase
           .from("rooms")
-          .insert([formData]);
+          .insert([{
+            ...formData,
+            currency: formData.currency as "LKR" | "USD" | "EUR" | "GBP"
+          }]);
 
         if (error) throw error;
         
@@ -144,6 +153,7 @@ export default function RoomManagement() {
         description: "",
         amenities: [],
         is_active: true,
+        currency: "LKR",
       });
       fetchData();
     } catch (error) {
@@ -167,6 +177,7 @@ export default function RoomManagement() {
       description: room.description,
       amenities: room.amenities || [],
       is_active: room.is_active,
+      currency: room.currency || "LKR",
     });
     setIsDialogOpen(true);
   };
@@ -272,6 +283,7 @@ export default function RoomManagement() {
                         description: "",
                         amenities: [],
                         is_active: true,
+                        currency: "LKR",
                       });
                     }}>
                       <Plus className="h-4 w-4 mr-2" />
@@ -381,16 +393,32 @@ export default function RoomManagement() {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="base_price">Base Price (LKR)</Label>
-                          <Input
-                            id="base_price"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={formData.base_price}
-                            onChange={(e) => setFormData({ ...formData, base_price: parseFloat(e.target.value) })}
-                            required
-                          />
+                          <Label htmlFor="base_price">Base Price</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="base_price"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={formData.base_price}
+                              onChange={(e) => setFormData({ ...formData, base_price: parseFloat(e.target.value) })}
+                              required
+                            />
+                            <Select
+                              value={formData.currency}
+                              onValueChange={(value) => 
+                                setFormData({ ...formData, currency: value })
+                              }
+                            >
+                              <SelectTrigger className="w-20">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="LKR">LKR</SelectItem>
+                                <SelectItem value="USD">USD</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                       </div>
 
@@ -469,8 +497,8 @@ export default function RoomManagement() {
                   <TableHead>Location</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Bed</TableHead>
-                  <TableHead>Occupancy</TableHead>
                   <TableHead>Base Price</TableHead>
+                  <TableHead>Currency</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -501,8 +529,13 @@ export default function RoomManagement() {
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
-                        {room.base_price.toLocaleString()}
+                        {formatCurrency(room.base_price, room.currency as any)}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {room.currency}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant={room.is_active ? "default" : "secondary"}>

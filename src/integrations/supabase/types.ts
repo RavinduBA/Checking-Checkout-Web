@@ -90,6 +90,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          currency: Database["public"]["Enums"]["currency_type"]
           id: string
           notes: string | null
           quantity: number
@@ -103,6 +104,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          currency?: Database["public"]["Enums"]["currency_type"]
           id?: string
           notes?: string | null
           quantity?: number
@@ -116,6 +118,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          currency?: Database["public"]["Enums"]["currency_type"]
           id?: string
           notes?: string | null
           quantity?: number
@@ -181,6 +184,7 @@ export type Database = {
           amount: number
           booking_id: string
           created_at: string
+          currency: Database["public"]["Enums"]["currency_type"]
           id: string
           is_advance: boolean
           note: string | null
@@ -191,6 +195,7 @@ export type Database = {
           amount: number
           booking_id: string
           created_at?: string
+          currency?: Database["public"]["Enums"]["currency_type"]
           id?: string
           is_advance?: boolean
           note?: string | null
@@ -201,6 +206,7 @@ export type Database = {
           amount?: number
           booking_id?: string
           created_at?: string
+          currency?: Database["public"]["Enums"]["currency_type"]
           id?: string
           is_advance?: boolean
           note?: string | null
@@ -318,6 +324,33 @@ export type Database = {
           },
         ]
       }
+      currency_rates: {
+        Row: {
+          created_at: string
+          from_currency: Database["public"]["Enums"]["currency_type"]
+          id: string
+          rate: number
+          to_currency: Database["public"]["Enums"]["currency_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_currency: Database["public"]["Enums"]["currency_type"]
+          id?: string
+          rate: number
+          to_currency: Database["public"]["Enums"]["currency_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_currency?: Database["public"]["Enums"]["currency_type"]
+          id?: string
+          rate?: number
+          to_currency?: Database["public"]["Enums"]["currency_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       expense_types: {
         Row: {
           created_at: string
@@ -344,6 +377,7 @@ export type Database = {
           account_id: string
           amount: number
           created_at: string
+          currency: Database["public"]["Enums"]["currency_type"]
           date: string
           id: string
           location_id: string
@@ -355,6 +389,7 @@ export type Database = {
           account_id: string
           amount: number
           created_at?: string
+          currency?: Database["public"]["Enums"]["currency_type"]
           date?: string
           id?: string
           location_id: string
@@ -366,6 +401,7 @@ export type Database = {
           account_id?: string
           amount?: number
           created_at?: string
+          currency?: Database["public"]["Enums"]["currency_type"]
           date?: string
           id?: string
           location_id?: string
@@ -509,6 +545,7 @@ export type Database = {
           check_in_date: string | null
           check_out_date: string | null
           created_at: string
+          currency: Database["public"]["Enums"]["currency_type"]
           date: string
           id: string
           is_advance: boolean
@@ -525,6 +562,7 @@ export type Database = {
           check_in_date?: string | null
           check_out_date?: string | null
           created_at?: string
+          currency?: Database["public"]["Enums"]["currency_type"]
           date?: string
           id?: string
           is_advance?: boolean
@@ -541,6 +579,7 @@ export type Database = {
           check_in_date?: string | null
           check_out_date?: string | null
           created_at?: string
+          currency?: Database["public"]["Enums"]["currency_type"]
           date?: string
           id?: string
           is_advance?: boolean
@@ -663,6 +702,7 @@ export type Database = {
           amount: number
           created_at: string
           created_by: string | null
+          currency: Database["public"]["Enums"]["currency_type"]
           id: string
           notes: string | null
           payment_method: string
@@ -676,6 +716,7 @@ export type Database = {
           amount: number
           created_at?: string
           created_by?: string | null
+          currency?: Database["public"]["Enums"]["currency_type"]
           id?: string
           notes?: string | null
           payment_method: string
@@ -689,6 +730,7 @@ export type Database = {
           amount?: number
           created_at?: string
           created_by?: string | null
+          currency?: Database["public"]["Enums"]["currency_type"]
           id?: string
           notes?: string | null
           payment_method?: string
@@ -751,6 +793,7 @@ export type Database = {
           children: number
           created_at: string
           created_by: string | null
+          currency: Database["public"]["Enums"]["currency_type"]
           grc_approved: boolean | null
           grc_approved_at: string | null
           grc_approved_by: string | null
@@ -786,6 +829,7 @@ export type Database = {
           children?: number
           created_at?: string
           created_by?: string | null
+          currency?: Database["public"]["Enums"]["currency_type"]
           grc_approved?: boolean | null
           grc_approved_at?: string | null
           grc_approved_by?: string | null
@@ -821,6 +865,7 @@ export type Database = {
           children?: number
           created_at?: string
           created_by?: string | null
+          currency?: Database["public"]["Enums"]["currency_type"]
           grc_approved?: boolean | null
           grc_approved_at?: string | null
           grc_approved_by?: string | null
@@ -916,6 +961,7 @@ export type Database = {
           base_price: number
           bed_type: string
           created_at: string
+          currency: Database["public"]["Enums"]["currency_type"]
           description: string | null
           id: string
           is_active: boolean
@@ -930,6 +976,7 @@ export type Database = {
           base_price?: number
           bed_type: string
           created_at?: string
+          currency?: Database["public"]["Enums"]["currency_type"]
           description?: string | null
           id?: string
           is_active?: boolean
@@ -944,6 +991,7 @@ export type Database = {
           base_price?: number
           bed_type?: string
           created_at?: string
+          currency?: Database["public"]["Enums"]["currency_type"]
           description?: string | null
           id?: string
           is_active?: boolean

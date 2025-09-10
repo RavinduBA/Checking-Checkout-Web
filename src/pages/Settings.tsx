@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrencyRates } from "@/utils/currency";
 import { Trash2, ArrowLeft, DollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -45,8 +46,17 @@ export default function Settings() {
     fetchExpenseTypes();
     fetchIncomeTypes();
     fetchLocations();
-    loadCurrencySettings();
+    fetchCurrencyRates();
   }, []);
+
+  const fetchCurrencyRates = async () => {
+    try {
+      const rates = await getCurrencyRates();
+      // Handle currency rates state if needed
+    } catch (error) {
+      console.error('Error fetching currency rates:', error);
+    }
+  };
 
   const loadCurrencySettings = () => {
     const savedRate = localStorage.getItem('usdToLkrRate');

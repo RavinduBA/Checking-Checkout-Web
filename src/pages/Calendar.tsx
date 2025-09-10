@@ -218,6 +218,7 @@ export default function Calendar() {
           is_active: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          currency: 'LKR' as const,
           isVirtual: true,
           virtualRoomName: firstBooking.room_name || 'External Room'
         });
