@@ -46,10 +46,17 @@ type TransactionWithBalance = {
 
 export default function DetailedBalanceSheet() {
   const [accounts, setAccounts] = useState<AccountDetail[]>([]);
+  const [allTransactions, setAllTransactions] = useState<TransactionWithBalance[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAccount, setSelectedAccount] = useState("all");
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
   const [baseCurrency, setBaseCurrency] = useState<'LKR' | 'USD'>('LKR');
+  const [accountSummary, setAccountSummary] = useState({
+    totalInitialBalance: 0,
+    totalCurrentBalance: 0,
+    totalIncome: 0,
+    totalExpenses: 0
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -68,6 +75,13 @@ export default function DetailedBalanceSheet() {
       if (accountsError) throw accountsError;
 
       const accountDetails: AccountDetail[] = [];
+      const globalTransactions: TransactionWithBalance[] = [];
+      let summaryTotals = {
+        totalInitialBalance: 0,
+        totalCurrentBalance: 0,
+        totalIncome: 0,
+        totalExpenses: 0
+      };
 
       for (const account of accountsData || []) {
         // Fetch all transactions for this account
@@ -209,6 +223,20 @@ export default function DetailedBalanceSheet() {
           baseCurrency
         );
 
+        // Add to global transactions for overall summary
+        transactions.forEach(txn => {
+          globalTransactions.push({
+            ...txn,
+            description: `${txn.description} (${account.name})`
+          });
+        });
+
+        // Update summary totals
+        summaryTotals.totalInitialBalance += convertedInitialBalance;
+        summaryTotals.totalCurrentBalance += convertedCurrentBalance;
+        summaryTotals.totalIncome += totalIncome;
+        summaryTotals.totalExpenses += totalExpenses;
+
         accountDetails.push({
           id: account.id,
           name: account.name,
@@ -223,7 +251,12 @@ export default function DetailedBalanceSheet() {
         });
       }
 
+      // Sort global transactions by date (most recent first)
+      globalTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
       setAccounts(accountDetails);
+      setAllTransactions(globalTransactions);
+      setAccountSummary(summaryTotals);
     } catch (error) {
       console.error("Error fetching account details:", error);
       toast({
@@ -318,140 +351,121 @@ export default function DetailedBalanceSheet() {
         </div>
       </div>
 
-      <div className="space-y-4">
-        {accounts.map((account) => (
-          <Card key={account.id}>
-            <Collapsible 
-              open={expandedAccounts.has(account.id)}
-              onOpenChange={() => toggleAccountExpansion(account.id)}
-            >
-              <CollapsibleTrigger className="w-full">
-                <CardHeader className="hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 text-left">
-                      {expandedAccounts.has(account.id) ? 
-                        <ChevronDown className="h-5 w-5" /> : 
-                        <ChevronRight className="h-5 w-5" />
-                      }
-                      <div>
-                        <CardTitle className="text-lg">{account.name}</CardTitle>
-                        <CardDescription>
-                          <Badge variant="outline" className="mr-2">{account.currency}</Badge>
-                          {account.transaction_count} transactions
-                        </CardDescription>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 gap-6 text-right">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Initial Balance</p>
-                        <p className="font-semibold">
-                          {formatCurrency(account.initial_balance, baseCurrency)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Total Income</p>
-                        <p className="font-semibold text-green-600">
-                          +{formatCurrency(account.total_income, baseCurrency)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Total Expenses</p>
-                        <p className="font-semibold text-red-600">
-                          -{formatCurrency(account.total_expenses, baseCurrency)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Current Balance</p>
-                        <p className="text-lg font-bold">
-                          {formatCurrency(account.current_balance, baseCurrency)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent>
-                  <div className="mb-4">
-                    <h4 className="font-semibold text-lg mb-2">Account Summary</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Initial Balance:</p>
-                        <p className="font-semibold">
-                          {formatCurrency(account.initial_balance, baseCurrency)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Total Income:</p>
-                        <p className="font-semibold text-green-600">
-                          +{formatCurrency(account.total_income, baseCurrency)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Total Expenses:</p>
-                        <p className="font-semibold text-red-600">
-                          -{formatCurrency(account.total_expenses, baseCurrency)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Current Balance:</p>
-                        <p className="text-lg font-bold">
-                          {formatCurrency(account.current_balance, baseCurrency)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+      {/* Account Summary Overview */}
+      <Card className="bg-muted/20">
+        <CardHeader>
+          <CardTitle>Account Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div>
+              <p className="text-sm text-muted-foreground">Initial Balance:</p>
+              <p className="text-xl font-semibold">
+                {formatCurrency(accountSummary.totalInitialBalance, baseCurrency)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Income:</p>
+              <p className="text-xl font-semibold text-green-600">
+                {formatCurrency(accountSummary.totalIncome, baseCurrency)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Expenses:</p>
+              <p className="text-xl font-semibold text-red-600">
+                {formatCurrency(accountSummary.totalExpenses, baseCurrency)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Current Balance:</p>
+              <p className="text-xl font-semibold text-primary">
+                {formatCurrency(accountSummary.totalCurrentBalance, baseCurrency)}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-                  <h4 className="font-semibold text-lg mb-3">Transaction History (Sorted by Date)</h4>
-                  {account.transactions.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">No transactions found</p>
-                  ) : (
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {account.transactions.map((txn) => (
-                        <div key={txn.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                          <div className="flex items-center gap-3">
-                            {getTransactionIcon(txn.type)}
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant={
-                                  txn.type === 'income' ? 'default' :
-                                  txn.type === 'expense' ? 'destructive' :
-                                  'secondary'
-                                }>
-                                  {txn.type.replace('_', ' ').toUpperCase()}
-                                </Badge>
-                                <span className="text-sm text-muted-foreground">
-                                  {new Date(txn.date).toLocaleDateString()}
-                                </span>
-                              </div>
-                              <p className="font-medium">{txn.description}</p>
-                              {txn.note && (
-                                <p className="text-sm text-muted-foreground">{txn.note}</p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className={`font-semibold ${
-                              txn.type === 'income' || txn.type === 'transfer_in' 
-                                ? 'text-green-600' 
-                                : 'text-red-600'
-                            }`}>
-                              {txn.type === 'income' || txn.type === 'transfer_in' ? '+' : '-'}
-                              {formatCurrency(txn.amount, baseCurrency)}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              Balance: {formatCurrency(txn.running_balance, baseCurrency)}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+      {/* Transaction History */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Transaction History (Sorted by Date)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {allTransactions.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No transactions found</p>
+            ) : (
+              allTransactions.map((txn) => (
+                <div key={`${txn.id}-${txn.date}`} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <Badge variant={
+                      txn.type === 'income' || txn.type === 'transfer_in' ? 'default' : 'destructive'
+                    } className={
+                      txn.type === 'income' || txn.type === 'transfer_in' 
+                        ? 'bg-orange-500 hover:bg-orange-600' 
+                        : 'bg-red-500 hover:bg-red-600'
+                    }>
+                      {txn.type === 'income' || txn.type === 'transfer_in' ? 'INCOME' : 'EXPENSE'}
+                    </Badge>
+                    <div>
+                      <div className="text-sm text-muted-foreground">
+                        {new Date(txn.date).toLocaleDateString()} {new Date(txn.date).toLocaleTimeString()}
+                      </div>
+                      <p className="font-medium">{txn.description}</p>
+                      {txn.note && (
+                        <p className="text-sm text-muted-foreground">{txn.note}</p>
+                      )}
                     </div>
-                  )}
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </Card>
-        ))}
+                  </div>
+                  <div className="text-right">
+                    <p className={`font-semibold ${
+                      txn.type === 'income' || txn.type === 'transfer_in' 
+                        ? 'text-green-600' 
+                        : 'text-red-600'
+                    }`}>
+                      {txn.type === 'income' || txn.type === 'transfer_in' ? '+' : ''}
+                      {formatCurrency(txn.amount, baseCurrency)}
+                    </p>
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Balance</span>
+                      <div className="text-right font-medium">
+                        {formatCurrency(txn.running_balance, baseCurrency)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Account Details */}
+      <div>
+        <h3 className="text-xl font-semibold text-green-600 mb-4">Account Details</h3>
+        <div className="space-y-4">
+          {accounts.map((account) => (
+            <Card key={account.id} className="border-l-4 border-l-primary">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg font-bold">{account.name}</CardTitle>
+                    <CardDescription>
+                      <Badge variant="outline" className="mr-2">{account.currency} Account</Badge>
+                      {account.transaction_count} transactions
+                    </CardDescription>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold">
+                      {formatCurrency(account.current_balance, baseCurrency)}
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );

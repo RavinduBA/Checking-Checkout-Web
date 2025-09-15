@@ -484,16 +484,16 @@ export default function EnhancedFinancialReports() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Income Summary */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-green-600">
-                  <TrendingUp className="h-5 w-5" />
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-green-600 text-xl">
+                  <TrendingUp className="h-6 w-6" />
                   Income Summary
-                  <Badge variant="secondary" className="ml-auto">
+                  <span className="ml-auto font-bold">
                     {formatCurrency(summary.totalIncome, baseCurrency)}
-                  </Badge>
+                  </span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 {incomeCategories.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">
                     No income data for selected period
@@ -506,42 +506,43 @@ export default function EnhancedFinancialReports() {
                       onOpenChange={() => toggleIncomeExpansion(category.type)}
                     >
                       <CollapsibleTrigger className="w-full">
-                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                        <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                           <div className="flex items-center gap-3">
                             {expandedIncome.has(category.type) ? 
                               <ChevronDown className="h-4 w-4" /> : 
                               <ChevronRight className="h-4 w-4" />
                             }
                             <div className="text-left">
-                              <p className="font-medium">{category.type}</p>
+                              <p className="font-semibold">{category.type}</p>
                               <p className="text-sm text-muted-foreground">
                                 {category.percentage.toFixed(1)}%
                               </p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-green-700">
-                              {formatCurrency(category.amount, baseCurrency)}
+                            <p className="font-bold">
+                              {formatCurrency(category.amount, baseCurrency)} 
+                              <ChevronDown className="h-4 w-4 inline ml-1" />
                             </p>
                           </div>
                         </div>
                       </CollapsibleTrigger>
                       <CollapsibleContent className="mt-2">
-                        <div className="pl-4 space-y-2">
-                          {category.transactions.slice(0, 5).map((txn) => (
-                            <div key={txn.id} className="flex justify-between items-center text-sm p-2 bg-white rounded border">
+                        <div className="pl-8 space-y-2">
+                          {category.transactions.slice(0, 10).map((txn) => (
+                            <div key={txn.id} className="flex justify-between items-center text-sm p-2 bg-muted/30 rounded border-l-2 border-l-green-200">
                               <div>
-                                <p className="font-medium">{new Date(txn.date).toLocaleDateString()}</p>
+                                <p className="font-medium">{new Date(txn.date).toLocaleDateString()} - {txn.account}</p>
                                 <p className="text-muted-foreground truncate">{txn.description}</p>
                               </div>
-                              <p className="font-medium text-green-600">
-                                +{formatCurrency(txn.amount, baseCurrency)}
+                              <p className="font-semibold text-green-600">
+                                {formatCurrency(txn.amount, baseCurrency)}
                               </p>
                             </div>
                           ))}
-                          {category.transactions.length > 5 && (
+                          {category.transactions.length > 10 && (
                             <p className="text-sm text-muted-foreground text-center py-2">
-                              +{category.transactions.length - 5} more transactions
+                              +{category.transactions.length - 10} more transactions
                             </p>
                           )}
                         </div>
@@ -554,16 +555,16 @@ export default function EnhancedFinancialReports() {
 
             {/* Expense Summary */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-red-600">
-                  <TrendingDown className="h-5 w-5" />
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-red-600 text-xl">
+                  <TrendingDown className="h-6 w-6" />
                   Expense Summary
-                  <Badge variant="secondary" className="ml-auto">
+                  <span className="ml-auto font-bold">
                     {formatCurrency(summary.totalExpenses, baseCurrency)}
-                  </Badge>
+                  </span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 {expenseCategories.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">
                     No expense data for selected period
@@ -576,42 +577,43 @@ export default function EnhancedFinancialReports() {
                       onOpenChange={() => toggleExpenseExpansion(category.type)}
                     >
                       <CollapsibleTrigger className="w-full">
-                        <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                        <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                           <div className="flex items-center gap-3">
                             {expandedExpenses.has(category.type) ? 
                               <ChevronDown className="h-4 w-4" /> : 
                               <ChevronRight className="h-4 w-4" />
                             }
                             <div className="text-left">
-                              <p className="font-medium">{category.type}</p>
+                              <p className="font-semibold">{category.type}</p>
                               <p className="text-sm text-muted-foreground">
                                 {category.percentage.toFixed(1)}%
                               </p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-red-700">
-                              {formatCurrency(category.amount, baseCurrency)}
+                            <p className="font-bold">
+                              {formatCurrency(category.amount, baseCurrency)} 
+                              <ChevronDown className="h-4 w-4 inline ml-1" />
                             </p>
                           </div>
                         </div>
                       </CollapsibleTrigger>
                       <CollapsibleContent className="mt-2">
-                        <div className="pl-4 space-y-2">
-                          {category.transactions.slice(0, 5).map((txn) => (
-                            <div key={txn.id} className="flex justify-between items-center text-sm p-2 bg-white rounded border">
+                        <div className="pl-8 space-y-2">
+                          {category.transactions.slice(0, 10).map((txn) => (
+                            <div key={txn.id} className="flex justify-between items-center text-sm p-2 bg-muted/30 rounded border-l-2 border-l-red-200">
                               <div>
-                                <p className="font-medium">{new Date(txn.date).toLocaleDateString()}</p>
+                                <p className="font-medium">{new Date(txn.date).toLocaleDateString()} - {txn.account}</p>
                                 <p className="text-muted-foreground truncate">{txn.description}</p>
                               </div>
-                              <p className="font-medium text-red-600">
-                                -{formatCurrency(txn.amount, baseCurrency)}
+                              <p className="font-semibold text-red-600">
+                                {formatCurrency(txn.amount, baseCurrency)}
                               </p>
                             </div>
                           ))}
-                          {category.transactions.length > 5 && (
+                          {category.transactions.length > 10 && (
                             <p className="text-sm text-muted-foreground text-center py-2">
-                              +{category.transactions.length - 5} more transactions
+                              +{category.transactions.length - 10} more transactions
                             </p>
                           )}
                         </div>
