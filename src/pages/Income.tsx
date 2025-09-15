@@ -51,7 +51,6 @@ const Income = () => {
     check_in_date: "",
     check_out_date: "",
     special_requests: "",
-    advance_amount: 0,
   });
 
   const [paymentForm, setPaymentForm] = useState({
@@ -154,12 +153,12 @@ const Income = () => {
         check_in_date: reservationForm.check_in_date,
         check_out_date: reservationForm.check_out_date,
         special_requests: reservationForm.special_requests || null,
-        advance_amount: reservationForm.advance_amount || 0,
+        advance_amount: 0,
         nights,
         room_rate: selectedRoom.base_price,
         total_amount: totalAmount,
-        paid_amount: reservationForm.advance_amount || 0,
-        balance_amount: totalAmount - (reservationForm.advance_amount || 0),
+        paid_amount: 0,
+        balance_amount: totalAmount,
         status: 'tentative' as const,
         reservation_number: reservationNumber,
       };
@@ -202,7 +201,6 @@ const Income = () => {
       check_in_date: "",
       check_out_date: "",
       special_requests: "",
-      advance_amount: 0,
     });
   };
 
@@ -232,11 +230,32 @@ const Income = () => {
         payment_number: paymentNumber,
       };
 
-      const { error } = await supabase
+      const { error: paymentError } = await supabase
         .from("payments")
         .insert(paymentData);
 
-      if (error) throw error;
+      if (paymentError) throw paymentError;
+
+      // Create income record
+      const incomeData = {
+        location_id: selectedReservation.location_id,
+        account_id: paymentForm.account_id,
+        type: 'booking' as const,
+        amount: paymentForm.amount,
+        payment_method: paymentForm.payment_method,
+        booking_id: selectedReservation.id,
+        booking_source: 'direct',
+        check_in_date: selectedReservation.check_in_date,
+        check_out_date: selectedReservation.check_out_date,
+        note: paymentForm.notes || null,
+        currency: 'LKR' as const,
+      };
+
+      const { error: incomeError } = await supabase
+        .from("income")
+        .insert(incomeData);
+
+      if (incomeError) throw incomeError;
 
       // Update reservation paid amount
       const newPaidAmount = selectedReservation.paid_amount + paymentForm.amount;
@@ -522,25 +541,13 @@ const Income = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="advance_amount">Advance Payment (LKR)</Label>
-                  <Input
-                    id="advance_amount"
-                    type="number"
-                    min="0"
-                    value={reservationForm.advance_amount}
-                    onChange={(e) => setReservationForm({...reservationForm, advance_amount: parseFloat(e.target.value)})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="special_requests">Special Requests</Label>
-                  <Textarea
-                    id="special_requests"
-                    value={reservationForm.special_requests}
-                    onChange={(e) => setReservationForm({...reservationForm, special_requests: e.target.value})}
-                  />
-                </div>
+              <div>
+                <Label htmlFor="special_requests">Special Requests</Label>
+                <Textarea
+                  id="special_requests"
+                  value={reservationForm.special_requests}
+                  onChange={(e) => setReservationForm({...reservationForm, special_requests: e.target.value})}
+                />
               </div>
 
               <div className="flex justify-end space-x-2">

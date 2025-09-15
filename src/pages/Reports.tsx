@@ -16,6 +16,8 @@ import {
 import FinancialReports from "./FinancialReports";
 import CommissionReports from "@/components/reports/CommissionReports";
 import AccountsReports from "@/components/reports/AccountsReports";
+import EnhancedFinancialReports from "@/components/reports/EnhancedFinancialReports";
+import DetailedBalanceSheet from "@/components/reports/DetailedBalanceSheet";
 
 const reportTabs = [
   { 
@@ -82,9 +84,9 @@ export default function Reports() {
   const renderTabContent = () => {
     switch (activeTab) {
       case "financial":
-        return <FinancialReports />;
+        return <EnhancedFinancialReports />;
       case "accounts":
-        return <AccountsReports />;
+        return <DetailedBalanceSheet />;
       case "commission":
         return <CommissionReports />;
       case "occupancy":
@@ -92,7 +94,7 @@ export default function Reports() {
       case "trends":
         return <div className="text-center text-muted-foreground py-12">Trend analysis coming soon...</div>;
       default:
-        return <FinancialReports />;
+        return <EnhancedFinancialReports />;
     }
   };
 
