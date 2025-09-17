@@ -178,6 +178,57 @@ export type Database = {
         }
         Relationships: []
       }
+      beds24_property_mappings: {
+        Row: {
+          beds24_property_id: string
+          beds24_property_name: string
+          created_at: string
+          id: string
+          is_active: boolean
+          location_id: string
+          mapping_type: string
+          room_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          beds24_property_id: string
+          beds24_property_name: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location_id: string
+          mapping_type: string
+          room_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          beds24_property_id?: string
+          beds24_property_name?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location_id?: string
+          mapping_type?: string
+          room_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beds24_property_mappings_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beds24_property_mappings_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_payments: {
         Row: {
           account_id: string
@@ -967,6 +1018,7 @@ export type Database = {
           is_active: boolean
           location_id: string
           max_occupancy: number
+          property_type: string
           room_number: string
           room_type: string
           updated_at: string
@@ -982,6 +1034,7 @@ export type Database = {
           is_active?: boolean
           location_id: string
           max_occupancy?: number
+          property_type?: string
           room_number: string
           room_type: string
           updated_at?: string
@@ -997,6 +1050,7 @@ export type Database = {
           is_active?: boolean
           location_id?: string
           max_occupancy?: number
+          property_type?: string
           room_number?: string
           room_type?: string
           updated_at?: string

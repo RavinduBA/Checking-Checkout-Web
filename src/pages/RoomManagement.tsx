@@ -362,26 +362,26 @@ export default function RoomManagement() {
                       </div>
                       
                       <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="room_type">Room Type</Label>
-                          <Select
-                            value={formData.room_type}
-                            onValueChange={(value) => 
-                              setFormData({ ...formData, room_type: value })
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select room type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {roomTypes.map((type) => (
-                                <SelectItem key={type} value={type}>
-                                  {type}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                          <div>
+                            <Label htmlFor="room_type">Room/Property Type</Label>
+                            <Select
+                              value={formData.room_type}
+                              onValueChange={(value) => 
+                                setFormData({ ...formData, room_type: value })
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {roomTypes.map((type) => (
+                                  <SelectItem key={type} value={type}>
+                                    {type}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         <div>
                           <Label htmlFor="bed_type">Bed Type</Label>
                           <Select
@@ -518,11 +518,11 @@ export default function RoomManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Room</TableHead>
+                  <TableHead>Room/Villa</TableHead>
                   <TableHead>Location</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Bed</TableHead>
-                  <TableHead>Base Price</TableHead>
+                  <TableHead>Base Price (USD)</TableHead>
                   <TableHead>Currency</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
@@ -534,7 +534,14 @@ export default function RoomManagement() {
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         <Bed className="h-4 w-4 text-muted-foreground" />
-                        {room.room_number}
+                        <div>
+                          <div className="font-medium">{room.room_number}</div>
+                          {room.room_type === "Villa" && (
+                            <Badge variant="secondary" className="text-xs mt-1">
+                              Villa Property
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -554,7 +561,9 @@ export default function RoomManagement() {
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
-                        {formatCurrency(room.base_price, room.currency as any)}
+                        <span className="font-medium">
+                          {formatCurrency(room.base_price, room.currency as any)}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>

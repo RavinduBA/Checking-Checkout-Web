@@ -219,6 +219,7 @@ export default function Calendar() {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           currency: 'LKR' as const,
+          property_type: 'Room', // Add the missing property
           isVirtual: true,
           virtualRoomName: firstBooking.room_name || 'External Room'
         });

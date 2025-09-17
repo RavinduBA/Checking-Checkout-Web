@@ -3,12 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, Calendar, Users, Bed, MapPin, DollarSign, AlertCircle, CheckCircle, Clock, Wifi, Settings as SettingsIcon, Key } from "lucide-react";
+import { RefreshCw, Calendar, Users, Bed, MapPin, DollarSign, AlertCircle, CheckCircle, Clock, Wifi, Settings as SettingsIcon, Key, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
 
 interface ExternalBooking {
@@ -31,6 +33,7 @@ interface ExternalBooking {
   };
   last_synced_at: string;
   raw_data?: any;
+  mappedLocation?: Location | null;
 }
 
 interface Location {
@@ -59,6 +62,8 @@ export default function Beds24Integration() {
   const [syncing, setSyncing] = useState(false);
   const [setupMode, setSetupMode] = useState(false);
   const [exchangingToken, setExchangingToken] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<ExternalBooking | null>(null);
+  const [showBookingDialog, setShowBookingDialog] = useState(false);
   const [syncStats, setSyncStats] = useState<SyncStats>({
     totalBookings: 0,
     recentSync: null,
@@ -266,19 +271,6 @@ export default function Beds24Integration() {
     return nights;
   };
 
-  const formatBookingDate = (booking: ExternalBooking) => {
-    if (booking.raw_data?.bookingTime) {
-      const date = new Date(booking.raw_data.bookingTime);
-      return date.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        day: 'numeric', 
-        month: 'short', 
-        year: 'numeric' 
-      });
-    }
-    return '';
-  };
-
   const getGuestName = (booking: ExternalBooking) => {
     if (booking.raw_data?.firstName && booking.raw_data?.lastName) {
       return `${booking.raw_data.firstName} ${booking.raw_data.lastName}`;
@@ -290,8 +282,11 @@ export default function Beds24Integration() {
     return booking.raw_data?.email || '';
   };
 
-  const getReferrer = (booking: ExternalBooking) => {
-    return booking.raw_data?.referer || booking.source || '';
+  const formatPrice = (booking: ExternalBooking) => {
+    if (booking.raw_data?.price) {
+      return `${booking.raw_data.price.toLocaleString()} LKR`;
+    }
+    return `${booking.total_amount?.toLocaleString() || '0'} ${booking.currency}`;
   };
 
   const getPaymentInfo = (booking: ExternalBooking) => {
@@ -306,23 +301,10 @@ export default function Beds24Integration() {
       
       return {
         type: 'airbnb',
-        lines: [
-          'Cancel policy flexible',
-          `Base Price ${price} LKR`,
-          `Host Fee -${commission}.00 LKR`,
-          `Expected Payout Amount ${expectedPayout} LKR`
-        ]
+        basePrice: price,
+        hostFee: commission,
+        payout: expectedPayout
       };
-    } else if (source === 'booking.com') {
-      const rateDesc = booking.raw_data.rateDescription;
-      if (rateDesc) {
-        // Extract rate info from description
-        const lines = rateDesc.split('\n').filter(line => line.trim());
-        return {
-          type: 'booking',
-          lines: lines
-        };
-      }
     }
     
     return null;
@@ -358,6 +340,11 @@ export default function Beds24Integration() {
       default:
         return 'bg-purple-100 text-purple-800 border-purple-200';
     }
+  };
+
+  const openBookingDetails = (booking: ExternalBooking) => {
+    setSelectedBooking(booking);
+    setShowBookingDialog(true);
   };
 
   const filteredBookings = selectedLocation === "all" 
@@ -506,10 +493,12 @@ export default function Beds24Integration() {
                 >
                   All Locations ({bookings.length})
                 </Button>
-                {locations.map(location => {
-                  const count = bookings
-                    .map(booking => ({ ...booking, mappedLocation: getLocationFromBooking(booking) }))
-                    .filter(b => b.mappedLocation?.id === location.id).length;
+                {locations.map((location) => {
+                  const locationBookings = bookings.filter(booking => {
+                    const mappedLocation = getLocationFromBooking(booking);
+                    return mappedLocation?.id === location.id;
+                  }).length;
+                  
                   return (
                     <Button
                       key={location.id}
@@ -517,7 +506,7 @@ export default function Beds24Integration() {
                       size="sm"
                       onClick={() => setSelectedLocation(location.id)}
                     >
-                      {location.name} ({count})
+                      {location.name} ({locationBookings})
                     </Button>
                   );
                 })}
@@ -528,370 +517,479 @@ export default function Beds24Integration() {
           {/* Bookings Table */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                External Bookings
-                {lastSyncTime && (
-                  <Badge variant="outline" className="ml-auto text-xs">
-                    Auto-sync every hour • Last: {format(lastSyncTime, 'HH:mm')}
-                  </Badge>
-                )}
-              </CardTitle>
+              <CardTitle>External Bookings</CardTitle>
               <CardDescription>
-                Showing {filteredBookings.length} bookings from Beds24
+                Bookings synchronized from Beds24 and other external sources
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {filteredBookings.map((booking) => {
-                  const paymentInfo = getPaymentInfo(booking);
-                  const nights = calculateNights(booking.check_in, booking.check_out);
-                  const guestName = getGuestName(booking);
-                  const email = getEmail(booking);
-                  
-                  return (
-                    <Card key={booking.id} className="p-4 hover:shadow-md transition-shadow">
-                      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                        {/* Booking Details */}
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Badge 
-                              variant="outline" 
-                              className={`${getStatusColor(booking.status)} text-xs capitalize`}
-                            >
-                              {booking.status}
-                            </Badge>
-                            <span className="font-mono text-sm text-muted-foreground">
-                              #{booking.external_id}
-                            </span>
-                          </div>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Property</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Guest</TableHead>
+                      <TableHead>Dates</TableHead>
+                      <TableHead>Guests</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Source</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredBookings.map((booking) => (
+                      <TableRow key={booking.id} className="hover:bg-muted/50">
+                        <TableCell className="font-medium">
                           <div className="space-y-1">
                             <div className="text-sm font-medium">
-                              {formatDate(booking.check_in)}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              to {formatDate(booking.check_out)}
+                              {booking.room_name || 'Unknown Property'}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {nights} night{nights > 1 ? 's' : ''}
+                              ID: {booking.external_id}
                             </div>
                           </div>
-                        </div>
-
-                        {/* Guest Information */}
-                        <div className="space-y-2">
-                          <div className="text-sm font-medium">{guestName}</div>
-                          {email && (
-                            <div className="text-xs text-muted-foreground">{email}</div>
-                          )}
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Users className="h-3 w-3" />
-                              {booking.adults} adults
-                            </div>
-                            {booking.children > 0 && (
-                              <div>{booking.children} children</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">
+                              {booking.mappedLocation?.name || 'Unmapped'}
+                            </span>
+                            {!booking.mappedLocation && (
+                              <Badge variant="secondary" className="text-xs">
+                                Needs Mapping
+                              </Badge>
                             )}
                           </div>
-                          <div className="text-xs">
-                            <Badge variant="outline" className={getSourceColor(booking.source)}>
-                              {getReferrer(booking)}
-                            </Badge>
-                          </div>
-                        </div>
-
-                        {/* Property & Room */}
-                        <div className="space-y-2">
-                          <div className="text-sm font-medium flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {booking.mappedLocation?.name || booking.location?.name || 'Unknown'}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {booking.room_name || 'Unknown Room'}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Booked: {formatBookingDate(booking)}
-                          </div>
-                        </div>
-
-                        {/* Pricing Information */}
-                        <div className="space-y-2">
-                          {paymentInfo ? (
-                            <div className="space-y-1">
-                              {paymentInfo.type === 'airbnb' ? (
-                                <>
-                                  <div className="text-sm font-medium text-green-600">
-                                    {booking.raw_data?.price?.toLocaleString()} LKR
-                                  </div>
-                                  <div className="text-xs space-y-0.5 text-muted-foreground">
-                                    <div>Base: {booking.raw_data?.price?.toLocaleString()} LKR</div>
-                                    <div className="text-red-600">
-                                      Host Fee: -{booking.raw_data?.commission?.toLocaleString()} LKR
-                                    </div>
-                                    <div className="font-medium text-green-600">
-                                      Payout: {(booking.raw_data?.price - booking.raw_data?.commission)?.toLocaleString()} LKR
-                                    </div>
-                                  </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    Cancel policy flexible
-                                  </div>
-                                </>
-                              ) : (
-                                <div className="text-sm font-medium">
-                                  ${booking.total_amount?.toLocaleString() || '0'} {booking.currency}
-                                </div>
-                              )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="font-medium text-sm">
+                              {getGuestName(booking)}
                             </div>
-                          ) : (
-                            <div className="text-sm font-medium">
-                              ${booking.total_amount?.toLocaleString() || '0'} {booking.currency}
+                            {getEmail(booking) && (
+                              <div className="text-xs text-muted-foreground">
+                                {getEmail(booking)}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="text-sm">
+                              {formatDate(booking.check_in)} - {formatDate(booking.check_out)}
                             </div>
-                          )}
-                        </div>
+                            <div className="text-xs text-muted-foreground">
+                              {calculateNights(booking.check_in, booking.check_out)} nights
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">
+                              {booking.adults + booking.children}
+                              <span className="text-xs text-muted-foreground ml-1">
+                                ({booking.adults}A + {booking.children}C)
+                              </span>
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="font-medium text-sm">
+                              {formatPrice(booking)}
+                            </div>
+                            {getPaymentInfo(booking) && (
+                              <div className="text-xs text-green-600">
+                                Payout: {getPaymentInfo(booking)?.payout} LKR
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getSourceColor(booking.source)}>
+                            {booking.source.replace('_', '.')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(booking.status)}>
+                            {booking.status.replace('_', ' ')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => openBookingDetails(booking)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                
+                {filteredBookings.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No bookings found for the selected location.</p>
+                    <Button 
+                      onClick={syncBeds24Data} 
+                      variant="outline" 
+                      className="mt-4"
+                      disabled={syncing}
+                    >
+                      {syncing ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Syncing...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Sync Now
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Booking Details Dialog */}
+        <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Booking Details</DialogTitle>
+            </DialogHeader>
+            {selectedBooking && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Guest Details</h4>
+                    <div className="mt-1">
+                      <p className="font-medium">{getGuestName(selectedBooking)}</p>
+                      {getEmail(selectedBooking) && (
+                        <p className="text-sm text-muted-foreground">{getEmail(selectedBooking)}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Property</h4>
+                    <div className="mt-1">
+                      <p className="font-medium">{selectedBooking.room_name || 'Unknown'}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedBooking.mappedLocation?.name || 'Unmapped Location'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Check-in / Check-out</h4>
+                    <div className="mt-1">
+                      <p className="font-medium">
+                        {formatDate(selectedBooking.check_in)} - {formatDate(selectedBooking.check_out)}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {calculateNights(selectedBooking.check_in, selectedBooking.check_out)} nights
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Guests</h4>
+                    <div className="mt-1">
+                      <p className="font-medium">
+                        {selectedBooking.adults + selectedBooking.children} total
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedBooking.adults} adults, {selectedBooking.children} children
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Source & Status</h4>
+                    <div className="mt-1 flex gap-2">
+                      <Badge className={getSourceColor(selectedBooking.source)}>
+                        {selectedBooking.source.replace('_', '.')}
+                      </Badge>
+                      <Badge className={getStatusColor(selectedBooking.status)}>
+                        {selectedBooking.status.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Amount</h4>
+                    <div className="mt-1">
+                      <p className="font-medium">{formatPrice(selectedBooking)}</p>
+                      {getPaymentInfo(selectedBooking) && (
+                        <p className="text-sm text-green-600">
+                          Expected Payout: {getPaymentInfo(selectedBooking)?.payout} LKR
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {getPaymentInfo(selectedBooking)?.type === 'airbnb' && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Payment Breakdown</h4>
+                    <div className="bg-gray-50 p-3 rounded-lg space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span>Base Price:</span>
+                        <span>{getPaymentInfo(selectedBooking)?.basePrice} LKR</span>
                       </div>
+                      <div className="flex justify-between text-red-600">
+                        <span>Host Fee:</span>
+                        <span>-{getPaymentInfo(selectedBooking)?.hostFee} LKR</span>
+                      </div>
+                      <div className="border-t pt-1 flex justify-between font-medium text-green-600">
+                        <span>Expected Payout:</span>
+                        <span>{getPaymentInfo(selectedBooking)?.payout} LKR</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Booking Details</h4>
+                  <div className="bg-gray-50 p-3 rounded-lg space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span>External ID:</span>
+                      <span className="font-mono">{selectedBooking.external_id}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Property ID:</span>
+                      <span className="font-mono">{selectedBooking.property_id}</span>
+                    </div>
+                    {selectedBooking.last_synced_at && (
+                      <div className="flex justify-between">
+                        <span>Last Synced:</span>
+                        <span>{format(new Date(selectedBooking.last_synced_at), 'MMM dd, yyyy HH:mm')}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        <TabsContent value="analytics" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Booking Analytics</CardTitle>
+              <CardDescription>
+                Insights and trends from your external bookings
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-3">Source Breakdown</h4>
+                  <div className="space-y-2">
+                    {Object.entries(syncStats.sourceBreakdown).map(([source, count]) => (
+                      <div key={source} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge className={getSourceColor(source)}>
+                            {source.replace('_', '.')}
+                          </Badge>
+                        </div>
+                        <span className="text-sm font-medium">{count} bookings</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-3">Status Breakdown</h4>
+                  <div className="space-y-2">
+                    {Object.entries(syncStats.statusBreakdown).map(([status, count]) => (
+                      <div key={status} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge className={getStatusColor(status)}>
+                            {status.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                        <span className="text-sm font-medium">{count} bookings</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-4">
+          {/* Property Mapping Section */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <SettingsIcon className="h-5 w-5" />
+                    Beds24 Property Mapping
+                  </CardTitle>
+                  <CardDescription>
+                    Map your Beds24 properties to internal locations and rooms
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Location-based Property Mappings */}
+              <div className="space-y-4">
+                {locations.map((location) => {
+                  const mapping = propertyMappings.find(m => m.locationName === location.name);
+                  return (
+                    <Card key={location.id} className="border-l-4 border-l-primary">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-lg">{location.name}</CardTitle>
+                          <Badge variant={mapping ? "default" : "secondary"}>
+                            {mapping ? `${mapping.beds24Properties.length} Properties` : "Not Mapped"}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {mapping && (
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Mapped Beds24 Properties:</Label>
+                            <div className="flex flex-wrap gap-2">
+                              {mapping.beds24Properties.map((property, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  {property}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor={`property-${location.id}`} className="text-sm">
+                              Add Beds24 Property Name
+                            </Label>
+                            <Input
+                              id={`property-${location.id}`}
+                              placeholder="e.g., Rusty Bunk Villa"
+                              className="mt-1"
+                            />
+                          </div>
+                          <div className="flex items-end">
+                            <Button size="sm" className="w-full">
+                              Add Property Mapping
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
                     </Card>
                   );
                 })}
               </div>
-              
-              {filteredBookings.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>No bookings found</p>
-                  <p className="text-sm">Try syncing with Beds24 to fetch the latest data</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="analytics" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Booking Sources</CardTitle>
-                <CardDescription>Distribution by channel</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {Object.entries(syncStats.sourceBreakdown).map(([source, count]) => (
-                    <div key={source} className="flex items-center justify-between">
-                      <Badge variant="outline" className={getSourceColor(source)}>
-                        {source.replace('_', '.')}
-                      </Badge>
-                      <span className="font-medium">{count}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Booking Status</CardTitle>
-                <CardDescription>Distribution by status</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {Object.entries(syncStats.statusBreakdown).map(([status, count]) => (
-                    <div key={status} className="flex items-center justify-between">
-                      <Badge variant="outline" className={getStatusColor(status)}>
-                        {status.replace('_', ' ')}
-                      </Badge>
-                      <span className="font-medium">{count}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="settings" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Key className="h-5 w-5" />
-                Initial Setup
-              </CardTitle>
-              <CardDescription>
-                Exchange your Beds24 invite code for API access
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {!setupMode ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">API Integration Status</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {syncStats.totalBookings > 0 
-                          ? 'Connected and syncing data' 
-                          : 'Ready to connect - click Setup to exchange your invite code'
-                        }
-                      </p>
-                    </div>
-                    <Button onClick={() => setSetupMode(true)} variant="outline">
-                      <SettingsIcon className="h-4 w-4 mr-2" />
-                      Setup
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Beds24 Invite Code</label>
-                    <Input
-                      id="invite-code"
-                      placeholder="Paste your Beds24 invite code here..."
-                      className="font-mono text-xs"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      This will be exchanged for a secure refresh token and stored in Supabase secrets.
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={async () => {
-                        setExchangingToken(true);
-                        try {
-                          // First try the automatic setup
-                          const { data, error } = await supabase.functions.invoke('setup-beds24-integration');
-                          
-                          if (data?.success) {
-                            toast.success('Refresh token generated! Please copy it to your Supabase secrets.');
-                            console.log('=== BEDS24 REFRESH TOKEN ===');
-                            console.log(data.data.refreshToken);
-                            console.log('===========================');
-                            
-                            // Show instructions
-                            alert(`Success! Please copy this refresh token to your BEDS24_REFRESH_TOKEN secret:\n\n${data.data.refreshToken}\n\nThen try syncing again.`);
-                            setSetupMode(false);
-                          } else {
-                            // Fallback to manual input
-                            const input = document.getElementById('invite-code') as HTMLInputElement;
-                            if (input?.value) {
-                              await exchangeInviteCode(input.value);
-                            } else {
-                              toast.error('Please enter your invite code');
-                            }
-                          }
-                        } catch (error: any) {
-                          console.error('Setup error:', error);
-                          toast.error(`Setup failed: ${error.message}`);
-                        } finally {
-                          setExchangingToken(false);
-                        }
-                      }}
-                      disabled={exchangingToken}
-                    >
-                      {exchangingToken ? (
-                        <>
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                          Exchanging...
-                        </>
-                      ) : (
-                        <>
-                          <Key className="h-4 w-4 mr-2" />
-                          Exchange Code
-                        </>
-                      )}
-                    </Button>
-                    <Button variant="outline" onClick={() => setSetupMode(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5" />
-                Sync Configuration
-              </CardTitle>
-              <CardDescription>
-                Beds24 integration settings and configuration
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <h4 className="font-medium">API Status</h4>
-                  <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    Connected
-                  </Badge>
-                </div>
-                
-                <div className="space-y-2">
-                  <h4 className="font-medium">Last Sync</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {syncStats.recentSync 
-                      ? format(new Date(syncStats.recentSync), 'PPpp')
-                      : 'Never synced'
-                    }
-                  </p>
-                </div>
-              </div>
-              
-              <div className="pt-4 border-t">
-                <h4 className="font-medium mb-4">Property Mappings</h4>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Map your locations to Beds24 property names to ensure bookings are correctly categorized
-                </p>
-                
-                <div className="space-y-4">
-                  {propertyMappings.map((mapping, index) => (
-                    <Card key={mapping.locationId} className="p-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4" />
-                          <span className="font-medium">{mapping.locationName}</span>
+              {/* API Setup Section */}
+              <Card className="border-dashed">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Key className="h-5 w-5" />
+                    API Configuration
+                  </CardTitle>
+                  <CardDescription>
+                    Configure your Beds24 API connection
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {!setupMode ? (
+                    <div className="text-center py-8">
+                      <div className="space-y-4">
+                        <div className="text-muted-foreground">
+                          API connection is already configured. 
+                          {syncStats.recentSync ? (
+                            <span className="block mt-2">
+                              Last successful sync: {format(new Date(syncStats.recentSync), 'MMM dd, yyyy HH:mm')}
+                            </span>
+                          ) : (
+                            <span className="block mt-2 text-yellow-600">
+                              No successful sync yet
+                            </span>
+                          )}
                         </div>
-                        
-                        <div className="space-y-2">
-                          <h5 className="text-sm font-medium">Beds24 Property Names:</h5>
-                          <div className="space-y-1">
-                            {mapping.beds24Properties.map((property, propIndex) => (
-                              <div key={propIndex} className="flex items-center gap-2 text-sm">
-                                <Badge variant="outline" className="text-xs">
-                                  {property.includes("Booking") || property.includes("Three-Bedroom") ? "Booking.com" : "Airbnb"}
-                                </Badge>
-                                <span>{property}</span>
-                              </div>
-                            ))}
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setSetupMode(true)}
+                        >
+                          Reconfigure API
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+                          <div className="space-y-2">
+                            <h4 className="font-medium text-amber-800">Setup Instructions</h4>
+                            <ol className="text-sm text-amber-700 space-y-1 ml-4 list-decimal">
+                              <li>Log into your Beds24 account</li>
+                              <li>Go to Settings → Channel Manager → API</li>
+                              <li>Generate an invite code for this application</li>
+                              <li>Enter the invite code below to complete setup</li>
+                            </ol>
                           </div>
                         </div>
-                        
-                        <div className="text-xs text-muted-foreground">
-                          Bookings from these Beds24 properties will be mapped to {mapping.locationName}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="inviteCode">Beds24 Invite Code</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="inviteCode"
+                            placeholder="Enter your Beds24 invite code"
+                            disabled={exchangingToken}
+                          />
+                          <Button 
+                            onClick={() => {
+                              const input = document.getElementById('inviteCode') as HTMLInputElement;
+                              if (input?.value) {
+                                exchangeInviteCode(input.value);
+                              }
+                            }}
+                            disabled={exchangingToken}
+                            className="min-w-[100px]"
+                          >
+                            {exchangingToken ? (
+                              <>
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                Setup...
+                              </>
+                            ) : (
+                              'Setup'
+                            )}
+                          </Button>
                         </div>
                       </div>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="pt-4 border-t">
-                <Button onClick={syncBeds24Data} disabled={syncing}>
-                  {syncing ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Syncing...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Manual Sync
-                    </>
+
+                      <Button 
+                        variant="ghost" 
+                        onClick={() => setSetupMode(false)}
+                        className="w-full"
+                      >
+                        Cancel Setup
+                      </Button>
+                    </div>
                   )}
-                </Button>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Manually trigger a sync with Beds24 to fetch the latest bookings
-                </p>
-              </div>
+                </CardContent>
+              </Card>
             </CardContent>
           </Card>
         </TabsContent>
