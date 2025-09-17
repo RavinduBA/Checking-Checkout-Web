@@ -124,41 +124,29 @@ export default function Onboarding() {
   };
 
   const handleComplete = async () => {
-    setLoading(true);
     try {
-      // Save company/onboarding data
-      const { error: companyError } = await supabase
-        .from('company_profiles')
-        .insert({
-          user_id: user!.id,
-          company_name: formData.companyName,
-          contact_name: formData.contactName,
-          email: formData.email,
-          phone: formData.phone,
-          address: formData.address,
-          country: formData.country,
-          property_type: formData.propertyType,
-          property_count: parseInt(formData.propertyCount) || 1,
-          total_rooms: parseInt(formData.totalRooms) || 1,
-          description: formData.description,
-          selected_features: formData.selectedFeatures,
-          currency: formData.currency,
-          timezone: formData.timezone,
-          onboarding_completed: true
-        });
-
-      if (companyError) throw companyError;
-
-      // Update user profile to mark onboarding as complete
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ 
-          name: formData.contactName,
-          role: 'admin' // Set as admin since they're setting up the company
-        })
-        .eq('id', user!.id);
-
-      if (profileError) throw profileError;
+      setLoading(true);
+      // Store onboarding data in localStorage for now
+      const onboardingData = {
+        user_id: user!.id,
+        company_name: formData.companyName,
+        contact_name: formData.contactName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        country: formData.country,
+        property_type: formData.propertyType,
+        property_count: formData.propertyCount,
+        total_rooms: formData.totalRooms,
+        description: formData.description,
+        selected_features: formData.selectedFeatures,
+        currency: formData.currency,
+        timezone: formData.timezone,
+        onboarding_completed: true,
+        completed_at: new Date().toISOString()
+      };
+      
+      localStorage.setItem('onboarding_data', JSON.stringify(onboardingData));
 
       toast({
         title: "Welcome aboard! 🎉",
@@ -166,7 +154,7 @@ export default function Onboarding() {
       });
 
       // Redirect to main app
-      navigate("/");
+      navigate("/app");
       
     } catch (error: any) {
       toast({

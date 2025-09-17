@@ -18,6 +18,8 @@ import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import Landing from "./pages/Landing";
+import Onboarding from "./pages/Onboarding";
 import BookingForm from "./pages/BookingForm";
 import MasterFiles from "./pages/MasterFiles";
 import RoomManagement from "./pages/RoomManagement";
@@ -34,8 +36,10 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/app" element={
               <ProtectedRoute>
                 <Layout />
               </ProtectedRoute>
@@ -57,7 +61,6 @@ const App = () => (
               <Route path="accounts" element={<Accounts />} />
               <Route path="users" element={<Users />} />
               <Route path="settings" element={<Settings />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
