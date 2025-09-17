@@ -396,98 +396,180 @@ export default function Calendar() {
           </div>
         </div>
 
-        {/* Calendar Grid */}
-        <Card className="bg-gradient-card border-0 shadow-elegant">
-          <CardContent className="p-0">
-            <div className="overflow-x-auto overflow-y-hidden">
-              <div className="min-w-max">
-                {/* Header with dates */}
-                <div className="grid sticky top-0 z-10 bg-background" 
-                     style={{ gridTemplateColumns: `minmax(120px, 150px) repeat(${calendarDates.length}, minmax(40px, 1fr))` }}>
-                  <div className="border-b border-r p-2 bg-muted font-semibold text-xs sticky left-0 z-20">
-                    <div>Room</div>
-                    <div className="text-xs text-muted-foreground">Type</div>
-                  </div>
-                  {calendarDates.map((date, index) => (
-                    <div key={index} className="border-b border-r p-1 text-center bg-muted min-w-[40px]">
-                      <div className="text-xs font-medium">{date.getDate()}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {date.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 1)}
+        {/* Mobile and Desktop Calendar Layout */}
+        <div className="space-y-4">
+          
+          {/* Mobile View */}
+          <div className="lg:hidden">
+            <Card className="bg-gradient-card border-0 shadow-elegant">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <CalendarIcon className="h-5 w-5" />
+                  {selectedLocation === "all" ? "All Locations" : locations.find(l => l.id === selectedLocation)?.name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Room List for Mobile */}
+                {allDisplayRooms.map((room) => {
+                  const location = locations.find(l => l.id === room.location_id);
+                  return (
+                    <div key={room.id} className="bg-muted/30 rounded-lg p-3 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <div className="font-medium text-sm">{room.room_number}</div>
+                          <div className="text-xs text-muted-foreground">{room.room_type}</div>
+                          {room.isVirtual && (
+                            <Badge variant="secondary" className="text-xs">External</Badge>
+                          )}
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {location?.name || 'Unknown'}
+                        </Badge>
                       </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Room rows */}
-                {allDisplayRooms.map((room) => (
-                  <div key={room.id} className="grid" 
-                       style={{ gridTemplateColumns: `minmax(120px, 150px) repeat(${calendarDates.length}, minmax(40px, 1fr))` }}>
-                    {/* Room info column */}
-                    <div className={`border-b border-r p-2 sticky left-0 z-10 ${room.isVirtual ? 'bg-purple-50' : 'bg-background'}`}>
-                      <div className="font-medium text-xs truncate" title={room.room_number}>
-                        {room.room_number}
-                      </div>
-                      <div className="text-xs text-muted-foreground truncate" title={room.room_type}>
-                        {room.room_type}
-                      </div>
-                      {room.isVirtual && (
-                        <div className="text-xs text-purple-600 font-medium">External</div>
-                      )}
-                    </div>
-                    
-                    {/* Date columns */}
-                    {calendarDates.map((date, dateIndex) => {
-                      const { internalReservations, externalReservations } = getBookingsForRoomAndDate(room.id, date);
-                      const internalReservation = internalReservations[0];
-                      const externalReservation = externalReservations[0];
                       
+                      {/* Current bookings for this room */}
+                      <div className="space-y-2">
+                        {calendarDates.slice(0, 7).map((date, dateIndex) => {
+                          const { internalReservations, externalReservations } = getBookingsForRoomAndDate(room.id, date);
+                          const internalReservation = internalReservations[0];
+                          const externalReservation = externalReservations[0];
+                          
+                          if (!internalReservation && !externalReservation) return null;
+                          
+                          return (
+                            <div key={dateIndex} className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground">
+                                {format(date, 'MMM dd')}
+                              </span>
+                              <div className="flex flex-col gap-1">
+                                {internalReservation && (
+                                  <div 
+                                    className={`px-2 py-1 rounded text-center cursor-pointer ${getStatusColor(internalReservation.status)}`}
+                                    onClick={() => navigate(`/reservations/${internalReservation.id}`)}
+                                  >
+                                    {internalReservation.guest_name.split(' ')[0]}
+                                  </div>
+                                )}
+                                {externalReservation && (
+                                  <div 
+                                    className={`px-2 py-1 rounded text-center cursor-pointer ${getStatusColor(externalReservation.status, true)}`}
+                                    onClick={() => openBookingDetails(externalReservation)}
+                                  >
+                                    {externalReservation.guest_name.split(' ')[0]}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Desktop Calendar Grid */}
+          <div className="hidden lg:block">
+            <Card className="bg-gradient-card border-0 shadow-elegant">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto overflow-y-hidden">
+                  <div className="min-w-max">
+                    {/* Header with dates */}
+                    <div className="grid sticky top-0 z-10 bg-background" 
+                         style={{ gridTemplateColumns: `minmax(180px, 200px) repeat(${calendarDates.length}, minmax(50px, 1fr))` }}>
+                      <div className="border-b border-r p-3 bg-muted font-semibold text-sm sticky left-0 z-20">
+                        <div>Room / Villa</div>
+                        <div className="text-xs text-muted-foreground">Type & Location</div>
+                      </div>
+                      {calendarDates.map((date, index) => (
+                        <div key={index} className="border-b border-r p-2 text-center bg-muted min-w-[50px]">
+                          <div className="text-sm font-medium">{date.getDate()}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Room rows */}
+                    {allDisplayRooms.map((room) => {
+                      const location = locations.find(l => l.id === room.location_id);
                       return (
-                        <div key={dateIndex} className="border-b border-r min-h-[60px] p-0.5 relative min-w-[40px]">
-                          {internalReservation && (
-                            <div 
-                              className={`text-xs p-1 rounded text-center cursor-pointer mb-0.5 ${getStatusColor(internalReservation.status)} overflow-hidden`}
-                              onClick={() => navigate(`/reservations/${internalReservation.id}`)}
-                              title={`${internalReservation.guest_name} - ${internalReservation.status}`}
-                            >
-                              <div className="font-medium text-xs leading-tight truncate">
-                                {internalReservation.guest_name.split(' ')[0].slice(0, 4)}
-                              </div>
-                              <div className="text-xs opacity-75 leading-tight">
-                                {new Date(internalReservation.check_in_date).getDate()}-{new Date(internalReservation.check_out_date).getDate()}
-                              </div>
+                        <div key={room.id} className="grid" 
+                             style={{ gridTemplateColumns: `minmax(180px, 200px) repeat(${calendarDates.length}, minmax(50px, 1fr))` }}>
+                          {/* Room info column */}
+                          <div className={`border-b border-r p-3 sticky left-0 z-10 ${room.isVirtual ? 'bg-purple-50' : 'bg-background'}`}>
+                            <div className="font-medium text-sm truncate" title={room.room_number}>
+                              {room.room_number}
                             </div>
-                          )}
-                          
-                          {externalReservation && (
-                            <div 
-                              className={`text-xs p-1 rounded text-center cursor-pointer ${getStatusColor(externalReservation.status, true)} overflow-hidden`}
-                              onClick={() => openBookingDetails(externalReservation)}
-                              title={`External: ${externalReservation.guest_name || 'Unknown'} - ${externalReservation.source}`}
-                            >
-                              <div className="font-medium text-xs leading-tight truncate">
-                                {(externalReservation.raw_data?.firstName || externalReservation.guest_name?.split(' ')[0] || 'Ext').slice(0, 4)}
-                              </div>
-                              <div className="text-xs opacity-75 leading-tight">
-                                {externalReservation.source.charAt(0).toUpperCase()}
-                              </div>
+                            <div className="text-xs text-muted-foreground truncate" title={room.room_type}>
+                              {room.room_type}
                             </div>
-                          )}
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {location?.name}
+                            </div>
+                            {room.isVirtual && (
+                              <Badge variant="secondary" className="text-xs mt-1">External</Badge>
+                            )}
+                          </div>
                           
-                          {!internalReservation && !externalReservation && (
-                            <div 
-                              className="h-full hover:bg-muted/50 cursor-pointer rounded"
-                              onClick={() => navigate(`/reservations/new?room=${room.id}&date=${date.toISOString().split('T')[0]}`)}
-                            />
-                          )}
+                          {/* Date columns */}
+                          {calendarDates.map((date, dateIndex) => {
+                            const { internalReservations, externalReservations } = getBookingsForRoomAndDate(room.id, date);
+                            const internalReservation = internalReservations[0];
+                            const externalReservation = externalReservations[0];
+                            
+                            return (
+                              <div key={dateIndex} className="border-b border-r min-h-[80px] p-1 relative min-w-[50px]">
+                                {internalReservation && (
+                                  <div 
+                                    className={`text-xs p-1 rounded text-center cursor-pointer mb-1 ${getStatusColor(internalReservation.status)} overflow-hidden`}
+                                    onClick={() => navigate(`/reservations/${internalReservation.id}`)}
+                                    title={`${internalReservation.guest_name} - ${internalReservation.status}`}
+                                  >
+                                    <div className="font-medium text-xs leading-tight truncate">
+                                    </div>
+                                    <div className="text-xs opacity-75 leading-tight">
+                                      {new Date(internalReservation.check_in_date).getDate()}-{new Date(internalReservation.check_out_date).getDate()}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {externalReservation && (
+                                  <div 
+                                    className={`text-xs p-1 rounded text-center cursor-pointer ${getStatusColor(externalReservation.status, true)} overflow-hidden`}
+                                    onClick={() => openBookingDetails(externalReservation)}
+                                    title={`External: ${externalReservation.guest_name || 'Unknown'} - ${externalReservation.source}`}
+                                  >
+                                    <div className="font-medium text-xs leading-tight truncate">
+                                      {(externalReservation.raw_data?.firstName || externalReservation.guest_name?.split(' ')[0] || 'Ext').slice(0, 6)}
+                                    </div>
+                                    <div className="text-xs opacity-75 leading-tight">
+                                      {externalReservation.source.charAt(0).toUpperCase()}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {!internalReservation && !externalReservation && (
+                                  <div 
+                                    className="h-full hover:bg-muted/50 cursor-pointer rounded"
+                                    onClick={() => navigate(`/reservations/new?room=${room.id}&date=${date.toISOString().split('T')[0]}`)}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       );
                     })}
                   </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
         {/* Legend */}
         <div className="flex flex-wrap gap-2 lg:gap-4 text-xs">

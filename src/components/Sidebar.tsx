@@ -34,7 +34,7 @@ interface SidebarProps {
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Calendar", href: "/calendar", icon: Calendar },
-  { name: "Beds24 Integration", href: "/beds24", icon: Wifi },
+  { name: "Channel Manager", href: "/beds24", icon: Wifi },
   { 
     name: "Master Files", 
     href: "/master-files", 
