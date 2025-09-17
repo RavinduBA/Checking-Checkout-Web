@@ -124,34 +124,49 @@ export default function EnhancedFinancialReports() {
 
   const fetchFinancialSummary = async () => {
     try {
-      let incomeQuery = supabase
-        .from("income")
-        .select("amount, currency");
-      
-      let expenseQuery = supabase
-        .from("expenses")
-        .select("amount, currency");
+      // Build queries with filters
+      let incomeQuery = supabase.from("income").select("amount, currency");
+      let expenseQuery = supabase.from("expenses").select("amount, currency");
+      let paymentsQuery = supabase.from("payments").select("amount, currency");
 
-      // Apply filters
+      // Apply location filters
       if (selectedLocation !== "all") {
         incomeQuery = incomeQuery.eq("location_id", selectedLocation);
         expenseQuery = expenseQuery.eq("location_id", selectedLocation);
+        // For payments, we need to join with reservations to get location
+        paymentsQuery = supabase
+          .from("payments")
+          .select("amount, currency, reservations!inner(location_id)")
+          .eq("reservations.location_id", selectedLocation);
+      } else {
+        paymentsQuery = supabase
+          .from("payments")
+          .select("amount, currency, reservations(location_id)");
       }
+
+      // Apply date filters
       if (dateFrom) {
         incomeQuery = incomeQuery.gte("date", dateFrom);
         expenseQuery = expenseQuery.gte("date", dateFrom);
+        paymentsQuery = paymentsQuery.gte("created_at", dateFrom);
       }
       if (dateTo) {
         incomeQuery = incomeQuery.lte("date", dateTo);
         expenseQuery = expenseQuery.lte("date", dateTo);
+        paymentsQuery = paymentsQuery.lte("created_at", dateTo);
       }
 
-      const [incomeResult, expenseResult] = await Promise.all([incomeQuery, expenseQuery]);
+      const [incomeResult, expenseResult, paymentsResult] = await Promise.all([
+        incomeQuery,
+        expenseQuery,
+        paymentsQuery
+      ]);
 
       let totalIncome = 0;
       let totalExpenses = 0;
+      let totalTransactions = 0;
 
-      // Process income with currency conversion
+      // Process direct income
       for (const income of incomeResult.data || []) {
         const convertedAmount = await convertCurrency(
           parseFloat(income.amount.toString()),
@@ -159,9 +174,21 @@ export default function EnhancedFinancialReports() {
           baseCurrency
         );
         totalIncome += convertedAmount;
+        totalTransactions++;
       }
 
-      // Process expenses with currency conversion
+      // Process reservation payments as income
+      for (const payment of paymentsResult.data || []) {
+        const convertedAmount = await convertCurrency(
+          parseFloat(payment.amount.toString()),
+          payment.currency as any,
+          baseCurrency
+        );
+        totalIncome += convertedAmount;
+        totalTransactions++;
+      }
+
+      // Process expenses
       for (const expense of expenseResult.data || []) {
         const convertedAmount = await convertCurrency(
           parseFloat(expense.amount.toString()),
@@ -179,7 +206,7 @@ export default function EnhancedFinancialReports() {
         totalExpenses,
         netProfit,
         profitMargin,
-        incomeTransactions: incomeResult.data?.length || 0,
+        incomeTransactions: totalTransactions,
         expenseTransactions: expenseResult.data?.length || 0
       });
     } catch (error) {
@@ -189,32 +216,64 @@ export default function EnhancedFinancialReports() {
 
   const fetchIncomeBreakdown = async () => {
     try {
-      let query = supabase
+      // Fetch direct income
+      let incomeQuery = supabase
         .from("income")
+        .select(`id, date, amount, type, note, currency, accounts(name)`);
+
+      // Fetch reservation payments
+      let paymentsQuery = supabase
+        .from("payments")
         .select(`
-          id, date, amount, type, note, currency,
-          accounts(name)
+          id, created_at, amount, currency, payment_type, notes,
+          accounts(name),
+          reservations(guest_name, reservation_number, location_id)
         `);
 
-      // Apply filters
+      // Apply location filters
       if (selectedLocation !== "all") {
-        query = query.eq("location_id", selectedLocation);
+        incomeQuery = incomeQuery.eq("location_id", selectedLocation);
+        paymentsQuery = supabase
+          .from("payments")
+          .select(`
+            id, created_at, amount, currency, payment_type, notes,
+            accounts(name),
+            reservations!inner(guest_name, reservation_number, location_id)
+          `)
+          .eq("reservations.location_id", selectedLocation);
+      } else {
+        paymentsQuery = supabase
+          .from("payments")
+          .select(`
+            id, created_at, amount, currency, payment_type, notes,
+            accounts(name),
+            reservations(guest_name, reservation_number, location_id)
+          `);
       }
+
+      // Apply date filters  
       if (dateFrom) {
-        query = query.gte("date", dateFrom);
+        incomeQuery = incomeQuery.gte("date", dateFrom);
+        paymentsQuery = paymentsQuery.gte("created_at", dateFrom);
       }
       if (dateTo) {
-        query = query.lte("date", dateTo);
+        incomeQuery = incomeQuery.lte("date", dateTo);
+        paymentsQuery = paymentsQuery.lte("created_at", dateTo);
       }
 
-      const { data, error } = await query.order("date", { ascending: false });
-      if (error) throw error;
+      const [incomeResult, paymentsResult] = await Promise.all([
+        incomeQuery.order("date", { ascending: false }),
+        paymentsQuery.order("created_at", { ascending: false })
+      ]);
 
-      // Group by income type
+      if (incomeResult.error) throw incomeResult.error;
+      if (paymentsResult.error) throw paymentsResult.error;
+
       const incomeMap = new Map<string, IncomeCategory>();
       let totalIncomeForPercentage = 0;
 
-      for (const income of data || []) {
+      // Process direct income
+      for (const income of incomeResult.data || []) {
         const convertedAmount = await convertCurrency(
           parseFloat(income.amount.toString()),
           income.currency as any,
@@ -222,7 +281,7 @@ export default function EnhancedFinancialReports() {
         );
         totalIncomeForPercentage += convertedAmount;
 
-        const type = income.type || 'Other';
+        const type = income.type || 'Direct Income';
         if (!incomeMap.has(type)) {
           incomeMap.set(type, {
             type,
@@ -238,13 +297,44 @@ export default function EnhancedFinancialReports() {
           id: income.id,
           date: income.date,
           amount: convertedAmount,
-          description: `${type} Income${income.note ? ` - ${income.note}` : ''}`,
+          description: `${type}${income.note ? ` - ${income.note}` : ''}`,
           account: (income as any).accounts?.name || 'Unknown',
           currency: baseCurrency
         });
       }
 
-      // Calculate percentages
+      // Process reservation payments
+      for (const payment of paymentsResult.data || []) {
+        const convertedAmount = await convertCurrency(
+          parseFloat(payment.amount.toString()),
+          payment.currency as any,
+          baseCurrency
+        );
+        totalIncomeForPercentage += convertedAmount;
+
+        const type = 'Reservation Payments';
+        if (!incomeMap.has(type)) {
+          incomeMap.set(type, {
+            type,
+            amount: 0,
+            percentage: 0,
+            transactions: []
+          });
+        }
+
+        const category = incomeMap.get(type)!;
+        category.amount += convertedAmount;
+        category.transactions.push({
+          id: payment.id,
+          date: payment.created_at,
+          amount: convertedAmount,
+          description: `${payment.payment_type} - ${(payment as any).reservations?.guest_name} (${(payment as any).reservations?.reservation_number})${payment.notes ? ` - ${payment.notes}` : ''}`,
+          account: (payment as any).accounts?.name || 'Unknown',
+          currency: baseCurrency
+        });
+      }
+
+      // Calculate percentages and sort
       const categories = Array.from(incomeMap.values()).map(cat => ({
         ...cat,
         percentage: totalIncomeForPercentage > 0 ? (cat.amount / totalIncomeForPercentage) * 100 : 0
