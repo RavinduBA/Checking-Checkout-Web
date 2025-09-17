@@ -3,6 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Calendar, 
   DollarSign, 
@@ -36,8 +40,19 @@ import checkinLogo from "@/assets/checkin-checkout-logo.png";
 
 export default function Landing() {
   const [loading, setLoading] = useState(false);
+  const [showInfoForm, setShowInfoForm] = useState(false);
+  const [businessInfo, setBusinessInfo] = useState({
+    businessName: "",
+    businessType: "",
+    numberOfRooms: "",
+    location: ""
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const handleStartTrial = () => {
+    setShowInfoForm(true);
+  };
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -65,6 +80,13 @@ export default function Landing() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleInfoFormSubmit = () => {
+    // Store the business info temporarily
+    localStorage.setItem('businessInfo', JSON.stringify(businessInfo));
+    setShowInfoForm(false);
+    handleGoogleSignIn();
   };
 
   const features = [
@@ -214,9 +236,12 @@ export default function Landing() {
       <nav className="fixed top-0 w-full bg-background/80 backdrop-blur-md border-b z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2">
-              <img src={checkinLogo} alt="Check In_Check Out" className="w-8 h-8 rounded-lg" />
-              <span className="text-xl font-bold">Check In_Check Out</span>
+            <div className="flex items-center gap-3">
+              <img src={checkinLogo} alt="CHECK-IN CHECK-OUT" className="w-10 h-10 rounded-lg" />
+              <div className="flex flex-col leading-tight">
+                <span className="text-lg font-bold">CHECK-IN</span>
+                <span className="text-lg font-normal">CHECK-OUT</span>
+              </div>
             </div>
             <div className="hidden md:flex items-center gap-6">
               <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
@@ -247,14 +272,14 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
-              onClick={handleGoogleSignIn}
+              onClick={handleStartTrial}
               disabled={loading}
               className="text-lg px-8 py-6"
             >
               {loading ? "Connecting..." : (
                 <>
                   <Globe className="h-5 w-5 mr-2" />
-                  Start Free with Google
+                  Start with Free Trial
                   <ArrowRight className="h-5 w-5 ml-2" />
                 </>
               )}
@@ -392,7 +417,7 @@ export default function Landing() {
                   <Button 
                     className="w-full" 
                     variant={plan.popular ? "default" : "outline"}
-                    onClick={handleGoogleSignIn}
+                    onClick={handleStartTrial}
                   >
                     Get Started
                     <ChevronRight className="h-4 w-4 ml-1" />
@@ -416,7 +441,7 @@ export default function Landing() {
           <Button 
             size="lg"
             variant="secondary"
-            onClick={handleGoogleSignIn}
+            onClick={handleStartTrial}
             disabled={loading}
             className="text-lg px-8 py-6"
           >
@@ -431,9 +456,12 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <img src={checkinLogo} alt="Check In_Check Out" className="w-8 h-8 rounded-lg" />
-                <span className="text-xl font-bold">Check In_Check Out</span>
+              <div className="flex items-center gap-3 mb-4">
+                <img src={checkinLogo} alt="CHECK-IN CHECK-OUT" className="w-10 h-10 rounded-lg" />
+                <div className="flex flex-col leading-tight">
+                  <span className="text-lg font-bold">CHECK-IN</span>
+                  <span className="text-lg font-normal">CHECK-OUT</span>
+                </div>
               </div>
               <p className="text-muted-foreground">
                 The ultimate hospitality management platform for modern hotels and villas.
@@ -468,10 +496,84 @@ export default function Landing() {
             </div>
           </div>
           <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 Check In_Check Out. All rights reserved.</p>
+            <p>&copy; 2024 CHECK-IN CHECK-OUT. All rights reserved.</p>
           </div>
         </div>
       </footer>
+
+      {/* Information Gathering Modal */}
+      <Dialog open={showInfoForm} onOpenChange={setShowInfoForm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Tell us about your business</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="businessName">Business Name</Label>
+              <Input
+                id="businessName"
+                placeholder="Enter your hotel/villa name"
+                value={businessInfo.businessName}
+                onChange={(e) => setBusinessInfo({...businessInfo, businessName: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="businessType">Business Type</Label>
+              <Select 
+                value={businessInfo.businessType} 
+                onValueChange={(value) => setBusinessInfo({...businessInfo, businessType: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select business type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hotel">Hotel</SelectItem>
+                  <SelectItem value="villa">Villa/Vacation Rental</SelectItem>
+                  <SelectItem value="bnb">Bed & Breakfast</SelectItem>
+                  <SelectItem value="hostel">Hostel</SelectItem>
+                  <SelectItem value="resort">Resort</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="numberOfRooms">Number of Rooms/Units</Label>
+              <Select 
+                value={businessInfo.numberOfRooms} 
+                onValueChange={(value) => setBusinessInfo({...businessInfo, numberOfRooms: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select number of rooms" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1-5">1-5 rooms</SelectItem>
+                  <SelectItem value="6-15">6-15 rooms</SelectItem>
+                  <SelectItem value="16-50">16-50 rooms</SelectItem>
+                  <SelectItem value="51-100">51-100 rooms</SelectItem>
+                  <SelectItem value="100+">100+ rooms</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                placeholder="City, Country"
+                value={businessInfo.location}
+                onChange={(e) => setBusinessInfo({...businessInfo, location: e.target.value})}
+              />
+            </div>
+            <Button 
+              className="w-full mt-6" 
+              onClick={handleInfoFormSubmit}
+              disabled={!businessInfo.businessName || !businessInfo.businessType}
+            >
+              Continue with Google
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
