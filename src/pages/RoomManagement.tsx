@@ -36,12 +36,13 @@ type Room = {
   locations?: Location;
 };
 
-const roomTypes = ["Standard", "Deluxe", "Suite", "Executive", "Presidential"];
+const roomTypes = ["Standard", "Deluxe", "Suite", "Executive", "Presidential", "Villa"];
 const bedTypes = ["Single", "Double", "Queen", "King", "Twin", "Sofa Bed"];
+const propertyTypes = ["Room", "Villa"];
 const amenityOptions = [
   "Air Conditioning", "WiFi", "TV", "Mini Bar", "Safe", "Balcony",
   "Sea View", "Pool View", "Garden View", "Room Service", "Jacuzzi",
-  "Kitchen", "Washing Machine", "Hair Dryer"
+  "Kitchen", "Washing Machine", "Hair Dryer", "Private Pool", "BBQ Area"
 ];
 
 export default function RoomManagement() {
@@ -61,7 +62,8 @@ export default function RoomManagement() {
     description: "",
     amenities: [] as string[],
     is_active: true,
-    currency: "LKR",
+    currency: "USD",
+    property_type: "Room",
   });
   const { toast } = useToast();
 
@@ -143,18 +145,19 @@ export default function RoomManagement() {
 
       setIsDialogOpen(false);
       setEditingRoom(null);
-      setFormData({
-        location_id: "",
-        room_number: "",
-        room_type: "",
-        bed_type: "",
-        max_occupancy: 2,
-        base_price: 0,
-        description: "",
-        amenities: [],
-        is_active: true,
-        currency: "LKR",
-      });
+        setFormData({
+          location_id: "",
+          room_number: "",
+          room_type: "",
+          bed_type: "",
+          max_occupancy: 2,
+          base_price: 0,
+          description: "",
+          amenities: [],
+          is_active: true,
+          currency: "USD",
+          property_type: "Room",
+        });
       fetchData();
     } catch (error) {
       toast({
@@ -177,7 +180,8 @@ export default function RoomManagement() {
       description: room.description,
       amenities: room.amenities || [],
       is_active: room.is_active,
-      currency: room.currency || "LKR",
+      currency: room.currency || "USD",
+      property_type: room.room_type === "Villa" ? "Villa" : "Room",
     });
     setIsDialogOpen(true);
   };
@@ -283,7 +287,8 @@ export default function RoomManagement() {
                         description: "",
                         amenities: [],
                         is_active: true,
-                        currency: "LKR",
+                        currency: "USD",
+                        property_type: "Room",
                       });
                     }}>
                       <Plus className="h-4 w-4 mr-2" />
@@ -303,7 +308,7 @@ export default function RoomManagement() {
                       </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-3 gap-4">
                         <div>
                           <Label htmlFor="location_id">Location</Label>
                           <Select
@@ -325,12 +330,32 @@ export default function RoomManagement() {
                           </Select>
                         </div>
                         <div>
-                          <Label htmlFor="room_number">Room Number</Label>
+                          <Label htmlFor="property_type">Property Type</Label>
+                          <Select
+                            value={formData.property_type}
+                            onValueChange={(value) => 
+                              setFormData({ ...formData, property_type: value })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {propertyTypes.map((type) => (
+                                <SelectItem key={type} value={type}>
+                                  {type}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="room_number">{formData.property_type === "Villa" ? "Villa Name" : "Room Number"}</Label>
                           <Input
                             id="room_number"
                             value={formData.room_number}
                             onChange={(e) => setFormData({ ...formData, room_number: e.target.value })}
-                            placeholder="e.g., 101, A-201"
+                            placeholder={formData.property_type === "Villa" ? "e.g., Rusty Bunk Villa" : "e.g., 101, A-201"}
                             required
                           />
                         </div>
@@ -414,8 +439,8 @@ export default function RoomManagement() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="LKR">LKR</SelectItem>
                                 <SelectItem value="USD">USD</SelectItem>
+                                <SelectItem value="LKR">LKR</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
