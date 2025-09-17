@@ -373,48 +373,84 @@ export default function AccountsReports() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Account Name</TableHead>
-                    <TableHead>Currency</TableHead>
-                    <TableHead className="text-right">Initial Balance</TableHead>
-                    <TableHead className="text-right">Total Income</TableHead>
-                    <TableHead className="text-right">Total Expenses</TableHead>
-                    <TableHead className="text-right">Net Transfers</TableHead>
-                    <TableHead className="text-right">Current Balance</TableHead>
-                    <TableHead className="text-right">Transactions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {accountBalances.map((balance) => (
-                    <TableRow key={balance.account.id}>
-                      <TableCell className="font-medium">{balance.account.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{balance.account.currency}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(balance.account.initial_balance, balance.account.currency)}
-                      </TableCell>
-                      <TableCell className="text-right text-green-600">
-                        +{formatCurrency(balance.totalIncome, balance.account.currency)}
-                      </TableCell>
-                      <TableCell className="text-right text-red-600">
-                        -{formatCurrency(balance.totalExpenses, balance.account.currency)}
-                      </TableCell>
-                      <TableCell className={`text-right ${balance.totalTransfers >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {balance.totalTransfers >= 0 ? '+' : '-'}{formatCurrency(Math.abs(balance.totalTransfers), balance.account.currency)}
-                      </TableCell>
-                      <TableCell className="text-right font-semibold">
-                        {formatCurrency(balance.currentBalance, balance.account.currency)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Badge variant="secondary">{balance.transactionCount}</Badge>
-                      </TableCell>
+              {/* Desktop table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Account Name</TableHead>
+                      <TableHead>Currency</TableHead>
+                      <TableHead className="text-right">Initial Balance</TableHead>
+                      <TableHead className="text-right">Total Income</TableHead>
+                      <TableHead className="text-right">Total Expenses</TableHead>
+                      <TableHead className="text-right">Net Transfers</TableHead>
+                      <TableHead className="text-right">Current Balance</TableHead>
+                      <TableHead className="text-right">Transactions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {accountBalances.map((balance) => (
+                      <TableRow key={balance.account.id}>
+                        <TableCell className="font-medium">{balance.account.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{balance.account.currency}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(balance.account.initial_balance, balance.account.currency)}
+                        </TableCell>
+                        <TableCell className="text-right text-green-600">
+                          +{formatCurrency(balance.totalIncome, balance.account.currency)}
+                        </TableCell>
+                        <TableCell className="text-right text-red-600">
+                          -{formatCurrency(balance.totalExpenses, balance.account.currency)}
+                        </TableCell>
+                        <TableCell className={`text-right ${balance.totalTransfers >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {balance.totalTransfers >= 0 ? '+' : '-'}{formatCurrency(Math.abs(balance.totalTransfers), balance.account.currency)}
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {formatCurrency(balance.currentBalance, balance.account.currency)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant="secondary">{balance.transactionCount}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile cards */}
+              <div className="md:hidden space-y-3">
+                {accountBalances.map((balance) => (
+                  <div key={balance.account.id} className="p-3 rounded-lg border bg-card">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{balance.account.name}</p>
+                        <div className="text-xs text-muted-foreground flex items-center gap-2">
+                          <Badge variant="outline">{balance.account.currency}</Badge>
+                          <span>{balance.transactionCount} txns</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">Current</p>
+                        <p className="text-base font-semibold">
+                          {formatCurrency(balance.currentBalance, balance.account.currency)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mt-3 text-xs">
+                      <div className="p-2 rounded bg-muted/40">
+                        <p className="text-muted-foreground">Income</p>
+                        <p className="text-green-600 font-medium">+{formatCurrency(balance.totalIncome, balance.account.currency)}</p>
+                      </div>
+                      <div className="p-2 rounded bg-muted/40">
+                        <p className="text-muted-foreground">Expenses</p>
+                        <p className="text-red-600 font-medium">-{formatCurrency(balance.totalExpenses, balance.account.currency)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -428,62 +464,97 @@ export default function AccountsReports() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Account</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Note</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {transactions.slice(0, 50).map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs">
-                            {transaction.currency}
-                          </Badge>
-                          {transaction.account_name}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getTransactionIcon(transaction.type)}
-                          <Badge variant={
-                            transaction.type === 'income' ? 'default' :
-                            transaction.type === 'expense' ? 'destructive' :
-                            'secondary'
-                          }>
-                            {transaction.type}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate">
-                        {transaction.description}
-                      </TableCell>
-                      <TableCell className={`text-right font-medium ${
-                        transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {transaction.type === 'income' ? '+' : '-'}
-                        {formatCurrency(transaction.amount, transaction.currency)}
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate text-muted-foreground text-sm">
-                        {transaction.note || '-'}
-                      </TableCell>
+              {/* Desktop table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Account</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead>Note</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              {transactions.length > 50 && (
-                <div className="text-center text-muted-foreground text-sm mt-4">
-                  Showing first 50 transactions. Use filters to narrow down results.
-                </div>
-              )}
+                  </TableHeader>
+                  <TableBody>
+                    {transactions.slice(0, 50).map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {transaction.currency}
+                            </Badge>
+                            {transaction.account_name}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getTransactionIcon(transaction.type)}
+                            <Badge variant={
+                              transaction.type === 'income' ? 'default' :
+                              transaction.type === 'expense' ? 'destructive' :
+                              'secondary'
+                            }>
+                              {transaction.type}
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="max-w-xs truncate">
+                          {transaction.description}
+                        </TableCell>
+                        <TableCell className={`text-right font-medium ${
+                          transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {transaction.type === 'income' ? '+' : '-'}
+                          {formatCurrency(transaction.amount, transaction.currency)}
+                        </TableCell>
+                        <TableCell className="max-w-xs truncate text-muted-foreground text-sm">
+                          {transaction.note || '-'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile list */}
+              <div className="md:hidden space-y-3">
+                {transactions.slice(0, 50).map((transaction) => (
+                  <div key={transaction.id} className="p-3 rounded-lg border bg-card">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm">
+                        <p className="font-medium">{transaction.account_name}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(transaction.date).toLocaleDateString()}</p>
+                      </div>
+                      <div className={`text-right text-sm font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                        {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount, transaction.currency)}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <div className="flex items-center gap-2 text-xs">
+                        {getTransactionIcon(transaction.type)}
+                        <Badge variant={
+                          transaction.type === 'income' ? 'default' :
+                          transaction.type === 'expense' ? 'destructive' :
+                          'secondary'
+                        }>
+                          {transaction.type}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate max-w-[60%]">
+                        {transaction.description}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {transactions.length > 50 && (
+                  <div className="text-center text-muted-foreground text-xs">
+                    Showing first 50 transactions. Use filters to narrow down results.
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

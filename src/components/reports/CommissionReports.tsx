@@ -340,58 +340,105 @@ export default function CommissionReports() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Reservation</TableHead>
-                <TableHead>Guest</TableHead>
-                <TableHead>Dates</TableHead>
-                <TableHead>Total Amount</TableHead>
-                <TableHead>Guide</TableHead>
-                <TableHead>Guide Commission</TableHead>
-                <TableHead>Agent</TableHead>
-                <TableHead>Agent Commission</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCommissions.map((item) => (
-                <TableRow key={item.reservation_id}>
-                  <TableCell className="font-medium">
-                    {item.reservation_number}
-                  </TableCell>
-                  <TableCell>{item.guest_name}</TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div>{new Date(item.check_in_date).toLocaleDateString()}</div>
-                      <div className="text-muted-foreground">
-                        to {new Date(item.check_out_date).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>LKR {item.total_amount.toFixed(2)}</TableCell>
-                  <TableCell>{item.guide_name || "-"}</TableCell>
-                  <TableCell>
-                    {item.guide_commission > 0 ? `LKR ${item.guide_commission.toFixed(2)}` : "-"}
-                  </TableCell>
-                  <TableCell>{item.agent_name || "-"}</TableCell>
-                  <TableCell>
-                    {item.agent_commission > 0 ? `LKR ${item.agent_commission.toFixed(2)}` : "-"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={
-                      item.status === "confirmed" ? "default" :
-                      item.status === "checked_out" ? "secondary" :
-                      item.status === "cancelled" ? "destructive" :
-                      "outline"
-                    }>
-                      {item.status}
-                    </Badge>
-                  </TableCell>
+          {/* Desktop table */}
+          
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Reservation</TableHead>
+                  <TableHead>Guest</TableHead>
+                  <TableHead>Dates</TableHead>
+                  <TableHead>Total Amount</TableHead>
+                  <TableHead>Guide</TableHead>
+                  <TableHead>Guide Commission</TableHead>
+                  <TableHead>Agent</TableHead>
+                  <TableHead>Agent Commission</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredCommissions.map((item) => (
+                  <TableRow key={item.reservation_id}>
+                    <TableCell className="font-medium">
+                      {item.reservation_number}
+                    </TableCell>
+                    <TableCell>{item.guest_name}</TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        <div>{new Date(item.check_in_date).toLocaleDateString()}</div>
+                        <div className="text-muted-foreground">
+                          to {new Date(item.check_out_date).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>LKR {item.total_amount.toFixed(2)}</TableCell>
+                    <TableCell>{item.guide_name || "-"}</TableCell>
+                    <TableCell>
+                      {item.guide_commission > 0 ? `LKR ${item.guide_commission.toFixed(2)}` : "-"}
+                    </TableCell>
+                    <TableCell>{item.agent_name || "-"}</TableCell>
+                    <TableCell>
+                      {item.agent_commission > 0 ? `LKR ${item.agent_commission.toFixed(2)}` : "-"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={
+                        item.status === "confirmed" ? "default" :
+                        item.status === "checked_out" ? "secondary" :
+                        item.status === "cancelled" ? "destructive" :
+                        "outline"
+                      }>
+                        {item.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
+            {filteredCommissions.map((item) => (
+              <div key={item.reservation_id} className="p-3 rounded-lg border bg-card">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{item.guest_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(item.check_in_date).toLocaleDateString()} → {new Date(item.check_out_date).toLocaleDateString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Res #{item.reservation_number}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Total</p>
+                    <p className="text-base font-semibold">LKR {item.total_amount.toFixed(2)}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+                  <div className="p-2 rounded bg-muted/40">
+                    <p className="text-muted-foreground">Guide</p>
+                    <p>{item.guide_name || '-'}</p>
+                    <p className="font-medium">{item.guide_commission > 0 ? `LKR ${item.guide_commission.toFixed(2)}` : '-'}</p>
+                  </div>
+                  <div className="p-2 rounded bg-muted/40">
+                    <p className="text-muted-foreground">Agent</p>
+                    <p>{item.agent_name || '-'}</p>
+                    <p className="font-medium">{item.agent_commission > 0 ? `LKR ${item.agent_commission.toFixed(2)}` : '-'}</p>
+                  </div>
+                </div>
+                <div className="flex justify-end mt-2">
+                  <Badge variant={
+                    item.status === "confirmed" ? "default" :
+                    item.status === "checked_out" ? "secondary" :
+                    item.status === "cancelled" ? "destructive" :
+                    "outline"
+                  }>
+                    {item.status}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>
