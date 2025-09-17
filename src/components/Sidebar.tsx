@@ -32,39 +32,39 @@ interface SidebarProps {
 }
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: Home },
-  { name: "Calendar", href: "/calendar", icon: Calendar },
-  { name: "Channel Manager", href: "/beds24", icon: Wifi },
+  { name: "Dashboard", href: "/app", icon: Home },
+  { name: "Calendar", href: "/app/calendar", icon: Calendar },
+  { name: "Channel Manager", href: "/app/beds24", icon: Wifi },
   { 
     name: "Master Files", 
-    href: "/master-files", 
+    href: "/app/master-files", 
     icon: FolderOpen,
     subItems: [
-      { name: "Hotel Locations", href: "/master-files?tab=locations", icon: MapPin, description: "Manage hotel locations" },
-      { name: "Room Management", href: "/master-files?tab=rooms", icon: Bed, description: "Manage hotel rooms" },
-      { name: "Tour Guides", href: "/master-files?tab=guides", icon: UserCheck, description: "Manage tour guides" },
-      { name: "Travel Agents", href: "/master-files?tab=agents", icon: Users, description: "Manage travel agents" },
-      { name: "Commission Settings", href: "/master-files?tab=commissions", icon: Percent, description: "Commission configuration" }
+      { name: "Hotel Locations", href: "/app/master-files?tab=locations", icon: MapPin, description: "Manage hotel locations" },
+      { name: "Room Management", href: "/app/master-files?tab=rooms", icon: Bed, description: "Manage hotel rooms" },
+      { name: "Tour Guides", href: "/app/master-files?tab=guides", icon: UserCheck, description: "Manage tour guides" },
+      { name: "Travel Agents", href: "/app/master-files?tab=agents", icon: Users, description: "Manage travel agents" },
+      { name: "Commission Settings", href: "/app/master-files?tab=commissions", icon: Percent, description: "Commission configuration" }
     ]
   },
-  { name: "Room Management", href: "/rooms", icon: Bed },
-  { name: "Reservations", href: "/income", icon: PlusCircle },
-  { name: "Add Expense", href: "/expense", icon: MinusCircle },
+  { name: "Room Management", href: "/app/rooms", icon: Bed },
+  { name: "Reservations", href: "/app/income", icon: PlusCircle },
+  { name: "Add Expense", href: "/app/expense", icon: MinusCircle },
   { 
     name: "Reports", 
-    href: "/reports", 
+    href: "/app/reports", 
     icon: BarChart3,
     subItems: [
-      { name: "Financial Reports", href: "/reports?tab=financial", icon: BarChart3, description: "Revenue and expense analysis" },
-      { name: "Accounts Reports", href: "/reports?tab=accounts", icon: CreditCard, description: "Account balances and transactions" },
-      { name: "Commission Reports", href: "/reports?tab=commission", icon: Percent, description: "Guide and agent commissions" },
-      { name: "Occupancy Reports", href: "/reports?tab=occupancy", icon: Building2, description: "Room occupancy analysis" },
-      { name: "Trend Analysis", href: "/reports?tab=trends", icon: TrendingUp, description: "Performance trends" }
+      { name: "Financial Reports", href: "/app/reports?tab=financial", icon: BarChart3, description: "Revenue and expense analysis" },
+      { name: "Accounts Reports", href: "/app/reports?tab=accounts", icon: CreditCard, description: "Account balances and transactions" },
+      { name: "Commission Reports", href: "/app/reports?tab=commission", icon: Percent, description: "Guide and agent commissions" },
+      { name: "Occupancy Reports", href: "/app/reports?tab=occupancy", icon: Building2, description: "Room occupancy analysis" },
+      { name: "Trend Analysis", href: "/app/reports?tab=trends", icon: TrendingUp, description: "Performance trends" }
     ]
   },
-  { name: "Accounts", href: "/accounts", icon: Building2 },
-  { name: "Users", href: "/users", icon: Users },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Accounts", href: "/app/accounts", icon: Building2 },
+  { name: "Users", href: "/app/users", icon: Users },
+  { name: "Settings", href: "/app/settings", icon: Settings },
 ];
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -87,10 +87,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
         <div className="flex flex-col flex-grow bg-card border-r border-border shadow-elegant">
           {/* Logo */}
-          <div className="flex items-center gap-2 px-6 py-6 border-b border-border">
-            <img src={checkinLogo} alt="Check In_Check Out" className="w-8 h-8 rounded-lg" />
-            <span className="font-bold text-lg text-foreground">Check In_Check Out</span>
-          </div>
+            <div className="flex items-center gap-3 mb-4">
+              <img src={checkinLogo} alt="CHECK-IN CHECK-OUT" className="w-10 h-10 rounded-lg" />
+              <div className="flex flex-col leading-tight">
+                <span className="font-bold text-lg">CHECK-IN</span>
+                <span className="font-normal text-lg">CHECK-OUT</span>
+              </div>
+            </div>
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-1">
@@ -161,9 +164,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center gap-2 px-6 py-6 border-b border-border">
-            <img src={checkinLogo} alt="Check In_Check Out" className="w-8 h-8 rounded-lg" />
-            <span className="font-bold text-lg text-foreground">Check In_Check Out</span>
+          <div className="flex items-center gap-3 px-6 py-6 border-b border-border">
+            <img src={checkinLogo} alt="CHECK-IN CHECK-OUT" className="w-10 h-10 rounded-lg" />
+            <div className="flex flex-col leading-tight">
+              <span className="font-bold text-lg">CHECK-IN</span>
+              <span className="font-normal text-lg">CHECK-OUT</span>
+            </div>
           </div>
 
           {/* Navigation */}
