@@ -123,7 +123,7 @@ export default function Auth() {
       <Card className="w-full max-w-md bg-gradient-card border-0 shadow-elegant">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-foreground">
-            CHECK-IN CHECK-OUT
+            Check In_Check Out
           </CardTitle>
           <p className="text-muted-foreground">
             {isLogin ? "Sign in to your account" : "Create a new account"}

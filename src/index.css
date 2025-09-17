@@ -18,10 +18,10 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 25 25% 15%;
 
-    /* CHECK-IN CHECK-OUT brand colors - Green and Orange */
-    --primary: 142 69% 58%;
+    /* Earth-tone primary colors */
+    --primary: 25 85% 45%;
     --primary-foreground: 0 0% 98%;
-    --primary-glow: 45 93% 47%;
+    --primary-glow: 35 95% 55%;
 
     --secondary: 28 15% 92%;
     --secondary-foreground: 25 25% 15%;

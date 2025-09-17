@@ -40,7 +40,7 @@ export function Layout() {
             <div className="flex items-center gap-2">
               <Building2 className="h-5 w-5 lg:h-6 lg:w-6 text-primary" />
               <span className="font-semibold text-foreground text-sm lg:text-base">
-                {isMobile ? "CHECK-IN" : "CHECK-IN CHECK-OUT"}
+                {isMobile ? "Check In" : "Check In_Check Out"}
               </span>
             </div>
           </div>

@@ -150,7 +150,7 @@ export default function Onboarding() {
 
       toast({
         title: "Welcome aboard! 🎉",
-        description: "Your account has been set up successfully. Welcome to CHECK-IN CHECK-OUT!",
+        description: "Your account has been set up successfully. Welcome to Check In_Check Out!",
       });
 
       // Redirect to main app
@@ -427,7 +427,7 @@ export default function Onboarding() {
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
             <h2 className="text-3xl font-bold">You're All Set! 🎉</h2>
             <p className="text-lg text-muted-foreground max-w-md mx-auto">
-              Welcome to CHECK-IN CHECK-OUT! Your account has been configured based on your preferences.
+              Welcome to Check In_Check Out! Your account has been configured based on your preferences.
             </p>
             
             <div className="bg-muted/30 rounded-lg p-6 text-left max-w-md mx-auto">
