@@ -215,8 +215,8 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
-              <img src={checkinLogo} alt="Check In_Check Out" className="w-8 h-8 rounded-lg" />
-              <span className="text-xl font-bold">Check In_Check Out</span>
+              <img src={checkinLogo} alt="CHECK-IN CHECK-OUT" className="w-8 h-8" />
+              <span className="text-xl font-bold">CHECK-IN CHECK-OUT</span>
             </div>
             <div className="hidden md:flex items-center gap-6">
               <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
@@ -432,8 +432,8 @@ export default function Landing() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <img src={checkinLogo} alt="Check In_Check Out" className="w-8 h-8 rounded-lg" />
-                <span className="text-xl font-bold">Check In_Check Out</span>
+                <img src={checkinLogo} alt="CHECK-IN CHECK-OUT" className="w-8 h-8" />
+                <span className="text-xl font-bold">CHECK-IN CHECK-OUT</span>
               </div>
               <p className="text-muted-foreground">
                 The ultimate hospitality management platform for modern hotels and villas.
@@ -468,7 +468,7 @@ export default function Landing() {
             </div>
           </div>
           <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 Check In_Check Out. All rights reserved.</p>
+            <p>&copy; 2024 CHECK-IN CHECK-OUT. All rights reserved.</p>
           </div>
         </div>
       </footer>
