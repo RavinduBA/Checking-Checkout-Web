@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import checkinLogo from "@/assets/checkin-checkout-logo.png";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -88,10 +88,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="flex flex-col flex-grow bg-card border-r border-border shadow-elegant">
           {/* Logo */}
           <div className="flex items-center gap-2 px-6 py-6 border-b border-border">
-            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <Building2 className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="font-bold text-lg text-foreground">Hotel Manager</span>
+            <img src={checkinLogo} alt="Check In_Check Out" className="w-8 h-8 rounded-lg" />
+            <span className="font-bold text-lg text-foreground">Check In_Check Out</span>
           </div>
 
           {/* Navigation */}
@@ -164,10 +162,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center gap-2 px-6 py-6 border-b border-border">
-            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <Building2 className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="font-bold text-lg text-foreground">Hotel Manager</span>
+            <img src={checkinLogo} alt="Check In_Check Out" className="w-8 h-8 rounded-lg" />
+            <span className="font-bold text-lg text-foreground">Check In_Check Out</span>
           </div>
 
           {/* Navigation */}

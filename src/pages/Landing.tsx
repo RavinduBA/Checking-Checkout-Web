@@ -18,10 +18,21 @@ import {
   Hotel,
   CreditCard,
   Smartphone,
-  ChevronRight
+  ChevronRight,
+  Key,
+  Clock,
+  MessageSquare,
+  Wifi,
+  Car,
+  Coffee,
+  MapPin,
+  Phone,
+  Mail,
+  FileText
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import checkinLogo from "@/assets/checkin-checkout-logo.png";
 
 export default function Landing() {
   const [loading, setLoading] = useState(false);
@@ -86,6 +97,36 @@ export default function Landing() {
       icon: Shield,
       title: "Secure & Compliant",
       description: "Enterprise-grade security with data encryption and compliance standards"
+    },
+    {
+      icon: Key,
+      title: "Digital Check-In/Out",
+      description: "Contactless check-in and check-out process with mobile keys and instant room access"
+    },
+    {
+      icon: Clock,
+      title: "Housekeeping Management",
+      description: "Real-time room status updates and efficient housekeeping task management"
+    },
+    {
+      icon: MessageSquare,
+      title: "Guest Communication",
+      description: "Automated messaging, SMS notifications, and 24/7 guest support integration"
+    },
+    {
+      icon: CreditCard,
+      title: "Payment Processing",
+      description: "Secure payment gateway with multiple payment options and automated billing"
+    },
+    {
+      icon: Wifi,
+      title: "Channel Manager",
+      description: "Sync inventory across all booking platforms and manage rates from one place"
+    },
+    {
+      icon: Car,
+      title: "Concierge Services",
+      description: "Manage guest requests, tours, transportation, and local experience bookings"
     }
   ];
 
@@ -174,10 +215,8 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <Hotel className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold">HotelVilla Pro</span>
+              <img src={checkinLogo} alt="Check In_Check Out" className="w-8 h-8 rounded-lg" />
+              <span className="text-xl font-bold">Check In_Check Out</span>
             </div>
             <div className="hidden md:flex items-center gap-6">
               <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
@@ -258,17 +297,17 @@ export default function Landing() {
               Comprehensive tools designed specifically for modern hospitality businesses
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {features.map((feature, index) => (
               <Card key={index} className="border-0 shadow-elegant bg-gradient-card hover:shadow-glow transition-all duration-300">
-                <CardHeader>
-                  <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mb-4">
+                <CardHeader className="pb-4">
+                  <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mb-3">
                     <feature.icon className="h-6 w-6 text-primary-foreground" />
                   </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
+                  <CardTitle className="text-lg">{feature.title}</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{feature.description}</p>
+                <CardContent className="pt-0">
+                  <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -393,10 +432,8 @@ export default function Landing() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                  <Hotel className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <span className="text-xl font-bold">HotelVilla Pro</span>
+                <img src={checkinLogo} alt="Check In_Check Out" className="w-8 h-8 rounded-lg" />
+                <span className="text-xl font-bold">Check In_Check Out</span>
               </div>
               <p className="text-muted-foreground">
                 The ultimate hospitality management platform for modern hotels and villas.
@@ -431,7 +468,7 @@ export default function Landing() {
             </div>
           </div>
           <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 HotelVilla Pro. All rights reserved.</p>
+            <p>&copy; 2024 Check In_Check Out. All rights reserved.</p>
           </div>
         </div>
       </footer>
