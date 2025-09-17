@@ -36,7 +36,7 @@ export default function Auth() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/onboarding`
+          redirectTo: `${window.location.origin}/app`
         }
       });
 
@@ -87,7 +87,7 @@ export default function Auth() {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/`,
+            emailRedirectTo: `${window.location.origin}/app`,
             data: {
               name: name,
             }
@@ -123,7 +123,10 @@ export default function Auth() {
       <Card className="w-full max-w-md bg-gradient-card border-0 shadow-elegant">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-foreground">
-            Check In_Check Out
+            <div className="flex flex-col leading-tight">
+              <span className="font-bold">CHECK-IN</span>
+              <span className="font-normal">CHECK-OUT</span>
+            </div>
           </CardTitle>
           <p className="text-muted-foreground">
             {isLogin ? "Sign in to your account" : "Create a new account"}
