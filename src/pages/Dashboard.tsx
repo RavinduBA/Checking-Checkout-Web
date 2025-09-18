@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type Income = Tables<"income"> & {
   accounts: Tables<"accounts">;
@@ -46,6 +47,7 @@ export default function Dashboard() {
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [selectedMonth, setSelectedMonth] = useState("");
   const [locations, setLocations] = useState<Location[]>([]);
+  const { hasAnyPermission, hasPermission } = usePermissions();
 
   useEffect(() => {
     fetchDashboardData();
@@ -176,18 +178,22 @@ export default function Dashboard() {
             <p className="text-sm lg:text-base text-muted-foreground">Financial Management Dashboard</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button asChild variant="villa" size="sm" className="w-full sm:w-auto">
-              <Link to="/income">
-                <Plus className="h-4 w-4" />
-                Add Income
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
-              <Link to="/expense">
-                <Plus className="h-4 w-4" />
-                Add Expense
-              </Link>
-            </Button>
+            {hasAnyPermission("income") && (
+              <Button asChild variant="villa" size="sm" className="w-full sm:w-auto">
+                <Link to="/app/income">
+                  <Plus className="h-4 w-4" />
+                  Add Income
+                </Link>
+              </Button>
+            )}
+            {hasAnyPermission("expenses") && (
+              <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
+                <Link to="/app/expense">
+                  <Plus className="h-4 w-4" />
+                  Add Expense
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
         
@@ -311,12 +317,14 @@ export default function Dashboard() {
             <Calendar className="h-5 w-5 text-primary" />
             Upcoming Bookings
           </CardTitle>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/calendar">
-              <Eye className="h-4 w-4" />
-              View All
-            </Link>
-          </Button>
+          {hasAnyPermission("calendar") && (
+            <Button asChild variant="outline" size="sm">
+              <Link to="/app/calendar">
+                <Eye className="h-4 w-4" />
+                View All
+              </Link>
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-3 lg:space-y-4">
           {upcomingBookings.length > 0 ? (

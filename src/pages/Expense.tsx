@@ -9,9 +9,11 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
-import { ArrowLeft, Minus, Calendar } from "lucide-react";
+import { ArrowLeft, Minus, Calendar, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ExpenseShortcuts } from "@/components/ExpenseShortcuts";
+import { usePermissions } from "@/hooks/usePermissions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type Location = Tables<"locations">;
 type Account = Tables<"accounts">;
@@ -38,6 +40,7 @@ export default function Expense() {
   const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { hasAnyPermission, hasPermission } = usePermissions();
 
   useEffect(() => {
     fetchData();
@@ -183,6 +186,19 @@ export default function Expense() {
     return <div className="container mx-auto p-4 sm:p-6">Loading...</div>;
   }
 
+  if (!hasAnyPermission("expenses")) {
+    return (
+      <div className="container mx-auto p-4 sm:p-6">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            You don't have permission to access this page. Please contact your administrator.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -197,12 +213,14 @@ export default function Expense() {
             <p className="text-sm sm:text-base text-muted-foreground">Record your business expenses</p>
           </div>
         </div>
-        <Button asChild variant="outline" className="text-xs sm:text-sm px-2 sm:px-4">
-          <Link to="/financial-reports?type=expense">
-            <span className="hidden sm:inline">View All Expenses</span>
-            <span className="sm:hidden">View All</span>
-          </Link>
-        </Button>
+        {hasAnyPermission("reports") && (
+          <Button asChild variant="outline" className="text-xs sm:text-sm px-2 sm:px-4">
+            <Link to="/app/reports?tab=financial&type=expense">
+              <span className="hidden sm:inline">View All Expenses</span>
+              <span className="sm:hidden">View All</span>
+            </Link>
+          </Button>
+        )}
       </div>
 
       {/* Location Filter at Top */}

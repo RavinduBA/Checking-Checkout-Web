@@ -10,9 +10,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Plus, Eye, Edit, CreditCard, Printer } from "lucide-react";
+import { Calendar, Plus, Eye, Edit, CreditCard, Printer, AlertCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import SignatureCanvas from 'react-signature-canvas';
+import { usePermissions } from "@/hooks/usePermissions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type Database = any;
 
@@ -25,6 +27,7 @@ type Account = Database['public']['Tables']['accounts']['Row'];
 const Income = () => {
   const { toast } = useToast();
   const sigCanvas = useRef<SignatureCanvas | null>(null);
+  const { hasAnyPermission, hasPermission } = usePermissions();
   
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -398,6 +401,19 @@ const Income = () => {
 
   if (loading) {
     return <div className="p-6">Loading...</div>;
+  }
+
+  if (!hasAnyPermission("income")) {
+    return (
+      <div className="p-6">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            You don't have permission to access this page. Please contact your administrator.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   return (

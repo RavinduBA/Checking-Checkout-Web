@@ -25,20 +25,22 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import checkinLogo from "@/assets/checkin-checkout-logo.png";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const navigation = [
-  { name: "Dashboard", href: "/app", icon: Home },
-  { name: "Calendar", href: "/app/calendar", icon: Calendar },
-  { name: "Channel Manager", href: "/app/beds24", icon: Wifi },
+const getNavigationItems = (hasAnyPermission: (perm: string) => boolean) => [
+  { name: "Dashboard", href: "/app", icon: Home, permission: "dashboard" },
+  { name: "Calendar", href: "/app/calendar", icon: Calendar, permission: "calendar" },
+  { name: "Channel Manager", href: "/app/beds24", icon: Wifi, permission: "beds24" },
   { 
     name: "Master Files", 
     href: "/app/master-files", 
     icon: FolderOpen,
+    permission: "master_files",
     subItems: [
       { name: "Hotel Locations", href: "/app/master-files?tab=locations", icon: MapPin, description: "Manage hotel locations" },
       { name: "Room Management", href: "/app/master-files?tab=rooms", icon: Bed, description: "Manage hotel rooms" },
@@ -47,13 +49,14 @@ const navigation = [
       { name: "Commission Settings", href: "/app/master-files?tab=commissions", icon: Percent, description: "Commission configuration" }
     ]
   },
-  { name: "Room Management", href: "/app/rooms", icon: Bed },
-  { name: "Reservations", href: "/app/income", icon: PlusCircle },
-  { name: "Add Expense", href: "/app/expense", icon: MinusCircle },
+  { name: "Room Management", href: "/app/rooms", icon: Bed, permission: "rooms" },
+  { name: "Reservations", href: "/app/income", icon: PlusCircle, permission: "income" },
+  { name: "Add Expense", href: "/app/expense", icon: MinusCircle, permission: "expenses" },
   { 
     name: "Reports", 
     href: "/app/reports", 
     icon: BarChart3,
+    permission: "reports",
     subItems: [
       { name: "Financial Reports", href: "/app/reports?tab=financial", icon: BarChart3, description: "Revenue and expense analysis" },
       { name: "Accounts Reports", href: "/app/reports?tab=accounts", icon: CreditCard, description: "Account balances and transactions" },
@@ -62,14 +65,15 @@ const navigation = [
       { name: "Trend Analysis", href: "/app/reports?tab=trends", icon: TrendingUp, description: "Performance trends" }
     ]
   },
-  { name: "Accounts", href: "/app/accounts", icon: Building2 },
-  { name: "Users", href: "/app/users", icon: Users },
-  { name: "Settings", href: "/app/settings", icon: Settings },
-];
+  { name: "Accounts", href: "/app/accounts", icon: Building2, permission: "accounts" },
+  { name: "Users", href: "/app/users", icon: Users, permission: "users" },
+  { name: "Settings", href: "/app/settings", icon: Settings, permission: "settings" },
+].filter(item => !item.permission || hasAnyPermission(item.permission));
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const { hasAnyPermission, loading } = usePermissions();
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems(prev => 
@@ -80,6 +84,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   const isExpanded = (itemName: string) => expandedItems.includes(itemName);
+
+  if (loading) {
+    return (
+      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
+        <div className="flex flex-col flex-grow bg-card border-r border-border shadow-elegant items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  const navigation = getNavigationItems(hasAnyPermission);
 
   return (
     <>
