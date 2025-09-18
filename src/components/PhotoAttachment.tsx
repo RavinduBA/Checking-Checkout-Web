@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PhotoAttachmentProps {
   photos: string[];
@@ -22,35 +23,58 @@ export const PhotoAttachment = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
 
-    const newPhotos: string[] = [];
-    
-    Array.from(files).forEach((file) => {
-      if (photos.length + newPhotos.length >= maxPhotos) {
+    const uploadPromises = Array.from(files).map(async (file) => {
+      if (photos.length >= maxPhotos) {
         toast({
           title: "Maximum photos reached",
           description: `You can only attach up to ${maxPhotos} photos`,
           variant: "destructive"
         });
-        return;
+        return null;
       }
 
       if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          if (e.target?.result) {
-            newPhotos.push(e.target.result as string);
-            if (newPhotos.length === Math.min(files.length, maxPhotos - photos.length)) {
-              onPhotosChange([...photos, ...newPhotos]);
-            }
-          }
-        };
-        reader.readAsDataURL(file);
+        try {
+          // Upload to Supabase Storage
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Math.random()}.${fileExt}`;
+          const filePath = `reservation-photos/${fileName}`;
+
+          const { data, error } = await supabase.storage
+            .from('reservation-documents')
+            .upload(filePath, file);
+
+          if (error) throw error;
+
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('reservation-documents')
+            .getPublicUrl(filePath);
+
+          return publicUrl;
+        } catch (error) {
+          console.error('Upload error:', error);
+          toast({
+            title: "Upload failed",
+            description: "Failed to upload photo. Please try again.",
+            variant: "destructive"
+          });
+          return null;
+        }
       }
+      return null;
     });
+
+    const uploadedUrls = await Promise.all(uploadPromises);
+    const validUrls = uploadedUrls.filter(url => url !== null) as string[];
+    
+    if (validUrls.length > 0) {
+      onPhotosChange([...photos, ...validUrls]);
+    }
   };
 
   const handleCameraCapture = () => {
@@ -62,7 +86,7 @@ export const PhotoAttachment = ({
     input.capture = 'environment'; // Use rear camera on mobile
     input.multiple = false;
     
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         if (photos.length >= maxPhotos) {
@@ -74,13 +98,32 @@ export const PhotoAttachment = ({
           return;
         }
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          if (event.target?.result) {
-            onPhotosChange([...photos, event.target.result as string]);
-          }
-        };
-        reader.readAsDataURL(file);
+        try {
+          // Upload to Supabase Storage
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Math.random()}.${fileExt}`;
+          const filePath = `reservation-photos/${fileName}`;
+
+          const { data, error } = await supabase.storage
+            .from('reservation-documents')
+            .upload(filePath, file);
+
+          if (error) throw error;
+
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('reservation-documents')
+            .getPublicUrl(filePath);
+
+          onPhotosChange([...photos, publicUrl]);
+        } catch (error) {
+          console.error('Upload error:', error);
+          toast({
+            title: "Upload failed",
+            description: "Failed to upload photo. Please try again.",
+            variant: "destructive"
+          });
+        }
       }
     };
     
@@ -93,7 +136,24 @@ export const PhotoAttachment = ({
     setIsOpen(false);
   };
 
-  const removePhoto = (index: number) => {
+  const removePhoto = async (index: number) => {
+    const photoUrl = photos[index];
+    
+    // Extract file path from URL for Supabase storage deletion
+    if (photoUrl.includes('reservation-documents')) {
+      try {
+        const urlParts = photoUrl.split('/');
+        const fileName = urlParts[urlParts.length - 1];
+        const filePath = `reservation-photos/${fileName}`;
+        
+        await supabase.storage
+          .from('reservation-documents')
+          .remove([filePath]);
+      } catch (error) {
+        console.error('Error deleting file:', error);
+      }
+    }
+    
     const newPhotos = photos.filter((_, i) => i !== index);
     onPhotosChange(newPhotos);
   };

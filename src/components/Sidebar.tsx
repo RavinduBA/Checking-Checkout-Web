@@ -50,7 +50,7 @@ const getNavigationItems = (hasAnyPermission: (perm: string) => boolean) => [
     ]
   },
   { name: "Room Management", href: "/app/rooms", icon: Bed, permission: "rooms" },
-  { name: "Reservations", href: "/app/income", icon: PlusCircle, permission: "income" },
+  { name: "Reservations", href: "/app/reservations", icon: PlusCircle, permission: "income" },
   { name: "Add Expense", href: "/app/expense", icon: MinusCircle, permission: "expenses" },
   { 
     name: "Reports", 

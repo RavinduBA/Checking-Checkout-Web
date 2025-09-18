@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import SignatureCanvas from 'react-signature-canvas';
 import { usePermissions } from "@/hooks/usePermissions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useNavigate } from "react-router-dom";
 
 type Database = any;
 
@@ -26,6 +27,7 @@ type Account = Database['public']['Tables']['accounts']['Row'];
 
 const Income = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const sigCanvas = useRef<SignatureCanvas | null>(null);
   const { hasAnyPermission, hasPermission } = usePermissions();
   
@@ -422,7 +424,7 @@ const Income = () => {
         <h1 className="text-3xl font-bold">Reservations & Payments</h1>
         <Dialog open={isReservationDialogOpen} onOpenChange={setIsReservationDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => navigate('/app/reservations/new')} className="bg-primary hover:bg-primary/90">
               <Plus className="mr-2 h-4 w-4" />
               New Reservation
             </Button>
