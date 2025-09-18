@@ -34,13 +34,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Check if email is allowed and create profile if user signs up
         if (event === 'SIGNED_IN' && session?.user) {
+          console.log('SIGNED_IN event triggered for:', session.user.email);
           setTimeout(async () => {
-            // Check if email is in allowed list
-            const { data: isAllowed } = await supabase
-              .rpc('is_email_allowed', { email_address: session.user.email });
-            
-            if (!isAllowed) {
-              console.error('Email not in allowed list:', session.user.email);
+            try {
+              console.log('Checking if email is allowed:', session.user.email);
+              // Check if email is in allowed list
+              const { data: isAllowed, error } = await supabase
+                .rpc('is_email_allowed', { email_address: session.user.email });
+              
+              console.log('Email allowed check result:', { isAllowed, error });
+              
+              if (error) {
+                console.error('Error checking email allowance:', error);
+                await supabase.auth.signOut();
+                return;
+              }
+              
+              if (!isAllowed) {
+                console.error('Email not in allowed list:', session.user.email);
+                await supabase.auth.signOut();
+                return;
+              }
+              
+              console.log('Email is allowed, proceeding with profile creation');
+            } catch (err) {
+              console.error('Exception during email check:', err);
               await supabase.auth.signOut();
               return;
             }
