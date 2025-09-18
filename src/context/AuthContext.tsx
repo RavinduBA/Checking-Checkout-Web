@@ -57,23 +57,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               }
               
               console.log('Email is allowed, proceeding with profile creation');
+
+              // Create profile - use upsert to handle existing profiles gracefully  
+              const { error: profileError } = await supabase
+                .from('profiles')
+                .upsert({
+                  id: session.user.id,
+                  email: session.user.email!,
+                  name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email!,
+                }, {
+                  onConflict: 'id'
+                });
+              
+              if (profileError) {
+                console.error('Error creating/updating profile:', profileError);
+              } else {
+                console.log('Profile created/updated successfully for:', session.user.email);
+              }
             } catch (err) {
               console.error('Exception during email check:', err);
               await supabase.auth.signOut();
               return;
-            }
-
-            // Create profile
-            const { error } = await supabase
-              .from('profiles')
-              .insert({
-                id: session.user.id,
-                email: session.user.email!,
-                name: session.user.user_metadata?.name || session.user.email!,
-              });
-            
-            if (error && error.code !== '23505') { // Ignore duplicate key errors
-              console.error('Error creating profile:', error);
             }
           }, 0);
         }
