@@ -149,6 +149,27 @@ export default function Expense() {
 
         const currencySymbol = selectedAccount.currency === "USD" ? "$" : "Rs.";
         
+        // Send SMS notification for expense
+        try {
+          const locationData = locations.find(l => l.id === formData.locationId);
+          
+          await supabase.functions.invoke('send-sms-notification', {
+            body: {
+              type: 'expense',
+              amount: parseFloat(formData.amount),
+              currency: selectedAccount.currency,
+              category: `${formData.mainCategory} - ${formData.subCategory}`,
+              account: selectedAccount.name,
+              location: locationData?.name || 'N/A',
+              date: format(new Date(formData.date), 'MMM dd, yyyy'),
+              note: formData.note,
+              accountBalance: currentBalance
+            }
+          });
+        } catch (smsError) {
+          console.error('SMS notification failed:', smsError);
+        }
+        
         toast({
           title: "Success",
           description: `Expense record added successfully\n${selectedAccount.name} - ${currencySymbol}${currentBalance.toLocaleString()}`,

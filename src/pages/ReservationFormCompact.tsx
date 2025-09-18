@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { ArrowLeft, Save, Calendar, MapPin, User, CreditCard, UserCheck, Users, Plus } from "lucide-react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,7 @@ export default function ReservationFormCompact() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showGuideDialog, setShowGuideDialog] = useState(false);
@@ -109,15 +111,17 @@ export default function ReservationFormCompact() {
 
   const fetchInitialData = async () => {
     try {
-      const [roomsRes, guidesRes, agentsRes] = await Promise.all([
+      const [roomsRes, guidesRes, agentsRes, locationsRes] = await Promise.all([
         supabase.from("rooms").select("*").eq("is_active", true).order("room_number"),
         supabase.from("guides").select("*").eq("is_active", true).order("name"),
-        supabase.from("agents").select("*").eq("is_active", true).order("name")
+        supabase.from("agents").select("*").eq("is_active", true).order("name"),
+        supabase.from("locations").select("*").eq("is_active", true).order("name")
       ]);
 
       setRooms(roomsRes.data || []);
       setGuides(guidesRes.data || []);
       setAgents(agentsRes.data || []);
+      setLocations(locationsRes.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -399,6 +403,29 @@ export default function ReservationFormCompact() {
           .insert(insertData);
 
         if (error) throw error;
+        
+        // Send SMS notification for reservation creation
+        try {
+          const locationData = locations.find(l => l.id === calculatedData.location_id);
+          const roomData = rooms.find(r => r.id === calculatedData.room_id);
+          
+          await supabase.functions.invoke('send-sms-notification', {
+            body: {
+              type: 'reservation',
+              guestName: calculatedData.guest_name,
+              reservationNumber: reservationNumber,
+              roomNumber: roomData?.room_number || 'N/A',
+              checkIn: format(new Date(calculatedData.check_in_date), 'MMM dd, yyyy'),
+              checkOut: format(new Date(calculatedData.check_out_date), 'MMM dd, yyyy'),
+              amount: calculatedData.total_amount,
+              currency: calculatedData.currency,
+              status: calculatedData.status,
+              location: locationData?.name || 'N/A'
+            }
+          });
+        } catch (smsError) {
+          console.error('SMS notification failed:', smsError);
+        }
         
         toast({
           title: "Success",

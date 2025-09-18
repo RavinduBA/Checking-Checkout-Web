@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { ArrowLeft, Save, CreditCard } from "lucide-react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -206,6 +207,28 @@ export default function PaymentForm() {
           status: newBalanceAmount <= 0 ? 'confirmed' : reservation.status
         })
         .eq("id", reservationId);
+
+      // Send SMS notification for payment
+      try {
+        const selectedAccount = accounts.find(acc => acc.id === formData.account_id);
+        
+        await supabase.functions.invoke('send-sms-notification', {
+          body: {
+            type: 'payment',
+            paymentNumber: paymentNumber,
+            amount: formData.amount,
+            currency: formData.currency,
+            paymentMethod: formData.payment_method,
+            guestName: reservation.guest_name,
+            reservationNumber: reservation.reservation_number,
+            account: selectedAccount?.name || 'N/A',
+            date: format(new Date(), 'MMM dd, yyyy'),
+            note: formData.notes
+          }
+        });
+      } catch (smsError) {
+        console.error('SMS notification failed:', smsError);
+      }
 
       toast({
         title: "Success",
