@@ -82,6 +82,8 @@ export default function Users() {
     permissions: {}
   });
   const [newEmail, setNewEmail] = useState("");
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [showEditUser, setShowEditUser] = useState(false);
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
 
@@ -304,6 +306,101 @@ export default function Users() {
     }));
   };
 
+  const updateEditUserPermission = (location: string, permission: string, checked: boolean) => {
+    if (!editingUser) return;
+    
+    setEditingUser(prev => ({
+      ...prev!,
+      permissions: {
+        ...prev!.permissions,
+        [location]: {
+          ...(prev!.permissions[location] || {
+            dashboard: false,
+            income: false,
+            expenses: false,
+            reports: false,
+            calendar: false,
+            bookings: false,
+            rooms: false,
+            master_files: false,
+            accounts: false,
+            users: false,
+            settings: false,
+            beds24: false
+          }),
+          [permission]: checked
+        }
+      }
+    }));
+  };
+
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setShowEditUser(true);
+  };
+
+  const handleSaveEditUser = async () => {
+    if (!editingUser) return;
+
+    try {
+      // Update profile role
+      await supabase
+        .from('profiles')
+        .update({ role: editingUser.role })
+        .eq('id', editingUser.id);
+
+      // Delete existing permissions
+      await supabase
+        .from('user_permissions')
+        .delete()
+        .eq('user_id', editingUser.id);
+
+      // Insert new permissions
+      const permissionPromises = Object.entries(editingUser.permissions).map(
+        ([locationName, perms]) => {
+          const location = locations.find(l => l.name === locationName);
+          if (!location) return null;
+
+          return supabase
+            .from('user_permissions')
+            .insert({
+              user_id: editingUser.id,
+              location_id: location.id,
+              access_dashboard: perms.dashboard,
+              access_income: perms.income,
+              access_expenses: perms.expenses,
+              access_reports: perms.reports,
+              access_calendar: perms.calendar,
+              access_bookings: perms.bookings,
+              access_rooms: perms.rooms,
+              access_master_files: perms.master_files,
+              access_accounts: perms.accounts,
+              access_users: perms.users,
+              access_settings: perms.settings,
+              access_beds24: perms.beds24,
+            });
+        }
+      ).filter(Boolean);
+
+      await Promise.all(permissionPromises);
+
+      setShowEditUser(false);
+      setEditingUser(null);
+      fetchData();
+
+      toast({
+        title: "User Updated",
+        description: `${editingUser.name}'s permissions have been updated.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update user",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
@@ -444,6 +541,85 @@ export default function Users() {
               </div>
             </DialogContent>
           </Dialog>
+
+          {/* Edit User Dialog */}
+          <Dialog open={showEditUser} onOpenChange={setShowEditUser}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Edit User Permissions</DialogTitle>
+              </DialogHeader>
+              {editingUser && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Full Name</Label>
+                      <Input
+                        placeholder="John Doe"
+                        value={editingUser.name}
+                        onChange={(e) => setEditingUser({...editingUser, name: e.target.value})}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Email Address</Label>
+                      <Input
+                        type="email"
+                        value={editingUser.email}
+                        disabled
+                        className="bg-muted"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Role</Label>
+                    <Select value={editingUser.role} onValueChange={(value: "admin" | "staff" | "manager") => setEditingUser({...editingUser, role: value})}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="staff">Staff</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
+                        <SelectItem value="admin">Administrator</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-4">
+                    <Label className="text-base font-semibold">Location Permissions</Label>
+                    {locations.map((location) => (
+                      <Card key={location.id} className="p-4">
+                        <h3 className="font-semibold mb-3">{location.name}</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          {permissionTypes.map((permission) => (
+                            <div key={permission.key} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`edit-${location.name}-${permission.key}`}
+                                checked={editingUser.permissions[location.name]?.[permission.key as keyof UserPermissions] || false}
+                                onCheckedChange={(checked) => updateEditUserPermission(location.name, permission.key, checked as boolean)}
+                              />
+                              <Label htmlFor={`edit-${location.name}-${permission.key}`} className="text-sm">
+                                {permission.label}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setShowEditUser(false)} className="flex-1">
+                      Cancel
+                    </Button>
+                    <Button onClick={handleSaveEditUser} className="flex-1">
+                      Save Changes
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -500,7 +676,11 @@ export default function Users() {
                     {user.role === "admin" ? <Shield className="h-3 w-3" /> : <UserCheck className="h-3 w-3" />}
                     {user.role === "admin" ? "Administrator" : "Staff"}
                   </Badge>
-                  <Button variant="ghost" size="sm">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleEditUser(user)}
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
                   {user.id !== currentUser?.id && (
