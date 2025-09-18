@@ -105,14 +105,24 @@ export default function EnhancedCalendar() {
   // Get status color for reservations
   const getStatusColor = (status: string) => {
     const colors = {
-      confirmed: "bg-green-500",
-      tentative: "bg-yellow-500",
-      pending: "bg-blue-500",
-      cancelled: "bg-red-500",
-      checked_in: "bg-purple-500",
-      checked_out: "bg-gray-500"
+      confirmed: "bg-gradient-to-r from-green-500 to-green-600",
+      tentative: "bg-gradient-to-r from-yellow-500 to-orange-500", 
+      pending: "bg-gradient-to-r from-blue-500 to-blue-600",
+      cancelled: "bg-gradient-to-r from-red-500 to-red-600",
+      checked_in: "bg-gradient-to-r from-purple-500 to-purple-600",
+      checked_out: "bg-gradient-to-r from-gray-500 to-gray-600"
     };
     return colors[status as keyof typeof colors] || "bg-gray-400";
+  };
+
+  const handleBookingClick = (booking: Reservation) => {
+    // If booking is tentative or pending, navigate to payment form
+    if (booking.status === 'tentative' || booking.status === 'pending') {
+      navigate(`/app/payment?reservation=${booking.id}`);
+    } else {
+      // Otherwise, view reservation details
+      navigate(`/app/reservations/${booking.id}`);
+    }
   };
 
   if (loading) {
@@ -271,21 +281,34 @@ export default function EnhancedCalendar() {
                             {booking && shouldDisplay && (
                               <div 
                                 className={cn(
-                                  "absolute inset-1 rounded text-white text-xs p-1 cursor-pointer transition-all hover:opacity-80 z-10",
-                                  getStatusColor(booking.status)
+                                  "absolute inset-1 rounded-lg text-white text-xs p-2 cursor-pointer transition-all hover:scale-105 hover:shadow-lg z-10 border border-white/20",
+                                  getStatusColor(booking.status),
+                                  (booking.status === 'tentative' || booking.status === 'pending') && "ring-2 ring-white/30 animate-pulse"
                                 )}
                                 style={{
                                   width: `${spanWidth * 100 + (spanWidth - 1) * 1}%`,
                                   minWidth: `${spanWidth * 41}px`
                                 }}
-                                onClick={() => navigate(`/app/reservations/${booking.id}`)}
-                                title={`${booking.guest_name} - ${booking.status} (${format(new Date(booking.check_in_date), 'MMM dd')} - ${format(new Date(booking.check_out_date), 'MMM dd')})`}
+                                onClick={() => handleBookingClick(booking)}
+                                title={`${booking.guest_name} - ${booking.status} (${format(new Date(booking.check_in_date), 'MMM dd')} - ${format(new Date(booking.check_out_date), 'MMM dd')})${(booking.status === 'tentative' || booking.status === 'pending') ? ' - Click to make payment' : ''}`}
                               >
-                                <div className="font-medium truncate">
-                                  {booking.guest_name.split(' ')[0]}
-                                </div>
-                                <div className="text-xs opacity-90">
-                                  #{booking.reservation_number.slice(-4)}
+                                <div className="flex flex-col h-full justify-between">
+                                  <div className="font-semibold truncate text-sm">
+                                    #{booking.reservation_number.slice(-4)} {booking.guest_name.split(' ')[0]}
+                                  </div>
+                                  {spanWidth > 2 && (
+                                    <div className="text-xs opacity-90 flex items-center gap-1">
+                                      <span className="truncate">{booking.guest_name.split(' ').slice(1).join(' ')}</span>
+                                      {(booking.status === 'tentative' || booking.status === 'pending') && (
+                                        <span className="text-yellow-200 font-bold">💳</span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {spanWidth > 4 && (
+                                    <div className="text-xs opacity-75">
+                                      {booking.currency === 'USD' ? '$' : 'Rs. '}{booking.total_amount.toLocaleString()}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             )}
@@ -360,13 +383,25 @@ export default function EnhancedCalendar() {
                       <span className="text-sm font-bold">
                         {reservation.currency === 'USD' ? '$' : 'Rs. '}{reservation.total_amount.toLocaleString()}
                       </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/app/reservations/${reservation.id}`)}
-                      >
-                        View
-                      </Button>
+                      <div className="flex gap-2">
+                        {(reservation.status === 'tentative' || reservation.status === 'pending') && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => navigate(`/app/payment?reservation=${reservation.id}`)}
+                            className="bg-green-600 hover:bg-green-700 gap-1"
+                          >
+                            💳 Pay
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/app/reservations/${reservation.id}`)}
+                        >
+                          View
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -399,13 +434,25 @@ export default function EnhancedCalendar() {
                     <div className="text-sm font-medium">
                       {reservation.currency === 'USD' ? '$' : 'Rs. '}{reservation.total_amount.toLocaleString()}
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/app/reservations/${reservation.id}`)}
-                    >
-                      View Details
-                    </Button>
+                    <div className="flex gap-2">
+                      {(reservation.status === 'tentative' || reservation.status === 'pending') && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => navigate(`/app/payment?reservation=${reservation.id}`)}
+                          className="bg-green-600 hover:bg-green-700 gap-1"
+                        >
+                          💳 Pay
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/app/reservations/${reservation.id}`)}
+                      >
+                        View Details
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
