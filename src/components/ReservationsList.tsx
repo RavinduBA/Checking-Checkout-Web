@@ -144,7 +144,7 @@ export const ReservationsList = () => {
             </SelectContent>
           </Select>
           
-          <Button onClick={() => navigate("/reservations/new")}>
+          <Button onClick={() => navigate("/app/reservations/new")}>
             <Calendar className="h-4 w-4 mr-2" />
             New Reservation
           </Button>
@@ -205,14 +205,14 @@ export const ReservationsList = () => {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => navigate(`/reservations/${reservation.id}`)}
+                              onClick={() => navigate(`/app/reservations/${reservation.id}`)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => window.print()}
+                              onClick={() => navigate(`/app/reservations/${reservation.id}?print=true`)}
                             >
                               <Printer className="h-4 w-4" />
                             </Button>
@@ -263,7 +263,7 @@ export const ReservationsList = () => {
                       variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={() => navigate(`/reservations/${reservation.id}`)}
+                      onClick={() => navigate(`/app/reservations/${reservation.id}`)}
                     >
                       <Eye className="h-4 w-4 mr-1" />
                       View
@@ -271,7 +271,7 @@ export const ReservationsList = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.print()}
+                      onClick={() => navigate(`/app/reservations/${reservation.id}?print=true`)}
                     >
                       <Printer className="h-4 w-4" />
                     </Button>
@@ -288,10 +288,47 @@ export const ReservationsList = () => {
               <CardTitle>Recent Payments</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground mb-4">
                 {filteredPayments.length} payments found
               </div>
-              {/* Payment table can be added here */}
+              {filteredPayments.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Payment #</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Method</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPayments.map((payment) => (
+                      <TableRow key={payment.id}>
+                        <TableCell className="font-medium">
+                          {payment.payment_number}
+                        </TableCell>
+                        <TableCell>
+                          {payment.currency} {payment.amount.toLocaleString()}
+                        </TableCell>
+                        <TableCell>{payment.payment_method}</TableCell>
+                        <TableCell>
+                          {new Date(payment.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                            {payment.status || 'Completed'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No payments found
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
