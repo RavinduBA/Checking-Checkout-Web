@@ -77,7 +77,16 @@ export const PhotoAttachment = ({
     }
   };
 
-  const handleCameraCapture = () => {
+  const handleCameraCapture = async () => {
+    try {
+      // Request camera permission explicitly for better user experience
+      if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
+        await navigator.mediaDevices.getUserMedia({ video: true });
+      }
+    } catch (error) {
+      console.log('Camera permission not granted, using file input fallback');
+    }
+    
     // For mobile devices, this will open the camera
     // For desktop, it will open file picker with camera preference
     const input = document.createElement('input');

@@ -278,7 +278,7 @@ export default function Settings() {
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+        <Button variant="ghost" onClick={() => navigate("/app")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-2xl font-bold">Settings</h1>

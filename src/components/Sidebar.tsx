@@ -43,7 +43,7 @@ const getNavigationItems = (hasAnyPermission: (perm: string) => boolean) => [
     permission: "master_files",
     subItems: [
       { name: "Hotel Locations", href: "/app/master-files?tab=locations", icon: MapPin, description: "Manage hotel locations" },
-      { name: "Room Management", href: "/app/master-files?tab=rooms", icon: Bed, description: "Manage hotel rooms" },
+      { name: "Rooms", href: "/app/master-files?tab=rooms", icon: Bed, description: "Room details & pricing" },
       { name: "Tour Guides", href: "/app/master-files?tab=guides", icon: UserCheck, description: "Manage tour guides" },
       { name: "Travel Agents", href: "/app/master-files?tab=agents", icon: Users, description: "Manage travel agents" },
       { name: "Commission Settings", href: "/app/master-files?tab=commissions", icon: Percent, description: "Commission configuration" }
