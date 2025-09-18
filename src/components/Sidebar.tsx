@@ -112,7 +112,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-1">
+          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href || 
                              (item.subItems && item.subItems.some(sub => location.pathname + location.search === sub.href));
@@ -189,7 +189,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-1">
+          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href || 
                              (item.subItems && item.subItems.some(sub => location.pathname + location.search === sub.href));

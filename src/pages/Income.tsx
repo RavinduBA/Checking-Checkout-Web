@@ -246,7 +246,7 @@ const Income = () => {
         type: 'booking' as const,
         amount: paymentForm.amount,
         payment_method: paymentForm.payment_method,
-        booking_id: selectedReservation.id,
+        // Remove booking_id since we're dealing with reservations, not bookings
         booking_source: 'direct',
         check_in_date: selectedReservation.check_in_date,
         check_out_date: selectedReservation.check_out_date,
