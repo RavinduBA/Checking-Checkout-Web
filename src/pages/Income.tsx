@@ -262,6 +262,27 @@ const Income = () => {
 
       if (incomeError) throw incomeError;
 
+      // Send SMS notification
+      try {
+        const selectedAccount = accounts.find(acc => acc.id === paymentForm.account_id);
+        const location = locations.find(l => l.id === selectedReservation.location_id);
+        
+        await supabase.functions.invoke('send-sms-notification', {
+          body: {
+            type: 'income',
+            amount: paymentForm.amount,
+            currency: selectedAccount?.currency || 'LKR',
+            category: 'booking',
+            account: selectedAccount?.name || '',
+            location: location?.name || '',
+            date: new Date().toISOString().split('T')[0],
+            note: paymentForm.notes || undefined,
+          },
+        });
+      } catch (smsError) {
+        console.warn('SMS notification failed:', smsError);
+      }
+
       // Update reservation paid amount
       const newPaidAmount = selectedReservation.paid_amount + paymentForm.amount;
       const newBalanceAmount = selectedReservation.total_amount - newPaidAmount;

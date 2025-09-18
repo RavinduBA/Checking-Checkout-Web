@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 interface SMSRequest {
-  type?: 'income' | 'expense' | 'otp_verification';
+  type?: 'income' | 'expense' | 'otp_verification' | 'reservation' | 'payment';
   phoneNumber?: string;
   message?: string;
   amount?: number;
@@ -16,6 +16,17 @@ interface SMSRequest {
   location?: string;
   date?: string;
   note?: string;
+  accountBalance?: number;
+  // Reservation specific fields
+  guestName?: string;
+  reservationNumber?: string;
+  roomNumber?: string;
+  checkIn?: string;
+  checkOut?: string;
+  status?: string;
+  // Payment specific fields
+  paymentNumber?: string;
+  paymentMethod?: string;
 }
 
 let accessToken: string | null = null;
@@ -150,14 +161,53 @@ function formatCurrency(amount: number, currency: string): string {
 }
 
 function createSMSMessage(data: SMSRequest): string {
-  const currencyAmount = formatCurrency(data.amount, data.currency);
-  const type = data.type.toUpperCase();
+  const currencyAmount = formatCurrency(data.amount!, data.currency!);
+  const type = data.type!.toUpperCase();
   
   let message = `${type} ALERT\n`;
   message += `Amount: ${currencyAmount}\n`;
   message += `Category: ${data.category}\n`;
+  message += `Account: ${data.account}`;
+  if (typeof data.accountBalance === 'number') {
+    const bal = formatCurrency(data.accountBalance, data.currency!);
+    message += `\nAfter Balance: ${bal}`;
+  }
+  message += `\nLocation: ${data.location}\n`;
+  message += `Date: ${data.date}`;
+  
+  if (data.note) {
+    message += `\nNote: ${data.note}`;
+  }
+  
+  return message;
+}
+
+function createReservationSMSMessage(data: SMSRequest): string {
+  const currencyAmount = formatCurrency(data.amount!, data.currency!);
+  
+  let message = `RESERVATION CREATED\n`;
+  message += `Guest: ${data.guestName}\n`;
+  message += `Reservation: ${data.reservationNumber}\n`;
+  message += `Room: ${data.roomNumber}\n`;
+  message += `Check-in: ${data.checkIn}\n`;
+  message += `Check-out: ${data.checkOut}\n`;
+  message += `Amount: ${currencyAmount}\n`;
+  message += `Status: ${data.status!.toUpperCase()}\n`;
+  message += `Location: ${data.location}`;
+  
+  return message;
+}
+
+function createPaymentSMSMessage(data: SMSRequest): string {
+  const currencyAmount = formatCurrency(data.amount!, data.currency!);
+  
+  let message = `PAYMENT RECEIVED\n`;
+  message += `Amount: ${currencyAmount}\n`;
+  message += `Payment #: ${data.paymentNumber}\n`;
+  message += `Method: ${data.paymentMethod}\n`;
+  message += `Guest: ${data.guestName}\n`;
+  message += `Reservation: ${data.reservationNumber}\n`;
   message += `Account: ${data.account}\n`;
-  message += `Location: ${data.location}\n`;
   message += `Date: ${data.date}`;
   
   if (data.note) {
@@ -189,6 +239,12 @@ const handler = async (req: Request): Promise<Response> => {
     if (smsRequest.type === 'otp_verification') {
       // Handle OTP verification SMS
       message = smsRequest.message || "Your OTP verification code";
+    } else if (smsRequest.type === 'reservation') {
+      // Handle reservation creation SMS
+      message = createReservationSMSMessage(smsRequest);
+    } else if (smsRequest.type === 'payment') {
+      // Handle payment SMS
+      message = createPaymentSMSMessage(smsRequest);
     } else {
       // Validate required fields for financial alerts
       if (!smsRequest.type || !smsRequest.amount || !smsRequest.category || !smsRequest.account) {

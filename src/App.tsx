@@ -10,7 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Income from "./pages/Income";
 import PaymentForm from "./pages/PaymentForm";
 import Expense from "./pages/Expense";
-import Calendar from "@/pages/Calendar";
+import EnhancedCalendar from "./pages/EnhancedCalendar";
 import Beds24Integration from "@/pages/Beds24Integration";
 import Reports from "@/pages/Reports";
 import FinancialReports from "./pages/FinancialReports";
@@ -44,7 +44,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={<Dashboard />} />
-              <Route path="calendar" element={<Calendar />} />
+              <Route path="calendar" element={<EnhancedCalendar />} />
               <Route path="beds24" element={<Beds24Integration />} />
               <Route path="master-files" element={<MasterFiles />} />
               <Route path="income" element={<Income />} />

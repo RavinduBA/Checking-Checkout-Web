@@ -13,7 +13,9 @@ import { useNavigate } from "react-router-dom";
 import { useAutoLocation } from "@/hooks/useAutoLocation";
 import { OTPVerification } from "@/components/OTPVerification";
 import { ReservationEditDialog } from "@/components/ReservationEditDialog";
+import { ReservationPrintView } from "@/components/ReservationPrintView";
 import { useToast } from "@/hooks/use-toast";
+import ReactDOM from "react-dom";
 
 type Reservation = Tables<"reservations"> & {
   locations: Tables<"locations">;
@@ -109,6 +111,41 @@ export const ReservationsList = () => {
 
   const canShowPaymentButton = (status: string) => {
     return status === 'tentative' || status === 'pending';
+  };
+
+  const handlePrintReservation = (reservation: Reservation) => {
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    // Create a container for the print component
+    const printContainer = document.createElement('div');
+    printWindow.document.body.appendChild(printContainer);
+
+    // Set up the print window
+    printWindow.document.head.innerHTML = `
+      <title>Reservation ${reservation.reservation_number}</title>
+      <style>
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; }
+        @media print {
+          body { margin: 0; padding: 0; }
+          @page { size: A4; margin: 1cm; }
+        }
+      </style>
+    `;
+
+    // Render the print component
+    ReactDOM.render(
+      <ReservationPrintView reservation={reservation} />,
+      printContainer,
+      () => {
+        // Trigger print after component renders
+        setTimeout(() => {
+          printWindow.print();
+          printWindow.close();
+        }, 500);
+      }
+    );
   };
 
   const filteredReservations = reservations.filter(reservation => {
@@ -245,7 +282,7 @@ export const ReservationsList = () => {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => navigate(`/app/reservations/${reservation.id}?print=true`)}
+                              onClick={() => handlePrintReservation(reservation)}
                             >
                               <Printer className="h-4 w-4" />
                             </Button>
@@ -322,7 +359,7 @@ export const ReservationsList = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate(`/app/reservations/${reservation.id}?print=true`)}
+                      onClick={() => handlePrintReservation(reservation)}
                     >
                       <Printer className="h-4 w-4" />
                     </Button>
