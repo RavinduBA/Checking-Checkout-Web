@@ -1,0 +1,407 @@
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { ArrowLeft, Save, CreditCard } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
+import { useToast } from "@/hooks/use-toast";
+import { CurrencySelector } from "@/components/CurrencySelector";
+import { convertCurrency } from "@/utils/currency";
+
+type Reservation = Tables<"reservations"> & {
+  locations: Tables<"locations">;
+  rooms: Tables<"rooms">;
+};
+type Account = Tables<"accounts">;
+
+export default function PaymentForm() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  
+  const reservationId = searchParams.get('reservation');
+  const initialAmount = parseFloat(searchParams.get('amount') || '0');
+  const initialCurrency = searchParams.get('currency') || 'LKR';
+
+  const [reservation, setReservation] = useState<Reservation | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [formData, setFormData] = useState({
+    payment_type: 'room_payment',
+    payment_method: '',
+    amount: initialAmount,
+    account_id: '',
+    notes: '',
+    currency: initialCurrency as any,
+    reference_number: '',
+  });
+
+  useEffect(() => {
+    if (reservationId) {
+      fetchReservationAndAccounts();
+    }
+  }, [reservationId]);
+
+  useEffect(() => {
+    // Filter accounts based on selected currency
+    setFormData(prev => ({ ...prev, account_id: '' }));
+  }, [formData.currency]);
+
+  const fetchReservationAndAccounts = async () => {
+    setLoading(true);
+    try {
+      const [reservationRes, accountsRes] = await Promise.all([
+        supabase
+          .from("reservations")
+          .select(`
+            *,
+            locations (*),
+            rooms (*)
+          `)
+          .eq("id", reservationId)
+          .single(),
+        supabase
+          .from("accounts")
+          .select("*")
+          .order("name")
+      ]);
+
+      if (reservationRes.error) throw reservationRes.error;
+      if (accountsRes.error) throw accountsRes.error;
+
+      setReservation(reservationRes.data);
+      setAccounts(accountsRes.data || []);
+
+      // Convert amount if currencies don't match
+      if (reservationRes.data && reservationRes.data.currency !== initialCurrency) {
+        try {
+          const convertedAmount = await convertCurrency(
+            initialAmount, 
+            reservationRes.data.currency as any, 
+            initialCurrency as any
+          );
+          setFormData(prev => ({ ...prev, amount: convertedAmount }));
+        } catch (error) {
+          console.error('Currency conversion failed:', error);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load payment details",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCurrencyChange = async (newCurrency: string) => {
+    if (!reservation) return;
+    
+    try {
+      let newAmount = formData.amount;
+      if (formData.currency !== newCurrency) {
+        newAmount = await convertCurrency(formData.amount, formData.currency as any, newCurrency as any);
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        currency: newCurrency as any,
+        amount: newAmount,
+        account_id: '' // Reset account selection
+      }));
+    } catch (error) {
+      console.error('Currency conversion failed:', error);
+      toast({
+        title: "Currency Conversion Failed",
+        description: "Using original amount. Please adjust manually if needed.",
+        variant: "destructive"
+      });
+      setFormData(prev => ({ ...prev, currency: newCurrency as any, account_id: '' }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reservation) return;
+
+    setSubmitting(true);
+    try {
+      // Generate payment number
+      const currentYear = new Date().getFullYear();
+      const { data: existingPayments } = await supabase
+        .from('payments')
+        .select('id')
+        .gte('created_at', `${currentYear}-01-01`)
+        .lt('created_at', `${currentYear + 1}-01-01`);
+
+      const paymentNumber = `PAY${currentYear}${String((existingPayments?.length || 0) + 1).padStart(4, '0')}`;
+
+      const paymentData = {
+        reservation_id: reservationId,
+        payment_type: formData.payment_type,
+        payment_method: formData.payment_method,
+        amount: formData.amount,
+        account_id: formData.account_id,
+        notes: formData.notes || null,
+        reference_number: formData.reference_number || null,
+        payment_number: paymentNumber,
+        currency: formData.currency,
+      };
+
+      const { error: paymentError } = await supabase
+        .from("payments")
+        .insert(paymentData);
+
+      if (paymentError) throw paymentError;
+
+      // Create income record
+      const incomeData = {
+        location_id: reservation.location_id,
+        account_id: formData.account_id,
+        type: 'booking' as const,
+        amount: formData.amount,
+        payment_method: formData.payment_method,
+        booking_source: 'direct',
+        check_in_date: reservation.check_in_date,
+        check_out_date: reservation.check_out_date,
+        note: formData.notes || null,
+        currency: formData.currency,
+        booking_id: reservationId,
+      };
+
+      const { error: incomeError } = await supabase
+        .from("income")
+        .insert(incomeData);
+
+      if (incomeError) throw incomeError;
+
+      // Update reservation amounts (convert to reservation currency if needed)
+      let paymentAmountInReservationCurrency = formData.amount;
+      if (formData.currency !== reservation.currency) {
+        paymentAmountInReservationCurrency = await convertCurrency(
+          formData.amount, 
+          formData.currency as any, 
+          reservation.currency as any
+        );
+      }
+
+      const newPaidAmount = (reservation.paid_amount || 0) + paymentAmountInReservationCurrency;
+      const newBalanceAmount = reservation.total_amount - newPaidAmount;
+
+      await supabase
+        .from("reservations")
+        .update({
+          paid_amount: newPaidAmount,
+          balance_amount: newBalanceAmount,
+          status: newBalanceAmount <= 0 ? 'confirmed' : reservation.status
+        })
+        .eq("id", reservationId);
+
+      toast({
+        title: "Success",
+        description: "Payment processed successfully"
+      });
+
+      navigate("/app/reservations");
+    } catch (error: any) {
+      console.error("Error processing payment:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to process payment",
+        variant: "destructive"
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Filter accounts by currency
+  const compatibleAccounts = accounts.filter(account => account.currency === formData.currency);
+
+  if (loading) {
+    return <div className="flex justify-center items-center min-h-64">Loading...</div>;
+  }
+
+  if (!reservation) {
+    return (
+      <div className="max-w-4xl mx-auto p-4 text-center">
+        <h1 className="text-2xl font-bold mb-4">Reservation Not Found</h1>
+        <Button asChild>
+          <Link to="/app/reservations">Back to Reservations</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto p-4 space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button asChild variant="ghost" size="icon">
+          <Link to="/app/reservations">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+        </Button>
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold text-foreground">New Payment</h1>
+          <p className="text-muted-foreground">
+            Reservation #{reservation.reservation_number} - {reservation.guest_name}
+          </p>
+        </div>
+        <Button type="submit" form="payment-form" disabled={submitting}>
+          <Save className="h-4 w-4 mr-2" />
+          {submitting ? 'Processing...' : 'Save Payment'}
+        </Button>
+      </div>
+
+      {/* Reservation Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Reservation Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Guest:</span>
+            <span className="font-medium">{reservation.guest_name}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Room:</span>
+            <span className="font-medium">{reservation.rooms?.room_number} - {reservation.rooms?.room_type}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Total Amount:</span>
+            <span className="font-medium">{reservation.currency} {reservation.total_amount.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Paid Amount:</span>
+            <span className="font-medium text-green-600">{reservation.currency} {(reservation.paid_amount || 0).toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Balance:</span>
+            <span className="font-bold text-red-600">{reservation.currency} {(reservation.balance_amount || 0).toLocaleString()}</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Payment Form */}
+      <form id="payment-form" onSubmit={handleSubmit}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Payment Type</Label>
+                <Select value={formData.payment_type} onValueChange={(value) => setFormData(prev => ({ ...prev, payment_type: value }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="room_payment">Room Payment</SelectItem>
+                    <SelectItem value="advance_payment">Advance Payment</SelectItem>
+                    <SelectItem value="balance_payment">Balance Payment</SelectItem>
+                    <SelectItem value="refund">Refund</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Payment Method *</Label>
+                <Select value={formData.payment_method} onValueChange={(value) => setFormData(prev => ({ ...prev, payment_method: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="card">Credit/Debit Card</SelectItem>
+                    <SelectItem value="cheque">Cheque</SelectItem>
+                    <SelectItem value="online">Online Payment</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <CurrencySelector
+                  currency={formData.currency}
+                  onCurrencyChange={handleCurrencyChange}
+                  label="Payment Currency"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="amount">Amount *</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.amount}
+                  onChange={(e) => setFormData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Account *</Label>
+              <Select value={formData.account_id} onValueChange={(value) => setFormData(prev => ({ ...prev, account_id: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select account" />
+                </SelectTrigger>
+                <SelectContent>
+                  {compatibleAccounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.name} ({account.currency})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {compatibleAccounts.length === 0 && (
+                <p className="text-sm text-red-600 mt-1">
+                  No {formData.currency} accounts available. Please create a {formData.currency} account first.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="reference_number">Reference Number</Label>
+              <Input
+                id="reference_number"
+                value={formData.reference_number}
+                onChange={(e) => setFormData(prev => ({ ...prev, reference_number: e.target.value }))}
+                placeholder="Optional reference number"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Additional notes..."
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </form>
+    </div>
+  );
+}

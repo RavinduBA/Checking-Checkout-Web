@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAutoLocation } from "@/hooks/useAutoLocation";
 import { PhotoAttachment } from "@/components/PhotoAttachment";
 import { SignatureCapture } from "@/components/SignatureCapture";
-import { DateRangePicker } from "@/components/DateRangePicker";
+import { AirbnbDatePicker } from "@/components/AirbnbDatePicker";
 import { CurrencySelector } from "@/components/CurrencySelector";
 import { PricingDisplay } from "@/components/PricingDisplay";
 import { convertCurrency } from "@/utils/currency";
@@ -69,6 +69,7 @@ export default function ReservationFormCompact() {
     guide_commission: 0,
     agent_commission: 0,
     currency: 'LKR' as any,
+    booking_source: 'direct' as any,
   });
 
   const [newGuide, setNewGuide] = useState({
@@ -159,6 +160,7 @@ export default function ReservationFormCompact() {
         guide_commission: data.guide_commission || 0,
         agent_commission: data.agent_commission || 0,
         currency: data.currency || 'LKR',
+        booking_source: 'direct',
       });
     } catch (error) {
       console.error("Error fetching reservation:", error);
@@ -361,7 +363,8 @@ export default function ReservationFormCompact() {
         agent_id: formData.has_agent ? formData.agent_id : null,
         guide_commission: formData.has_guide ? formData.guide_commission : 0,
         agent_commission: formData.has_agent ? formData.agent_commission : 0,
-        currency: formData.currency
+        currency: formData.currency,
+        booking_source: formData.booking_source
       };
 
       if (isEdit) {
@@ -580,7 +583,7 @@ export default function ReservationFormCompact() {
                   </div>
                 </div>
 
-                <DateRangePicker
+                <<AirbnbDatePicker
                   checkInDate={formData.check_in_date}
                   checkOutDate={formData.check_out_date}
                   onCheckInChange={(date) => handleInputChange('check_in_date', date)}

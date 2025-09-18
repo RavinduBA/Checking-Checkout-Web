@@ -9,6 +9,7 @@ import { Layout } from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Income from "./pages/Income";
 import Expense from "./pages/Expense";
+import PaymentForm from "./pages/PaymentForm";
 import Calendar from "./pages/Calendar";
 import Beds24Integration from "./pages/Beds24Integration";
 import Reports from "./pages/Reports";
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="master-files" element={<MasterFiles />} />
               <Route path="rooms" element={<RoomManagement />} />
               <Route path="income" element={<Income />} />
+              <Route path="payments/new" element={<PaymentForm />} />
               <Route path="expense" element={<Expense />} />
               <Route path="booking/new" element={<BookingForm />} />
               <Route path="booking/edit/:id" element={<BookingForm />} />

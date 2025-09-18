@@ -101,7 +101,7 @@ export const ReservationsList = () => {
   };
 
   const canShowPaymentButton = (status: string) => {
-    return status === 'tentative' || status === 'pending' || status === 'confirmed';
+    return status === 'tentative' || status === 'pending';
   };
 
   const filteredReservations = reservations.filter(reservation => {
@@ -246,7 +246,7 @@ export const ReservationsList = () => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => navigate(`/app/income?reservation=${reservation.id}`)}
+                                onClick={() => navigate(`/app/payments/new?reservation=${reservation.id}&amount=${reservation.balance_amount}&currency=${reservation.currency}`)}
                                 className="text-green-600 hover:text-green-700"
                               >
                                 <CreditCard className="h-4 w-4" />
@@ -333,7 +333,7 @@ export const ReservationsList = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/app/income?reservation=${reservation.id}`)}
+                        onClick={() => navigate(`/app/payments/new?reservation=${reservation.id}&amount=${reservation.balance_amount}&currency=${reservation.currency}`)}
                         className="text-green-600 hover:text-green-700"
                       >
                         <CreditCard className="h-4 w-4" />
