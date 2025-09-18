@@ -583,13 +583,30 @@ export default function ReservationFormCompact() {
                   </div>
                 </div>
 
-                <<AirbnbDatePicker
+                <AirbnbDatePicker
                   checkInDate={formData.check_in_date}
                   checkOutDate={formData.check_out_date}
                   onCheckInChange={(date) => handleInputChange('check_in_date', date)}
                   onCheckOutChange={(date) => handleInputChange('check_out_date', date)}
                   onNightsChange={(nights) => handleInputChange('nights', nights)}
                 />
+
+                <div>
+                  <Label className="text-sm">Booking Source *</Label>
+                  <Select value={formData.booking_source} onValueChange={(value) => handleInputChange('booking_source', value)}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Select booking source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="direct">Direct Booking</SelectItem>
+                      <SelectItem value="booking.com">Booking.com</SelectItem>
+                      <SelectItem value="airbnb">Airbnb</SelectItem>
+                      <SelectItem value="expedia">Expedia</SelectItem>
+                      <SelectItem value="agoda">Agoda</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
 
                 <div>
