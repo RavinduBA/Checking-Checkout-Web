@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Filter } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Filter, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, parseISO, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type Reservation = Tables<"reservations"> & {
   locations: Tables<"locations">;
@@ -20,6 +21,7 @@ type Location = Tables<"locations">;
 
 export default function EnhancedCalendar() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -31,6 +33,13 @@ export default function EnhancedCalendar() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Auto-switch to grid view on mobile
+  useEffect(() => {
+    if (isMobile && viewMode === 'timeline') {
+      setViewMode('grid');
+    }
+  }, [isMobile, viewMode]);
 
   const fetchData = async () => {
     try {
@@ -83,23 +92,44 @@ export default function EnhancedCalendar() {
   // Get bookings for a specific room and date
   const getBookingsForRoomAndDate = (roomId: string, date: Date) => {
     return filteredReservations.filter(reservation => {
-      const checkIn = new Date(reservation.check_in_date);
-      const checkOut = new Date(reservation.check_out_date);
-      return date >= checkIn && date < checkOut && reservation.room_id === roomId;
+      const checkIn = parseISO(reservation.check_in_date);
+      const checkOut = parseISO(reservation.check_out_date);
+      const checkDate = startOfDay(date);
+      
+      return checkDate >= startOfDay(checkIn) && 
+             checkDate < startOfDay(checkOut) && 
+             reservation.room_id === roomId;
     });
   };
 
   // Get booking that spans across a range for continuous display
   const getBookingSpanForRoom = (roomId: string, startDate: Date, endDate: Date) => {
     const bookingsInRange = filteredReservations.filter(reservation => {
-      const checkIn = new Date(reservation.check_in_date);
-      const checkOut = new Date(reservation.check_out_date);
+      const checkIn = parseISO(reservation.check_in_date);
+      const checkOut = parseISO(reservation.check_out_date);
+      
       return reservation.room_id === roomId && 
              ((checkIn >= startDate && checkIn < endDate) ||
               (checkOut > startDate && checkOut <= endDate) ||
               (checkIn <= startDate && checkOut >= endDate));
     });
     return bookingsInRange;
+  };
+
+  // Check if room is available for a date range
+  const isRoomAvailable = (roomId: string, checkIn: Date, checkOut: Date, excludeReservationId?: string) => {
+    return !filteredReservations.some(reservation => {
+      if (excludeReservationId && reservation.id === excludeReservationId) return false;
+      
+      const resCheckIn = parseISO(reservation.check_in_date);
+      const resCheckOut = parseISO(reservation.check_out_date);
+      
+      return reservation.room_id === roomId &&
+             reservation.status !== 'cancelled' &&
+             ((checkIn >= resCheckIn && checkIn < resCheckOut) ||
+              (checkOut > resCheckIn && checkOut <= resCheckOut) ||
+              (checkIn <= resCheckIn && checkOut >= resCheckOut));
+    });
   };
 
   // Get status color for reservations
@@ -163,7 +193,7 @@ export default function EnhancedCalendar() {
             </SelectContent>
           </Select>
 
-          <Select value={viewMode} onValueChange={(value) => setViewMode(value as 'timeline' | 'grid')}>
+          <Select value={viewMode} onValueChange={(value) => setViewMode(value as 'timeline' | 'grid')} disabled={isMobile}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -242,22 +272,21 @@ export default function EnhancedCalendar() {
                         const booking = bookings[0];
                         
                         // Check if this is the start of a booking span
-                        const isBookingStart = booking && new Date(booking.check_in_date).toDateString() === day.toDateString();
-                        const isBookingEnd = booking && new Date(booking.check_out_date).toDateString() === day.toDateString();
+                        const isBookingStart = booking && parseISO(booking.check_in_date).toDateString() === day.toDateString();
                         
                         // Calculate span width for continuous bookings
                         let spanWidth = 1;
                         let shouldDisplay = true;
                         
                         if (booking) {
-                          const checkIn = new Date(booking.check_in_date);
-                          const checkOut = new Date(booking.check_out_date);
+                          const checkIn = parseISO(booking.check_in_date);
+                          const checkOut = parseISO(booking.check_out_date);
                           
                           // Only display the booking element on the first day
                           if (day.toDateString() !== checkIn.toDateString()) {
                             shouldDisplay = false;
                           } else {
-                            // Calculate how many days this booking spans
+                            // Calculate how many days this booking spans within the current month view
                             const remainingDays = calendarDays.slice(dayIndex);
                             spanWidth = 0;
                             for (const remainingDay of remainingDays) {
@@ -267,6 +296,7 @@ export default function EnhancedCalendar() {
                                 break;
                               }
                             }
+                            spanWidth = Math.max(1, spanWidth); // Ensure minimum width of 1
                           }
                         }
 
@@ -290,7 +320,7 @@ export default function EnhancedCalendar() {
                                   minWidth: `${spanWidth * 41}px`
                                 }}
                                 onClick={() => handleBookingClick(booking)}
-                                title={`${booking.guest_name} - ${booking.status} (${format(new Date(booking.check_in_date), 'MMM dd')} - ${format(new Date(booking.check_out_date), 'MMM dd')})${(booking.status === 'tentative' || booking.status === 'pending') ? ' - Click to make payment' : ''}`}
+                                title={`${booking.guest_name} - ${booking.status} (${format(parseISO(booking.check_in_date), 'MMM dd')} - ${format(parseISO(booking.check_out_date), 'MMM dd')})${(booking.status === 'tentative' || booking.status === 'pending') ? ' - Click to make payment' : ''}`}
                               >
                                 <div className="flex flex-col h-full justify-between">
                                   <div className="font-semibold truncate text-sm">
@@ -349,115 +379,94 @@ export default function EnhancedCalendar() {
           </div>
         </div>
       ) : (
-        // Grid View (Mobile-friendly cards with better responsive layout)
+        // Grid View (Mobile-friendly and better for smaller screens)  
         <div className="space-y-4">
-          {/* Mobile/Tablet View */}
-          <div className="lg:hidden space-y-3">
-            {filteredReservations.map((reservation) => (
-              <Card key={reservation.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm truncate">{reservation.guest_name}</h3>
-                      <p className="text-xs text-muted-foreground">#{reservation.reservation_number}</p>
+          {filteredReservations.length === 0 ? (
+            <Card className="p-8 text-center">
+              <CalendarIcon className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">No Reservations Found</h3>
+              <p className="text-gray-500 mb-4">No reservations for the selected location and time period.</p>
+              <Button onClick={() => navigate('/app/reservations/new')} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Create First Reservation
+              </Button>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {filteredReservations
+                .filter(reservation => {
+                  const checkIn = parseISO(reservation.check_in_date);
+                  return isSameMonth(checkIn, currentDate);
+                })
+                .map((reservation) => (
+                <Card key={reservation.id} className="cursor-pointer hover:shadow-md transition-all duration-200 border-l-4" 
+                      style={{ borderLeftColor: getStatusColor(reservation.status).replace('bg-gradient-to-r from-', '').replace(' to-green-600', '').replace(' to-yellow-500', '').replace(' to-blue-600', '').replace(' to-red-600', '').replace(' to-purple-600', '').replace(' to-gray-600', '').replace('green-500', '#22c55e').replace('yellow-500', '#eab308').replace('blue-500', '#3b82f6').replace('red-500', '#ef4444').replace('purple-500', '#a855f7').replace('gray-500', '#6b7280') }}>
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-base truncate flex items-center gap-2">
+                          {reservation.guest_name}
+                          {(reservation.status === 'tentative' || reservation.status === 'pending') && (
+                            <Clock className="h-4 w-4 text-orange-500 animate-pulse" />
+                          )}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">#{reservation.reservation_number}</p>
+                      </div>
+                      <Badge className={cn("text-white text-xs shrink-0 ml-2", getStatusColor(reservation.status))}>
+                        {reservation.status}
+                      </Badge>
                     </div>
-                    <Badge className={cn("text-white text-xs shrink-0 ml-2", getStatusColor(reservation.status))}>
-                      {reservation.status}
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="font-medium">Room:</span>
-                      <span className="truncate">{reservation.rooms?.room_number} - {reservation.rooms?.room_type}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="font-medium">Location:</span>
-                      <span className="truncate">{reservation.locations?.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="font-medium">Dates:</span>
-                      <span>{format(new Date(reservation.check_in_date), 'MMM dd')} - {format(new Date(reservation.check_out_date), 'MMM dd, yyyy')}</span>
-                    </div>
-                    <div className="flex justify-between items-center pt-2">
-                      <span className="text-sm font-bold">
-                        {reservation.currency === 'USD' ? '$' : 'Rs. '}{reservation.total_amount.toLocaleString()}
-                      </span>
-                      <div className="flex gap-2">
-                        {(reservation.status === 'tentative' || reservation.status === 'pending') && (
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span className="font-medium min-w-0">Room:</span>
+                        <span className="truncate">{reservation.rooms?.room_number} - {reservation.rooms?.room_type}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span className="font-medium">Location:</span>
+                        <span className="truncate">{reservation.locations?.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-medium">Dates:</span>
+                        <span>{format(parseISO(reservation.check_in_date), 'MMM dd')} - {format(parseISO(reservation.check_out_date), 'MMM dd, yyyy')}</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                        <span className="text-lg font-bold text-primary">
+                          {reservation.currency === 'USD' ? '$' : 'Rs. '}{reservation.total_amount.toLocaleString()}
+                        </span>
+                        <div className="flex gap-2">
+                          {(reservation.status === 'tentative' || reservation.status === 'pending') && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/app/payment?reservation=${reservation.id}`);
+                              }}
+                              className="bg-green-600 hover:bg-green-700 gap-1 text-xs px-3"
+                            >
+                              💳 Pay Now
+                            </Button>
+                          )}
                           <Button
-                            variant="default"
+                            variant="outline"
                             size="sm"
-                            onClick={() => navigate(`/app/payment?reservation=${reservation.id}`)}
-                            className="bg-green-600 hover:bg-green-700 gap-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/app/reservations/${reservation.id}`);
+                            }}
+                            className="text-xs px-3"
                           >
-                            💳 Pay
+                            View
                           </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/app/reservations/${reservation.id}`)}
-                        >
-                          View
-                        </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Desktop Grid View */}
-          <div className="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredReservations.map((reservation) => (
-              <Card key={reservation.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-sm">{reservation.guest_name}</CardTitle>
-                    <Badge className={cn("text-white", getStatusColor(reservation.status))}>
-                      {reservation.status}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="text-sm text-gray-600">
-                    <div>Room: {reservation.rooms?.room_number} - {reservation.rooms?.room_type}</div>
-                    <div>Location: {reservation.locations?.name}</div>
-                  </div>
-                  <div className="text-sm">
-                    <div>Check-in: {format(new Date(reservation.check_in_date), 'MMM dd, yyyy')}</div>
-                    <div>Check-out: {format(new Date(reservation.check_out_date), 'MMM dd, yyyy')}</div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="text-sm font-medium">
-                      {reservation.currency === 'USD' ? '$' : 'Rs. '}{reservation.total_amount.toLocaleString()}
-                    </div>
-                    <div className="flex gap-2">
-                      {(reservation.status === 'tentative' || reservation.status === 'pending') && (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => navigate(`/app/payment?reservation=${reservation.id}`)}
-                          className="bg-green-600 hover:bg-green-700 gap-1"
-                        >
-                          💳 Pay
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/app/reservations/${reservation.id}`)}
-                      >
-                        View Details
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
