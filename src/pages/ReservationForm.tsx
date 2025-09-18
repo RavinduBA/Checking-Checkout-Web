@@ -15,6 +15,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useAutoLocation } from "@/hooks/useAutoLocation";
 import { PhotoAttachment } from "@/components/PhotoAttachment";
 import { SignatureCapture } from "@/components/SignatureCapture";
+import { DateRangePicker } from "@/components/DateRangePicker";
+import { CurrencySelector } from "@/components/CurrencySelector";
+import { PricingDisplay } from "@/components/PricingDisplay";
 
 type Location = Tables<"locations">;
 type Room = Tables<"rooms">;
@@ -65,6 +68,7 @@ export default function ReservationForm() {
     agent_id: '',
     guide_commission: 0,
     agent_commission: 0,
+    currency: 'LKR' as any,
   });
 
   const [newGuide, setNewGuide] = useState({
@@ -100,7 +104,7 @@ export default function ReservationForm() {
 
   useEffect(() => {
     calculateTotal();
-  }, [formData.room_rate, formData.nights]);
+  }, [formData.room_rate, formData.nights, formData.advance_amount]);
 
   const fetchInitialData = async () => {
     try {
@@ -155,6 +159,7 @@ export default function ReservationForm() {
         agent_id: data.agent_id || '',
         guide_commission: data.guide_commission || 0,
         agent_commission: data.agent_commission || 0,
+        currency: data.currency || 'LKR',
       });
     } catch (error) {
       console.error("Error fetching reservation:", error);
@@ -179,7 +184,13 @@ export default function ReservationForm() {
 
   const calculateTotal = () => {
     const total = formData.room_rate * formData.nights;
-    setFormData(prev => ({ ...prev, total_amount: total }));
+    const balanceAmount = total - formData.advance_amount;
+    setFormData(prev => ({ 
+      ...prev, 
+      total_amount: total,
+      balance_amount: balanceAmount,
+      paid_amount: formData.advance_amount
+    }));
   };
 
   const handleInputChange = (field: string, value: any) => {
@@ -329,7 +340,8 @@ export default function ReservationForm() {
         guide_id: formData.has_guide ? formData.guide_id : null,
         agent_id: formData.has_agent ? formData.agent_id : null,
         guide_commission: formData.has_guide ? formData.guide_commission : 0,
-        agent_commission: formData.has_agent ? formData.agent_commission : 0
+        agent_commission: formData.has_agent ? formData.agent_commission : 0,
+        currency: formData.currency
       };
 
       if (isEdit) {
@@ -393,7 +405,7 @@ export default function ReservationForm() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-4 space-y-6">
+    <div className="max-w-7xl mx-auto p-4 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button asChild variant="ghost" size="icon">
@@ -412,481 +424,479 @@ export default function ReservationForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {/* Guest Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Guest Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="guest_name">Guest Name *</Label>
-                <Input
-                  id="guest_name"
-                  value={formData.guest_name}
-                  onChange={(e) => handleInputChange('guest_name', e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="guest_email">Email</Label>
-                <Input
-                  id="guest_email"
-                  type="email"
-                  value={formData.guest_email}
-                  onChange={(e) => handleInputChange('guest_email', e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="guest_phone">Phone</Label>
-                <Input
-                  id="guest_phone"
-                  value={formData.guest_phone}
-                  onChange={(e) => handleInputChange('guest_phone', e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="guest_address">Address</Label>
-                <Textarea
-                  id="guest_address"
-                  value={formData.guest_address}
-                  onChange={(e) => handleInputChange('guest_address', e.target.value)}
-                  rows={3}
-                />
-              </div>
-              <div>
-                <Label htmlFor="guest_nationality">Nationality</Label>
-                <Input
-                  id="guest_nationality"
-                  value={formData.guest_nationality}
-                  onChange={(e) => handleInputChange('guest_nationality', e.target.value)}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="adults">Adults *</Label>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Left Column - Main Form */}
+          <div className="xl:col-span-2 space-y-6">
+            {/* Guest Information */}
+            <Card className="bg-gradient-to-br from-card to-card/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Guest Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <Label htmlFor="guest_name">Guest Name *</Label>
                   <Input
-                    id="adults"
-                    type="number"
-                    min="1"
-                    value={formData.adults}
-                    onChange={(e) => handleInputChange('adults', parseInt(e.target.value))}
+                    id="guest_name"
+                    value={formData.guest_name}
+                    onChange={(e) => handleInputChange('guest_name', e.target.value)}
                     required
+                    className="h-11"
                   />
                 </div>
+                
                 <div>
-                  <Label htmlFor="children">Children</Label>
+                  <Label htmlFor="guest_email">Email</Label>
                   <Input
-                    id="children"
-                    type="number"
-                    min="0"
-                    value={formData.children}
-                    onChange={(e) => handleInputChange('children', parseInt(e.target.value))}
+                    id="guest_email"
+                    type="email"
+                    value={formData.guest_email}
+                    onChange={(e) => handleInputChange('guest_email', e.target.value)}
+                    className="h-11"
                   />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Reservation Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Reservation Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {shouldShowLocationSelect ? (
+                
                 <div>
-                  <Label htmlFor="location_id">Location *</Label>
-                  <Select value={formData.location_id} onValueChange={(value) => handleInputChange('location_id', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select location" />
+                  <Label htmlFor="guest_phone">Phone</Label>
+                  <Input
+                    id="guest_phone"
+                    value={formData.guest_phone}
+                    onChange={(e) => handleInputChange('guest_phone', e.target.value)}
+                    className="h-11"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="guest_nationality">Nationality</Label>
+                  <Input
+                    id="guest_nationality"
+                    value={formData.guest_nationality}
+                    onChange={(e) => handleInputChange('guest_nationality', e.target.value)}
+                    className="h-11"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="adults">Adults *</Label>
+                    <Input
+                      id="adults"
+                      type="number"
+                      min="1"
+                      value={formData.adults}
+                      onChange={(e) => handleInputChange('adults', parseInt(e.target.value))}
+                      required
+                      className="h-11"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="children">Children</Label>
+                    <Input
+                      id="children"
+                      type="number"
+                      min="0"
+                      value={formData.children}
+                      onChange={(e) => handleInputChange('children', parseInt(e.target.value))}
+                      className="h-11"
+                    />
+                  </div>
+                </div>
+                
+                <div className="md:col-span-2">
+                  <Label htmlFor="guest_address">Address</Label>
+                  <Textarea
+                    id="guest_address"
+                    value={formData.guest_address}
+                    onChange={(e) => handleInputChange('guest_address', e.target.value)}
+                    rows={3}
+                    className="resize-none"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Reservation Details */}
+            <Card className="bg-gradient-to-br from-card to-card/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Reservation Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Location & Room Selection */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {shouldShowLocationSelect ? (
+                    <div>
+                      <Label htmlFor="location_id">Location *</Label>
+                      <Select value={formData.location_id} onValueChange={(value) => handleInputChange('location_id', value)}>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Select location" />
+                        </SelectTrigger>
+                        <SelectContent className="z-50 bg-background border shadow-lg">
+                          {availableLocations.map((location) => (
+                            <SelectItem key={location.id} value={location.id}>
+                              {location.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div>
+                      <Label>Location</Label>
+                      <div className="px-3 py-2 bg-muted rounded-md h-11 flex items-center">
+                        {availableLocations.find(l => l.id === autoSelectedLocation)?.name || "Auto-selected"}
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <Label htmlFor="room_id">Room *</Label>
+                    <Select value={formData.room_id} onValueChange={(value) => handleInputChange('room_id', value)}>
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder="Select room" />
+                      </SelectTrigger>
+                      <SelectContent className="z-50 bg-background border shadow-lg">
+                        {filteredRooms.map((room) => (
+                          <SelectItem key={room.id} value={room.id}>
+                            {room.room_number} - {room.room_type} (LKR {room.base_price.toLocaleString()}/night)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Date Selection */}
+                <div>
+                  <Label className="block mb-3">Check-in & Check-out Dates *</Label>
+                  <DateRangePicker
+                    checkInDate={formData.check_in_date}
+                    checkOutDate={formData.check_out_date}
+                    onCheckInChange={(date) => handleInputChange('check_in_date', date)}
+                    onCheckOutChange={(date) => handleInputChange('check_out_date', date)}
+                    onNightsChange={(nights) => handleInputChange('nights', nights)}
+                  />
+                </div>
+
+                {/* Currency & Pricing */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <CurrencySelector
+                    currency={formData.currency}
+                    onCurrencyChange={(currency) => handleInputChange('currency', currency)}
+                  />
+                  
+                  <div>
+                    <Label htmlFor="advance_amount">Advance Payment</Label>
+                    <Input
+                      id="advance_amount"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.advance_amount}
+                      onChange={(e) => handleInputChange('advance_amount', parseFloat(e.target.value) || 0)}
+                      className="h-11"
+                    />
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                    <SelectTrigger className="h-11">
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="z-50 bg-background border shadow-lg">
-                      {availableLocations.map((location) => (
-                        <SelectItem key={location.id} value={location.id}>
-                          {location.name}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="tentative">Tentative</SelectItem>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              ) : (
+
+                {/* Special Requests */}
                 <div>
-                  <Label>Location</Label>
-                  <div className="px-3 py-2 bg-muted rounded-md">
-                    {availableLocations.find(l => l.id === autoSelectedLocation)?.name || "Auto-selected"}
+                  <Label htmlFor="special_requests">Special Requests</Label>
+                  <Textarea
+                    id="special_requests"
+                    value={formData.special_requests}
+                    onChange={(e) => handleInputChange('special_requests', e.target.value)}
+                    rows={3}
+                    placeholder="Any special requirements or notes..."
+                    className="resize-none"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column - Pricing & Actions */}
+          <div className="space-y-6">
+            {/* Pricing Display */}
+            <PricingDisplay
+              roomRate={formData.room_rate}
+              nights={formData.nights}
+              currency={formData.currency}
+              totalAmount={formData.total_amount}
+              advanceAmount={formData.advance_amount}
+            />
+
+            {/* Photo Attachments */}
+            <PhotoAttachment 
+              photos={idPhotos}
+              onPhotosChange={setIdPhotos}
+              title="ID Photos & Documents"
+              maxPhotos={5}
+            />
+
+            {/* Guest Signature */}
+            <SignatureCapture 
+              signature={guestSignature}
+              onSignatureChange={setGuestSignature}
+              title="Guest Signature"
+            />
+
+            {/* Action Buttons */}
+            <div className="sticky top-6 space-y-4">
+              <Button
+                type="submit"
+                disabled={submitting || !formData.guest_name || !formData.room_id || !formData.check_in_date || !formData.check_out_date}
+                className="w-full h-12 text-base"
+              >
+                {submitting ? (
+                  'Saving...'
+                ) : (
+                  <>
+                    <Save className="h-5 w-5 mr-2" />
+                    {isEdit ? 'Update Reservation' : 'Create Reservation'}
+                  </>
+                )}
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate("/calendar")}
+                className="w-full h-12"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Additional Services */}
+        <Card className="bg-gradient-to-br from-card to-card/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserCheck className="h-5 w-5" />
+              Additional Services
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Guide Services */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="has_guide"
+                  checked={formData.has_guide}
+                  onCheckedChange={(checked) => handleInputChange('has_guide', checked)}
+                />
+                <Label htmlFor="has_guide" className="font-medium">Include Guide Services</Label>
+              </div>
+              
+              {formData.has_guide && (
+                <div className="space-y-4 pl-6 border-l-2 border-primary/20">
+                  <div className="flex gap-2">
+                    <Select 
+                      value={formData.guide_id} 
+                      onValueChange={(value) => handleInputChange('guide_id', value)}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Select guide" />
+                      </SelectTrigger>
+                      <SelectContent className="z-50 bg-background border shadow-lg">
+                        {guides.map((guide) => (
+                          <SelectItem key={guide.id} value={guide.id}>
+                            {guide.name} ({guide.commission_rate}%)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    <Dialog open={showGuideDialog} onOpenChange={setShowGuideDialog}>
+                      <DialogTrigger asChild>
+                        <Button type="button" variant="outline" size="icon">
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Add New Guide</DialogTitle>
+                          <DialogDescription>Create a new guide profile</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="guide_name">Name</Label>
+                            <Input
+                              id="guide_name"
+                              value={newGuide.name}
+                              onChange={(e) => setNewGuide(prev => ({ ...prev, name: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="guide_phone">Phone</Label>
+                            <Input
+                              id="guide_phone"
+                              value={newGuide.phone}
+                              onChange={(e) => setNewGuide(prev => ({ ...prev, phone: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="guide_email">Email</Label>
+                            <Input
+                              id="guide_email"
+                              type="email"
+                              value={newGuide.email}
+                              onChange={(e) => setNewGuide(prev => ({ ...prev, email: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="guide_commission">Commission Rate (%)</Label>
+                            <Input
+                              id="guide_commission"
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={newGuide.commission_rate}
+                              onChange={(e) => setNewGuide(prev => ({ ...prev, commission_rate: parseFloat(e.target.value) }))}
+                            />
+                          </div>
+                          <Button onClick={createGuide} className="w-full">
+                            Create Guide
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
+                  
+                  {formData.guide_commission > 0 && (
+                    <div className="text-sm text-muted-foreground">
+                      Commission: {formData.currency} {formData.guide_commission.toLocaleString()}
+                    </div>
+                  )}
                 </div>
               )}
-              <div>
-                <Label htmlFor="room_id">Room *</Label>
-                <Select value={formData.room_id} onValueChange={(value) => handleInputChange('room_id', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select room" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredRooms.map((room) => (
-                      <SelectItem key={room.id} value={room.id}>
-                        {room.room_number} - {room.room_type} (LKR {room.base_price})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="check_in_date">Check-in Date *</Label>
-                  <Input
-                    id="check_in_date"
-                    type="date"
-                    value={formData.check_in_date}
-                    onChange={(e) => handleInputChange('check_in_date', e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="check_out_date">Check-out Date *</Label>
-                  <Input
-                    id="check_out_date"
-                    type="date"
-                    value={formData.check_out_date}
-                    onChange={(e) => handleInputChange('check_out_date', e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="tentative">Tentative</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="checked_in">Checked In</SelectItem>
-                    <SelectItem value="checked_out">Checked Out</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Guides & Agents */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserCheck className="h-5 w-5" />
-                Guide & Agent
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Guide Section */}
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="has_guide"
-                    checked={formData.has_guide}
-                    onCheckedChange={(checked) => handleInputChange('has_guide', checked)}
-                  />
-                  <Label htmlFor="has_guide">Include Guide</Label>
-                </div>
-                
-                {formData.has_guide && (
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <Select value={formData.guide_id} onValueChange={(value) => handleInputChange('guide_id', value)}>
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Select guide" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {guides.map((guide) => (
-                            <SelectItem key={guide.id} value={guide.id}>
-                              {guide.name} ({guide.commission_rate}%)
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Dialog open={showGuideDialog} onOpenChange={setShowGuideDialog}>
-                        <DialogTrigger asChild>
-                          <Button size="sm" variant="outline">
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Add New Guide</DialogTitle>
-                            <DialogDescription>Create a new guide profile</DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <Label htmlFor="guide_name">Name</Label>
-                              <Input
-                                id="guide_name"
-                                value={newGuide.name}
-                                onChange={(e) => setNewGuide({ ...newGuide, name: e.target.value })}
-                                placeholder="Guide name"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="guide_phone">Phone</Label>
-                              <Input
-                                id="guide_phone"
-                                value={newGuide.phone}
-                                onChange={(e) => setNewGuide({ ...newGuide, phone: e.target.value })}
-                                placeholder="Phone number"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="guide_email">Email</Label>
-                              <Input
-                                id="guide_email"
-                                type="email"
-                                value={newGuide.email}
-                                onChange={(e) => setNewGuide({ ...newGuide, email: e.target.value })}
-                                placeholder="Email address"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="guide_commission">Commission Rate (%)</Label>
-                              <Input
-                                id="guide_commission"
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="0.01"
-                                value={newGuide.commission_rate}
-                                onChange={(e) => setNewGuide({ ...newGuide, commission_rate: parseFloat(e.target.value) || 0 })}
-                              />
-                            </div>
-                            <div className="flex justify-end gap-2">
-                              <Button type="button" variant="outline" onClick={() => setShowGuideDialog(false)}>
-                                Cancel
-                              </Button>
-                              <Button type="button" onClick={createGuide}>
-                                Create Guide
-                              </Button>
-                            </div>
+            {/* Agent Services */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="has_agent"
+                  checked={formData.has_agent}
+                  onCheckedChange={(checked) => handleInputChange('has_agent', checked)}
+                />
+                <Label htmlFor="has_agent" className="font-medium">Include Agent Services</Label>
+              </div>
+              
+              {formData.has_agent && (
+                <div className="space-y-4 pl-6 border-l-2 border-primary/20">
+                  <div className="flex gap-2">
+                    <Select 
+                      value={formData.agent_id} 
+                      onValueChange={(value) => handleInputChange('agent_id', value)}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Select agent" />
+                      </SelectTrigger>
+                      <SelectContent className="z-50 bg-background border shadow-lg">
+                        {agents.map((agent) => (
+                          <SelectItem key={agent.id} value={agent.id}>
+                            {agent.name} - {agent.agency_name} ({agent.commission_rate}%)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    <Dialog open={showAgentDialog} onOpenChange={setShowAgentDialog}>
+                      <DialogTrigger asChild>
+                        <Button type="button" variant="outline" size="icon">
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Add New Agent</DialogTitle>
+                          <DialogDescription>Create a new agent profile</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="agent_name">Name</Label>
+                            <Input
+                              id="agent_name"
+                              value={newAgent.name}
+                              onChange={(e) => setNewAgent(prev => ({ ...prev, name: e.target.value }))}
+                            />
                           </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                    {formData.guide_commission > 0 && (
-                      <div className="text-sm text-muted-foreground">
-                        Commission: LKR {formData.guide_commission.toFixed(2)}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Agent Section */}
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="has_agent"
-                    checked={formData.has_agent}
-                    onCheckedChange={(checked) => handleInputChange('has_agent', checked)}
-                  />
-                  <Label htmlFor="has_agent">Include Agent</Label>
-                </div>
-                
-                {formData.has_agent && (
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <Select value={formData.agent_id} onValueChange={(value) => handleInputChange('agent_id', value)}>
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Select agent" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {agents.map((agent) => (
-                            <SelectItem key={agent.id} value={agent.id}>
-                              {agent.name} ({agent.commission_rate}%)
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Dialog open={showAgentDialog} onOpenChange={setShowAgentDialog}>
-                        <DialogTrigger asChild>
-                          <Button size="sm" variant="outline">
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Add New Agent</DialogTitle>
-                            <DialogDescription>Create a new agent profile</DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <Label htmlFor="agent_name">Name</Label>
-                              <Input
-                                id="agent_name"
-                                value={newAgent.name}
-                                onChange={(e) => setNewAgent({ ...newAgent, name: e.target.value })}
-                                placeholder="Agent name"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="agent_agency">Agency</Label>
-                              <Input
-                                id="agent_agency"
-                                value={newAgent.agency_name}
-                                onChange={(e) => setNewAgent({ ...newAgent, agency_name: e.target.value })}
-                                placeholder="Agency name"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="agent_phone">Phone</Label>
-                              <Input
-                                id="agent_phone"
-                                value={newAgent.phone}
-                                onChange={(e) => setNewAgent({ ...newAgent, phone: e.target.value })}
-                                placeholder="Phone number"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="agent_email">Email</Label>
-                              <Input
-                                id="agent_email"
-                                type="email"
-                                value={newAgent.email}
-                                onChange={(e) => setNewAgent({ ...newAgent, email: e.target.value })}
-                                placeholder="Email address"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="agent_commission">Commission Rate (%)</Label>
-                              <Input
-                                id="agent_commission"
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="0.01"
-                                value={newAgent.commission_rate}
-                                onChange={(e) => setNewAgent({ ...newAgent, commission_rate: parseFloat(e.target.value) || 0 })}
-                              />
-                            </div>
-                            <div className="flex justify-end gap-2">
-                              <Button type="button" variant="outline" onClick={() => setShowAgentDialog(false)}>
-                                Cancel
-                              </Button>
-                              <Button type="button" onClick={createAgent}>
-                                Create Agent
-                              </Button>
-                            </div>
+                          <div>
+                            <Label htmlFor="agent_agency">Agency Name</Label>
+                            <Input
+                              id="agent_agency"
+                              value={newAgent.agency_name}
+                              onChange={(e) => setNewAgent(prev => ({ ...prev, agency_name: e.target.value }))}
+                            />
                           </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                    {formData.agent_commission > 0 && (
-                      <div className="text-sm text-muted-foreground">
-                        Commission: LKR {formData.agent_commission.toFixed(2)}
-                      </div>
-                    )}
+                          <div>
+                            <Label htmlFor="agent_phone">Phone</Label>
+                            <Input
+                              id="agent_phone"
+                              value={newAgent.phone}
+                              onChange={(e) => setNewAgent(prev => ({ ...prev, phone: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="agent_email">Email</Label>
+                            <Input
+                              id="agent_email"
+                              type="email"
+                              value={newAgent.email}
+                              onChange={(e) => setNewAgent(prev => ({ ...prev, email: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="agent_commission">Commission Rate (%)</Label>
+                            <Input
+                              id="agent_commission"
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={newAgent.commission_rate}
+                              onChange={(e) => setNewAgent(prev => ({ ...prev, commission_rate: parseFloat(e.target.value) }))}
+                            />
+                          </div>
+                          <Button onClick={createAgent} className="w-full">
+                            Create Agent
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pricing */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Pricing Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="room_rate">Room Rate per Night</Label>
-                <Input
-                  id="room_rate"
-                  type="number"
-                  value={formData.room_rate}
-                  onChange={(e) => handleInputChange('room_rate', parseFloat(e.target.value))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="nights">Number of Nights</Label>
-                <Input
-                  id="nights"
-                  type="number"
-                  value={formData.nights}
-                  readOnly
-                />
-              </div>
-              <div>
-                <Label htmlFor="total_amount">Total Amount</Label>
-                <Input
-                  id="total_amount"
-                  type="number"
-                  value={formData.total_amount}
-                  readOnly
-                />
-              </div>
-              <div>
-                <Label htmlFor="advance_amount">Advance Amount</Label>
-                <Input
-                  id="advance_amount"
-                  type="number"
-                  value={formData.advance_amount}
-                  onChange={(e) => handleInputChange('advance_amount', parseFloat(e.target.value) || 0)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Special Requests */}
-          <Card className="xl:col-span-2">
-            <CardHeader>
-              <CardTitle>Special Requests</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                value={formData.special_requests}
-                onChange={(e) => handleInputChange('special_requests', e.target.value)}
-                placeholder="Any special requests or notes..."
-                rows={6}
-              />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Submit Button */}
-        <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" asChild>
-            <Link to="/calendar">Cancel</Link>
-          </Button>
-          <Button type="submit" disabled={submitting}>
-            <Save className="h-4 w-4 mr-2" />
-            {submitting ? 'Saving...' : (isEdit ? 'Update Reservation' : 'Create Reservation')}
-          </Button>
-        </div>
-
-        {/* Photo Attachments */}
-        <PhotoAttachment 
-          photos={idPhotos}
-          onPhotosChange={setIdPhotos}
-          title="ID Photos & Documents"
-          maxPhotos={5}
-        />
-
-        {/* Guest Signature */}
-        <SignatureCapture 
-          signature={guestSignature}
-          onSignatureChange={setGuestSignature}
-          title="Guest Signature"
-        />
+                  
+                  {formData.agent_commission > 0 && (
+                    <div className="text-sm text-muted-foreground">
+                      Commission: {formData.currency} {formData.agent_commission.toLocaleString()}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </form>
     </div>
   );
