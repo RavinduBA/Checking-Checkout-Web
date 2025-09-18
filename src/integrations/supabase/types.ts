@@ -923,6 +923,7 @@ export type Database = {
           agent_id: string | null
           arrival_time: string | null
           balance_amount: number | null
+          booking_source: string | null
           check_in_date: string
           check_out_date: string
           children: number
@@ -959,6 +960,7 @@ export type Database = {
           agent_id?: string | null
           arrival_time?: string | null
           balance_amount?: number | null
+          booking_source?: string | null
           check_in_date: string
           check_out_date: string
           children?: number
@@ -995,6 +997,7 @@ export type Database = {
           agent_id?: string | null
           arrival_time?: string | null
           balance_amount?: number | null
+          booking_source?: string | null
           check_in_date?: string
           check_out_date?: string
           children?: number

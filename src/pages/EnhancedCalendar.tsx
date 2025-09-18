@@ -89,6 +89,19 @@ export default function EnhancedCalendar() {
     });
   };
 
+  // Get booking that spans across a range for continuous display
+  const getBookingSpanForRoom = (roomId: string, startDate: Date, endDate: Date) => {
+    const bookingsInRange = filteredReservations.filter(reservation => {
+      const checkIn = new Date(reservation.check_in_date);
+      const checkOut = new Date(reservation.check_out_date);
+      return reservation.room_id === roomId && 
+             ((checkIn >= startDate && checkIn < endDate) ||
+              (checkOut > startDate && checkOut <= endDate) ||
+              (checkIn <= startDate && checkOut >= endDate));
+    });
+    return bookingsInRange;
+  };
+
   // Get status color for reservations
   const getStatusColor = (status: string) => {
     const colors = {
@@ -216,21 +229,57 @@ export default function EnhancedCalendar() {
                     <div className="grid gap-0 relative" style={{ gridTemplateColumns: `repeat(${calendarDays.length}, minmax(40px, 1fr))` }}>
                       {calendarDays.map((day, dayIndex) => {
                         const bookings = getBookingsForRoomAndDate(room.id, day);
-                        const booking = bookings[0]; // Show first booking if multiple
+                        const booking = bookings[0];
+                        
+                        // Check if this is the start of a booking span
+                        const isBookingStart = booking && new Date(booking.check_in_date).toDateString() === day.toDateString();
+                        const isBookingEnd = booking && new Date(booking.check_out_date).toDateString() === day.toDateString();
+                        
+                        // Calculate span width for continuous bookings
+                        let spanWidth = 1;
+                        let shouldDisplay = true;
+                        
+                        if (booking) {
+                          const checkIn = new Date(booking.check_in_date);
+                          const checkOut = new Date(booking.check_out_date);
+                          
+                          // Only display the booking element on the first day
+                          if (day.toDateString() !== checkIn.toDateString()) {
+                            shouldDisplay = false;
+                          } else {
+                            // Calculate how many days this booking spans
+                            const remainingDays = calendarDays.slice(dayIndex);
+                            spanWidth = 0;
+                            for (const remainingDay of remainingDays) {
+                              if (remainingDay < checkOut) {
+                                spanWidth++;
+                              } else {
+                                break;
+                              }
+                            }
+                          }
+                        }
 
                         return (
                           <div 
                             key={dayIndex} 
-                            className="h-16 border-r border-gray-200 relative flex items-center justify-center"
+                            className={cn(
+                              "h-16 border-r border-gray-200 relative flex items-center justify-center",
+                              booking && !shouldDisplay && "bg-gray-50"
+                            )}
                           >
-                            {booking && (
+                            {booking && shouldDisplay && (
                               <div 
                                 className={cn(
-                                  "absolute inset-1 rounded text-white text-xs p-1 cursor-pointer transition-all hover:opacity-80",
+                                  "absolute inset-1 rounded text-white text-xs p-1 cursor-pointer transition-all hover:opacity-80 z-10",
                                   getStatusColor(booking.status)
                                 )}
+                                style={{
+                                  width: `${spanWidth * 100 + (spanWidth - 1) * 1}%`,
+                                  minWidth: `${spanWidth * 41}px`
+                                }}
                                 onClick={() => navigate(`/app/reservations/${booking.id}`)}
-                                title={`${booking.guest_name} - ${booking.status}`}
+                                title={`${booking.guest_name} - ${booking.status} (${format(new Date(booking.check_in_date), 'MMM dd')} - ${format(new Date(booking.check_out_date), 'MMM dd')})`}
                               >
                                 <div className="font-medium truncate">
                                   {booking.guest_name.split(' ')[0]}
@@ -277,33 +326,91 @@ export default function EnhancedCalendar() {
           </div>
         </div>
       ) : (
-        // Grid View (Mobile-friendly cards)
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredReservations.map((reservation) => (
-            <Card key={reservation.id} className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-sm">{reservation.guest_name}</CardTitle>
-                  <Badge className={getStatusColor(reservation.status) + " text-white"}>
-                    {reservation.status}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="text-sm text-gray-600">
-                  <div>Room: {reservation.rooms?.room_number} - {reservation.rooms?.room_type}</div>
-                  <div>Location: {reservation.locations?.name}</div>
-                </div>
-                <div className="text-sm">
-                  <div>Check-in: {format(new Date(reservation.check_in_date), 'MMM dd, yyyy')}</div>
-                  <div>Check-out: {format(new Date(reservation.check_out_date), 'MMM dd, yyyy')}</div>
-                </div>
-                <div className="text-sm font-medium">
-                  {reservation.currency === 'USD' ? '$' : 'Rs. '}{reservation.total_amount.toLocaleString()}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        // Grid View (Mobile-friendly cards with better responsive layout)
+        <div className="space-y-4">
+          {/* Mobile/Tablet View */}
+          <div className="lg:hidden space-y-3">
+            {filteredReservations.map((reservation) => (
+              <Card key={reservation.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm truncate">{reservation.guest_name}</h3>
+                      <p className="text-xs text-muted-foreground">#{reservation.reservation_number}</p>
+                    </div>
+                    <Badge className={cn("text-white text-xs shrink-0 ml-2", getStatusColor(reservation.status))}>
+                      {reservation.status}
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="font-medium">Room:</span>
+                      <span className="truncate">{reservation.rooms?.room_number} - {reservation.rooms?.room_type}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="font-medium">Location:</span>
+                      <span className="truncate">{reservation.locations?.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="font-medium">Dates:</span>
+                      <span>{format(new Date(reservation.check_in_date), 'MMM dd')} - {format(new Date(reservation.check_out_date), 'MMM dd, yyyy')}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2">
+                      <span className="text-sm font-bold">
+                        {reservation.currency === 'USD' ? '$' : 'Rs. '}{reservation.total_amount.toLocaleString()}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/app/reservations/${reservation.id}`)}
+                      >
+                        View
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop Grid View */}
+          <div className="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filteredReservations.map((reservation) => (
+              <Card key={reservation.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-sm">{reservation.guest_name}</CardTitle>
+                    <Badge className={cn("text-white", getStatusColor(reservation.status))}>
+                      {reservation.status}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="text-sm text-gray-600">
+                    <div>Room: {reservation.rooms?.room_number} - {reservation.rooms?.room_type}</div>
+                    <div>Location: {reservation.locations?.name}</div>
+                  </div>
+                  <div className="text-sm">
+                    <div>Check-in: {format(new Date(reservation.check_in_date), 'MMM dd, yyyy')}</div>
+                    <div>Check-out: {format(new Date(reservation.check_out_date), 'MMM dd, yyyy')}</div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm font-medium">
+                      {reservation.currency === 'USD' ? '$' : 'Rs. '}{reservation.total_amount.toLocaleString()}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/app/reservations/${reservation.id}`)}
+                    >
+                      View Details
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
     </div>

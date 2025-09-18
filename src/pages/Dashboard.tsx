@@ -180,7 +180,7 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row gap-2">
             {hasAnyPermission("income") && (
               <Button asChild variant="villa" size="sm" className="w-full sm:w-auto">
-                <Link to="/app/income">
+                <Link to="/app/reservations">
                   <Plus className="h-4 w-4" />
                   Add Income
                 </Link>
