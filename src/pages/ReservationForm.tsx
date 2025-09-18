@@ -12,6 +12,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
+import { useAutoLocation } from "@/hooks/useAutoLocation";
+import { PhotoAttachment } from "@/components/PhotoAttachment";
+import { SignatureCapture } from "@/components/SignatureCapture";
 
 type Location = Tables<"locations">;
 type Room = Tables<"rooms">;
@@ -23,9 +26,9 @@ export default function ReservationForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
+  const { autoSelectedLocation, shouldShowLocationSelect, availableLocations, loading: locationLoading } = useAutoLocation();
   const isEdit = Boolean(id);
 
-  const [locations, setLocations] = useState<Location[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -33,9 +36,11 @@ export default function ReservationForm() {
   const [submitting, setSubmitting] = useState(false);
   const [showGuideDialog, setShowGuideDialog] = useState(false);
   const [showAgentDialog, setShowAgentDialog] = useState(false);
+  const [idPhotos, setIdPhotos] = useState<string[]>([]);
+  const [guestSignature, setGuestSignature] = useState("");
 
   const [formData, setFormData] = useState({
-    location_id: searchParams.get('location') || '',
+    location_id: searchParams.get('location') || autoSelectedLocation || '',
     room_id: searchParams.get('room') || '',
     guest_name: '',
     guest_email: '',
@@ -78,11 +83,20 @@ export default function ReservationForm() {
   });
 
   useEffect(() => {
-    fetchInitialData();
-    if (isEdit && id) {
-      fetchReservation();
+    if (!locationLoading) {
+      fetchInitialData();
+      if (isEdit && id) {
+        fetchReservation();
+      }
     }
-  }, [isEdit, id]);
+  }, [isEdit, id, locationLoading]);
+
+  useEffect(() => {
+    // Auto-select location if user has access to only one
+    if (autoSelectedLocation && !shouldShowLocationSelect && !formData.location_id) {
+      setFormData(prev => ({ ...prev, location_id: autoSelectedLocation }));
+    }
+  }, [autoSelectedLocation, shouldShowLocationSelect]);
 
   useEffect(() => {
     calculateTotal();
@@ -90,14 +104,12 @@ export default function ReservationForm() {
 
   const fetchInitialData = async () => {
     try {
-      const [locationsRes, roomsRes, guidesRes, agentsRes] = await Promise.all([
-        supabase.from("locations").select("*").eq("is_active", true),
+      const [roomsRes, guidesRes, agentsRes] = await Promise.all([
         supabase.from("rooms").select("*").eq("is_active", true).order("room_number"),
         supabase.from("guides").select("*").eq("is_active", true).order("name"),
         supabase.from("agents").select("*").eq("is_active", true).order("name")
       ]);
 
-      setLocations(locationsRes.data || []);
       setRooms(roomsRes.data || []);
       setGuides(guidesRes.data || []);
       setAgents(agentsRes.data || []);
@@ -376,7 +388,7 @@ export default function ReservationForm() {
     !formData.location_id || room.location_id === formData.location_id
   );
 
-  if (loading) {
+  if (loading || locationLoading) {
     return <div className="flex justify-center items-center min-h-64">Loading...</div>;
   }
 
@@ -488,21 +500,30 @@ export default function ReservationForm() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="location_id">Location *</Label>
-                <Select value={formData.location_id} onValueChange={(value) => handleInputChange('location_id', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {locations.map((location) => (
-                      <SelectItem key={location.id} value={location.id}>
-                        {location.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {shouldShowLocationSelect ? (
+                <div>
+                  <Label htmlFor="location_id">Location *</Label>
+                  <Select value={formData.location_id} onValueChange={(value) => handleInputChange('location_id', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select location" />
+                    </SelectTrigger>
+                    <SelectContent className="z-50 bg-background border shadow-lg">
+                      {availableLocations.map((location) => (
+                        <SelectItem key={location.id} value={location.id}>
+                          {location.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div>
+                  <Label>Location</Label>
+                  <div className="px-3 py-2 bg-muted rounded-md">
+                    {availableLocations.find(l => l.id === autoSelectedLocation)?.name || "Auto-selected"}
+                  </div>
+                </div>
+              )}
               <div>
                 <Label htmlFor="room_id">Room *</Label>
                 <Select value={formData.room_id} onValueChange={(value) => handleInputChange('room_id', value)}>
@@ -851,6 +872,21 @@ export default function ReservationForm() {
             {submitting ? 'Saving...' : (isEdit ? 'Update Reservation' : 'Create Reservation')}
           </Button>
         </div>
+
+        {/* Photo Attachments */}
+        <PhotoAttachment 
+          photos={idPhotos}
+          onPhotosChange={setIdPhotos}
+          title="ID Photos & Documents"
+          maxPhotos={5}
+        />
+
+        {/* Guest Signature */}
+        <SignatureCapture 
+          signature={guestSignature}
+          onSignatureChange={setGuestSignature}
+          title="Guest Signature"
+        />
       </form>
     </div>
   );

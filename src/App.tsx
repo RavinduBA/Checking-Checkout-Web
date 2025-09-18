@@ -24,6 +24,7 @@ import MasterFiles from "./pages/MasterFiles";
 import RoomManagement from "./pages/RoomManagement";
 import ReservationDetails from "./pages/ReservationDetails";
 import ReservationForm from "./pages/ReservationForm";
+import Reservations from "./pages/Reservations";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ const App = () => (
               <Route path="expense" element={<Expense />} />
               <Route path="booking/new" element={<BookingForm />} />
               <Route path="booking/edit/:id" element={<BookingForm />} />
+              <Route path="reservations" element={<Reservations />} />
               <Route path="reservations/new" element={<ReservationForm />} />
               <Route path="reservations/edit/:id" element={<ReservationForm />} />
               <Route path="reservations/:id" element={<ReservationDetails />} />

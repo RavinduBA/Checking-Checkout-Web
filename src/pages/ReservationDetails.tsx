@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Edit, Printer, CreditCard, Calendar, MapPin, User, Clock } from "lucide-react";
+import { ArrowLeft, Edit, Printer, CreditCard, Calendar, MapPin, User, Clock, PenTool } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
+import { OTPVerification } from "@/components/OTPVerification";
+import { SignatureCapture } from "@/components/SignatureCapture";
 
 type Reservation = Tables<"reservations"> & {
   locations: Tables<"locations">;
@@ -20,6 +22,8 @@ export default function ReservationDetails() {
   const { toast } = useToast();
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isOTPVerified, setIsOTPVerified] = useState(false);
+  const [guestSignature, setGuestSignature] = useState("");
 
   useEffect(() => {
     if (id) {
@@ -66,7 +70,31 @@ export default function ReservationDetails() {
   };
 
   const handlePrint = () => {
+    // Custom print styles for better formatting
+    const printStyles = `
+      <style>
+        @media print {
+          body * { visibility: hidden; }
+          .print-area, .print-area * { visibility: visible; }
+          .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+          .no-print { display: none !important; }
+          @page { margin: 0.5in; size: A4; }
+        }
+      </style>
+    `;
+    
+    const head = document.head.innerHTML;
+    document.head.innerHTML = head + printStyles;
+    
     window.print();
+  };
+
+  const handleOTPVerified = () => {
+    setIsOTPVerified(true);
+    toast({
+      title: "Verification Successful",
+      description: "You can now edit this reservation.",
+    });
   };
 
   if (loading) {
@@ -85,9 +113,9 @@ export default function ReservationDetails() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-6">
+    <div className="max-w-4xl mx-auto p-4 space-y-6 print-area">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 no-print">
         <Button asChild variant="ghost" size="icon">
           <Link to="/calendar">
             <ArrowLeft className="h-4 w-4" />
@@ -102,17 +130,36 @@ export default function ReservationDetails() {
             <Printer className="h-4 w-4 mr-2" />
             Print
           </Button>
-          <Button>
+          <Button onClick={() => navigate(`/income?reservation=${reservation.id}`)}>
             <CreditCard className="h-4 w-4 mr-2" />
             Payment
           </Button>
-          <Button variant="outline" asChild>
-            <Link to={`/reservations/edit/${reservation.id}`}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </Link>
-          </Button>
+          {isOTPVerified ? (
+            <Button variant="outline" asChild>
+              <Link to={`/reservations/edit/${reservation.id}`}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Link>
+            </Button>
+          ) : (
+            <OTPVerification
+              onVerified={handleOTPVerified}
+              triggerComponent={
+                <Button variant="outline">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              }
+            />
+          )}
         </div>
+      </div>
+      
+      {/* Print Header - Only visible when printing */}
+      <div className="hidden print:block text-center mb-6">
+        <h1 className="text-2xl font-bold">Reservation Details</h1>
+        <p className="text-lg">#{reservation.reservation_number}</p>
+        <p className="text-sm text-muted-foreground">Generated on {new Date().toLocaleString()}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -272,8 +319,25 @@ export default function ReservationDetails() {
         </Card>
       )}
 
-      {/* System Information */}
+      {/* Guest Signature */}
       <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <PenTool className="h-5 w-5" />
+            Guest Signature
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <SignatureCapture 
+            signature={guestSignature}
+            onSignatureChange={setGuestSignature}
+            title="Update Guest Signature"
+          />
+        </CardContent>
+      </Card>
+
+      {/* System Information */}
+      <Card className="no-print">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
