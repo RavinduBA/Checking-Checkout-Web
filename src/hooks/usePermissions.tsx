@@ -39,6 +39,8 @@ export const usePermissions = () => {
     if (!user) return;
 
     try {
+      console.log("Fetching permissions for user:", user.id);
+      
       // Check if user is admin
       const { data: profile } = await supabase
         .from("profiles")
@@ -46,11 +48,13 @@ export const usePermissions = () => {
         .eq("id", user.id)
         .single();
 
+      console.log("User profile:", profile);
       const userIsAdmin = profile?.role === 'admin';
       setIsAdmin(userIsAdmin);
 
       // If admin, grant all permissions
       if (userIsAdmin) {
+        console.log("User is admin - granting all permissions");
         const { data: locations } = await supabase
           .from("locations")
           .select("name")
@@ -73,12 +77,14 @@ export const usePermissions = () => {
             beds24: true,
           };
         });
+        console.log("Admin permissions:", adminPermissions);
         setPermissions(adminPermissions);
       } else {
         // Fetch user permissions using the RPC function
         const { data: userPermissions } = await supabase
           .rpc("get_user_permissions", { user_id_param: user.id });
 
+        console.log("User permissions from RPC:", userPermissions);
         setPermissions((userPermissions as UserPermissions) || {});
       }
     } catch (error) {
