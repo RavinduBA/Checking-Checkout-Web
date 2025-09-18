@@ -8,11 +8,11 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Income from "./pages/Income";
-import Expense from "./pages/Expense";
 import PaymentForm from "./pages/PaymentForm";
-import Calendar from "./pages/Calendar";
-import Beds24Integration from "./pages/Beds24Integration";
-import Reports from "./pages/Reports";
+import Expense from "./pages/Expense";
+import Calendar from "@/pages/Calendar";
+import Beds24Integration from "@/pages/Beds24Integration";
+import Reports from "@/pages/Reports";
 import FinancialReports from "./pages/FinancialReports";
 import Accounts from "./pages/Accounts";
 import Users from "./pages/Users";
@@ -22,7 +22,6 @@ import Auth from "./pages/Auth";
 import Landing from "./pages/Landing";
 import BookingForm from "./pages/BookingForm";
 import MasterFiles from "./pages/MasterFiles";
-import RoomManagement from "./pages/RoomManagement";
 import ReservationDetails from "./pages/ReservationDetails";
 import ReservationFormCompact from "./pages/ReservationFormCompact";
 import Reservations from "./pages/Reservations";
@@ -48,7 +47,6 @@ const App = () => (
               <Route path="calendar" element={<Calendar />} />
               <Route path="beds24" element={<Beds24Integration />} />
               <Route path="master-files" element={<MasterFiles />} />
-              <Route path="rooms" element={<RoomManagement />} />
               <Route path="income" element={<Income />} />
               <Route path="payments/new" element={<PaymentForm />} />
               <Route path="expense" element={<Expense />} />

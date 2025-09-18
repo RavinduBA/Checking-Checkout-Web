@@ -176,7 +176,7 @@ export default function PaymentForm() {
         check_out_date: reservation.check_out_date,
         note: formData.notes || null,
         currency: formData.currency,
-        booking_id: reservationId,
+        booking_id: null, // Remove booking_id since we're dealing with reservations
       };
 
       const { error: incomeError } = await supabase

@@ -49,7 +49,6 @@ const getNavigationItems = (hasAnyPermission: (perm: string) => boolean) => [
       { name: "Commission Settings", href: "/app/master-files?tab=commissions", icon: Percent, description: "Commission configuration" }
     ]
   },
-  { name: "Room Management", href: "/app/rooms", icon: Bed, permission: "rooms" },
   { name: "Reservations", href: "/app/reservations", icon: PlusCircle, permission: "income" },
   { name: "Add Expense", href: "/app/expense", icon: MinusCircle, permission: "expenses" },
   { 
