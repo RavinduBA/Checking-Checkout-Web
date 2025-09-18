@@ -106,7 +106,7 @@ export default function ReservationDetails() {
       <div className="max-w-4xl mx-auto p-4 text-center">
         <h1 className="text-2xl font-bold mb-4">Reservation Not Found</h1>
         <Button asChild>
-          <Link to="/calendar">Back to Calendar</Link>
+          <Link to="/app/reservations">Back to Reservations</Link>
         </Button>
       </div>
     );
@@ -117,7 +117,7 @@ export default function ReservationDetails() {
       {/* Header */}
       <div className="flex items-center gap-4 no-print">
         <Button asChild variant="ghost" size="icon">
-          <Link to="/calendar">
+          <Link to="/app/reservations">
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
@@ -130,13 +130,13 @@ export default function ReservationDetails() {
             <Printer className="h-4 w-4 mr-2" />
             Print
           </Button>
-          <Button onClick={() => navigate(`/income?reservation=${reservation.id}`)}>
+          <Button onClick={() => navigate(`/app/income?reservation=${reservation.id}`)}>
             <CreditCard className="h-4 w-4 mr-2" />
             Payment
           </Button>
           {isOTPVerified ? (
             <Button variant="outline" asChild>
-              <Link to={`/reservations/edit/${reservation.id}`}>
+              <Link to={`/app/reservations/edit/${reservation.id}`}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
               </Link>

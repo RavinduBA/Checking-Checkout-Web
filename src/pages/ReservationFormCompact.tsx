@@ -58,7 +58,6 @@ export default function ReservationFormCompact() {
     room_rate: 0,
     nights: 1,
     total_amount: 0,
-    advance_amount: 0,
     special_requests: '',
     status: 'tentative' as any,
     paid_amount: 0,
@@ -105,7 +104,7 @@ export default function ReservationFormCompact() {
 
   useEffect(() => {
     calculateTotal();
-  }, [formData.room_rate, formData.nights, formData.advance_amount, formData.currency]);
+  }, [formData.room_rate, formData.nights, formData.currency]);
 
   const fetchInitialData = async () => {
     try {
@@ -149,7 +148,6 @@ export default function ReservationFormCompact() {
         room_rate: data.room_rate,
         nights: data.nights,
         total_amount: data.total_amount,
-        advance_amount: data.advance_amount || 0,
         special_requests: data.special_requests || '',
         status: data.status,
         paid_amount: data.paid_amount || 0,
@@ -200,14 +198,14 @@ export default function ReservationFormCompact() {
     }
     
     const total = roomRate * formData.nights;
-    const balanceAmount = total - formData.advance_amount;
+    const balanceAmount = total;
     
     setFormData(prev => ({ 
       ...prev, 
       room_rate: roomRate,
       total_amount: total,
       balance_amount: balanceAmount,
-      paid_amount: formData.advance_amount
+      paid_amount: 0
     }));
   };
 
@@ -355,11 +353,10 @@ export default function ReservationFormCompact() {
         room_rate: formData.room_rate,
         nights: formData.nights,
         total_amount: formData.total_amount,
-        advance_amount: formData.advance_amount,
         special_requests: formData.special_requests || null,
         status: formData.status,
-        paid_amount: formData.advance_amount,
-        balance_amount: formData.total_amount - formData.advance_amount,
+        paid_amount: 0,
+        balance_amount: formData.total_amount,
         guide_id: formData.has_guide ? formData.guide_id : null,
         agent_id: formData.has_agent ? formData.agent_id : null,
         guide_commission: formData.has_guide ? formData.guide_commission : 0,
@@ -406,7 +403,7 @@ export default function ReservationFormCompact() {
         });
       }
 
-      navigate("/app/calendar");
+      navigate("/app/reservations");
     } catch (error: any) {
       console.error("Error saving reservation:", error);
       toast({
@@ -432,7 +429,7 @@ export default function ReservationFormCompact() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button asChild variant="ghost" size="icon">
-          <Link to="/app/calendar">
+          <Link to="/app/reservations">
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
@@ -591,18 +588,6 @@ export default function ReservationFormCompact() {
                   onNightsChange={(nights) => handleInputChange('nights', nights)}
                 />
 
-                <div>
-                  <Label htmlFor="advance_amount" className="text-sm">Advance Amount</Label>
-                  <Input
-                    id="advance_amount"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.advance_amount}
-                    onChange={(e) => handleInputChange('advance_amount', parseFloat(e.target.value) || 0)}
-                    className="h-9"
-                  />
-                </div>
 
                 <div>
                   <Label htmlFor="special_requests" className="text-sm">Special Requests</Label>
@@ -620,12 +605,11 @@ export default function ReservationFormCompact() {
           {/* Middle Column - Pricing & Services */}
           <div className="space-y-4">
             {/* Pricing Display */}
-            <PricingDisplay
+            <PricingDisplay 
               roomRate={formData.room_rate}
               nights={formData.nights}
               currency={formData.currency}
               totalAmount={formData.total_amount}
-              advanceAmount={formData.advance_amount}
             />
 
             {/* Services */}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Eye, Printer, Edit, Calendar, User, MapPin, DollarSign } from "lucide-react";
+import { Eye, Printer, Edit, Calendar, User, MapPin, DollarSign, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { useNavigate } from "react-router-dom";
 import { useAutoLocation } from "@/hooks/useAutoLocation";
+import { OTPVerification } from "@/components/OTPVerification";
+import { useToast } from "@/hooks/use-toast";
 
 type Reservation = Tables<"reservations"> & {
   locations: Tables<"locations">;
@@ -21,6 +23,7 @@ type Payment = Tables<"payments">;
 
 export const ReservationsList = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { autoSelectedLocation, shouldShowLocationSelect, availableLocations } = useAutoLocation();
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -28,6 +31,7 @@ export const ReservationsList = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [otpVerifiedIds, setOtpVerifiedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchData();
@@ -76,6 +80,28 @@ export const ReservationsList = () => {
       cancelled: "bg-red-100 text-red-800 border-red-200"
     };
     return colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800 border-gray-200";
+  };
+
+  const getCurrencySymbol = (currency: string) => {
+    const symbols = {
+      'LKR': 'LKR',
+      'USD': '$',
+      'EUR': '€',
+      'GBP': '£'
+    };
+    return symbols[currency as keyof typeof symbols] || currency;
+  };
+
+  const handleOTPVerified = (reservationId: string) => {
+    setOtpVerifiedIds(prev => new Set([...prev, reservationId]));
+    toast({
+      title: "Verification Successful",
+      description: "You can now edit this reservation.",
+    });
+  };
+
+  const canShowPaymentButton = (status: string) => {
+    return status === 'tentative' || status === 'pending' || status === 'confirmed';
   };
 
   const filteredReservations = reservations.filter(reservation => {
@@ -194,7 +220,7 @@ export const ReservationsList = () => {
                         <TableCell>
                           {new Date(reservation.check_out_date).toLocaleDateString()}
                         </TableCell>
-                        <TableCell>LKR {reservation.total_amount.toLocaleString()}</TableCell>
+                        <TableCell>{getCurrencySymbol(reservation.currency)} {reservation.total_amount.toLocaleString()}</TableCell>
                         <TableCell>
                           <Badge className={getStatusColor(reservation.status)}>
                             {reservation.status}
@@ -216,6 +242,34 @@ export const ReservationsList = () => {
                             >
                               <Printer className="h-4 w-4" />
                             </Button>
+                            {canShowPaymentButton(reservation.status) && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => navigate(`/app/income?reservation=${reservation.id}`)}
+                                className="text-green-600 hover:text-green-700"
+                              >
+                                <CreditCard className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {otpVerifiedIds.has(reservation.id) ? (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => navigate(`/app/reservations/edit/${reservation.id}`)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            ) : (
+                              <OTPVerification
+                                onVerified={() => handleOTPVerified(reservation.id)}
+                                triggerComponent={
+                                  <Button variant="ghost" size="icon">
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                }
+                              />
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -254,7 +308,7 @@ export const ReservationsList = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <DollarSign className="h-3 w-3" />
-                      <span>LKR {reservation.total_amount.toLocaleString()}</span>
+                      <span>{getCurrencySymbol(reservation.currency)} {reservation.total_amount.toLocaleString()}</span>
                     </div>
                   </div>
                   
@@ -275,6 +329,34 @@ export const ReservationsList = () => {
                     >
                       <Printer className="h-4 w-4" />
                     </Button>
+                    {canShowPaymentButton(reservation.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/app/income?reservation=${reservation.id}`)}
+                        className="text-green-600 hover:text-green-700"
+                      >
+                        <CreditCard className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {otpVerifiedIds.has(reservation.id) ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/app/reservations/edit/${reservation.id}`)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <OTPVerification
+                        onVerified={() => handleOTPVerified(reservation.id)}
+                        triggerComponent={
+                          <Button variant="outline" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
+                    )}
                   </div>
                 </CardContent>
               </Card>
