@@ -6,13 +6,15 @@ const corsHeaders = {
 };
 
 interface SMSRequest {
-  type: 'income' | 'expense';
-  amount: number;
-  currency: string;
-  category: string;
-  account: string;
-  location: string;
-  date: string;
+  type?: 'income' | 'expense' | 'otp_verification';
+  phoneNumber?: string;
+  message?: string;
+  amount?: number;
+  currency?: string;
+  category?: string;
+  account?: string;
+  location?: string;
+  date?: string;
   note?: string;
 }
 
@@ -91,13 +93,13 @@ async function renewAccessToken(): Promise<string> {
   }
 }
 
-async function sendSMS(message: string): Promise<void> {
+async function sendSMS(message: string, phoneNumber: string = "94719528589"): Promise<void> {
   let token = accessToken || await getAccessToken();
   
   const smsData = {
     campaignName: "Financial Alert",
     mask: "RathnaSuper",
-    numbers: "94719528589",
+    numbers: phoneNumber,
     content: message
   };
 
@@ -181,16 +183,24 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const smsRequest: SMSRequest = await req.json();
     
-    // Validate required fields
-    if (!smsRequest.type || !smsRequest.amount || !smsRequest.category || !smsRequest.account) {
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    let message: string;
+    let phoneNumber = smsRequest.phoneNumber || "94719528589";
+    
+    if (smsRequest.type === 'otp_verification') {
+      // Handle OTP verification SMS
+      message = smsRequest.message || "Your OTP verification code";
+    } else {
+      // Validate required fields for financial alerts
+      if (!smsRequest.type || !smsRequest.amount || !smsRequest.category || !smsRequest.account) {
+        return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      message = createSMSMessage(smsRequest);
     }
 
-    const message = createSMSMessage(smsRequest);
-    await sendSMS(message);
+    await sendSMS(message, phoneNumber);
 
     return new Response(JSON.stringify({ success: true, message: 'SMS sent successfully' }), {
       status: 200,

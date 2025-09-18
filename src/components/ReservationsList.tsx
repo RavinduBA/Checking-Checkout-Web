@@ -12,6 +12,7 @@ import { Tables } from "@/integrations/supabase/types";
 import { useNavigate } from "react-router-dom";
 import { useAutoLocation } from "@/hooks/useAutoLocation";
 import { OTPVerification } from "@/components/OTPVerification";
+import { ReservationEditDialog } from "@/components/ReservationEditDialog";
 import { useToast } from "@/hooks/use-toast";
 
 type Reservation = Tables<"reservations"> & {
@@ -32,6 +33,8 @@ export const ReservationsList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [otpVerifiedIds, setOtpVerifiedIds] = useState<Set<string>>(new Set());
+  const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -93,9 +96,13 @@ export const ReservationsList = () => {
   };
 
   const handleOTPVerified = (reservationId: string) => {
-    setOtpVerifiedIds(prev => new Set([...prev, reservationId]));
+    const reservation = reservations.find(r => r.id === reservationId);
+    if (reservation) {
+      setEditingReservation(reservation);
+      setIsEditDialogOpen(true);
+    }
     toast({
-      title: "Verification Successful",
+      title: "Verification Successful", 
       description: "You can now edit this reservation.",
     });
   };
@@ -252,24 +259,14 @@ export const ReservationsList = () => {
                                 <CreditCard className="h-4 w-4" />
                               </Button>
                             )}
-                            {otpVerifiedIds.has(reservation.id) ? (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => navigate(`/app/reservations/edit/${reservation.id}`)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            ) : (
-                              <OTPVerification
-                                onVerified={() => handleOTPVerified(reservation.id)}
-                                triggerComponent={
-                                  <Button variant="ghost" size="icon">
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                }
-                              />
-                            )}
+                            <OTPVerification
+                              onVerified={() => handleOTPVerified(reservation.id)}
+                              triggerComponent={
+                                <Button variant="ghost" size="icon">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              }
+                            />
                           </div>
                         </TableCell>
                       </TableRow>
@@ -339,24 +336,14 @@ export const ReservationsList = () => {
                         <CreditCard className="h-4 w-4" />
                       </Button>
                     )}
-                    {otpVerifiedIds.has(reservation.id) ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/app/reservations/edit/${reservation.id}`)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    ) : (
-                      <OTPVerification
-                        onVerified={() => handleOTPVerified(reservation.id)}
-                        triggerComponent={
-                          <Button variant="outline" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        }
-                      />
-                    )}
+                    <OTPVerification
+                      onVerified={() => handleOTPVerified(reservation.id)}
+                      triggerComponent={
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      }
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -415,6 +402,20 @@ export const ReservationsList = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <ReservationEditDialog
+        reservation={editingReservation}
+        isOpen={isEditDialogOpen}
+        onClose={() => {
+          setIsEditDialogOpen(false);
+          setEditingReservation(null);
+        }}
+        onUpdate={() => {
+          fetchData();
+          setIsEditDialogOpen(false);
+          setEditingReservation(null);
+        }}
+      />
     </div>
   );
 };

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Bed, Plus, Edit, Trash2 } from "lucide-react";
@@ -15,9 +16,11 @@ type Room = {
   id: string;
   room_number: string;
   room_type: string;
+  property_type: string;
   bed_type: string;
   max_occupancy: number;
   base_price: number;
+  currency: 'USD' | 'LKR' | 'EUR' | 'GBP';
   location_id: string;
   description?: string;
   amenities?: string[];
@@ -40,14 +43,22 @@ export default function RoomsTab() {
   const [formData, setFormData] = useState({
     room_number: "",
     room_type: "",
+    property_type: "Room",
     bed_type: "",
     max_occupancy: 2,
     base_price: 0,
+    currency: "USD" as 'USD' | 'LKR' | 'EUR' | 'GBP',
     location_id: "",
     description: "",
     amenities: [] as string[],
     is_active: true,
   });
+
+  const availableAmenities = [
+    "Air Conditioning", "WiFi", "TV", "Mini Bar", "Safe", "Balcony", 
+    "Sea View", "Pool View", "Garden View", "Room Service", "Jacuzzi",
+    "Kitchen", "Washing Machine", "Hair Dryer", "Private Pool", "BBQ Area"
+  ];
   const { toast } = useToast();
 
   useEffect(() => {
@@ -143,9 +154,11 @@ export default function RoomsTab() {
     setFormData({
       room_number: "",
       room_type: "",
+      property_type: "Room",
       bed_type: "",
       max_occupancy: 2,
       base_price: 0,
+      currency: "USD",
       location_id: "",
       description: "",
       amenities: [],
@@ -158,9 +171,11 @@ export default function RoomsTab() {
     setFormData({
       room_number: room.room_number,
       room_type: room.room_type,
+      property_type: room.property_type,
       bed_type: room.bed_type,
       max_occupancy: room.max_occupancy,
       base_price: room.base_price,
+      currency: room.currency,
       location_id: room.location_id,
       description: room.description || "",
       amenities: room.amenities || [],
@@ -234,7 +249,7 @@ export default function RoomsTab() {
                 }
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="room_number">Room Number</Label>
@@ -242,7 +257,7 @@ export default function RoomsTab() {
                     id="room_number"
                     value={formData.room_number}
                     onChange={(e) => setFormData({ ...formData, room_number: e.target.value })}
-                    placeholder="e.g., 101, A-102"
+                    placeholder="e.g., 101, A-201"
                     required
                   />
                 </div>
@@ -265,31 +280,65 @@ export default function RoomsTab() {
                   </Select>
                 </div>
               </div>
+
+              <div>
+                <Label htmlFor="property_type">Property Type</Label>
+                <Select
+                  value={formData.property_type}
+                  onValueChange={(value) => setFormData({ ...formData, property_type: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Room">Room</SelectItem>
+                    <SelectItem value="Villa">Villa</SelectItem>
+                    <SelectItem value="Apartment">Apartment</SelectItem>
+                    <SelectItem value="Suite">Suite</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="room_type">Room Type</Label>
-                  <Input
-                    id="room_type"
+                  <Label htmlFor="room_type">Room/Property Type</Label>
+                  <Select
                     value={formData.room_type}
-                    onChange={(e) => setFormData({ ...formData, room_type: e.target.value })}
-                    placeholder="e.g., Standard, Deluxe, Suite"
-                    required
-                  />
+                    onValueChange={(value) => setFormData({ ...formData, room_type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Standard">Standard</SelectItem>
+                      <SelectItem value="Deluxe">Deluxe</SelectItem>
+                      <SelectItem value="Suite">Suite</SelectItem>
+                      <SelectItem value="Presidential">Presidential</SelectItem>
+                      <SelectItem value="Villa">Villa</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="bed_type">Bed Type</Label>
-                  <Input
-                    id="bed_type"
+                  <Select
                     value={formData.bed_type}
-                    onChange={(e) => setFormData({ ...formData, bed_type: e.target.value })}
-                    placeholder="e.g., Single, Double, King"
-                    required
-                  />
+                    onValueChange={(value) => setFormData({ ...formData, bed_type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select bed type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Single">Single</SelectItem>
+                      <SelectItem value="Double">Double</SelectItem>
+                      <SelectItem value="Queen">Queen</SelectItem>
+                      <SelectItem value="King">King</SelectItem>
+                      <SelectItem value="Twin">Twin</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="max_occupancy">Max Occupancy</Label>
                   <Input
@@ -313,6 +362,21 @@ export default function RoomsTab() {
                     required
                   />
                 </div>
+                <div>
+                  <Label htmlFor="currency">Currency</Label>
+                  <Select
+                    value={formData.currency}
+                    onValueChange={(value) => setFormData({ ...formData, currency: value as 'USD' | 'LKR' | 'EUR' | 'GBP' })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USD">USD</SelectItem>
+                      <SelectItem value="LKR">LKR</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div>
@@ -321,9 +385,39 @@ export default function RoomsTab() {
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Room description and features"
+                  placeholder="Room description..."
                   rows={3}
                 />
+              </div>
+
+              <div>
+                <Label>Amenities</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto">
+                  {availableAmenities.map((amenity) => (
+                    <div key={amenity} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={amenity}
+                        checked={formData.amenities.includes(amenity)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData({
+                              ...formData,
+                              amenities: [...formData.amenities, amenity]
+                            });
+                          } else {
+                            setFormData({
+                              ...formData,
+                              amenities: formData.amenities.filter(a => a !== amenity)
+                            });
+                          }
+                        }}
+                      />
+                      <Label htmlFor={amenity} className="text-sm font-normal">
+                        {amenity}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div>
@@ -344,7 +438,7 @@ export default function RoomsTab() {
                 </Select>
               </div>
 
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button
                   type="button"
                   variant="outline"
@@ -380,7 +474,7 @@ export default function RoomsTab() {
               <TableCell>{room.room_type}</TableCell>
               <TableCell>{(room as any).locations?.name}</TableCell>
               <TableCell>{room.max_occupancy}</TableCell>
-              <TableCell>${room.base_price}</TableCell>
+              <TableCell>{room.currency === 'USD' ? '$' : 'Rs. '}{room.base_price}</TableCell>
               <TableCell>
                 <Badge variant={room.is_active ? "default" : "secondary"}>
                   {room.is_active ? "Active" : "Inactive"}
