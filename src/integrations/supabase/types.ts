@@ -178,6 +178,27 @@ export type Database = {
         }
         Relationships: []
       }
+      allowed_emails: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_active: boolean
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          is_active?: boolean
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_active?: boolean
+        }
+        Relationships: []
+      }
       beds24_property_mappings: {
         Row: {
           beds24_property_id: string
@@ -374,6 +395,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      company_profiles: {
+        Row: {
+          address: string | null
+          company_name: string
+          contact_name: string
+          country: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          email: string
+          id: string
+          onboarding_completed: boolean
+          phone: string | null
+          property_count: number
+          property_type: string
+          selected_features: string[]
+          timezone: string | null
+          total_rooms: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          company_name: string
+          contact_name: string
+          country?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          email: string
+          id?: string
+          onboarding_completed?: boolean
+          phone?: string | null
+          property_count?: number
+          property_type: string
+          selected_features?: string[]
+          timezone?: string | null
+          total_rooms?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          company_name?: string
+          contact_name?: string
+          country?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          email?: string
+          id?: string
+          onboarding_completed?: boolean
+          phone?: string | null
+          property_count?: number
+          property_type?: string
+          selected_features?: string[]
+          timezone?: string | null
+          total_rooms?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       currency_rates: {
         Row: {
@@ -1067,33 +1151,54 @@ export type Database = {
       }
       user_permissions: {
         Row: {
+          access_accounts: boolean
+          access_beds24: boolean
+          access_bookings: boolean
           access_calendar: boolean
           access_dashboard: boolean
           access_expenses: boolean
           access_income: boolean
+          access_master_files: boolean
           access_reports: boolean
+          access_rooms: boolean
+          access_settings: boolean
+          access_users: boolean
           created_at: string
           id: string
           location_id: string
           user_id: string
         }
         Insert: {
+          access_accounts?: boolean
+          access_beds24?: boolean
+          access_bookings?: boolean
           access_calendar?: boolean
           access_dashboard?: boolean
           access_expenses?: boolean
           access_income?: boolean
+          access_master_files?: boolean
           access_reports?: boolean
+          access_rooms?: boolean
+          access_settings?: boolean
+          access_users?: boolean
           created_at?: string
           id?: string
           location_id: string
           user_id: string
         }
         Update: {
+          access_accounts?: boolean
+          access_beds24?: boolean
+          access_bookings?: boolean
           access_calendar?: boolean
           access_dashboard?: boolean
           access_expenses?: boolean
           access_income?: boolean
+          access_master_files?: boolean
           access_reports?: boolean
+          access_rooms?: boolean
+          access_settings?: boolean
+          access_users?: boolean
           created_at?: string
           id?: string
           location_id?: string
@@ -1114,11 +1219,28 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_permissions_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      user_permissions_view: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string | null
+          name: string | null
+          permissions_by_location: Json | null
+          role: Database["public"]["Enums"]["user_role"] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       generate_payment_number: {
@@ -1128,6 +1250,10 @@ export type Database = {
       generate_reservation_number: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      is_email_allowed: {
+        Args: { email_address: string }
+        Returns: boolean
       }
     }
     Enums: {
