@@ -317,7 +317,7 @@ export const ReservationsList = () => {
                         </TableCell>
                         <TableCell>
                           <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
-                            {payment.status || 'Completed'}
+                            Completed
                           </Badge>
                         </TableCell>
                       </TableRow>
