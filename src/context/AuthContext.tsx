@@ -32,9 +32,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         setLoading(false);
         
-        // Create profile if user signs up
+        // Check if email is allowed and create profile if user signs up
         if (event === 'SIGNED_IN' && session?.user) {
           setTimeout(async () => {
+            // Check if email is in allowed list
+            const { data: isAllowed } = await supabase
+              .rpc('is_email_allowed', { email_address: session.user.email });
+            
+            if (!isAllowed) {
+              console.error('Email not in allowed list:', session.user.email);
+              await supabase.auth.signOut();
+              return;
+            }
+
+            // Create profile
             const { error } = await supabase
               .from('profiles')
               .insert({
@@ -43,7 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 name: session.user.user_metadata?.name || session.user.email!,
               });
             
-            if (error) {
+            if (error && error.code !== '23505') { // Ignore duplicate key errors
               console.error('Error creating profile:', error);
             }
           }, 0);

@@ -19,7 +19,6 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Landing from "./pages/Landing";
-import Onboarding from "./pages/Onboarding";
 import BookingForm from "./pages/BookingForm";
 import MasterFiles from "./pages/MasterFiles";
 import RoomManagement from "./pages/RoomManagement";
@@ -38,7 +37,6 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/app" element={
               <ProtectedRoute>
                 <Layout />

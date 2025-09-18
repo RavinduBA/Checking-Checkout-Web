@@ -80,6 +80,21 @@ export default function Auth() {
             title: "Login Successful",
             description: "Welcome back!",
           });
+          
+          // Check if email is allowed
+          const { data: isAllowed } = await supabase
+            .rpc('is_email_allowed', { email_address: email });
+          
+          if (!isAllowed) {
+            await supabase.auth.signOut();
+            toast({
+              title: "Access Denied",
+              description: "Your email is not authorized to access this system.",
+              variant: "destructive",
+            });
+            return;
+          }
+          
           navigate("/app");
         }
       } else {

@@ -1219,28 +1219,11 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "user_permissions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_permissions_view"
-            referencedColumns: ["id"]
-          },
         ]
       }
     }
     Views: {
-      user_permissions_view: {
-        Row: {
-          created_at: string | null
-          email: string | null
-          id: string | null
-          name: string | null
-          permissions_by_location: Json | null
-          role: Database["public"]["Enums"]["user_role"] | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       generate_payment_number: {
@@ -1250,6 +1233,10 @@ export type Database = {
       generate_reservation_number: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_user_permissions: {
+        Args: { user_id_param: string }
+        Returns: Json
       }
       is_email_allowed: {
         Args: { email_address: string }
