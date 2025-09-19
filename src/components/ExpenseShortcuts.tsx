@@ -32,41 +32,48 @@ export function ExpenseShortcuts({ locationId, accounts, onQuickFill }: ExpenseS
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchTodaysBookings = async () => {
+      try {
+        const today = format(new Date(), "yyyy-MM-dd");
+        
+        // Check for bookings where today is between check-in and check-out dates
+        const { data: bookingsData } = await supabase
+          .from("bookings")
+          .select(`
+            *,
+            locations (*)
+          `)
+          .eq("location_id", locationId)
+          .lte("check_in", today)
+          .gt("check_out", today); // Check-out is after today (guests still here)
+
+        setTodaysBookings(bookingsData || []);
+      } catch (error) {
+        console.error("Error fetching today's bookings:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (locationId) {
       fetchTodaysBookings();
     }
   }, [locationId]);
 
-  const fetchTodaysBookings = async () => {
-    try {
-      const today = format(new Date(), "yyyy-MM-dd");
-      
-      // Check for bookings where today is between check-in and check-out dates
-      const { data: bookingsData } = await supabase
-        .from("bookings")
-        .select(`
-          *,
-          locations (*)
-        `)
-        .eq("location_id", locationId)
-        .lte("check_in", today)
-        .gt("check_out", today); // Check-out is after today (guests still here)
-
-      setTodaysBookings(bookingsData || []);
-    } catch (error) {
-      console.error("Error fetching today's bookings:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getAccountForExpense = (locationName: string): Account | undefined => {
-    if (locationName === "Rusty Bunk") {
-      return accounts.find(acc => acc.name === "RB-CASH ON HAND-LKR");
-    } else if (locationName === "Asaliya Villa") {
-      return accounts.find(acc => acc.name === "Asaliya Cash-LKR");  
+    // Look for accounts that contain location-specific identifiers
+    if (locationName.toLowerCase().includes("rusty")) {
+      return accounts.find(acc => acc.name.includes("RB-CASH") || acc.name.includes("Rusty"));
+    } else if (locationName.toLowerCase().includes("asaliya")) {
+      return accounts.find(acc => acc.name.includes("Asaliya"));  
     }
-    return accounts[0]; // Fallback to first account
+    
+    // Fallback: try to find account with location name or use first account
+    const locationAccount = accounts.find(acc => 
+      acc.name.toLowerCase().includes(locationName.toLowerCase())
+    );
+    return locationAccount || accounts[0];
   };
 
   const getExpenseShortcuts = () => {
@@ -78,8 +85,8 @@ export function ExpenseShortcuts({ locationId, accounts, onQuickFill }: ExpenseS
     // Staff - Caretaker shortcut
     const staffAccount = getAccountForExpense(location.name);
     if (staffAccount) {
-      const amount = location.name === "Rusty Bunk" ? "1500" : "2000";
-      const staffName = location.name === "Rusty Bunk" ? "Nilu" : "Tharanga";
+      const amount = location.name.toLowerCase().includes("rusty") ? "1500" : "2000";
+      const staffName = location.name.toLowerCase().includes("rusty") ? "Nilu" : "Tharanga";
       const shortcutId = `staff-${locationId}-${format(new Date(), "yyyy-MM-dd")}`;
       
       if (!usedShortcuts.has(shortcutId)) {
@@ -91,15 +98,15 @@ export function ExpenseShortcuts({ locationId, accounts, onQuickFill }: ExpenseS
           amount,
           currency: "Rs.", // Always LKR for these shortcuts
           account: staffAccount,
-          note: `${staffName} sallery - ${format(new Date(), "MMM dd, yyyy")} + Rs.${amount}`,
+          note: `${staffName} salary - ${format(new Date(), "MMM dd, yyyy")} + Rs.${amount}`,
           mainCategory: "Staff",
           subCategory: "Caretaker"
         });
       }
     }
     
-    // Laundry shortcut (only for Rusty Bunk)
-    if (location.name === "Rusty Bunk") {
+    // Laundry shortcut (only for locations that include "rusty")
+    if (location.name.toLowerCase().includes("rusty")) {
       const laundryAccount = getAccountForExpense(location.name);
       if (laundryAccount) {
         const shortcutId = `laundry-${locationId}-${format(new Date(), "yyyy-MM-dd")}`;

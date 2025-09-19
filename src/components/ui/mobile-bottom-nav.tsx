@@ -3,11 +3,11 @@ import { Home, Plus, Calendar, BarChart3, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { name: "Home", href: "/app", icon: Home },
-  { name: "Income", href: "/app/income", icon: Plus },
-  { name: "Calendar", href: "/app/calendar", icon: Calendar },
-  { name: "Reports", href: "/app/reports", icon: BarChart3 },
-  { name: "Accounts", href: "/app/accounts", icon: Building2 },
+  { name: "Home", href: "/dashboard", icon: Home },
+  { name: "Income", href: "/income", icon: Plus },
+  { name: "Calendar", href: "/calendar", icon: Calendar },
+  { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "Accounts", href: "/accounts", icon: Building2 },
 ];
 
 export function MobileBottomNav() {

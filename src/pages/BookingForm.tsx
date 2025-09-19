@@ -186,22 +186,6 @@ export default function BookingForm() {
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button asChild variant="ghost" size="icon">
-          <Link to="/calendar">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {isEdit ? 'Edit Booking' : 'New Booking'}
-          </h1>
-          <p className="text-muted-foreground">
-            {isEdit ? 'Update booking details' : 'Create a new booking reservation'}
-          </p>
-        </div>
-      </div>
 
       {/* Form */}
       <Card className="bg-gradient-card border-0 shadow-elegant">

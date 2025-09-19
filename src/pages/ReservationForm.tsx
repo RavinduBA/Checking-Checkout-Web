@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom"
 import { ArrowLeft, Save, Calendar, MapPin, User, CreditCard, UserCheck, Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SectionLoader } from "@/components/ui/loading-spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -383,7 +384,7 @@ export default function ReservationForm() {
         });
       }
 
-      navigate("/app/calendar");
+      navigate("/calendar");
     } catch (error: any) {
       console.error("Error saving reservation:", error);
       toast({
@@ -401,15 +402,15 @@ export default function ReservationForm() {
   );
 
   if (loading || locationLoading) {
-    return <div className="flex justify-center items-center min-h-64">Loading...</div>;
+    return <SectionLoader className="min-h-64" />;
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4 space-y-6">
+    <div className="w-full mx-auto p-4 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button asChild variant="ghost" size="icon">
-          <Link to="/app/calendar">
+          <Link to="/calendar">
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
@@ -428,7 +429,7 @@ export default function ReservationForm() {
           {/* Left Column - Main Form */}
           <div className="xl:col-span-2 space-y-6">
             {/* Guest Information */}
-            <Card className="bg-gradient-to-br from-card to-card/50">
+            <Card className="bg-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
@@ -518,7 +519,7 @@ export default function ReservationForm() {
             </Card>
 
             {/* Reservation Details */}
-            <Card className="bg-gradient-to-br from-card to-card/50">
+            <Card className="bg-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
@@ -690,7 +691,7 @@ export default function ReservationForm() {
         </div>
 
         {/* Additional Services */}
-        <Card className="bg-gradient-to-br from-card to-card/50">
+        <Card className="bg-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UserCheck className="h-5 w-5" />

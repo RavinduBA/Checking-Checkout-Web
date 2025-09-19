@@ -154,7 +154,7 @@ export default function Onboarding() {
       });
 
       // Redirect to main app
-      navigate("/app");
+      navigate("/dashboard");
       
     } catch (error: any) {
       toast({
@@ -461,12 +461,12 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background p-4">
+    <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
         {/* Progress Header */}
         <div className="text-center mb-8 pt-8">
           <div className="flex items-center gap-2 justify-center mb-4">
-            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <Hotel className="h-5 w-5 text-primary-foreground" />
             </div>
             <span className="text-xl font-bold">HotelVilla Pro</span>
@@ -502,7 +502,7 @@ export default function Onboarding() {
         </div>
 
         {/* Main Content */}
-        <Card className="border-0 shadow-elegant bg-gradient-card">
+        <Card className="bg-card border">
           <CardHeader className="pb-6">
             <CardTitle className="text-center text-2xl">
               {STEPS[currentStep - 1]?.title}

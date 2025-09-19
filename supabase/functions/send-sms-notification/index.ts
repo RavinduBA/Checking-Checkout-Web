@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
@@ -62,7 +63,7 @@ async function getAccessToken(): Promise<string> {
     accessToken = data.accessToken;
     refreshToken = data.refreshToken;
     
-    return accessToken;
+    return accessToken || "";
   } catch (error) {
     console.error('Error getting access token:', error);
     throw error;
@@ -96,7 +97,7 @@ async function renewAccessToken(): Promise<string> {
     const data = await response.json();
     accessToken = data.accessToken;
     
-    return accessToken;
+    return accessToken || "";
   } catch (error) {
     console.error('Error renewing access token:', error);
     // Fallback to fresh login

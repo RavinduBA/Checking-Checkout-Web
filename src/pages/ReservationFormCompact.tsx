@@ -4,6 +4,7 @@ import { ArrowLeft, Save, Calendar, MapPin, User, CreditCard, UserCheck, Users, 
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SectionLoader } from "@/components/ui/loading-spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,7 +17,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAutoLocation } from "@/hooks/useAutoLocation";
 import { PhotoAttachment } from "@/components/PhotoAttachment";
 import { SignatureCapture } from "@/components/SignatureCapture";
-import { AirbnbDatePicker } from "@/components/AirbnbDatePicker";
 import { CurrencySelector } from "@/components/CurrencySelector";
 import { PricingDisplay } from "@/components/PricingDisplay";
 import { convertCurrency } from "@/utils/currency";
@@ -55,7 +55,7 @@ export default function ReservationFormCompact() {
     guest_nationality: '',
     adults: 1,
     children: 0,
-    check_in_date: searchParams.get('date') || '',
+    check_in_date: searchParams.get('checkIn') || searchParams.get('date') || '',
     check_out_date: '',
     room_rate: 0,
     nights: 1,
@@ -433,7 +433,7 @@ export default function ReservationFormCompact() {
         });
       }
 
-      navigate("/app/reservations");
+      navigate("/reservations");
     } catch (error: any) {
       console.error("Error saving reservation:", error);
       toast({
@@ -451,22 +451,14 @@ export default function ReservationFormCompact() {
   );
 
   if (loading || locationLoading) {
-    return <div className="flex justify-center items-center min-h-64">Loading...</div>;
+    return <SectionLoader className="min-h-64" />;
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-4 space-y-4">
+    <div className="w-full mx-auto p-4 space-y-4">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button asChild variant="ghost" size="icon">
-          <Link to="/app/reservations">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
+      <div className="flex items-center">
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-foreground">
-            {isEdit ? 'Edit Reservation' : 'New Reservation'}
-          </h1>
         </div>
         <Button type="submit" form="reservation-form" disabled={submitting}>
           <Save className="h-4 w-4 mr-2" />
@@ -479,7 +471,7 @@ export default function ReservationFormCompact() {
           {/* Left Column - Guest & Booking Info */}
           <div className="xl:col-span-2 space-y-4">
             {/* Guest Information */}
-            <Card className="bg-gradient-to-br from-card to-card/50">
+            <Card className="bg-card">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <User className="h-4 w-4" />
@@ -558,7 +550,7 @@ export default function ReservationFormCompact() {
             </Card>
 
             {/* Booking Details */}
-            <Card className="bg-gradient-to-br from-card to-card/50">
+            <Card className="bg-card">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Calendar className="h-4 w-4" />
@@ -610,13 +602,41 @@ export default function ReservationFormCompact() {
                   </div>
                 </div>
 
-                <AirbnbDatePicker
-                  checkInDate={formData.check_in_date}
-                  checkOutDate={formData.check_out_date}
-                  onCheckInChange={(date) => handleInputChange('check_in_date', date)}
-                  onCheckOutChange={(date) => handleInputChange('check_out_date', date)}
-                  onNightsChange={(nights) => handleInputChange('nights', nights)}
-                />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="check_in_date" className="text-sm">Check-in Date *</Label>
+                    <Input
+                      id="check_in_date"
+                      type="date"
+                      value={formData.check_in_date}
+                      onChange={(e) => handleInputChange('check_in_date', e.target.value)}
+                      required
+                      className="h-9"
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="check_out_date" className="text-sm">Check-out Date *</Label>
+                    <Input
+                      id="check_out_date"
+                      type="date"
+                      value={formData.check_out_date}
+                      onChange={(e) => handleInputChange('check_out_date', e.target.value)}
+                      required
+                      className="h-9"
+                      min={formData.check_in_date || new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                </div>
+
+                {formData.check_in_date && formData.check_out_date && (
+                  <div className="flex items-center justify-center py-2 px-4 bg-muted/50 rounded-lg">
+                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span className="text-sm font-medium">
+                      {formData.nights} {formData.nights === 1 ? 'night' : 'nights'}
+                    </span>
+                  </div>
+                )}
 
                 <div>
                   <Label className="text-sm">Booking Source *</Label>

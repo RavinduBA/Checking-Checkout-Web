@@ -4,6 +4,7 @@ import { ArrowLeft, Edit, Printer, CreditCard, Calendar, MapPin, User, Clock, Pe
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { SectionLoader } from "@/components/ui/loading-spinner";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -98,7 +99,7 @@ export default function ReservationDetails() {
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center min-h-64">Loading...</div>;
+    return <SectionLoader className="min-h-64" />;
   }
 
   if (!reservation) {
@@ -106,18 +107,18 @@ export default function ReservationDetails() {
       <div className="max-w-4xl mx-auto p-4 text-center">
         <h1 className="text-2xl font-bold mb-4">Reservation Not Found</h1>
         <Button asChild>
-          <Link to="/app/reservations">Back to Reservations</Link>
+          <Link to="/reservations">Back to Reservations</Link>
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-6 print-area">
+    <div className="w-full mx-auto px-0 sm:px-4 space-y-6 print-area">
       {/* Header */}
       <div className="flex items-center gap-4 no-print">
         <Button asChild variant="ghost" size="icon">
-          <Link to="/app/reservations">
+          <Link to="/reservations">
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
@@ -130,13 +131,13 @@ export default function ReservationDetails() {
             <Printer className="h-4 w-4 mr-2" />
             Print
           </Button>
-          <Button onClick={() => navigate(`/app/income?reservation=${reservation.id}`)}>
+          <Button onClick={() => navigate(`/income?reservation=${reservation.id}`)}>
             <CreditCard className="h-4 w-4 mr-2" />
             Payment
           </Button>
           {isOTPVerified ? (
             <Button variant="outline" asChild>
-              <Link to={`/app/reservations/edit/${reservation.id}`}>
+              <Link to={`/reservations/edit/${reservation.id}`}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
               </Link>

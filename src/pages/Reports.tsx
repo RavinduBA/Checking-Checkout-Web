@@ -31,32 +31,11 @@ export default function Reports() {
   const activeTab = searchParams.get("tab") || "comprehensive";
 
   return (
-    <div className="max-w-full mx-auto p-2 lg:p-6 space-y-4 animate-fade-in">
-      {/* Mobile Header */}
-      <div className="flex items-center gap-2 lg:gap-4">
-        <Button asChild variant="ghost" size="icon" className="md:hidden h-8 w-8">
-          <Link to="/">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <BarChart3 className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-lg lg:text-2xl xl:text-3xl font-bold text-foreground">Financial Reports</h1>
-              <p className="text-xs lg:text-sm text-muted-foreground hidden sm:block">
-                Comprehensive financial analytics and account management
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="max-w-full w-full mx-auto p-2 lg:p-6 space-y-4 animate-fade-in">
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-        <Card className="bg-gradient-card border-0 shadow-elegant">
+        <Card className="bg-card border">
           <CardContent className="p-3 lg:p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -70,7 +49,7 @@ export default function Reports() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card border-0 shadow-elegant">
+        <Card className="bg-card border">
           <CardContent className="p-3 lg:p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -84,7 +63,7 @@ export default function Reports() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card border-0 shadow-elegant">
+        <Card className="bg-card border">
           <CardContent className="p-3 lg:p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -98,7 +77,7 @@ export default function Reports() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card border-0 shadow-elegant">
+        <Card className="bg-card border">
           <CardContent className="p-3 lg:p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -114,7 +93,7 @@ export default function Reports() {
       </div>
 
       {/* Reports Content */}
-      <Card className="bg-gradient-card border-0 shadow-elegant">
+      <Card className="bg-card border">
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <div>

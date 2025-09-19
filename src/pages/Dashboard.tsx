@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { SectionLoader } from "@/components/ui/loading-spinner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,75 +51,76 @@ export default function Dashboard() {
   const { hasAnyPermission, hasPermission } = usePermissions();
 
   useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        // Set date filters based on selected month
+        const today = new Date().toISOString().split('T')[0];
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        
+        let monthStart = "";
+        let monthEnd = "";
+        if (selectedMonth) {
+          const [year, month] = selectedMonth.split('-');
+          monthStart = `${year}-${month}-01`;
+          const nextMonth = new Date(parseInt(year), parseInt(month), 1);
+          monthEnd = nextMonth.toISOString().split('T')[0];
+        }
+
+        // Build query filters
+        const locationFilter = selectedLocation === "all" ? {} : { location_id: selectedLocation };
+        const todayFilter = selectedMonth ? 
+          { ...locationFilter, date: { gte: monthStart, lt: monthEnd } } : 
+          { ...locationFilter, date: today };
+        const weeklyFilter = selectedMonth ? 
+          { ...locationFilter, date: { gte: monthStart, lt: monthEnd } } : 
+          { ...locationFilter, date: { gte: weekAgo } };
+
+        const [
+          todayIncomeData,
+          todayExpensesData,
+          weeklyIncomeData,
+          weeklyExpensesData,
+          accountsData,
+          bookingsData,
+          locationsData
+        ] = await Promise.all([
+          selectedMonth ? 
+            supabase.from("income").select("amount").gte("date", monthStart).lt("date", monthEnd).match(locationFilter) :
+            supabase.from("income").select("amount").eq("date", today).match(locationFilter),
+          selectedMonth ?
+            supabase.from("expenses").select("amount").gte("date", monthStart).lt("date", monthEnd).match(locationFilter) :
+            supabase.from("expenses").select("amount").eq("date", today).match(locationFilter),
+          selectedMonth ?
+            supabase.from("income").select("amount").gte("date", monthStart).lt("date", monthEnd).match(locationFilter) :
+            supabase.from("income").select("amount").gte("date", weekAgo).match(locationFilter),
+          selectedMonth ?
+            supabase.from("expenses").select("amount").gte("date", monthStart).lt("date", monthEnd).match(locationFilter) :
+            supabase.from("expenses").select("amount").gte("date", weekAgo).match(locationFilter),
+          supabase.from("accounts").select("*"),
+          supabase.from("bookings").select("*, locations(*)").gte("check_in", today).match(selectedLocation === "all" ? {} : { location_id: selectedLocation }).order("check_in").limit(5),
+          supabase.from("locations").select("*").eq("is_active", true)
+        ]);
+
+        setTodayIncome(todayIncomeData.data?.reduce((sum, item) => sum + item.amount, 0) || 0);
+        setTodayExpenses(todayExpensesData.data?.reduce((sum, item) => sum + item.amount, 0) || 0);
+        setWeeklyIncome(weeklyIncomeData.data?.reduce((sum, item) => sum + item.amount, 0) || 0);
+        setWeeklyExpenses(weeklyExpensesData.data?.reduce((sum, item) => sum + item.amount, 0) || 0);
+        setAccounts(accountsData.data || []);
+        setUpcomingBookings(bookingsData.data || []);
+        setLocations(locationsData.data || []);
+
+        // Calculate account balances
+        await calculateAccountBalances(accountsData.data || []);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
     fetchDashboardData();
   }, [selectedLocation, selectedMonth]);
 
-  const fetchDashboardData = async () => {
-    try {
-      // Set date filters based on selected month
-      const today = new Date().toISOString().split('T')[0];
-      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      
-      let monthStart = "";
-      let monthEnd = "";
-      if (selectedMonth) {
-        const [year, month] = selectedMonth.split('-');
-        monthStart = `${year}-${month}-01`;
-        const nextMonth = new Date(parseInt(year), parseInt(month), 1);
-        monthEnd = nextMonth.toISOString().split('T')[0];
-      }
-
-      // Build query filters
-      const locationFilter = selectedLocation === "all" ? {} : { location_id: selectedLocation };
-      const todayFilter = selectedMonth ? 
-        { ...locationFilter, date: { gte: monthStart, lt: monthEnd } } : 
-        { ...locationFilter, date: today };
-      const weeklyFilter = selectedMonth ? 
-        { ...locationFilter, date: { gte: monthStart, lt: monthEnd } } : 
-        { ...locationFilter, date: { gte: weekAgo } };
-
-      const [
-        todayIncomeData,
-        todayExpensesData,
-        weeklyIncomeData,
-        weeklyExpensesData,
-        accountsData,
-        bookingsData,
-        locationsData
-      ] = await Promise.all([
-        selectedMonth ? 
-          supabase.from("income").select("amount").gte("date", monthStart).lt("date", monthEnd).match(locationFilter) :
-          supabase.from("income").select("amount").eq("date", today).match(locationFilter),
-        selectedMonth ?
-          supabase.from("expenses").select("amount").gte("date", monthStart).lt("date", monthEnd).match(locationFilter) :
-          supabase.from("expenses").select("amount").eq("date", today).match(locationFilter),
-        selectedMonth ?
-          supabase.from("income").select("amount").gte("date", monthStart).lt("date", monthEnd).match(locationFilter) :
-          supabase.from("income").select("amount").gte("date", weekAgo).match(locationFilter),
-        selectedMonth ?
-          supabase.from("expenses").select("amount").gte("date", monthStart).lt("date", monthEnd).match(locationFilter) :
-          supabase.from("expenses").select("amount").gte("date", weekAgo).match(locationFilter),
-        supabase.from("accounts").select("*"),
-        supabase.from("bookings").select("*, locations(*)").gte("check_in", today).match(selectedLocation === "all" ? {} : { location_id: selectedLocation }).order("check_in").limit(5),
-        supabase.from("locations").select("*").eq("is_active", true)
-      ]);
-
-      setTodayIncome(todayIncomeData.data?.reduce((sum, item) => sum + item.amount, 0) || 0);
-      setTodayExpenses(todayExpensesData.data?.reduce((sum, item) => sum + item.amount, 0) || 0);
-      setWeeklyIncome(weeklyIncomeData.data?.reduce((sum, item) => sum + item.amount, 0) || 0);
-      setWeeklyExpenses(weeklyExpensesData.data?.reduce((sum, item) => sum + item.amount, 0) || 0);
-      setAccounts(accountsData.data || []);
-      setUpcomingBookings(bookingsData.data || []);
-      setLocations(locationsData.data || []);
-
-      // Calculate account balances
-      await calculateAccountBalances(accountsData.data || []);
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const calculateAccountBalances = async (accountsList: Account[]) => {
     const balances: Record<string, number> = {};
@@ -162,14 +164,14 @@ export default function Dashboard() {
   };
 
   if (loading) {
-    return <div className="space-y-6 animate-fade-in">Loading dashboard...</div>;
+    return <SectionLoader className="min-h-64" />;
   }
 
   const profit = weeklyIncome - weeklyExpenses;
   const profitPercentage = weeklyIncome > 0 ? ((profit / weeklyIncome) * 100).toFixed(1) : '0';
 
   return (
-    <div className="space-y-4 lg:space-y-6 animate-fade-in p-4 lg:p-0">
+    <div className="space-y-4 w-full pb-8 lg:space-y-6 animate-fade-in p-4">
       {/* Header with Filters */}
       <div className="flex flex-col space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -179,8 +181,8 @@ export default function Dashboard() {
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
             {hasAnyPermission("income") && (
-              <Button asChild variant="villa" size="sm" className="w-full sm:w-auto">
-                <Link to="/app/reservations">
+              <Button asChild variant="default" size="sm" className="w-full sm:w-auto">
+                <Link to="/reservations">
                   <Plus className="h-4 w-4" />
                   Add Income
                 </Link>
@@ -188,7 +190,7 @@ export default function Dashboard() {
             )}
             {hasAnyPermission("expenses") && (
               <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
-                <Link to="/app/expense">
+                <Link to="/expense">
                   <Plus className="h-4 w-4" />
                   Add Expense
                 </Link>
@@ -229,7 +231,7 @@ export default function Dashboard() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="bg-gradient-card border-0 shadow-soft hover:shadow-elegant transition-all duration-300">
+        <Card className="bg-card border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {selectedMonth ? 'Monthly Income' : 'Today\'s Income'}
@@ -246,7 +248,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card border-0 shadow-soft hover:shadow-elegant transition-all duration-300">
+        <Card className="bg-card border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {selectedMonth ? 'Monthly Expenses' : 'Today\'s Expenses'}
@@ -263,7 +265,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card border-0 shadow-soft hover:shadow-elegant transition-all duration-300">
+        <Card className="bg-card border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {selectedMonth ? 'Monthly Profit' : 'Weekly Profit'}
@@ -282,7 +284,7 @@ export default function Dashboard() {
       </div>
 
       {/* Account Balances */}
-      <Card className="bg-gradient-card border-0 shadow-elegant">
+      <Card className="bg-card border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-primary" />
@@ -311,7 +313,7 @@ export default function Dashboard() {
       </Card>
 
       {/* Upcoming Bookings */}
-      <Card className="bg-gradient-card border-0 shadow-elegant">
+      <Card className="bg-card border">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
@@ -319,7 +321,7 @@ export default function Dashboard() {
           </CardTitle>
           {hasAnyPermission("calendar") && (
             <Button asChild variant="outline" size="sm">
-              <Link to="/app/calendar">
+              <Link to="/calendar">
                 <Eye className="h-4 w-4" />
                 View All
               </Link>

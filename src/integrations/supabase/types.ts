@@ -199,10 +199,10 @@ export type Database = {
         }
         Relationships: []
       }
-      beds24_property_mappings: {
+      channel_property_mappings: {
         Row: {
-          beds24_property_id: string
-          beds24_property_name: string
+          channel_property_id: string
+          channel_property_name: string
           created_at: string
           id: string
           is_active: boolean
@@ -212,8 +212,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          beds24_property_id: string
-          beds24_property_name: string
+          channel_property_id: string
+          channel_property_name: string
           created_at?: string
           id?: string
           is_active?: boolean
@@ -223,8 +223,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          beds24_property_id?: string
-          beds24_property_name?: string
+          channel_property_id?: string
+          channel_property_name?: string
           created_at?: string
           id?: string
           is_active?: boolean
@@ -235,14 +235,14 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "beds24_property_mappings_location_id_fkey"
+            foreignKeyName: "channel_property_mappings_location_id_fkey"
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "locations"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "beds24_property_mappings_room_id_fkey"
+            foreignKeyName: "channel_property_mappings_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
@@ -1155,7 +1155,7 @@ export type Database = {
       user_permissions: {
         Row: {
           access_accounts: boolean
-          access_beds24: boolean
+          access_booking_channels: boolean
           access_bookings: boolean
           access_calendar: boolean
           access_dashboard: boolean
@@ -1173,7 +1173,7 @@ export type Database = {
         }
         Insert: {
           access_accounts?: boolean
-          access_beds24?: boolean
+          access_booking_channels?: boolean
           access_bookings?: boolean
           access_calendar?: boolean
           access_dashboard?: boolean
@@ -1191,7 +1191,7 @@ export type Database = {
         }
         Update: {
           access_accounts?: boolean
-          access_beds24?: boolean
+          access_booking_channels?: boolean
           access_bookings?: boolean
           access_calendar?: boolean
           access_dashboard?: boolean

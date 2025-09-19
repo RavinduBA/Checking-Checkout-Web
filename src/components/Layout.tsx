@@ -1,114 +1,138 @@
-import { Outlet } from "react-router-dom";
-import { useState } from "react";
-import { Building2, Menu, X, LogOut, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAuth } from "@/context/AuthContext";
-import { useProfile } from "@/hooks/useProfile";
-import { Sidebar } from "@/components/Sidebar";
+import { Outlet, useLocation } from "react-router-dom";
+import { useLocationContext } from "@/context/LocationContext";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileBottomNav } from "@/components/ui/mobile-bottom-nav";
+import { Separator } from "@/components/ui/separator";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 export function Layout() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState("all");
-  const { signOut } = useAuth();
-  const { profile } = useProfile();
+  const { selectedLocation, setSelectedLocation, locations, loading } = useLocationContext();
   const isMobile = useIsMobile();
+  const location = useLocation();
 
-  const locations = [
-    { value: "all", label: "All Locations" },
-    { value: "asaliya", label: "Asaliya Villa" },
-    { value: "rusty", label: "Rusty Bunk" },
-    { value: "antiqua", label: "Antiqua Serenity" },
-  ];
+  // Get page title based on current route
+  const getPageTitle = () => {
+    const path = location.pathname;
+    const searchParams = new URLSearchParams(location.search);
+    
+    switch (path) {
+      case '/dashboard':
+        return 'Dashboard';
+      case '/calendar':
+        return 'Calendar';
+      case '/reservations':
+        return 'Reservations';
+      case '/reservations/new':
+        return 'New Reservation';
+      case '/reservations/compact':
+        return 'Quick Booking';
+      case '/income':
+        return 'Reservations & Payments';
+      case '/expense':
+        return 'Add Expense';
+      case '/accounts':
+        return 'Accounts';
+      case '/payments/new':
+        return 'Payment Form';
+      case '/reports': {
+        const tab = searchParams.get('tab');
+        switch (tab) {
+          case 'comprehensive':
+            return 'Comprehensive Reports';
+          case 'accounts':
+            return 'Account Reports';
+          case 'commission':
+            return 'Commission Reports';
+          case 'balance':
+            return 'Balance Sheet';
+          case 'enhanced':
+            return 'Enhanced Financial Reports';
+          default:
+            return 'Financial Reports';
+        }
+      }
+      case '/financial-reports':
+        return 'Reports & Analytics';
+      case '/users':
+        return 'User Management';
+      case '/settings':
+        return 'Settings';
+      case '/master-files': {
+        const masterTab = searchParams.get('tab');
+        switch (masterTab) {
+          case 'locations':
+            return 'Master Files - Locations';
+          case 'rooms':
+            return 'Master Files - Rooms';
+          case 'guides':
+            return 'Master Files - Guides';
+          case 'agents':
+            return 'Master Files - Agents';
+          case 'commissions':
+            return 'Master Files - Commissions';
+          default:
+            return 'Master Files';
+        }
+      }
+      case '/room-management':
+        return 'Room Management';
+      case '/booking-channels':
+        return 'Booking Channels';
+      default:
+        if (path.startsWith('/reservations/')) {
+          return 'Reservation Details';
+        }
+        return 'Hotel Management';
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
-      {/* Header */}
-      <header className="bg-card border-b border-border shadow-soft sticky top-0 z-40">
-        <div className="flex items-center justify-between p-3 lg:p-4">
-          <div className="flex items-center gap-2 lg:gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden h-8 w-8"
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            >
-              {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-            </Button>
-            <div className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 lg:h-6 lg:w-6 text-primary" />
-              <span className="font-semibold text-foreground text-sm lg:text-base">
-                {isMobile ? "Check In" : "Check In_Check Out"}
-              </span>
-            </div>
+    <SidebarProvider>
+      <AppSidebar 
+        locations={locations}
+        selectedLocation={selectedLocation}
+        onLocationChange={setSelectedLocation}
+        locationsLoading={loading}
+      />
+      <SidebarInset>
+        {/* Header */}
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="/dashboard">
+                    <span className="text-black">CheckingCheckout</span>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="text-black text-md font-normal">{getPageTitle()}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
-          
-          <div className="flex items-center gap-2 lg:gap-4">
-            {/* Location Selector */}
-            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-              <SelectTrigger className="w-32 sm:w-40 lg:w-48 h-8 lg:h-10 text-xs lg:text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="z-50">
-                {locations.map((location) => (
-                  <SelectItem key={location.value} value={location.value}>
-                    {location.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* User Info & Logout */}
-            <div className="flex items-center gap-1 lg:gap-2">
-              {!isMobile && (
-                <div className="hidden sm:flex items-center gap-2 text-sm">
-                  <User className="h-4 w-4" />
-                  <span className="text-muted-foreground">
-                    {profile?.name || "User"}
-                  </span>
-                </div>
-              )}
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={signOut}
-                title="Sign Out"
-                className="h-8 w-8 lg:h-10 lg:w-10"
-              >
-                <LogOut className="h-3 w-3 lg:h-4 lg:w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex">
-        {/* Sidebar */}
-        <Sidebar 
-          isOpen={isSidebarOpen} 
-          onClose={() => setIsSidebarOpen(false)} 
-        />
-        
-        {/* Sidebar Overlay for Mobile */}
-        {isSidebarOpen && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-            onClick={() => setIsSidebarOpen(false)}
-          />
-        )}
+        </header>
 
         {/* Main Content */}
-        <main className="flex-1 lg:ml-64 min-h-screen">
-          <div className="p-3 lg:p-6 pb-20 lg:pb-6">
-            <Outlet />
-          </div>
-        </main>
-      </div>
+        <div className="flex flex-1 flex-col gap-4 px-0 sm:px-4 pt-0">
+          <Outlet />
+        </div>
+      </SidebarInset>
 
       {/* Mobile Bottom Navigation */}
       {isMobile && <MobileBottomNav />}
-    </div>
+    </SidebarProvider>
   );
 }

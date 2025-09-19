@@ -38,61 +38,67 @@ export function BookingShortcuts({ locationId, accounts, onQuickFill }: BookingS
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchTodaysBookings = async () => {
+      try {
+        const today = format(new Date(), "yyyy-MM-dd");
+        
+        // Check for bookings where today is between check-in and check-out dates
+        const { data: bookingsData } = await supabase
+          .from("bookings")
+          .select(`
+            *,
+            locations (*),
+            booking_payments (
+              amount,
+              is_advance,
+              account_id
+            )
+          `)
+          .eq("location_id", locationId)
+          .lte("check_in", today)
+          .gt("check_out", today); // Check-out is after today (guests still here)
+
+        setTodaysBookings(bookingsData || []);
+      } catch (error) {
+        console.error("Error fetching today's bookings:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (locationId) {
       fetchTodaysBookings();
     }
   }, [locationId]);
 
-  const fetchTodaysBookings = async () => {
-    try {
-      const today = format(new Date(), "yyyy-MM-dd");
-      
-      // Check for bookings where today is between check-in and check-out dates
-      const { data: bookingsData } = await supabase
-        .from("bookings")
-        .select(`
-          *,
-          locations (*),
-          booking_payments (
-            amount,
-            is_advance,
-            account_id
-          )
-        `)
-        .eq("location_id", locationId)
-        .lte("check_in", today)
-        .gt("check_out", today); // Check-out is after today (guests still here)
-
-      setTodaysBookings(bookingsData || []);
-    } catch (error) {
-      console.error("Error fetching today's bookings:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getAccountForBooking = (booking: Booking): Account | undefined => {
     const locationName = booking.locations.name;
     const source = booking.source;
 
     // Account mapping logic based on location and source
-    if (locationName === "Rusty Bunk") {
+    // Look for accounts that contain location-specific identifiers
+    if (locationName.toLowerCase().includes("rusty")) {
       if (source === "booking_com") {
-        return accounts.find(acc => acc.name === "RB-CASH ON HAND-LKR");
+        return accounts.find(acc => acc.name.includes("RB-CASH") || acc.name.includes("Rusty"));
       } else if (source === "airbnb") {
         return accounts.find(acc => acc.name === "Payoneer jayathu");
       } else {
-        return accounts.find(acc => acc.name === "RB-CASH ON HAND-LKR");
+        return accounts.find(acc => acc.name.includes("RB-CASH") || acc.name.includes("Rusty"));
       }
-    } else if (locationName === "Asaliya Villa") {
+    } else if (locationName.toLowerCase().includes("asaliya")) {
       if (source === "airbnb") {
         return accounts.find(acc => acc.name === "Payoneer jayathu");
       } else {
-        return accounts.find(acc => acc.name === "Asaliya Cash-LKR");
+        return accounts.find(acc => acc.name.includes("Asaliya"));
       }
     }
 
-    return accounts[0]; // Fallback to first account
+    // Fallback: try to find account with location name or use first account
+    const locationAccount = accounts.find(acc => 
+      acc.name.toLowerCase().includes(locationName.toLowerCase())
+    );
+    return locationAccount || accounts[0];
   };
 
   const getSourceIcon = (source: string) => {

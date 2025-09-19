@@ -15,7 +15,7 @@ interface OTPVerificationProps {
 
 export const OTPVerification = ({ 
   onVerified, 
-  phoneNumber = "94719528589",
+  phoneNumber = "94760351335",
   triggerComponent 
 }: OTPVerificationProps) => {
   const { toast } = useToast();

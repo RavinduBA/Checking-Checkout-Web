@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { SectionLoader } from "@/components/ui/loading-spinner";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, convertCurrency } from "@/utils/currency";
@@ -76,7 +77,7 @@ export default function DetailedBalanceSheet() {
 
       const accountDetails: AccountDetail[] = [];
       const globalTransactions: TransactionWithBalance[] = [];
-      let summaryTotals = {
+      const summaryTotals = {
         totalInitialBalance: 0,
         totalCurrentBalance: 0,
         totalIncome: 0,
@@ -319,7 +320,7 @@ export default function DetailedBalanceSheet() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Loading balance sheet data...</div>
+        <SectionLoader />
       </div>
     );
   }
@@ -401,10 +402,6 @@ export default function DetailedBalanceSheet() {
                   <div className="flex items-center gap-3">
                     <Badge variant={
                       txn.type === 'income' || txn.type === 'transfer_in' ? 'default' : 'destructive'
-                    } className={
-                      txn.type === 'income' || txn.type === 'transfer_in' 
-                        ? 'bg-orange-500 hover:bg-orange-600' 
-                        : 'bg-red-500 hover:bg-red-600'
                     }>
                       {txn.type === 'income' || txn.type === 'transfer_in' ? 'INCOME' : 'EXPENSE'}
                     </Badge>

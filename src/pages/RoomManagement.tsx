@@ -3,10 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { InlineLoader } from "@/components/ui/loading-spinner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +54,7 @@ export default function RoomManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
+  const [deletingRoom, setDeletingRoom] = useState<Room | null>(null);
   const [formData, setFormData] = useState({
     location_id: "",
     room_number: "",
@@ -186,26 +189,52 @@ export default function RoomManagement() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this room?")) return;
-
+  const handleDelete = async (room: Room) => {
     try {
+      // Check if room has any active reservations
+      const { data: reservations, error: checkError } = await supabase
+        .from("reservations")
+        .select("id")
+        .eq("room_id", room.id)
+        .gte("check_out_date", new Date().toISOString())
+        .limit(1);
+
+      if (checkError) {
+        console.error("Error checking reservations:", checkError);
+        // Continue with deletion even if check fails
+      }
+
+      if (reservations && reservations.length > 0) {
+        toast({
+          title: "Cannot Delete Room",
+          description: "This room has active or future reservations. Please cancel them first.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from("rooms")
         .delete()
-        .eq("id", id);
+        .eq("id", room.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Delete error:", error);
+        throw error;
+      }
       
       toast({
         title: "Success",
-        description: "Room deleted successfully",
+        description: `Room ${room.room_number} deleted successfully`,
       });
+      
+      setDeletingRoom(null);
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Failed to delete room:", error);
       toast({
         title: "Error",
-        description: "Failed to delete room",
+        description: error.message || "Failed to delete room",
         variant: "destructive",
       });
     }
@@ -232,19 +261,13 @@ export default function RoomManagement() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Loading...</div>
+        <InlineLoader />
       </div>
     );
   }
 
   return (
     <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Room Management</h1>
-          <p className="text-muted-foreground">Manage rooms and pricing for each location</p>
-        </div>
-      </div>
 
       <div className="grid gap-6">
         <Card>
@@ -522,8 +545,8 @@ export default function RoomManagement() {
                   <TableHead>Location</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Bed</TableHead>
-                  <TableHead>Base Price (USD)</TableHead>
-                  <TableHead>Currency</TableHead>
+                  <TableHead>Occupancy</TableHead>
+                  <TableHead>Base Price</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -567,11 +590,6 @@ export default function RoomManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">
-                        {room.currency}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
                       <Badge variant={room.is_active ? "default" : "secondary"}>
                         {room.is_active ? "Active" : "Inactive"}
                       </Badge>
@@ -585,13 +603,34 @@ export default function RoomManagement() {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDelete(room.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Room</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete room "{room.room_number}"? 
+                                This action cannot be undone and will remove all room data.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(room)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete Room
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </TableCell>
                   </TableRow>

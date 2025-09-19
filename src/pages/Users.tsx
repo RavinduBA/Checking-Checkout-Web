@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { SectionLoader } from "@/components/ui/loading-spinner";
 
 interface UserPermissions {
   dashboard: boolean;
@@ -25,7 +26,7 @@ interface UserPermissions {
   accounts: boolean;
   users: boolean;
   settings: boolean;
-  beds24: boolean;
+  booking_channels: boolean;
 }
 
 interface User {
@@ -60,7 +61,7 @@ const permissionTypes = [
   { key: "accounts", label: "Account Management" },
   { key: "users", label: "User Management" },
   { key: "settings", label: "Settings Access" },
-  { key: "beds24", label: "Beds24 Integration" }
+  { key: "booking_channels", label: "Booking Channels" }
 ];
 
 export default function Users() {
@@ -103,11 +104,12 @@ export default function Users() {
 
       if (profilesError) throw profilesError;
 
-      // Fetch locations
+      // Fetch locations (only active ones)
       const { data: locationsData, error: locationsError } = await supabase
         .from('locations')
         .select('*')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .order('name');
 
       if (locationsError) throw locationsError;
 
@@ -119,22 +121,58 @@ export default function Users() {
 
       if (emailsError) throw emailsError;
 
-      // Get permissions for each user
+      // Get permissions for each user - but only for active locations
       const usersWithPermissions = await Promise.all(
-        profilesData.map(async (profile) => {
-          const { data: permissionsData } = await supabase
-            .rpc('get_user_permissions', { user_id_param: profile.id });
+        (profilesData || []).map(async (profile) => {
+          try {
+            // Get permissions directly from user_permissions table, filtered by active locations
+            const { data: userPermsData, error: userPermsError } = await supabase
+              .from('user_permissions')
+              .select(`
+                *,
+                locations!inner(id, name, is_active)
+              `)
+              .eq('user_id', profile.id)
+              .eq('locations.is_active', true);
 
-          // Safely parse permissions data
-          let permissions: Record<string, UserPermissions> = {};
-          if (permissionsData && typeof permissionsData === 'object' && !Array.isArray(permissionsData)) {
-            permissions = permissionsData as unknown as Record<string, UserPermissions>;
+            if (userPermsError) {
+              console.error('Error fetching user permissions:', userPermsError);
+            }
+
+            // Transform permissions data
+            const permissions: Record<string, UserPermissions> = {};
+            if (userPermsData) {
+              userPermsData.forEach((perm: any) => {
+                if (perm.locations) {
+                  permissions[perm.locations.name] = {
+                    dashboard: perm.access_dashboard || false,
+                    income: perm.access_income || false,
+                    expenses: perm.access_expenses || false,
+                    reports: perm.access_reports || false,
+                    calendar: perm.access_calendar || false,
+                    bookings: perm.access_bookings || false,
+                    rooms: perm.access_rooms || false,
+                    master_files: perm.access_master_files || false,
+                    accounts: perm.access_accounts || false,
+                    users: perm.access_users || false,
+                    settings: perm.access_settings || false,
+                    booking_channels: perm.access_booking_channels || false,
+                  };
+                }
+              });
+            }
+
+            return {
+              ...profile,
+              permissions
+            };
+          } catch (error) {
+            console.error('Error processing user permissions for', profile.email, error);
+            return {
+              ...profile,
+              permissions: {}
+            };
           }
-
-          return {
-            ...profile,
-            permissions
-          };
         })
       );
 
@@ -142,6 +180,7 @@ export default function Users() {
       setLocations(locationsData || []);
       setAllowedEmails(emailsData || []);
     } catch (error: any) {
+      console.error('Error fetching data:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to fetch data",
@@ -166,31 +205,17 @@ export default function Users() {
         if (emailError) throw emailError;
       }
 
-      // Create user permissions for each location
-      const permissionPromises = Object.entries(newUser.permissions).map(
-        ([locationName, perms]) => {
-          const location = locations.find(l => l.name === locationName);
-          if (!location) return null;
-
-          return supabase
-            .from('user_permissions')
-            .insert({
-              user_id: newUser.email, // Will be updated when user actually signs in
-              location_id: location.id,
-              ...perms
-            });
-        }
-      ).filter(Boolean);
-
-      await Promise.all(permissionPromises);
+      // Note: We can't create a profile or permissions until the user actually signs in
+      // The profile will be created automatically by the handle_new_user trigger
+      // For now, we just add the email to allowed list
 
       setNewUser({ name: "", email: "", role: "staff", permissions: {} });
       setShowAddUser(false);
       fetchData();
 
       toast({
-        title: "User Added",
-        description: `${newUser.name} has been added. They can now sign in with Gmail.`,
+        title: "Email Added",
+        description: `${newUser.email} has been added to allowed emails. They can now sign in with Gmail to complete setup.`,
       });
     } catch (error: any) {
       toast({
@@ -252,26 +277,39 @@ export default function Users() {
   };
 
   const handleDeleteUser = async (userId: string) => {
+    if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
+      return;
+    }
+
     try {
-      // Delete user permissions
-      await supabase
+      // Delete user permissions first (foreign key constraint)
+      const { error: permError } = await supabase
         .from('user_permissions')
         .delete()
         .eq('user_id', userId);
 
-      // Delete profile
-      await supabase
+      if (permError) {
+        console.error('Error deleting permissions:', permError);
+        // Continue anyway, as permissions might not exist
+      }
+
+      // Note: We cannot delete from auth.users table directly
+      // Instead, we'll just delete the profile and mark the user as inactive
+      const { error: profileError } = await supabase
         .from('profiles')
         .delete()
         .eq('id', userId);
+
+      if (profileError) throw profileError;
 
       fetchData();
 
       toast({
         title: "User Deleted",
-        description: "User has been removed from the system.",
+        description: "User profile and permissions have been removed from the system.",
       });
     } catch (error: any) {
+      console.error('Error deleting user:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to delete user",
@@ -298,7 +336,7 @@ export default function Users() {
             accounts: false,
             users: false,
             settings: false,
-            beds24: false
+            booking_channels: false
           }),
           [permission]: checked
         }
@@ -326,7 +364,7 @@ export default function Users() {
             accounts: false,
             users: false,
             settings: false,
-            beds24: false
+            booking_channels: false
           }),
           [permission]: checked
         }
@@ -335,7 +373,30 @@ export default function Users() {
   };
 
   const handleEditUser = (user: User) => {
-    setEditingUser(user);
+    // Initialize permissions for all active locations if user doesn't have any
+    const userWithInitializedPermissions = { ...user };
+    
+    // Ensure user has permission entries for all active locations
+    locations.forEach(location => {
+      if (!userWithInitializedPermissions.permissions[location.name]) {
+        userWithInitializedPermissions.permissions[location.name] = {
+          dashboard: false,
+          income: false,
+          expenses: false,
+          reports: false,
+          calendar: false,
+          bookings: false,
+          rooms: false,
+          master_files: false,
+          accounts: false,
+          users: false,
+          settings: false,
+          booking_channels: false
+        };
+      }
+    });
+
+    setEditingUser(userWithInitializedPermissions);
     setShowEditUser(true);
   };
 
@@ -343,10 +404,13 @@ export default function Users() {
     if (!editingUser) return;
 
     try {
-      // Update profile role
+      // Update profile role and name
       await supabase
         .from('profiles')
-        .update({ role: editingUser.role })
+        .update({ 
+          role: editingUser.role,
+          name: editingUser.name 
+        })
         .eq('id', editingUser.id);
 
       // Delete existing permissions
@@ -355,34 +419,37 @@ export default function Users() {
         .delete()
         .eq('user_id', editingUser.id);
 
-      // Insert new permissions
-      const permissionPromises = Object.entries(editingUser.permissions).map(
-        ([locationName, perms]) => {
-          const location = locations.find(l => l.name === locationName);
-          if (!location) return null;
-
-          return supabase
-            .from('user_permissions')
-            .insert({
-              user_id: editingUser.id,
-              location_id: location.id,
-              access_dashboard: perms.dashboard,
-              access_income: perms.income,
-              access_expenses: perms.expenses,
-              access_reports: perms.reports,
-              access_calendar: perms.calendar,
-              access_bookings: perms.bookings,
-              access_rooms: perms.rooms,
-              access_master_files: perms.master_files,
-              access_accounts: perms.accounts,
-              access_users: perms.users,
-              access_settings: perms.settings,
-              access_beds24: perms.beds24,
-            });
+      // Insert new permissions for each location
+      const permissionInserts = [];
+      for (const location of locations) {
+        const locationPerms = editingUser.permissions[location.name];
+        if (locationPerms) {
+          permissionInserts.push({
+            user_id: editingUser.id,
+            location_id: location.id,
+            access_dashboard: locationPerms.dashboard || false,
+            access_income: locationPerms.income || false,
+            access_expenses: locationPerms.expenses || false,
+            access_reports: locationPerms.reports || false,
+            access_calendar: locationPerms.calendar || false,
+            access_bookings: locationPerms.bookings || false,
+            access_rooms: locationPerms.rooms || false,
+            access_master_files: locationPerms.master_files || false,
+            access_accounts: locationPerms.accounts || false,
+            access_users: locationPerms.users || false,
+            access_settings: locationPerms.settings || false,
+            access_booking_channels: locationPerms.booking_channels || false,
+          });
         }
-      ).filter(Boolean);
+      }
 
-      await Promise.all(permissionPromises);
+      if (permissionInserts.length > 0) {
+        const { error: permError } = await supabase
+          .from('user_permissions')
+          .insert(permissionInserts);
+
+        if (permError) throw permError;
+      }
 
       setShowEditUser(false);
       setEditingUser(null);
@@ -393,6 +460,7 @@ export default function Users() {
         description: `${editingUser.name}'s permissions have been updated.`,
       });
     } catch (error: any) {
+      console.error('Error updating user:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to update user",
@@ -404,28 +472,15 @@ export default function Users() {
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
-        <div className="flex items-center justify-center min-h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
+        <SectionLoader className="min-h-64" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button asChild variant="ghost" size="icon">
-            <Link to="/app">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">User Management</h1>
-            <p className="text-muted-foreground">Manage users, roles, and permissions</p>
-          </div>
-        </div>
+    <div className="w-full pb-8 mx-auto space-y-6 animate-fade-in">
+      {/* Action Buttons */}
+      <div className="flex items-center justify-end">
         <div className="flex gap-2">
           <Dialog open={showAddEmail} onOpenChange={setShowAddEmail}>
             <DialogTrigger asChild>
@@ -659,7 +714,7 @@ export default function Users() {
       {/* Users List */}
       <div className="space-y-4">
         {users.map((user) => (
-          <Card key={user.id} className="bg-gradient-card border-0 shadow-elegant">
+          <Card key={user.id} className="bg-card border">
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
@@ -698,20 +753,37 @@ export default function Users() {
             <CardContent>
               <div className="space-y-3">
                 <h4 className="font-semibold text-sm">Permissions by Location:</h4>
-                {Object.entries(user.permissions).map(([location, perms]) => (
-                  <div key={location} className="space-y-2">
-                    <h5 className="font-medium text-sm text-primary">{location}</h5>
-                    <div className="flex flex-wrap gap-1 pl-4">
-                      {Object.entries(perms).map(([perm, enabled]) => (
-                        enabled && (
-                          <Badge key={perm} variant="outline" className="text-xs">
-                            {permissionTypes.find(p => p.key === perm)?.label}
-                          </Badge>
-                        )
-                      ))}
+                {Object.keys(user.permissions).length > 0 ? (
+                  Object.entries(user.permissions).map(([location, perms]) => (
+                    <div key={location} className="space-y-2">
+                      <h5 className="font-medium text-sm text-primary">{location}</h5>
+                      <div className="flex flex-wrap gap-1">
+                        {Object.entries(perms).map(([perm, enabled]) => (
+                          enabled && (
+                            <Badge key={perm} variant="outline" className="text-xs rounded-sm">
+                              {permissionTypes.find(p => p.key === perm)?.label}
+                            </Badge>
+                          )
+                        ))}
+                        {Object.values(perms).every(p => !p) && (
+                          <Badge variant="secondary" className="text-xs">No permissions assigned</Badge>
+                        )}
+                      </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
+                    No permissions configured for active locations. 
+                    <Button 
+                      variant="link" 
+                      size="sm" 
+                      className="p-0 ml-1 h-auto"
+                      onClick={() => handleEditUser(user)}
+                    >
+                      Click here to set up permissions.
+                    </Button>
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>
@@ -720,7 +792,7 @@ export default function Users() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-gradient-card border-0 shadow-elegant">
+        <Card className="bg-card border">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -732,7 +804,7 @@ export default function Users() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card border-0 shadow-elegant">
+        <Card className="bg-card border">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -744,7 +816,7 @@ export default function Users() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card border-0 shadow-elegant">
+        <Card className="bg-card border">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>

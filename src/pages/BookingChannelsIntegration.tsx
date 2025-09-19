@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SectionLoader } from "@/components/ui/loading-spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCw, Calendar, Users, Bed, MapPin, DollarSign, AlertCircle, CheckCircle, Clock, Wifi, Settings as SettingsIcon, Key, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -45,7 +45,7 @@ interface Location {
 interface PropertyMapping {
   locationId: string;
   locationName: string;
-  beds24Properties: string[];
+  channelProperties: string[];
 }
 
 interface SyncStats {
@@ -55,7 +55,7 @@ interface SyncStats {
   statusBreakdown: Record<string, number>;
 }
 
-export default function Beds24Integration() {
+export default function BookingChannelsIntegration() {
   const [bookings, setBookings] = useState<ExternalBooking[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,37 +72,108 @@ export default function Beds24Integration() {
   });
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
-  const [propertyMappings, setPropertyMappings] = useState<PropertyMapping[]>([
-    {
-      locationId: "f8ad4c1d-1fb3-4bbe-992f-f434d0b43df8", // Rusty Bunk
-      locationName: "Rusty Bunk",
-      beds24Properties: [
-        "Rusty Bunk Villa", 
-        "Three-Bedroom Apartment", 
-        "Luxury 3 Bedroom Mountain-View Villa, Sleeps 1-6",
-        "Room 609309" // Adding room ID as fallback
-      ]
-    },
-    {
-      locationId: "ddbdda7c-23d4-4685-9ef3-43f5b5d989a5", // Asaliya Villa
-      locationName: "Asaliya Villa", 
-      beds24Properties: [
-        "Luxury 4BR Bungalow Sleeps 8-10"
-      ]
-    }
-  ]);
+  const [propertyMappings, setPropertyMappings] = useState<PropertyMapping[]>([]);
 
   useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch bookings with location data
+        const { data: bookingsData, error: bookingsError } = await supabase
+          .from('external_bookings')
+          .select(`
+            *,
+            location:locations(name)
+          `)
+          .order('check_in', { ascending: false });
+
+        // Fetch locations
+        const { data: locationsData, error: locationsError } = await supabase
+          .from('locations')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+
+        if (bookingsError) throw bookingsError;
+        if (locationsError) throw locationsError;
+
+        // Fetch property mappings from database
+        const { data: mappingsData } = await supabase
+          .from('channel_property_mappings')
+          .select(`
+            *,
+            locations (id, name)
+          `)
+          .eq('is_active', true);
+
+        // Transform mappings data into the format expected by the component
+        const transformedMappings: PropertyMapping[] = [];
+        if (mappingsData) {
+          const groupedMappings = mappingsData.reduce((acc, mapping) => {
+            const locationId = mapping.location_id;
+            if (!acc[locationId]) {
+              acc[locationId] = {
+                locationId,
+                locationName: mapping.locations?.name || '',
+                channelProperties: []
+              };
+            }
+            acc[locationId].channelProperties.push(mapping.channel_property_name);
+            return acc;
+          }, {} as Record<string, PropertyMapping>);
+          
+          transformedMappings.push(...Object.values(groupedMappings));
+        }
+
+        setBookings(bookingsData || []);
+        setLocations(locationsData || []);
+        setPropertyMappings(transformedMappings);
+        
+        // Calculate stats
+        if (bookingsData) {
+          const stats = calculateStats(bookingsData);
+          setSyncStats(stats);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('Failed to fetch booking channel data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const syncChannelData = async () => {
+      setSyncing(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('fetch-beds24-bookings');
+        
+        if (error) {
+          console.error('Error syncing booking channel data:', error);
+          toast.error('Failed to sync booking channel data');
+        } else {
+          console.log('Booking channel sync response:', data);
+          toast.success('Booking channel data synced successfully');
+          // Refresh the data after sync
+          fetchData();
+        }
+      } catch (error) {
+        console.error('Error syncing booking channel data:', error);
+        toast.error('Failed to sync booking channel data');
+      } finally {
+        setSyncing(false);
+      }
+    };
+
     fetchData();
     setLastSyncTime(new Date());
     
     // Auto-sync every hour
     const interval = setInterval(() => {
-      syncBeds24Data();
+      syncChannelData();
     }, 60 * 60 * 1000); // 1 hour in milliseconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, []); // Dependencies are intentionally empty for initial setup
 
   const fetchData = async () => {
     setLoading(true);
@@ -126,8 +197,37 @@ export default function Beds24Integration() {
       if (bookingsError) throw bookingsError;
       if (locationsError) throw locationsError;
 
+      // Fetch property mappings from database
+      const { data: mappingsData } = await supabase
+        .from('channel_property_mappings')
+        .select(`
+          *,
+          locations (id, name)
+        `)
+        .eq('is_active', true);
+
+      // Transform mappings data into the format expected by the component
+      const transformedMappings: PropertyMapping[] = [];
+      if (mappingsData) {
+        const groupedMappings = mappingsData.reduce((acc, mapping) => {
+          const locationId = mapping.location_id;
+          if (!acc[locationId]) {
+            acc[locationId] = {
+              locationId,
+              locationName: mapping.locations?.name || '',
+              channelProperties: []
+            };
+          }
+          acc[locationId].channelProperties.push(mapping.channel_property_name);
+          return acc;
+        }, {} as Record<string, PropertyMapping>);
+        
+        transformedMappings.push(...Object.values(groupedMappings));
+      }
+
       setBookings(bookingsData || []);
       setLocations(locationsData || []);
+      setPropertyMappings(transformedMappings);
       
       // Calculate stats
       if (bookingsData) {
@@ -136,7 +236,7 @@ export default function Beds24Integration() {
       }
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Failed to fetch Beds24 data');
+      toast.error('Failed to fetch booking channel data');
     } finally {
       setLoading(false);
     }
@@ -168,19 +268,23 @@ export default function Beds24Integration() {
     };
   };
 
-  const syncBeds24Data = async () => {
+  const syncChannelData = async () => {
     setSyncing(true);
     try {
       const { data, error } = await supabase.functions.invoke('fetch-beds24-bookings');
       
-      if (error) throw error;
-      
-      toast.success(data.message || 'Beds24 sync completed successfully');
-      setLastSyncTime(new Date());
-      await fetchData(); // Refresh data
-    } catch (error: any) {
-      console.error('Sync error:', error);
-      toast.error(`Sync failed: ${error.message || 'Unknown error'}`);
+      if (error) {
+        console.error('Error syncing booking channel data:', error);
+        toast.error('Failed to sync booking channel data');
+      } else {
+        console.log('Booking channel sync response:', data);
+        toast.success('Booking channel data synced successfully');
+        // Refresh the data after sync
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Error syncing booking channel data:', error);
+      toast.error('Failed to sync booking channel data');
     } finally {
       setSyncing(false);
     }
@@ -189,15 +293,15 @@ export default function Beds24Integration() {
   const exchangeInviteCode = async (inviteCode: string) => {
     setExchangingToken(true);
     try {
-      const { data, error } = await supabase.functions.invoke('beds24-token-exchange', {
+      const { data, error } = await supabase.functions.invoke('channel-token-exchange', {
         body: { inviteCode }
       });
       
       if (error) throw error;
       
-      if (data.success) {
-        toast.success('Token exchange successful! You can now sync with Beds24.');
-        toast.info('Please save your refresh token in Supabase secrets as BEDS24_REFRESH_TOKEN');
+      if (data && data.success) {
+        toast.success('Token exchange successful! You can now sync with booking channels.');
+        toast.info('Please save your refresh token in Supabase secrets as CHANNEL_REFRESH_TOKEN');
         console.log('Refresh token:', data.data.refreshToken);
         setSetupMode(false);
       } else {
@@ -213,13 +317,12 @@ export default function Beds24Integration() {
 
   // Helper function to get location from booking based on property mappings
   const getLocationFromBooking = (booking: ExternalBooking): Location | null => {
-    // Special handling for "Luxury 3 Bedroom Mountain-View Villa" - force to Rusty Bunk
+    // Special handling for "Room 609309" - force to first location that contains "rusty"
     if (booking.room_name && booking.room_name.includes("Room 609309")) {
-      // All Room 609309 should go to Rusty Bunk based on the Airbnb property name
-      const rustyBunkLocation = locations.find(loc => loc.name === "Rusty Bunk");
-      if (rustyBunkLocation) {
-        console.log(`Forcing booking ${booking.external_id} with Room 609309 to Rusty Bunk`);
-        return rustyBunkLocation;
+      const rustyLocation = locations.find(loc => loc.name.toLowerCase().includes("rusty"));
+      if (rustyLocation) {
+        console.log(`Forcing booking ${booking.external_id} with Room 609309 to ${rustyLocation.name}`);
+        return rustyLocation;
       }
     }
     
@@ -236,7 +339,7 @@ export default function Beds24Integration() {
     
     for (const mapping of propertyMappings) {
       for (const propertyName of possiblePropertyNames) {
-        if (propertyName && mapping.beds24Properties.some(prop => 
+        if (propertyName && mapping.channelProperties.some(prop => 
           propertyName.includes(prop) || prop.includes(propertyName) || 
           prop === propertyName
         )) {
@@ -370,11 +473,9 @@ export default function Beds24Integration() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Beds24 Integration</h1>
+          <h1 className="text-3xl font-bold">Booking Channels</h1>
         </div>
-        <div className="flex items-center justify-center h-64">
-          <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <SectionLoader className="h-64" />
       </div>
     );
   }
@@ -382,16 +483,11 @@ export default function Beds24Integration() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Beds24 Integration</h1>
-          <p className="text-muted-foreground">Manage and sync your Beds24 booking data</p>
-        </div>
         <div className="flex items-center gap-2">
           <Button 
-            onClick={syncBeds24Data} 
+            onClick={syncChannelData} 
             disabled={syncing}
-            className="bg-gradient-primary hover:opacity-90"
+            className="bg-primary hover:bg-primary/90"
           >
             {syncing ? (
               <>
@@ -412,7 +508,6 @@ export default function Beds24Integration() {
             )}
           </div>
         </div>
-      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -519,7 +614,7 @@ export default function Beds24Integration() {
             <CardHeader>
               <CardTitle>External Bookings</CardTitle>
               <CardDescription>
-                Bookings synchronized from Beds24 and other external sources
+                Bookings synchronized from booking channels and other external sources
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -637,7 +732,7 @@ export default function Beds24Integration() {
                   <div className="text-center py-8">
                     <p className="text-muted-foreground">No bookings found for the selected location.</p>
                     <Button 
-                      onClick={syncBeds24Data} 
+                      onClick={syncChannelData} 
                       variant="outline" 
                       className="mt-4"
                       disabled={syncing}
@@ -838,10 +933,10 @@ export default function Beds24Integration() {
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <SettingsIcon className="h-5 w-5" />
-                    Beds24 Property Mapping
+                    Channel Property Mapping
                   </CardTitle>
                   <CardDescription>
-                    Map your Beds24 properties to internal locations and rooms
+                    Map your booking channel properties to internal locations and rooms
                   </CardDescription>
                 </div>
               </div>
@@ -857,16 +952,16 @@ export default function Beds24Integration() {
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-lg">{location.name}</CardTitle>
                           <Badge variant={mapping ? "default" : "secondary"}>
-                            {mapping ? `${mapping.beds24Properties.length} Properties` : "Not Mapped"}
+                            {mapping ? `${mapping.channelProperties.length} Properties` : "Not Mapped"}
                           </Badge>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-3">
                         {mapping && (
                           <div className="space-y-2">
-                            <Label className="text-sm font-medium">Mapped Beds24 Properties:</Label>
+                            <Label className="text-sm font-medium">Mapped Channel Properties:</Label>
                             <div className="flex flex-wrap gap-2">
-                              {mapping.beds24Properties.map((property, index) => (
+                              {mapping.channelProperties.map((property, index) => (
                                 <Badge key={index} variant="outline" className="text-xs">
                                   {property}
                                 </Badge>
@@ -877,7 +972,7 @@ export default function Beds24Integration() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <Label htmlFor={`property-${location.id}`} className="text-sm">
-                              Add Beds24 Property Name
+                              Add Channel Property Name
                             </Label>
                             <Input
                               id={`property-${location.id}`}
@@ -905,7 +1000,7 @@ export default function Beds24Integration() {
                     API Configuration
                   </CardTitle>
                   <CardDescription>
-                    Configure your Beds24 API connection
+                    Configure your booking channel API connection
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -940,7 +1035,7 @@ export default function Beds24Integration() {
                           <div className="space-y-2">
                             <h4 className="font-medium text-amber-800">Setup Instructions</h4>
                             <ol className="text-sm text-amber-700 space-y-1 ml-4 list-decimal">
-                              <li>Log into your Beds24 account</li>
+                              <li>Log into your booking channel account</li>
                               <li>Go to Settings → Channel Manager → API</li>
                               <li>Generate an invite code for this application</li>
                               <li>Enter the invite code below to complete setup</li>
@@ -950,11 +1045,11 @@ export default function Beds24Integration() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="inviteCode">Beds24 Invite Code</Label>
+                        <Label htmlFor="inviteCode">Channel Invite Code</Label>
                         <div className="flex gap-2">
                           <Input
                             id="inviteCode"
-                            placeholder="Enter your Beds24 invite code"
+                            placeholder="Enter your booking channel invite code"
                             disabled={exchangingToken}
                           />
                           <Button 

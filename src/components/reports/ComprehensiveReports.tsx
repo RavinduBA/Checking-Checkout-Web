@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { SectionLoader } from "@/components/ui/loading-spinner";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, convertCurrency } from "@/utils/currency";
@@ -113,7 +114,7 @@ export default function ComprehensiveReports() {
       if (accountsError) throw accountsError;
 
       const accountBalances: AccountBalance[] = [];
-      let globalSummary = {
+      const globalSummary = {
         totalIncome: 0,
         totalExpenses: 0,
         totalPayments: 0,
@@ -409,7 +410,7 @@ export default function ComprehensiveReports() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Loading comprehensive financial data...</div>
+        <SectionLoader />
       </div>
     );
   }

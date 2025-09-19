@@ -3,6 +3,7 @@ import { Eye, Printer, Edit, Calendar, User, MapPin, DollarSign, CreditCard } fr
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { SectionLoader } from "@/components/ui/loading-spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -166,11 +167,11 @@ export const ReservationsList = () => {
   });
 
   if (loading) {
-    return <div className="flex justify-center items-center min-h-64">Loading...</div>;
+    return <SectionLoader className="min-h-64" />;
   }
 
   return (
-    <div className="max-w-full mx-auto p-4 space-y-6">
+    <div className="max-w-full w-full mx-auto p-4 space-y-6">
       <div className="flex flex-col gap-4">
         <h1 className="text-2xl font-bold">Reservations & Payments</h1>
         
@@ -214,7 +215,7 @@ export const ReservationsList = () => {
             </SelectContent>
           </Select>
           
-          <Button onClick={() => navigate("/app/reservations/new")}>
+          <Button onClick={() => navigate("/reservations/new")}>
             <Calendar className="h-4 w-4 mr-2" />
             New Reservation
           </Button>
@@ -275,7 +276,7 @@ export const ReservationsList = () => {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => navigate(`/app/reservations/${reservation.id}`)}
+                              onClick={() => navigate(`/reservations/${reservation.id}`)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -290,7 +291,7 @@ export const ReservationsList = () => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => navigate(`/app/payments/new?reservation=${reservation.id}&amount=${reservation.balance_amount}&currency=${reservation.currency}`)}
+                                onClick={() => navigate(`/payments/new?reservation=${reservation.id}&amount=${reservation.balance_amount}&currency=${reservation.currency}`)}
                                 className="text-green-600 hover:text-green-700"
                               >
                                 <CreditCard className="h-4 w-4" />
@@ -351,7 +352,7 @@ export const ReservationsList = () => {
                       variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={() => navigate(`/app/reservations/${reservation.id}`)}
+                      onClick={() => navigate(`/reservations/${reservation.id}`)}
                     >
                       <Eye className="h-4 w-4 mr-1" />
                       View
@@ -367,7 +368,7 @@ export const ReservationsList = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/app/payments/new?reservation=${reservation.id}&amount=${reservation.balance_amount}&currency=${reservation.currency}`)}
+                        onClick={() => navigate(`/payments/new?reservation=${reservation.id}&amount=${reservation.balance_amount}&currency=${reservation.currency}`)}
                         className="text-green-600 hover:text-green-700"
                       >
                         <CreditCard className="h-4 w-4" />

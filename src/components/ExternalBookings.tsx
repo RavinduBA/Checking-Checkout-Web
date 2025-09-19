@@ -72,9 +72,9 @@ export const ExternalBookings = ({ locationId, className = "" }: ExternalBooking
   const syncBookings = async () => {
     setSyncing(true);
     try {
-      console.log('Starting manual sync of Beds24 bookings...');
+      console.log('Starting manual sync of booking channel data...');
       
-      const { data, error } = await supabase.functions.invoke('fetch-beds24-bookings');
+      const { data, error } = await supabase.functions.invoke('fetch-channel-bookings');
 
       if (error) {
         console.error('Sync error:', error);
@@ -178,7 +178,7 @@ export const ExternalBookings = ({ locationId, className = "" }: ExternalBooking
           <div className="text-center py-8 text-muted-foreground">
             <CalendarDays className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No external bookings found</p>
-            <p className="text-sm mt-2">Click "Sync Now" to fetch bookings from Beds24</p>
+            <p className="text-sm mt-2">Click "Sync Now" to fetch bookings from booking channels</p>
           </div>
         ) : (
           <div className="space-y-4">

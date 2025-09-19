@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SectionLoader, InlineLoader } from "@/components/ui/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import { ArrowLeft, Plus, Edit, Trash2, ArrowRightLeft } from "lucide-react";
+import { Plus, Edit, Trash2, ArrowRightLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
@@ -39,10 +40,6 @@ export default function Accounts() {
     note: ""
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const fetchData = async () => {
     try {
       const [accountsResponse, locationsResponse] = await Promise.all([
@@ -69,6 +66,13 @@ export default function Accounts() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    
+
+    fetchData();
+  }, []);
+
 
   const calculateAccountBalances = async (accountsList: Account[]) => {
     const balances: Record<string, number> = {};
@@ -268,16 +272,12 @@ export default function Accounts() {
   };
 
   if (loading) {
-    return <div className="p-6">Loading accounts...</div>;
+    return <SectionLoader className="min-h-64" />;
   }
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="text-2xl font-bold">Account Management</h1>
         <div className="flex gap-2">
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
             <DialogTrigger asChild>
@@ -624,7 +624,7 @@ function TransferHistory() {
   };
 
   if (loading) {
-    return <div>Loading transfers...</div>;
+    return <InlineLoader />;
   }
 
   if (transfers.length === 0) {

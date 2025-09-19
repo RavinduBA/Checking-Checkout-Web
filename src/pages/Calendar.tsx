@@ -3,6 +3,7 @@ import { ArrowLeft, Calendar as CalendarIcon, Filter, Plus, RefreshCw, ChevronLe
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { SectionLoader } from "@/components/ui/loading-spinner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Link, useNavigate } from "react-router-dom";
@@ -51,7 +52,7 @@ interface VirtualRoom extends Room {
 interface PropertyMapping {
   locationId: string;
   locationName: string;
-  beds24Properties: string[];
+  channelProperties: string[];
 }
 
 export default function Calendar() {
@@ -67,80 +68,92 @@ export default function Calendar() {
   const [selectedBooking, setSelectedBooking] = useState<ExternalBooking | null>(null);
   const [showBookingDialog, setShowBookingDialog] = useState(false);
 
-  const propertyMappings: PropertyMapping[] = [
-    {
-      locationId: "f8ad4c1d-1fb3-4bbe-992f-f434d0b43df8", // Rusty Bunk
-      locationName: "Rusty Bunk",
-      beds24Properties: [
-        "Rusty Bunk Villa", 
-        "Three-Bedroom Apartment", 
-        "Luxury 3 Bedroom Mountain-View Villa, Sleeps 1-6",
-        "Room 609309"
-      ]
-    },
-    {
-      locationId: "ddbdda7c-23d4-4685-9ef3-43f5b5d989a5", // Asaliya Villa
-      locationName: "Asaliya Villa", 
-      beds24Properties: [
-        "Luxury 4BR Bungalow Sleeps 8-10"
-      ]
-    }
-  ];
+  // Property mappings will be fetched from database or configured dynamically
+  const [propertyMappings, setPropertyMappings] = useState<PropertyMapping[]>([]);
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch locations
+        const { data: locationsData } = await supabase
+          .from("locations")
+          .select("*")
+          .eq("is_active", true);
+
+        // Fetch rooms with location data
+        const { data: roomsData } = await supabase
+          .from("rooms")
+          .select("*")
+          .eq("is_active", true);
+
+        // Fetch reservations with location and room data
+        const { data: reservationsData } = await supabase
+          .from("reservations")
+          .select(`
+            *,
+            locations (*),
+            rooms (*)
+          `)
+          .order("check_in_date", { ascending: true });
+
+        // Fetch external bookings
+        const { data: externalBookingsData } = await supabase
+          .from('external_bookings')
+          .select(`
+            *,
+            location:locations(name)
+          `)
+          .order('check_in', { ascending: true });
+
+        // Fetch property mappings from database
+        const { data: mappingsData } = await supabase
+          .from('channel_property_mappings')
+          .select(`
+            *,
+            locations (id, name)
+          `)
+          .eq('is_active', true);
+
+        // Transform mappings data into the format expected by the component
+        const transformedMappings: PropertyMapping[] = [];
+        if (mappingsData) {
+          const groupedMappings = mappingsData.reduce((acc, mapping) => {
+            const locationId = mapping.location_id;
+            if (!acc[locationId]) {
+              acc[locationId] = {
+                locationId,
+                locationName: mapping.locations?.name || '',
+                channelProperties: []
+              };
+            }
+            acc[locationId].channelProperties.push(mapping.channel_property_name);
+            return acc;
+          }, {} as Record<string, PropertyMapping>);
+          
+          transformedMappings.push(...Object.values(groupedMappings));
+        }
+
+        setLocations(locationsData || []);
+        setRooms(roomsData || []);
+        setReservations(reservationsData || []);
+        setExternalBookings(externalBookingsData || []);
+        setPropertyMappings(transformedMappings);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchData();
   }, []);
 
-  const fetchData = async () => {
-    try {
-      // Fetch locations
-      const { data: locationsData } = await supabase
-        .from("locations")
-        .select("*")
-        .eq("is_active", true);
-
-      // Fetch rooms with location data
-      const { data: roomsData } = await supabase
-        .from("rooms")
-        .select("*")
-        .eq("is_active", true)
-        .order("room_number");
-
-      // Fetch reservations with location and room data
-      const { data: reservationsData } = await supabase
-        .from("reservations")
-        .select(`
-          *,
-          locations (*),
-          rooms (*)
-        `)
-        .order("check_in_date", { ascending: true });
-
-      // Fetch external bookings
-      const { data: externalBookingsData } = await supabase
-        .from('external_bookings')
-        .select(`
-          *,
-          location:locations(name)
-        `)
-        .order('check_in', { ascending: true });
-
-      setLocations(locationsData || []);
-      setRooms(roomsData || []);
-      setReservations(reservationsData || []);
-      setExternalBookings(externalBookingsData || []);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Helper function to get location from external booking based on property mappings
   const getLocationFromExternalBooking = (booking: ExternalBooking): Location | null => {
-    // Special handling for "Room 609309" - force to Rusty Bunk
+    // Special handling for "Room 609309" - force to first location that contains "rusty"
     if (booking.room_name && booking.room_name.includes("Room 609309")) {
-      return locations.find(loc => loc.name === "Rusty Bunk") || null;
+      return locations.find(loc => loc.name.toLowerCase().includes("rusty")) || null;
     }
     
     const possiblePropertyNames = [
@@ -152,7 +165,7 @@ export default function Calendar() {
     
     for (const mapping of propertyMappings) {
       for (const propertyName of possiblePropertyNames) {
-        if (propertyName && mapping.beds24Properties.some(prop => 
+        if (propertyName && mapping.channelProperties.some(prop => 
           propertyName.includes(prop) || prop.includes(propertyName) || prop === propertyName
         )) {
           return locations.find(loc => loc.id === mapping.locationId) || null;
@@ -337,7 +350,7 @@ export default function Calendar() {
   const calendarDates = generateCalendarDates();
 
   if (loading) {
-    return <div className="flex justify-center items-center min-h-64">Loading...</div>;
+    return <SectionLoader className="min-h-64" />;
   }
 
   return (
@@ -401,7 +414,7 @@ export default function Calendar() {
           
           {/* Mobile View */}
           <div className="lg:hidden">
-            <Card className="bg-gradient-card border-0 shadow-elegant">
+            <Card className="bg-card border">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base font-medium flex items-center gap-2">
                   <CalendarIcon className="h-5 w-5" />
@@ -472,7 +485,7 @@ export default function Calendar() {
 
           {/* Desktop Calendar Grid */}
           <div className="hidden lg:block">
-            <Card className="bg-gradient-card border-0 shadow-elegant">
+            <Card className="bg-card border">
               <CardContent className="p-0">
                 <div className="overflow-x-auto overflow-y-hidden">
                   <div className="min-w-max">

@@ -4,6 +4,7 @@ import { ArrowLeft, Save, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SectionLoader } from "@/components/ui/loading-spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -235,7 +236,7 @@ export default function PaymentForm() {
         description: "Payment processed successfully"
       });
 
-      navigate("/app/reservations");
+      navigate("/reservations");
     } catch (error: any) {
       console.error("Error processing payment:", error);
       toast({
@@ -252,7 +253,7 @@ export default function PaymentForm() {
   const compatibleAccounts = accounts.filter(account => account.currency === formData.currency);
 
   if (loading) {
-    return <div className="flex justify-center items-center min-h-64">Loading...</div>;
+    return <SectionLoader className="min-h-64" />;
   }
 
   if (!reservation) {
@@ -260,7 +261,7 @@ export default function PaymentForm() {
       <div className="max-w-4xl mx-auto p-4 text-center">
         <h1 className="text-2xl font-bold mb-4">Reservation Not Found</h1>
         <Button asChild>
-          <Link to="/app/reservations">Back to Reservations</Link>
+          <Link to="/reservations">Back to Reservations</Link>
         </Button>
       </div>
     );
@@ -271,7 +272,7 @@ export default function PaymentForm() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button asChild variant="ghost" size="icon">
-          <Link to="/app/reservations">
+          <Link to="/reservations">
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>

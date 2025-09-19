@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { SectionLoader } from "@/components/ui/loading-spinner";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, parseISO, isWithinInterval, startOfDay, endOfDay } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, parseISO, isWithinInterval, startOfDay, endOfDay, isSameDay } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -29,6 +30,9 @@ export default function EnhancedCalendar() {
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'timeline' | 'grid'>('timeline');
+  const [isQuickBookDialogOpen, setIsQuickBookDialogOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -92,14 +96,41 @@ export default function EnhancedCalendar() {
   // Get bookings for a specific room and date
   const getBookingsForRoomAndDate = (roomId: string, date: Date) => {
     return filteredReservations.filter(reservation => {
-      const checkIn = parseISO(reservation.check_in_date);
-      const checkOut = parseISO(reservation.check_out_date);
+      const checkIn = startOfDay(parseISO(reservation.check_in_date));
+      const checkOut = startOfDay(parseISO(reservation.check_out_date));
       const checkDate = startOfDay(date);
       
-      return checkDate >= startOfDay(checkIn) && 
-             checkDate < startOfDay(checkOut) && 
+      return checkDate >= checkIn && 
+             checkDate < checkOut && 
              reservation.room_id === roomId;
     });
+  };
+
+  // Calculate booking span within the calendar view
+  const calculateBookingSpan = (booking: any, calendarDays: Date[]) => {
+    const checkIn = startOfDay(parseISO(booking.check_in_date));
+    const checkOut = startOfDay(parseISO(booking.check_out_date));
+    
+    // Find the start position in the calendar
+    const startIndex = calendarDays.findIndex(day => isSameDay(startOfDay(day), checkIn));
+    if (startIndex === -1) return { startIndex: -1, spanDays: 0, isVisible: false };
+    
+    // Calculate how many days the booking spans within the visible calendar
+    let spanDays = 0;
+    for (let i = startIndex; i < calendarDays.length; i++) {
+      const currentDay = startOfDay(calendarDays[i]);
+      if (currentDay < checkOut) {
+        spanDays++;
+      } else {
+        break;
+      }
+    }
+    
+    return { 
+      startIndex, 
+      spanDays: Math.max(1, spanDays), 
+      isVisible: startIndex >= 0 && spanDays > 0 
+    };
   };
 
   // Get booking that spans across a range for continuous display
@@ -135,28 +166,40 @@ export default function EnhancedCalendar() {
   // Get status color for reservations
   const getStatusColor = (status: string) => {
     const colors = {
-      confirmed: "bg-gradient-to-r from-green-500 to-green-600",
-      tentative: "bg-gradient-to-r from-yellow-500 to-orange-500", 
-      pending: "bg-gradient-to-r from-blue-500 to-blue-600",
-      cancelled: "bg-gradient-to-r from-red-500 to-red-600",
-      checked_in: "bg-gradient-to-r from-purple-500 to-purple-600",
-      checked_out: "bg-gradient-to-r from-gray-500 to-gray-600"
+      confirmed: "bg-green-600",
+      tentative: "bg-yellow-500", 
+      pending: "bg-blue-600",
+      cancelled: "bg-red-600",
+      checked_in: "bg-purple-600",
+      checked_out: "bg-gray-600"
     };
     return colors[status as keyof typeof colors] || "bg-gray-400";
+  };
+
+  const getStatusBorderColor = (status: string) => {
+    const colors = {
+      confirmed: "#22c55e",
+      tentative: "#eab308", 
+      pending: "#2563eb",
+      cancelled: "#dc2626",
+      checked_in: "#9333ea",
+      checked_out: "#4b5563"
+    };
+    return colors[status as keyof typeof colors] || "#6b7280";
   };
 
   const handleBookingClick = (booking: Reservation) => {
     // If booking is tentative or pending, navigate to payment form
     if (booking.status === 'tentative' || booking.status === 'pending') {
-      navigate(`/app/payment?reservation=${booking.id}`);
+      navigate(`/payments/new?reservation=${booking.id}`);
     } else {
       // Otherwise, view reservation details
-      navigate(`/app/reservations/${booking.id}`);
+      navigate(`/reservations/${booking.id}`);
     }
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center min-h-64">Loading...</div>;
+    return <SectionLoader className="min-h-64" />;
   }
 
   return (
@@ -164,12 +207,11 @@ export default function EnhancedCalendar() {
       {/* Header */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
         <div>
-          <h1 className="text-2xl font-bold">Calendar View</h1>
           <p className="text-muted-foreground">Visual booking calendar with room timeline</p>
         </div>
         
         <div className="flex items-center gap-2">
-          <Button onClick={() => navigate('/app/reservations/new')} className="gap-2">
+          <Button onClick={() => navigate('/reservations/new')} className="gap-2">
             <Plus className="h-4 w-4" />
             New Reservation
           </Button>
@@ -257,9 +299,12 @@ export default function EnhancedCalendar() {
                 return (
                   <div key={room.id} className="grid grid-cols-[200px_1fr] border-b hover:bg-gray-50/50">
                     {/* Room Info */}
-                    <div className="p-3 border-r">
+                    <div className="p-2 border-r">
+                      <div className="flex items-center gap-1">
+
                       <div className="font-medium text-sm">{room.room_number}</div>
                       <div className="text-xs text-gray-500">{room.room_type}</div>
+                      </div>
                       <Badge variant="outline" className="text-xs mt-1">
                         {location?.name}
                       </Badge>
@@ -267,84 +312,85 @@ export default function EnhancedCalendar() {
 
                     {/* Calendar Days for this Room */}
                     <div className="grid gap-0 relative" style={{ gridTemplateColumns: `repeat(${calendarDays.length}, minmax(40px, 1fr))` }}>
-                      {calendarDays.map((day, dayIndex) => {
-                        const bookings = getBookingsForRoomAndDate(room.id, day);
-                        const booking = bookings[0];
-                        
-                        // Check if this is the start of a booking span
-                        const isBookingStart = booking && parseISO(booking.check_in_date).toDateString() === day.toDateString();
-                        
-                        // Calculate span width for continuous bookings
-                        let spanWidth = 1;
-                        let shouldDisplay = true;
-                        
-                        if (booking) {
-                          const checkIn = parseISO(booking.check_in_date);
-                          const checkOut = parseISO(booking.check_out_date);
-                          
-                          // Only display the booking element on the first day
-                          if (day.toDateString() !== checkIn.toDateString()) {
-                            shouldDisplay = false;
-                          } else {
-                            // Calculate how many days this booking spans within the current month view
-                            const remainingDays = calendarDays.slice(dayIndex);
-                            spanWidth = 0;
-                            for (const remainingDay of remainingDays) {
-                              if (remainingDay < checkOut) {
-                                spanWidth++;
-                              } else {
-                                break;
-                              }
-                            }
-                            spanWidth = Math.max(1, spanWidth); // Ensure minimum width of 1
-                          }
-                        }
+{(() => {
+                        // Get all bookings for this room that intersect with the calendar view
+                        const roomBookings = filteredReservations
+                          .filter(reservation => reservation.room_id === room.id)
+                          .map(booking => ({
+                            ...booking,
+                            span: calculateBookingSpan(booking, calendarDays)
+                          }))
+                          .filter(booking => booking.span.isVisible);
 
-                        return (
-                          <div 
-                            key={dayIndex} 
-                            className={cn(
-                              "h-16 border-r border-gray-200 relative flex items-center justify-center",
-                              booking && !shouldDisplay && "bg-gray-50"
-                            )}
-                          >
-                            {booking && shouldDisplay && (
-                              <div 
-                                className={cn(
-                                  "absolute inset-1 rounded-lg text-white text-xs p-2 cursor-pointer transition-all hover:scale-105 hover:shadow-lg z-10 border border-white/20",
-                                  getStatusColor(booking.status),
-                                  (booking.status === 'tentative' || booking.status === 'pending') && "ring-2 ring-white/30 animate-pulse"
-                                )}
-                                style={{
-                                  width: `${spanWidth * 100 + (spanWidth - 1) * 1}%`,
-                                  minWidth: `${spanWidth * 41}px`
-                                }}
-                                onClick={() => handleBookingClick(booking)}
-                                title={`${booking.guest_name} - ${booking.status} (${format(parseISO(booking.check_in_date), 'MMM dd')} - ${format(parseISO(booking.check_out_date), 'MMM dd')})${(booking.status === 'tentative' || booking.status === 'pending') ? ' - Click to make payment' : ''}`}
-                              >
-                                <div className="flex flex-col h-full justify-between">
-                                  <div className="font-semibold truncate text-sm">
-                                    #{booking.reservation_number.slice(-4)} {booking.guest_name.split(' ')[0]}
+                        return calendarDays.map((day, dayIndex) => {
+                          // Find booking that starts on this day
+                          const bookingStartingToday = roomBookings.find(booking => 
+                            booking.span.startIndex === dayIndex
+                          );
+                          
+                          // Check if this day is occupied by any booking
+                          const isOccupied = roomBookings.some(booking => 
+                            dayIndex >= booking.span.startIndex && 
+                            dayIndex < booking.span.startIndex + booking.span.spanDays
+                          );
+
+                          return (
+                            <div 
+                              key={dayIndex} 
+                              className={cn(
+                                "h-16 border-r border-gray-200 relative flex items-center justify-center",
+                                isOccupied && !bookingStartingToday && "bg-gray-50"
+                              )}
+                            >
+                              {bookingStartingToday && (
+                                <div 
+                                  className={cn(
+                                    "absolute inset-0 rounded-lg text-white text-xs px-2 cursor-pointer transition-all z-10 border border-white/20 flex flex-col justify-between overflow-hidden",
+                                    getStatusColor(bookingStartingToday.status)
+                                  )}
+                                  style={{
+                                    width: `calc(${bookingStartingToday.span.spanDays * 100}% + ${(bookingStartingToday.span.spanDays - 1) * 1}px)`,
+                                    minWidth: `${bookingStartingToday.span.spanDays * 38}px`
+                                  }}
+                                  onClick={() => handleBookingClick(bookingStartingToday)}
+                                  title={`${bookingStartingToday.guest_name} - ${bookingStartingToday.status} (${format(parseISO(bookingStartingToday.check_in_date), 'MMM dd')} - ${format(parseISO(bookingStartingToday.check_out_date), 'MMM dd')})${(bookingStartingToday.status === 'tentative' || bookingStartingToday.status === 'pending') ? ' - Click to make payment' : ''}`}
+                                >
+                                  <div className="font-semibold truncate text-sm py-1">
+                                    #{bookingStartingToday.reservation_number.slice(-4)} {bookingStartingToday.guest_name.split(' ')[0]}
                                   </div>
-                                  {spanWidth > 2 && (
-                                    <div className="text-xs opacity-90 flex items-center gap-1">
-                                      <span className="truncate">{booking.guest_name.split(' ').slice(1).join(' ')}</span>
-                                      {(booking.status === 'tentative' || booking.status === 'pending') && (
+                                  {bookingStartingToday.span.spanDays > 2 && (
+                                    <div className="text-xs opacity-90 flex items-center gap-1 pb-1">
+                                      <span className="truncate">{bookingStartingToday.guest_name.split(' ').slice(1).join(' ')}</span>
+                                      {(bookingStartingToday.status === 'tentative' || bookingStartingToday.status === 'pending') && (
                                         <span className="text-yellow-200 font-bold">💳</span>
                                       )}
                                     </div>
                                   )}
-                                  {spanWidth > 4 && (
-                                    <div className="text-xs opacity-75">
-                                      {booking.currency === 'USD' ? '$' : 'Rs. '}{booking.total_amount.toLocaleString()}
+                                  {bookingStartingToday.span.spanDays > 4 && (
+                                    <div className="text-xs opacity-75 pb-1">
+                                      {bookingStartingToday.currency === 'USD' ? '$' : 'Rs. '}{bookingStartingToday.total_amount.toLocaleString()}
                                     </div>
                                   )}
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                              )}
+                              
+                              {!isOccupied && (
+                                <button
+                                  className="w-full h-full hover:bg-blue-50 transition-colors flex items-center justify-center group"
+                                  onClick={() => {
+                                    setSelectedRoom(room);
+                                    setSelectedDate(day);
+                                    setIsQuickBookDialogOpen(true);
+                                  }}
+                                  title={`Book ${room.room_number} for ${format(day, 'MMM dd, yyyy')}`}
+                                >
+                                  <Plus className="h-4 w-4 text-gray-300 group-hover:text-blue-500 transition-colors" />
+                                </button>
+                              )}
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
                   </div>
                 );
@@ -386,7 +432,7 @@ export default function EnhancedCalendar() {
               <CalendarIcon className="h-16 w-16 mx-auto mb-4 text-gray-300" />
               <h3 className="text-lg font-semibold text-gray-600 mb-2">No Reservations Found</h3>
               <p className="text-gray-500 mb-4">No reservations for the selected location and time period.</p>
-              <Button onClick={() => navigate('/app/reservations/new')} className="gap-2">
+              <Button onClick={() => navigate('/reservations/new')} className="gap-2">
                 <Plus className="h-4 w-4" />
                 Create First Reservation
               </Button>
@@ -400,7 +446,7 @@ export default function EnhancedCalendar() {
                 })
                 .map((reservation) => (
                 <Card key={reservation.id} className="cursor-pointer hover:shadow-md transition-all duration-200 border-l-4" 
-                      style={{ borderLeftColor: getStatusColor(reservation.status).replace('bg-gradient-to-r from-', '').replace(' to-green-600', '').replace(' to-yellow-500', '').replace(' to-blue-600', '').replace(' to-red-600', '').replace(' to-purple-600', '').replace(' to-gray-600', '').replace('green-500', '#22c55e').replace('yellow-500', '#eab308').replace('blue-500', '#3b82f6').replace('red-500', '#ef4444').replace('purple-500', '#a855f7').replace('gray-500', '#6b7280') }}>
+                      style={{ borderLeftColor: getStatusBorderColor(reservation.status) }}>
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1 min-w-0">
@@ -441,7 +487,7 @@ export default function EnhancedCalendar() {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/app/payment?reservation=${reservation.id}`);
+                                navigate(`/payments/new?reservation=${reservation.id}`);
                               }}
                               className="bg-green-600 hover:bg-green-700 gap-1 text-xs px-3"
                             >
@@ -453,7 +499,7 @@ export default function EnhancedCalendar() {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`/app/reservations/${reservation.id}`);
+                              navigate(`/reservations/${reservation.id}`);
                             }}
                             className="text-xs px-3"
                           >
@@ -467,6 +513,45 @@ export default function EnhancedCalendar() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Quick Book Dialog */}
+      {isQuickBookDialogOpen && selectedRoom && selectedDate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Quick Book Room</h3>
+            <div className="space-y-3">
+              <div>
+                <span className="font-medium">Room:</span> {selectedRoom.room_number} ({selectedRoom.room_type})
+              </div>
+              <div>
+                <span className="font-medium">Date:</span> {format(selectedDate, 'MMM dd, yyyy')}
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsQuickBookDialogOpen(false);
+                  setSelectedRoom(null);
+                  setSelectedDate(null);
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  const checkInDate = format(selectedDate, 'yyyy-MM-dd');
+                  navigate(`/reservations/new?room=${selectedRoom.id}&checkIn=${checkInDate}`);
+                }}
+                className="flex-1"
+              >
+                Book Room
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

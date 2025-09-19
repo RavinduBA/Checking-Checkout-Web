@@ -103,16 +103,6 @@ export default function MasterFiles() {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <div className="flex items-center gap-2">
-          <Building2 className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold text-foreground">Master Files</h1>
-        </div>
-        <p className="text-sm text-muted-foreground mt-1">
-          System configurations and master data management
-        </p>
-      </div>
-      
       <Card className="h-full">
         <CardContent className="p-6">
           {renderTabContent()}

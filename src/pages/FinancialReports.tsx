@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { SectionLoader } from "@/components/ui/loading-spinner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -199,7 +200,7 @@ export default function FinancialReports() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Loading financial data...</div>
+        <SectionLoader />
       </div>
     );
   }
@@ -214,7 +215,6 @@ export default function FinancialReports() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Reports & Analytics</h1>
           <p className="text-muted-foreground">Financial insights and performance tracking</p>
         </div>
       </div>
@@ -304,7 +304,7 @@ export default function FinancialReports() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+        <Card className="bg-card border">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -321,7 +321,7 @@ export default function FinancialReports() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200">
+        <Card className="bg-card border">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -338,7 +338,7 @@ export default function FinancialReports() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 relative">
+        <Card className="bg-card border relative">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -352,7 +352,6 @@ export default function FinancialReports() {
               </div>
               <DollarSign className="h-8 w-8 text-blue-600" />
             </div>
-            <div className="absolute top-0 right-0 w-1 h-full bg-gradient-to-b from-green-400 to-blue-400 rounded-r-lg"></div>
           </CardContent>
         </Card>
       </div>

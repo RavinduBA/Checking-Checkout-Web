@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SectionLoader } from "@/components/ui/loading-spinner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,6 +34,7 @@ const Income = () => {
   
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [recentPayments, setRecentPayments] = useState<Payment[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -66,47 +68,34 @@ const Income = () => {
     notes: "",
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const [reservationsRes, locationsRes, roomsRes, accountsRes, paymentsRes] = await Promise.all([
         supabase
           .from("reservations")
-          .select("*, rooms(room_number, room_type), locations(name)")
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("locations")
-          .select("*")
-          .eq("is_active", true),
-        supabase
-          .from("rooms")
-          .select("*")
-          .eq("is_active", true),
-        supabase
-          .from("accounts")
-          .select("*"),
-        supabase
-          .from("payments")
-          .select("*, reservations(guest_name, reservation_number)")
+          .select(`
+            *,
+            locations(*),
+            rooms(*),
+            payments(*)
+          `)
           .order("created_at", { ascending: false })
+          .limit(20),
+        supabase.from("locations").select("*").eq("is_active", true),
+        supabase.from("rooms").select("*").eq("is_active", true),
+        supabase.from("accounts").select("*"),
+        supabase.from("payments").select("*").order("created_at", { ascending: false }).limit(10)
       ]);
-
-      if (reservationsRes.error) throw reservationsRes.error;
-      if (locationsRes.error) throw locationsRes.error;
-      if (roomsRes.error) throw roomsRes.error;
-      if (accountsRes.error) throw accountsRes.error;
-      if (paymentsRes.error) throw paymentsRes.error;
 
       setReservations(reservationsRes.data || []);
       setLocations(locationsRes.data || []);
       setRooms(roomsRes.data || []);
       setAccounts(accountsRes.data || []);
+      setRecentPayments(paymentsRes.data || []);
       setPayments(paymentsRes.data || []);
     } catch (error) {
+      console.error("Error fetching data:", error);
       toast({
         title: "Error",
         description: "Failed to fetch data",
@@ -115,7 +104,12 @@ const Income = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
 
   const calculateNights = (checkIn: string, checkOut: string) => {
     if (!checkIn || !checkOut) return 0;
@@ -347,7 +341,6 @@ const Income = () => {
           </head>
           <body>
             <div class="header">
-              <h1>Hotel Management System</h1>
               <h2>Reservation Details</h2>
             </div>
             
@@ -423,7 +416,7 @@ const Income = () => {
   };
 
   if (loading) {
-    return <div className="p-6">Loading...</div>;
+    return <SectionLoader className="min-h-64" />;
   }
 
   if (!hasAnyPermission("income")) {
@@ -442,14 +435,12 @@ const Income = () => {
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Reservations & Payments</h1>
+        <Button onClick={() => navigate('/reservations/new')} className="">
+          <Plus className="mr-2 h-4 w-4" />
+          New Reservation
+        </Button>
+        
         <Dialog open={isReservationDialogOpen} onOpenChange={setIsReservationDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => navigate('/app/reservations/new')} className="bg-primary hover:bg-primary/90">
-              <Plus className="mr-2 h-4 w-4" />
-              New Reservation
-            </Button>
-          </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Reservation</DialogTitle>
@@ -689,15 +680,20 @@ const Income = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {payments.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell className="font-medium">{payment.payment_number}</TableCell>
-                      <TableCell>{payment.reservations?.guest_name} ({payment.reservations?.reservation_number})</TableCell>
-                      <TableCell>LKR {payment.amount.toLocaleString()}</TableCell>
-                      <TableCell>{payment.payment_method}</TableCell>
-                      <TableCell>{new Date(payment.created_at).toLocaleDateString()}</TableCell>
-                    </TableRow>
-                  ))}
+                  {recentPayments.map((payment) => {
+                    const reservation = reservations.find(r => r.id === payment.reservation_id);
+                    return (
+                      <TableRow key={payment.id}>
+                        <TableCell className="font-medium">{payment.payment_number}</TableCell>
+                        <TableCell>
+                          {reservation ? `${reservation.guest_name} (${reservation.reservation_number})` : 'N/A'}
+                        </TableCell>
+                        <TableCell>LKR {payment.amount.toLocaleString()}</TableCell>
+                        <TableCell>{payment.payment_method}</TableCell>
+                        <TableCell>{new Date(payment.created_at).toLocaleDateString()}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>

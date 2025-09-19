@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SectionLoader } from "@/components/ui/loading-spinner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -204,7 +205,7 @@ export default function Expense() {
   };
 
   if (loading) {
-    return <div className="container mx-auto p-4 sm:p-6">Loading...</div>;
+    return <SectionLoader className="min-h-64" />;
   }
 
   if (!hasAnyPermission("expenses")) {
@@ -223,20 +224,9 @@ export default function Expense() {
   return (
     <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Button asChild variant="ghost" size="icon">
-            <Link to="/">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Add Expense</h1>
-            <p className="text-sm sm:text-base text-muted-foreground">Record your business expenses</p>
-          </div>
-        </div>
         {hasAnyPermission("reports") && (
           <Button asChild variant="outline" className="text-xs sm:text-sm px-2 sm:px-4">
-            <Link to="/app/reports?tab=financial&type=expense">
+            <Link to="/reports?tab=comprehensive&type=expense">
               <span className="hidden sm:inline">View All Expenses</span>
               <span className="sm:hidden">View All</span>
             </Link>
@@ -276,7 +266,7 @@ export default function Expense() {
           />
 
           {/* Expense Form - Show Second */}
-          <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200 shadow-lg">
+          <Card className="bg-card border">
             <CardHeader className="pb-3">
               <CardTitle className="text-red-800 flex items-center gap-2 text-lg">
                 <Minus className="h-5 w-5" />
@@ -387,7 +377,7 @@ export default function Expense() {
                 </div>
 
                 <div className="flex gap-2 pt-4">
-                  <Button type="submit" className="flex-1 bg-red-600 hover:bg-red-700 text-white">
+                  <Button type="submit" className="flex-1  text-white">
                     <Minus className="h-4 w-4 mr-2" />
                     Add Expense
                   </Button>
@@ -397,7 +387,7 @@ export default function Expense() {
           </Card>
 
           {/* Recent Expenses - Show Second */}
-          <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200 shadow-lg">
+          <Card className="bg-card border">
             <CardHeader className="pb-3">
               <CardTitle className="text-red-800 text-lg">Recent Expenses</CardTitle>
             </CardHeader>

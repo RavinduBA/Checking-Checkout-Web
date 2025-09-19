@@ -24,7 +24,7 @@ export default function Auth() {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/app");
+        navigate("/dashboard");
       }
     };
     checkAuth();
@@ -36,7 +36,7 @@ export default function Auth() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/app`
+          redirectTo: `${window.location.origin}/dashboard`
         }
       });
 
@@ -95,14 +95,14 @@ export default function Auth() {
             return;
           }
           
-          navigate("/app");
+          navigate("/dashboard");
         }
       } else {
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/app`,
+            emailRedirectTo: `${window.location.origin}/dashboard`,
             data: {
               name: name,
             }
@@ -135,7 +135,7 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md bg-gradient-card border-0 shadow-elegant">
+      <Card className="w-full max-w-md bg-card border">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-foreground">
             <div className="flex flex-col leading-tight">
@@ -200,7 +200,9 @@ export default function Auth() {
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (
-                "Loading..."
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-transparent border-t-current"></div>
+                </div>
               ) : isLogin ? (
                 <>
                   <LogIn className="h-4 w-4 mr-2" />

@@ -21,7 +21,6 @@ All colors MUST be HSL.
     /* Earth-tone primary colors */
     --primary: 25 85% 45%;
     --primary-foreground: 0 0% 98%;
-    --primary-glow: 35 95% 55%;
 
     --secondary: 28 15% 92%;
     --secondary-foreground: 25 25% 15%;
@@ -45,19 +44,7 @@ All colors MUST be HSL.
     --warning: 45 93% 47%;
     --warning-foreground: 25 25% 15%;
 
-    /* Villa-specific gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100% / 0.9), hsl(28 20% 96%));
 
-    /* Enhanced shadows */
-    --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.2);
-    --shadow-soft: 0 4px 20px -8px hsl(25 25% 15% / 0.1);
-    --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.3);
-
-    /* Animation tokens */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --radius: 0.5rem;
 
