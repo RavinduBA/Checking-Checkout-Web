@@ -59,7 +59,7 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const { user } = useAuth()
   const { profile } = useProfile()
-  const { hasAnyPermission } = usePermissions()
+  const { hasAnyPermission, permissions, loading } = usePermissions()
   const location = useLocation()
 
   // Main navigation items based on user permissions
@@ -82,6 +82,46 @@ export function AppSidebar({
         url: "/calendar", 
         icon: Calendar,
         isActive: location.pathname === "/calendar"
+      })
+    }
+
+    // Reservations/Bookings
+    if (hasAnyPermission("bookings")) {
+      items.push({
+        title: "Reservations",
+        url: "/reservations",
+        icon: Building,
+        isActive: location.pathname === "/reservations" || location.pathname.startsWith("/reservations/")
+      })
+    }
+
+    // Income/Payments
+    if (hasAnyPermission("income")) {
+      items.push({
+        title: "Income & Payments",
+        url: "/income",
+        icon: DollarSign,
+        isActive: location.pathname === "/income"
+      })
+    }
+
+    // Expenses
+    if (hasAnyPermission("expenses")) {
+      items.push({
+        title: "Expenses",
+        url: "/expense",
+        icon: CreditCard,
+        isActive: location.pathname === "/expense"
+      })
+    }
+
+    // Accounts
+    if (hasAnyPermission("accounts")) {
+      items.push({
+        title: "Accounts",
+        url: "/accounts",
+        icon: Building2,
+        isActive: location.pathname === "/accounts"
       })
     }
 
@@ -121,6 +161,34 @@ export function AppSidebar({
       })
     }
 
+    // Admin features
+    if (hasAnyPermission("rooms")) {
+      items.push({
+        title: "Room Management",
+        url: "/rooms",
+        icon: Bed,
+        isActive: location.pathname === "/rooms"
+      })
+    }
+
+    if (hasAnyPermission("users")) {
+      items.push({
+        title: "Users",
+        url: "/users",
+        icon: Users,
+        isActive: location.pathname === "/users"
+      })
+    }
+
+    if (hasAnyPermission("settings")) {
+      items.push({
+        title: "Settings",
+        url: "/settings",
+        icon: Settings,
+        isActive: location.pathname === "/settings"
+      })
+    }
+
     return items
   }
 
@@ -128,11 +196,19 @@ export function AppSidebar({
   const getProjectItems = () => {
     const projects = []
 
+    if (hasAnyPermission("bookings")) {
+      projects.push({
+        name: "New Reservation",
+        url: "/reservations/new",
+        icon: PlusCircle
+      })
+    }
+
     if (hasAnyPermission("income")) {
       projects.push({
-        name: "Reservations",
-        url: "/reservations",
-        icon: PlusCircle
+        name: "New Payment",
+        url: "/payments/new",
+        icon: DollarSign
       })
     }
 
@@ -141,14 +217,6 @@ export function AppSidebar({
         name: "Add Expense", 
         url: "/expense",
         icon: MinusCircle
-      })
-    }
-
-    if (hasAnyPermission("accounts")) {
-      projects.push({
-        name: "Accounts",
-        url: "/accounts", 
-        icon: Building2
       })
     }
 
@@ -172,8 +240,14 @@ export function AppSidebar({
         />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={getNavMainItems()} />
-        <NavProjects projects={getProjectItems()} />
+        {loading ? (
+          <div className="p-4 text-sm text-muted-foreground">Loading navigation...</div>
+        ) : (
+          <>
+            <NavMain items={getNavMainItems()} />
+            <NavProjects projects={getProjectItems()} />
+          </>
+        )}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={userData} />

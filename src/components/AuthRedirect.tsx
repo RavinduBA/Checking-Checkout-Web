@@ -9,9 +9,9 @@ export const AuthRedirect = () => {
     return <FullScreenLoader />;
   }
 
-  // If user is authenticated, redirect to dashboard
+  // If user is authenticated, redirect to smart redirect to find appropriate page
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/smart-redirect" replace />;
   }
 
   // If user is not authenticated, redirect to auth page
