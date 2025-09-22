@@ -61,7 +61,7 @@ async function sendSMS(message: string, numbers?: string): Promise<void> {
   const smsData = {
     campaignName: "Daily Bookings",
     mask: "RathnaSuper",
-    numbers: numbers && numbers.trim().length > 0 ? numbers : "94719528589,94760898589",
+    numbers: numbers && numbers.trim().length > 0 ? numbers : "94719528589,94760898589,94760351335",
     content: message
   };
 
