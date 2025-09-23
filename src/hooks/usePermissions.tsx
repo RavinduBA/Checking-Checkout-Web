@@ -16,6 +16,7 @@ export interface UserPermissions {
     users: boolean;
     settings: boolean;
     booking_channels: boolean;
+    is_admin?: boolean;
   };
 }
 
@@ -30,19 +31,22 @@ export const usePermissions = () => {
       if (!user) return;
 
       try {
-        // Check if user is admin
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .single();
+        // Fetch user permissions using the RPC function
+        const { data: userPermissions } = await supabase
+          .rpc("get_user_permissions", { user_id_param: user.id });
 
-        console.log("User profile:", profile);
-        const userIsAdmin = profile?.role === 'admin';
-        setIsAdmin(userIsAdmin);
+        console.log("User permissions from RPC:", userPermissions);
+        
+        // Check if user is admin from any location permissions
+        const isUserAdmin = userPermissions && Object.values(userPermissions).some(
+          (locationPerms: any) => locationPerms.is_admin === true
+        );
+        
+        setIsAdmin(isUserAdmin || false);
+        console.log("User is admin:", isUserAdmin);
 
-        // If admin, grant all permissions
-        if (userIsAdmin) {
+        // If admin, grant all permissions for all locations
+        if (isUserAdmin) {
           console.log("User is admin - granting all permissions");
           const { data: locations } = await supabase
             .from("locations")
@@ -64,16 +68,13 @@ export const usePermissions = () => {
               users: true,
               settings: true,
               booking_channels: true,
+              is_admin: true,
             };
           });
           console.log("Admin permissions:", adminPermissions);
           setPermissions(adminPermissions);
         } else {
-          // Fetch user permissions using the RPC function
-          const { data: userPermissions } = await supabase
-            .rpc("get_user_permissions", { user_id_param: user.id });
-
-          console.log("User permissions from RPC:", userPermissions);
+          // Use the permissions as returned from RPC
           setPermissions((userPermissions as UserPermissions) || {});
         }
       } catch (error) {
@@ -123,19 +124,22 @@ export const usePermissions = () => {
     try {
       console.log("Fetching permissions for user:", user.id);
       
-      // Check if user is admin
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
+      // Fetch user permissions using the RPC function
+      const { data: userPermissions } = await supabase
+        .rpc("get_user_permissions", { user_id_param: user.id });
 
-      console.log("User profile:", profile);
-      const userIsAdmin = profile?.role === 'admin';
-      setIsAdmin(userIsAdmin);
+      console.log("User permissions from RPC:", userPermissions);
+      
+      // Check if user is admin from any location permissions
+      const isUserAdmin = userPermissions && Object.values(userPermissions).some(
+        (locationPerms: any) => locationPerms.is_admin === true
+      );
+      
+      setIsAdmin(isUserAdmin || false);
+      console.log("User is admin:", isUserAdmin);
 
-      // If admin, grant all permissions
-      if (userIsAdmin) {
+      // If admin, grant all permissions for all locations
+      if (isUserAdmin) {
         console.log("User is admin - granting all permissions");
         const { data: locations } = await supabase
           .from("locations")
@@ -157,16 +161,13 @@ export const usePermissions = () => {
             users: true,
             settings: true,
             booking_channels: true,
+            is_admin: true,
           };
         });
         console.log("Admin permissions:", adminPermissions);
         setPermissions(adminPermissions);
       } else {
-        // Fetch user permissions using the RPC function
-        const { data: userPermissions } = await supabase
-          .rpc("get_user_permissions", { user_id_param: user.id });
-
-        console.log("User permissions from RPC:", userPermissions);
+        // Use the permissions as returned from RPC
         setPermissions((userPermissions as UserPermissions) || {});
       }
     } catch (error) {

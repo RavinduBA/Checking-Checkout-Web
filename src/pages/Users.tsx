@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, User, Shield, Edit, Trash2, UserCheck, Mail, Settings, ShieldX, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,14 +26,15 @@ interface UserPermissions {
   users: boolean;
   settings: boolean;
   booking_channels: boolean;
+  is_admin?: boolean;
 }
 
 interface User {
   id: string;
   name: string;
   email: string;
-  role: "admin" | "staff" | "manager";
   permissions: Record<string, UserPermissions>;
+  is_admin: boolean;
   created_at: string;
 }
 
@@ -73,13 +74,13 @@ export default function Users() {
   const [newUser, setNewUser] = useState<{
     name: string;
     email: string;
-    role: "admin" | "staff" | "manager";
     permissions: Record<string, UserPermissions>;
+    is_admin: boolean;
   }>({
     name: "",
     email: "",
-    role: "staff",
-    permissions: {}
+    permissions: {},
+    is_admin: false
   });
   const [newEmail, setNewEmail] = useState("");
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -87,11 +88,7 @@ export default function Users() {
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -142,6 +139,7 @@ export default function Users() {
 
             // Transform permissions data
             const permissions: Record<string, UserPermissions> = {};
+            let isUserAdmin = false;
             if (userPermsData) {
               userPermsData.forEach((perm: any) => {
                 if (perm.locations) {
@@ -158,20 +156,27 @@ export default function Users() {
                     users: perm.access_users || false,
                     settings: perm.access_settings || false,
                     booking_channels: perm.access_booking_channels || false,
+                    is_admin: perm.is_admin || false,
                   };
+                  // Check if user is admin in any location
+                  if (perm.is_admin) {
+                    isUserAdmin = true;
+                  }
                 }
               });
             }
 
             return {
               ...profile,
-              permissions
+              permissions,
+              is_admin: isUserAdmin
             };
           } catch (error) {
             console.error('Error processing user permissions for', profile.email, error);
             return {
               ...profile,
-              permissions: {}
+              permissions: {},
+              is_admin: false
             };
           }
         })
@@ -191,7 +196,11 @@ export default function Users() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleAddUser = async () => {
     if (!newUser.name || !newUser.email) return;
@@ -211,7 +220,7 @@ export default function Users() {
       // The profile will be created automatically by the handle_new_user trigger
       // For now, we just add the email to allowed list
 
-      setNewUser({ name: "", email: "", role: "staff", permissions: {} });
+      setNewUser({ name: "", email: "", permissions: {}, is_admin: false });
       setShowAddUser(false);
       fetchData();
 
@@ -406,13 +415,12 @@ export default function Users() {
     if (!editingUser) return;
 
     try {
-      console.log('Updating user:', editingUser.id, 'with role:', editingUser.role);
+      console.log('Updating user:', editingUser.id, 'admin status:', editingUser.is_admin);
       
-      // Update profile role and name
+      // Update profile name only (no role)
       const { data: updateResult, error: profileError } = await supabase
         .from('profiles')
         .update({ 
-          role: editingUser.role,
           name: editingUser.name 
         })
         .eq('id', editingUser.id)
@@ -459,6 +467,7 @@ export default function Users() {
             access_users: locationPerms.users || false,
             access_settings: locationPerms.settings || false,
             access_booking_channels: locationPerms.booking_channels || false,
+            is_admin: editingUser.is_admin || false,
           });
         }
       }
@@ -578,17 +587,17 @@ export default function Users() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Role</Label>
-                  <Select value={newUser.role} onValueChange={(value: "admin" | "staff" | "manager") => setNewUser({...newUser, role: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="staff">Staff</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="admin">Administrator</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="new-user-admin"
+                      checked={newUser.is_admin}
+                      onCheckedChange={(checked) => setNewUser({...newUser, is_admin: !!checked})}
+                    />
+                    <Label htmlFor="new-user-admin" className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      Administrator
+                    </Label>
+                  </div>
                 </div>
 
                 <div className="space-y-4">
@@ -659,17 +668,17 @@ export default function Users() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Role</Label>
-                    <Select value={editingUser.role} onValueChange={(value: "admin" | "staff" | "manager") => setEditingUser({...editingUser, role: value})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="staff">Staff</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
-                        <SelectItem value="admin">Administrator</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-user-admin"
+                        checked={editingUser.is_admin}
+                        onCheckedChange={(checked) => setEditingUser({...editingUser, is_admin: !!checked})}
+                      />
+                      <Label htmlFor="edit-user-admin" className="flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        Administrator
+                      </Label>
+                    </div>
                   </div>
 
                   <div className="space-y-4">
@@ -760,9 +769,9 @@ export default function Users() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={user.role === "admin" ? "default" : user.role === "manager" ? "outline" : "secondary"} className="flex items-center gap-1">
-                    {user.role === "admin" ? <Shield className="h-3 w-3" /> : <UserCheck className="h-3 w-3" />}
-                    {user.role === "admin" ? "Administrator" : user.role === "manager" ? "Manager" : "Staff"}
+                  <Badge variant={user.is_admin ? "default" : "secondary"} className="flex items-center gap-1">
+                    {user.is_admin ? <Shield className="h-3 w-3" /> : <UserCheck className="h-3 w-3" />}
+                    {user.is_admin ? "Administrator" : "Staff"}
                   </Badge>
                   <Button 
                     variant="ghost" 
@@ -842,7 +851,7 @@ export default function Users() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Administrators</p>
-                <p className="text-lg sm:text-2xl font-bold">{users.filter(u => u.role === "admin").length}</p>
+                <p className="text-lg sm:text-2xl font-bold">{users.filter(u => u.is_admin).length}</p>
               </div>
               <Shield className="size-5 text-primary" />
             </div>
