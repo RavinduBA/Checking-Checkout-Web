@@ -137,7 +137,7 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md bg-card border">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-foreground">
+          <CardTitle className="text-lg sm:text-2xl font-bold text-foreground">
             <div className="flex flex-col leading-tight">
               <span className="font-bold">CHECK-IN</span>
               <span className="font-normal">CHECK-OUT</span>
@@ -190,10 +190,10 @@ export default function Auth() {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 size-5"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </Button>
               </div>
             </div>
@@ -201,16 +201,16 @@ export default function Auth() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (
                 <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-transparent border-t-current"></div>
+                  <div className="animate-spin rounded-full size-4 border-2 border-transparent border-t-current"></div>
                 </div>
               ) : isLogin ? (
                 <>
-                  <LogIn className="h-4 w-4 mr-2" />
+                  <LogIn className="size-4 mr-2" />
                   Sign In
                 </>
               ) : (
                 <>
-                  <UserPlus className="h-4 w-4 mr-2" />
+                  <UserPlus className="size-4 mr-2" />
                   Sign Up
                 </>
               )}
@@ -235,7 +235,7 @@ export default function Auth() {
             onClick={handleGoogleSignIn}
             disabled={loading}
           >
-            <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24">
+            <svg className="size-4 mr-2" viewBox="0 0 24 24">
               <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
               <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>

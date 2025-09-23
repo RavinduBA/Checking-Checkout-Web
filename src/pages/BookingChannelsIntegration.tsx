@@ -473,7 +473,7 @@ export default function BookingChannelsIntegration() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Booking Channels</h1>
+          <h1 className="text-md sm:text-3xl font-bold">Booking Channels</h1>
         </div>
         <SectionLoader className="h-64" />
       </div>
@@ -491,12 +491,12 @@ export default function BookingChannelsIntegration() {
           >
             {syncing ? (
               <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                <RefreshCw className="size-4 mr-2 animate-spin" />
                 Syncing...
               </>
             ) : (
               <>
-                <Wifi className="h-4 w-4 mr-2" />
+                <Wifi className="size-4 mr-2" />
                 Sync Now
               </>
             )}
@@ -514,10 +514,10 @@ export default function BookingChannelsIntegration() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Calendar className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{syncStats.totalBookings}</div>
+            <div className="text-lg sm:text-2xl font-bold">{syncStats.totalBookings}</div>
             <p className="text-xs text-muted-foreground">External bookings synced</p>
           </CardContent>
         </Card>
@@ -525,10 +525,10 @@ export default function BookingChannelsIntegration() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Last Sync</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <Clock className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-lg sm:text-2xl font-bold">
               {syncStats.recentSync ? format(new Date(syncStats.recentSync), 'MMM dd') : 'Never'}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -540,10 +540,10 @@ export default function BookingChannelsIntegration() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-lg sm:text-2xl font-bold">
               ${bookings.reduce((sum, booking) => sum + (booking.total_amount || 0), 0).toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">Total booking value</p>
@@ -553,10 +553,10 @@ export default function BookingChannelsIntegration() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Sources</CardTitle>
-            <Wifi className="h-4 w-4 text-muted-foreground" />
+            <Wifi className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{Object.keys(syncStats.sourceBreakdown).length}</div>
+            <div className="text-lg sm:text-2xl font-bold">{Object.keys(syncStats.sourceBreakdown).length}</div>
             <p className="text-xs text-muted-foreground">Booking channels</p>
           </CardContent>
         </Card>
@@ -575,7 +575,7 @@ export default function BookingChannelsIntegration() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
+                <MapPin className="size-5" />
                 Filter by Location
               </CardTitle>
             </CardHeader>
@@ -648,7 +648,7 @@ export default function BookingChannelsIntegration() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                            <MapPin className="size-4 text-muted-foreground" />
                             <span className="text-sm">
                               {booking.mappedLocation?.name || 'Unmapped'}
                             </span>
@@ -683,7 +683,7 @@ export default function BookingChannelsIntegration() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <Users className="size-4 text-muted-foreground" />
                             <span className="text-sm">
                               {booking.adults + booking.children}
                               <span className="text-xs text-muted-foreground ml-1">
@@ -720,7 +720,7 @@ export default function BookingChannelsIntegration() {
                             size="sm"
                             onClick={() => openBookingDetails(booking)}
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="size-4" />
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -739,12 +739,12 @@ export default function BookingChannelsIntegration() {
                     >
                       {syncing ? (
                         <>
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          <RefreshCw className="size-4 mr-2 animate-spin" />
                           Syncing...
                         </>
                       ) : (
                         <>
-                          <RefreshCw className="h-4 w-4 mr-2" />
+                          <RefreshCw className="size-4 mr-2" />
                           Sync Now
                         </>
                       )}
@@ -932,7 +932,7 @@ export default function BookingChannelsIntegration() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    <SettingsIcon className="h-5 w-5" />
+                    <SettingsIcon className="size-5" />
                     Channel Property Mapping
                   </CardTitle>
                   <CardDescription>
@@ -996,7 +996,7 @@ export default function BookingChannelsIntegration() {
               <Card className="border-dashed">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Key className="h-5 w-5" />
+                    <Key className="size-5" />
                     API Configuration
                   </CardTitle>
                   <CardDescription>
@@ -1031,7 +1031,7 @@ export default function BookingChannelsIntegration() {
                     <div className="space-y-4">
                       <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
                         <div className="flex items-start gap-3">
-                          <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+                          <AlertCircle className="size-5 text-amber-600 mt-0.5" />
                           <div className="space-y-2">
                             <h4 className="font-medium text-amber-800">Setup Instructions</h4>
                             <ol className="text-sm text-amber-700 space-y-1 ml-4 list-decimal">
@@ -1064,7 +1064,7 @@ export default function BookingChannelsIntegration() {
                           >
                             {exchangingToken ? (
                               <>
-                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                <RefreshCw className="size-4 mr-2 animate-spin" />
                                 Setup...
                               </>
                             ) : (

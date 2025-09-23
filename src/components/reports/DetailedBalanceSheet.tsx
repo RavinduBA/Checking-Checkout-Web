@@ -284,12 +284,12 @@ export default function DetailedBalanceSheet() {
     switch (type) {
       case 'income':
       case 'transfer_in':
-        return <ArrowUpRight className="h-4 w-4 text-green-600" />;
+        return <ArrowUpRight className="size-4 text-green-600" />;
       case 'expense':
       case 'transfer_out':
-        return <ArrowDownLeft className="h-4 w-4 text-red-600" />;
+        return <ArrowDownLeft className="size-4 text-red-600" />;
       default:
-        return <DollarSign className="h-4 w-4 text-gray-600" />;
+        return <DollarSign className="size-4 text-gray-600" />;
     }
   };
 
@@ -326,11 +326,11 @@ export default function DetailedBalanceSheet() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 px-4">
+      <div className="flex flex-col sm:flex-row gap-y-2 justify-between items-start sm:items-center">
         <div>
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <CreditCard className="h-6 w-6" />
+          <h2 className="text-lg sm:text-2xl font-bold text-foreground flex items-center gap-2">
+            <CreditCard className="size-6" />
             Detailed Balance Sheet
           </h2>
           <p className="text-muted-foreground">Account balances with transaction history and running balances</p>
@@ -346,7 +346,7 @@ export default function DetailedBalanceSheet() {
             </SelectContent>
           </Select>
           <Button onClick={exportBalanceSheet} variant="outline">
-            <Download className="h-4 w-4 mr-2" />
+            <Download className="size-4 mr-2" />
             Export CSV
           </Button>
         </div>
@@ -390,7 +390,7 @@ export default function DetailedBalanceSheet() {
       {/* Transaction History */}
       <Card>
         <CardHeader>
-          <CardTitle>Transaction History (Sorted by Date)</CardTitle>
+          <CardTitle className="text-md sm:text-lg">Transaction History (Sorted by Date)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -398,8 +398,8 @@ export default function DetailedBalanceSheet() {
               <p className="text-center text-muted-foreground py-8">No transactions found</p>
             ) : (
               allTransactions.map((txn) => (
-                <div key={`${txn.id}-${txn.date}`} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3">
+                <div key={`${txn.id}-${txn.date}`} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                     <Badge variant={
                       txn.type === 'income' || txn.type === 'transfer_in' ? 'default' : 'destructive'
                     }>
@@ -415,7 +415,7 @@ export default function DetailedBalanceSheet() {
                       )}
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left sm:text-right">
                     <p className={`font-semibold ${
                       txn.type === 'income' || txn.type === 'transfer_in' 
                         ? 'text-green-600' 
@@ -426,7 +426,7 @@ export default function DetailedBalanceSheet() {
                     </p>
                     <div className="text-sm">
                       <span className="text-muted-foreground">Balance</span>
-                      <div className="text-right font-medium">
+                      <div className="text-left sm:text-right font-medium">
                         {formatCurrency(txn.running_balance, baseCurrency)}
                       </div>
                     </div>
@@ -443,18 +443,18 @@ export default function DetailedBalanceSheet() {
         <h3 className="text-xl font-semibold text-green-600 mb-4">Account Details</h3>
         <div className="space-y-4">
           {accounts.map((account) => (
-            <Card key={account.id} className="border-l-4 border-l-primary">
+            <Card key={account.id} className="border-l-2 sm:border-l-4 border-l-primary">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg font-bold">{account.name}</CardTitle>
+                    <CardTitle className="text-md sm:text-lg font-bold">{account.name}</CardTitle>
                     <CardDescription>
                       <Badge variant="outline" className="mr-2">{account.currency} Account</Badge>
                       {account.transaction_count} transactions
                     </CardDescription>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold">
+                    <p className="text-lg sm:text-2xl font-bold">
                       {formatCurrency(account.current_balance, baseCurrency)}
                     </p>
                   </div>

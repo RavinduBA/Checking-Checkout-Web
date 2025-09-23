@@ -99,7 +99,7 @@ export const DateRangePicker = ({
                 selectingCheckIn && isOpen && "ring-2 ring-primary"
               )}
             >
-              <CalendarIcon className="mr-3 h-4 w-4" />
+              <CalendarIcon className="mr-3 size-4" />
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground">Check-in</span>
                 <span className="text-sm">
@@ -109,7 +109,7 @@ export const DateRangePicker = ({
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
-            <Card className="border-0 shadow-lg">
+            <Card className="border-0">
               <CardContent className="p-0">
                 <CalendarComponent
                   mode="single"
@@ -138,7 +138,7 @@ export const DateRangePicker = ({
                 !selectingCheckIn && isOpen && "ring-2 ring-primary"
               )}
             >
-              <CalendarIcon className="mr-3 h-4 w-4" />
+              <CalendarIcon className="mr-3 size-4" />
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground">Check-out</span>
                 <span className="text-sm">
@@ -148,7 +148,7 @@ export const DateRangePicker = ({
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
-            <Card className="border-0 shadow-lg">
+            <Card className="border-0">
               <CardContent className="p-0">
                 <CalendarComponent
                   mode="single"
@@ -167,7 +167,7 @@ export const DateRangePicker = ({
       {/* Nights Display */}
       {nights > 0 && (
         <div className="flex items-center justify-center py-2 px-4 bg-muted/50 rounded-lg">
-          <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+          <Calendar className="size-4 mr-2 text-muted-foreground" />
           <span className="text-sm font-medium">
             {nights} {nights === 1 ? 'night' : 'nights'}
           </span>

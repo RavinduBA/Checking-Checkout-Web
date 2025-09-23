@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Plus, User, Shield, Edit, Trash2, UserCheck, Mail, Settings } from "lucide-react";
+import { ArrowLeft, Plus, User, Shield, Edit, Trash2, UserCheck, Mail, Settings, ShieldX, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -478,20 +478,23 @@ export default function Users() {
   }
 
   return (
-    <div className="w-full pb-8 mx-auto space-y-6 animate-fade-in">
+    <div className="w-full pb-20 sm:pb-8 px-4 sm:px-0 mx-auto space-y-6 animate-fade-in">
       {/* Action Buttons */}
       <div className="flex items-center justify-end">
         <div className="flex gap-2">
           <Dialog open={showAddEmail} onOpenChange={setShowAddEmail}>
             <DialogTrigger asChild>
               <Button variant="outline">
-                <Mail className="h-4 w-4 mr-2" />
+                <Mail className="size-4 mr-2" />
                 Add Email
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add Allowed Email</DialogTitle>
+                <DialogDescription>
+                  Add a new email address to the list of allowed users who can access the application.
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -518,13 +521,16 @@ export default function Users() {
           <Dialog open={showAddUser} onOpenChange={setShowAddUser}>
             <DialogTrigger asChild>
               <Button>
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="size-4 mr-2" />
                 Add User
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add New User</DialogTitle>
+                <DialogDescription>
+                  Create a new user account and configure their permissions for different locations and features.
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
@@ -599,9 +605,12 @@ export default function Users() {
 
           {/* Edit User Dialog */}
           <Dialog open={showEditUser} onOpenChange={setShowEditUser}>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogContent className="max-w-[380px] sm:max-w-2xl max-h-[85vh] sm:max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Edit User Permissions</DialogTitle>
+                <DialogDescription>
+                  Modify user details and configure their permissions for different locations and application features.
+                </DialogDescription>
               </DialogHeader>
               {editingUser && (
                 <div className="space-y-6">
@@ -679,10 +688,10 @@ export default function Users() {
       </div>
 
       {/* Allowed Emails Section */}
-      <Card>
+      <Card >
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
+            <Mail className="size-5" />
             Allowed Email Addresses
           </CardTitle>
         </CardHeader>
@@ -690,7 +699,7 @@ export default function Users() {
           <div className="space-y-2">
             {allowedEmails.map((email) => (
               <div key={email.id} className="flex items-center justify-between p-2 border rounded">
-                <span className={email.is_active ? "text-foreground" : "text-muted-foreground"}>
+                <span className={email.is_active ? "text-foreground truncate w-48 sm:w-80" : "text-muted-foreground truncate w-48 sm:80"}>
                   {email.email}
                 </span>
                 <div className="flex items-center gap-2">
@@ -700,9 +709,10 @@ export default function Users() {
                   <Button
                     variant="ghost"
                     size="sm"
+                    className="p-1 rounded-md bg-primary/30 border"
                     onClick={() => handleToggleEmail(email.id, email.is_active)}
                   >
-                    <Settings className="h-4 w-4" />
+                    {email.is_active ? <ShieldCheck /> : <ShieldX />}
                   </Button>
                 </div>
               </div>
@@ -716,10 +726,10 @@ export default function Users() {
         {users.map((user) => (
           <Card key={user.id} className="bg-card border">
             <CardHeader>
-              <div className="flex justify-between items-start">
+              <div className="flex flex-col sm:flex-row gap-y-2 justify-between items-start">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-primary/10 rounded-full">
-                    <User className="h-5 w-5 text-primary" />
+                    <User className="size-5 text-primary" />
                   </div>
                   <div>
                     <CardTitle className="text-lg">{user.name}</CardTitle>
@@ -736,7 +746,7 @@ export default function Users() {
                     size="sm"
                     onClick={() => handleEditUser(user)}
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="size-4" />
                   </Button>
                   {user.id !== currentUser?.id && (
                     <Button 
@@ -744,7 +754,7 @@ export default function Users() {
                       size="sm"
                       onClick={() => handleDeleteUser(user.id)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="size-4" />
                     </Button>
                   )}
                 </div>
@@ -797,9 +807,9 @@ export default function Users() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Users</p>
-                <p className="text-2xl font-bold">{users.length}</p>
+                <p className="text-lg sm:text-2xl font-bold">{users.length}</p>
               </div>
-              <User className="h-8 w-8 text-primary" />
+              <User className="size-5 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -809,9 +819,9 @@ export default function Users() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Administrators</p>
-                <p className="text-2xl font-bold">{users.filter(u => u.role === "admin").length}</p>
+                <p className="text-lg sm:text-2xl font-bold">{users.filter(u => u.role === "admin").length}</p>
               </div>
-              <Shield className="h-8 w-8 text-primary" />
+              <Shield className="size-5 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -821,9 +831,9 @@ export default function Users() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Allowed Emails</p>
-                <p className="text-2xl font-bold">{allowedEmails.filter(e => e.is_active).length}</p>
+                <p className="text-lg sm:text-2xl font-bold">{allowedEmails.filter(e => e.is_active).length}</p>
               </div>
-              <Mail className="h-8 w-8 text-primary" />
+              <Mail className="size-5 text-primary" />
             </div>
           </CardContent>
         </Card>

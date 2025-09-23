@@ -62,7 +62,7 @@ export default function ReservationDetails() {
     const colors = {
       confirmed: "bg-emerald-100 text-emerald-800 border-emerald-200",
       tentative: "bg-amber-100 text-amber-800 border-amber-200",
-      pending: "bg-orange-100 text-orange-800 border-orange-200",
+      pending: "bg-orange-100 text-orange-800 border-border",
       checked_in: "bg-blue-100 text-blue-800 border-blue-200",
       checked_out: "bg-gray-100 text-gray-800 border-gray-200",
       cancelled: "bg-red-100 text-red-800 border-red-200"
@@ -83,10 +83,10 @@ export default function ReservationDetails() {
         }
       </style>
     `;
-    
+
     const head = document.head.innerHTML;
     document.head.innerHTML = head + printStyles;
-    
+
     window.print();
   };
 
@@ -105,7 +105,7 @@ export default function ReservationDetails() {
   if (!reservation) {
     return (
       <div className="max-w-4xl mx-auto p-4 text-center">
-        <h1 className="text-2xl font-bold mb-4">Reservation Not Found</h1>
+        <h1 className="text-lg sm:text-2xl font-bold mb-4">Reservation Not Found</h1>
         <Button asChild>
           <Link to="/reservations">Back to Reservations</Link>
         </Button>
@@ -116,29 +116,26 @@ export default function ReservationDetails() {
   return (
     <div className="w-full mx-auto px-0 sm:px-4 space-y-6 print-area">
       {/* Header */}
-      <div className="flex items-center gap-4 no-print">
-        <Button asChild variant="ghost" size="icon">
-          <Link to="/reservations">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-foreground">Reservation Details</h1>
-          <p className="text-muted-foreground">#{reservation.reservation_number}</p>
+      <div className="flex flex-col sm:flex-row items-start px-4 sm:px-0 sm:items-center gap-4 no-print">
+        <div className="flex flex-1 items-center gap-4">
+          <div className="flex-1">
+            <h1 className="text-lg sm:text-2xl font-bold text-foreground">Reservation Details</h1>
+            <p className="text-muted-foreground">#{reservation.reservation_number}</p>
+          </div>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handlePrint}>
-            <Printer className="h-4 w-4 mr-2" />
+            <Printer className="size-4 mr-2" />
             Print
           </Button>
           <Button onClick={() => navigate(`/income?reservation=${reservation.id}`)}>
-            <CreditCard className="h-4 w-4 mr-2" />
+            <CreditCard className="size-4 mr-2" />
             Payment
           </Button>
           {isOTPVerified ? (
             <Button variant="outline" asChild>
               <Link to={`/reservations/edit/${reservation.id}`}>
-                <Edit className="h-4 w-4 mr-2" />
+                <Edit className="size-4 mr-2" />
                 Edit
               </Link>
             </Button>
@@ -147,7 +144,7 @@ export default function ReservationDetails() {
               onVerified={handleOTPVerified}
               triggerComponent={
                 <Button variant="outline">
-                  <Edit className="h-4 w-4 mr-2" />
+                  <Edit className="size-4 mr-2" />
                   Edit
                 </Button>
               }
@@ -155,20 +152,20 @@ export default function ReservationDetails() {
           )}
         </div>
       </div>
-      
+
       {/* Print Header - Only visible when printing */}
       <div className="hidden print:block text-center mb-6">
-        <h1 className="text-2xl font-bold">Reservation Details</h1>
+        <h1 className="text-lg sm:text-2xl font-bold">Reservation Details</h1>
         <p className="text-lg">#{reservation.reservation_number}</p>
         <p className="text-sm text-muted-foreground">Generated on {new Date().toLocaleString()}</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-4 pb-20 sm:px-0">
         {/* Guest Information */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
+              <User className="size-5" />
               Guest Information
             </CardTitle>
           </CardHeader>
@@ -218,7 +215,7 @@ export default function ReservationDetails() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
+              <Calendar className="size-5" />
               Reservation Details
             </CardTitle>
           </CardHeader>
@@ -258,7 +255,7 @@ export default function ReservationDetails() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
+              <MapPin className="size-5" />
               Location & Room
             </CardTitle>
           </CardHeader>
@@ -282,7 +279,7 @@ export default function ReservationDetails() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
+              <CreditCard className="size-5" />
               Payment Information
             </CardTitle>
           </CardHeader>
@@ -306,56 +303,58 @@ export default function ReservationDetails() {
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      {/* Special Requests */}
-      {reservation.special_requests && (
+        {/* Special Requests */}
+        {reservation.special_requests && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Special Requests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>{reservation.special_requests}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Guest Signature */}
         <Card>
           <CardHeader>
-            <CardTitle>Special Requests</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <PenTool className="size-5" />
+              Guest Signature
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p>{reservation.special_requests}</p>
+            <SignatureCapture
+              signature={guestSignature}
+              onSignatureChange={setGuestSignature}
+              title="Update Guest Signature"
+            />
           </CardContent>
         </Card>
-      )}
 
-      {/* Guest Signature */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <PenTool className="h-5 w-5" />
-            Guest Signature
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SignatureCapture 
-            signature={guestSignature}
-            onSignatureChange={setGuestSignature}
-            title="Update Guest Signature"
-          />
-        </CardContent>
-      </Card>
+        {/* System Information */}
+        <Card className="no-print">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="size-5" />
+              System Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Created</span>
+              <span>{new Date(reservation.created_at).toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Last Updated</span>
+              <span>{new Date(reservation.updated_at).toLocaleString()}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* System Information */}
-      <Card className="no-print">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            System Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Created</span>
-            <span>{new Date(reservation.created_at).toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Last Updated</span>
-            <span>{new Date(reservation.updated_at).toLocaleString()}</span>
-          </div>
-        </CardContent>
-      </Card>
+
     </div>
   );
 }

@@ -282,7 +282,7 @@ export default function Accounts() {
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
             <DialogTrigger asChild>
               <Button onClick={() => resetForm()}>
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="size-4 mr-2" />
                 Add Account
               </Button>
             </DialogTrigger>
@@ -290,7 +290,7 @@ export default function Accounts() {
           <Dialog open={showTransferDialog} onOpenChange={setShowTransferDialog}>
             <DialogTrigger asChild>
               <Button variant="outline">
-                <ArrowRightLeft className="h-4 w-4 mr-2" />
+                <ArrowRightLeft className="size-4 mr-2" />
                 Transfer Money
               </Button>
             </DialogTrigger>
@@ -531,14 +531,14 @@ export default function Accounts() {
                   size="sm"
                   onClick={() => startEdit(account)}
                 >
-                  <Edit className="h-4 w-4" />
+                  <Edit className="size-4" />
                 </Button>
                 <Button
                   variant="destructive"
                   size="sm"
                   onClick={() => handleDelete(account.id)}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="size-4" />
                 </Button>
               </div>
             </CardHeader>
@@ -573,7 +573,7 @@ export default function Accounts() {
       <Card className="border-2">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ArrowRightLeft className="h-5 w-5" />
+            <ArrowRightLeft className="size-5" />
             Recent Transfers
           </CardTitle>
         </CardHeader>
@@ -641,7 +641,7 @@ function TransferHistory() {
         <div key={transfer.id} className="p-4 border border-border rounded-lg">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
+              <ArrowRightLeft className="size-4 text-muted-foreground" />
               <span className="font-medium">
                 {getAccountName(transfer.from_account_id)} → {getAccountName(transfer.to_account_id)}
               </span>

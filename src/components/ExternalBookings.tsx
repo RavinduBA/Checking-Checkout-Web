@@ -141,13 +141,13 @@ export const ExternalBookings = ({ locationId, className = "" }: ExternalBooking
       <Card className={className}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5" />
+            <CalendarDays className="size-5" />
             External Bookings
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+            <RefreshCw className="size-6 animate-spin text-muted-foreground" />
           </div>
         </CardContent>
       </Card>
@@ -159,7 +159,7 @@ export const ExternalBookings = ({ locationId, className = "" }: ExternalBooking
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5" />
+            <CalendarDays className="size-5" />
             External Bookings ({bookings.length})
           </CardTitle>
           <Button 
@@ -168,7 +168,7 @@ export const ExternalBookings = ({ locationId, className = "" }: ExternalBooking
             size="sm"
             variant="outline"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`size-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
             Sync Now
           </Button>
         </div>
@@ -185,23 +185,23 @@ export const ExternalBookings = ({ locationId, className = "" }: ExternalBooking
             {bookings.map((booking) => (
               <div
                 key={booking.id}
-                className="border rounded-lg p-4 space-y-3 hover:shadow-sm transition-shadow"
+                className="border rounded-lg p-4 space-y-3 transition-shadow"
               >
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <h4 className="font-medium">{booking.guest_name}</h4>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
-                        <CalendarDays className="h-4 w-4" />
+                        <CalendarDays className="size-4" />
                         {formatDate(booking.check_in)} - {formatDate(booking.check_out)}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
+                        <Users className="size-4" />
                         {booking.adults + booking.children} guests
                       </span>
                       {booking.locations && (
                         <span className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
+                          <MapPin className="size-4" />
                           {booking.locations.name}
                         </span>
                       )}

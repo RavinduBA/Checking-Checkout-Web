@@ -357,9 +357,9 @@ export default function Calendar() {
     <div className="max-w-full mx-auto p-2 lg:p-4 space-y-3 lg:space-y-4 animate-fade-in">
       {/* Header */}
       <div className="flex items-center gap-2 lg:gap-4">
-        <Button asChild variant="ghost" size="icon" className="md:hidden h-8 w-8">
+        <Button asChild variant="ghost" size="icon" className="md:hidden size-5">
           <Link to="/">
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="size-4" />
           </Link>
         </Button>
         <div className="flex-1 min-w-0">
@@ -377,7 +377,7 @@ export default function Calendar() {
               <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Select location" />
               </SelectTrigger>
-              <SelectContent className="z-50 bg-background border shadow-lg">
+              <SelectContent className="z-50 bg-background border">
                 <SelectItem value="all">All Locations</SelectItem>
                 {locations.map((location) => (
                   <SelectItem key={location.id} value={location.id}>
@@ -394,7 +394,7 @@ export default function Calendar() {
               size="sm"
               onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="size-4" />
             </Button>
             <span className="text-sm font-medium px-2 sm:px-3 whitespace-nowrap">
               {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
@@ -404,7 +404,7 @@ export default function Calendar() {
               size="sm"
               onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="size-4" />
             </Button>
           </div>
         </div>
@@ -417,7 +417,7 @@ export default function Calendar() {
             <Card className="bg-card border">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base font-medium flex items-center gap-2">
-                  <CalendarIcon className="h-5 w-5" />
+                  <CalendarIcon className="size-5" />
                   {selectedLocation === "all" ? "All Locations" : locations.find(l => l.id === selectedLocation)?.name}
                 </CardTitle>
               </CardHeader>
@@ -613,7 +613,7 @@ export default function Calendar() {
           <DialogContent className="max-w-lg mx-auto max-h-[90vh] overflow-y-auto sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5" />
+                <Eye className="size-5" />
                 Booking Details #{selectedBooking?.external_id}
               </DialogTitle>
             </DialogHeader>
@@ -623,7 +623,7 @@ export default function Calendar() {
                 {/* Guest Information */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                    <Users className="h-4 w-4" />
+                    <Users className="size-4" />
                     Guest Information
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg">
@@ -661,7 +661,7 @@ export default function Calendar() {
                 {/* Stay Information */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                    <CalendarIcon className="h-4 w-4" />
+                    <CalendarIcon className="size-4" />
                     Stay Information
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg">
@@ -698,7 +698,7 @@ export default function Calendar() {
                 {/* Property Information */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
+                    <MapPin className="size-4" />
                     Property Information
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg">
@@ -721,7 +721,7 @@ export default function Calendar() {
                 {getPaymentInfo(selectedBooking) && (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                      <DollarSign className="h-4 w-4" />
+                      <DollarSign className="size-4" />
                       Payment Information
                     </div>
                     <div className="p-3 bg-muted/30 rounded-lg space-y-2">

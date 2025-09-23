@@ -193,17 +193,17 @@ export default function CommissionReports() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 px-2 sm:px-4">
+      <div className="flex flex-col gap-y-2 sm:flex-row justify-between items-start sm:items-center">
         <div>
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Percent className="h-6 w-6" />
+          <h2 className="text-md sm:text-2xl font-bold text-foreground flex items-center gap-2">
+            <Percent className="size-6" />
             Commission Reports
           </h2>
           <p className="text-muted-foreground">Track guide and agent commission earnings</p>
         </div>
         <Button onClick={exportData} variant="outline">
-          <Download className="h-4 w-4 mr-2" />
+          <Download className="size-4 mr-2" />
           Export CSV
         </Button>
       </div>
@@ -213,23 +213,23 @@ export default function CommissionReports() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <UserCheck className="h-4 w-4" />
+              <UserCheck className="size-4" />
               Guide Commissions
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">LKR {totals.totalGuideCommission.toFixed(2)}</div>
+            <div className="text-md sm:text-2xl font-bold">LKR {totals.totalGuideCommission.toFixed(2)}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Users className="h-4 w-4" />
+              <Users className="size-4" />
               Agent Commissions
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">LKR {totals.totalAgentCommission.toFixed(2)}</div>
+            <div className="text-md sm:text-2xl font-bold">LKR {totals.totalAgentCommission.toFixed(2)}</div>
           </CardContent>
         </Card>
         <Card>
@@ -237,7 +237,7 @@ export default function CommissionReports() {
             <CardTitle className="text-sm font-medium">Total Commissions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-md sm:text-2xl font-bold">
               LKR {(totals.totalGuideCommission + totals.totalAgentCommission).toFixed(2)}
             </div>
           </CardContent>
@@ -247,7 +247,7 @@ export default function CommissionReports() {
             <CardTitle className="text-sm font-medium">Reservation Value</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">LKR {totals.totalReservationValue.toFixed(2)}</div>
+            <div className="text-md sm:text-2xl font-bold">LKR {totals.totalReservationValue.toFixed(2)}</div>
           </CardContent>
         </Card>
       </div>

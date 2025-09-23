@@ -187,7 +187,7 @@ export default function Onboarding() {
           <div className="space-y-6">
             <div className="text-center mb-8">
               <Building2 className="h-12 w-12 text-primary mx-auto mb-4" />
-              <h2 className="text-2xl font-bold mb-2">Tell us about your business</h2>
+              <h2 className="text-lg sm:text-2xl font-bold mb-2">Tell us about your business</h2>
               <p className="text-muted-foreground">We'll use this information to customize your experience</p>
             </div>
             
@@ -273,7 +273,7 @@ export default function Onboarding() {
           <div className="space-y-6">
             <div className="text-center mb-8">
               <Hotel className="h-12 w-12 text-primary mx-auto mb-4" />
-              <h2 className="text-2xl font-bold mb-2">Property Information</h2>
+              <h2 className="text-lg sm:text-2xl font-bold mb-2">Property Information</h2>
               <p className="text-muted-foreground">Help us understand your property setup</p>
             </div>
 
@@ -291,7 +291,7 @@ export default function Onboarding() {
                     onClick={() => setFormData(prev => ({ ...prev, propertyType: type.id }))}
                   >
                     <div className="flex items-start gap-3">
-                      <type.icon className="h-6 w-6 text-primary mt-1" />
+                      <type.icon className="size-6 text-primary mt-1" />
                       <div>
                         <h3 className="font-medium">{type.label}</h3>
                         <p className="text-sm text-muted-foreground">{type.description}</p>
@@ -359,7 +359,7 @@ export default function Onboarding() {
           <div className="space-y-6">
             <div className="text-center mb-8">
               <Zap className="h-12 w-12 text-primary mx-auto mb-4" />
-              <h2 className="text-2xl font-bold mb-2">Choose Your Features</h2>
+              <h2 className="text-lg sm:text-2xl font-bold mb-2">Choose Your Features</h2>
               <p className="text-muted-foreground">Select the features you need to get started</p>
             </div>
 
@@ -382,7 +382,7 @@ export default function Onboarding() {
                         className="mt-1"
                       />
                     </div>
-                    <feature.icon className="h-6 w-6 text-primary mt-1" />
+                    <feature.icon className="size-6 text-primary mt-1" />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <h3 className="font-medium">{feature.label}</h3>
@@ -425,7 +425,7 @@ export default function Onboarding() {
         return (
           <div className="text-center space-y-6">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
-            <h2 className="text-3xl font-bold">You're All Set! 🎉</h2>
+            <h2 className="text-lg sm:text-3xl font-bold">You're All Set! 🎉</h2>
             <p className="text-lg text-muted-foreground max-w-md mx-auto">
               Welcome to Check In_Check Out! Your account has been configured based on your preferences.
             </p>
@@ -434,15 +434,15 @@ export default function Onboarding() {
               <h3 className="font-medium mb-4">What's Next:</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <CheckCircle className="size-4 text-green-500" />
                   Set up your first property
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <CheckCircle className="size-4 text-green-500" />
                   Configure room types and pricing
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <CheckCircle className="size-4 text-green-500" />
                   Start accepting bookings
                 </li>
               </ul>
@@ -450,7 +450,7 @@ export default function Onboarding() {
 
             <Button size="lg" onClick={handleComplete} disabled={loading} className="w-full max-w-sm">
               {loading ? "Setting up..." : "Enter Your Dashboard"}
-              <ArrowRight className="h-5 w-5 ml-2" />
+              <ArrowRight className="size-5 ml-2" />
             </Button>
           </div>
         );
@@ -467,7 +467,7 @@ export default function Onboarding() {
         <div className="text-center mb-8 pt-8">
           <div className="flex items-center gap-2 justify-center mb-4">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Hotel className="h-5 w-5 text-primary-foreground" />
+              <Hotel className="size-5 text-primary-foreground" />
             </div>
             <span className="text-xl font-bold">HotelVilla Pro</span>
           </div>
@@ -481,7 +481,7 @@ export default function Onboarding() {
                     : 'border-muted-foreground text-muted-foreground'
                 }`}>
                   {currentStep > step.id ? (
-                    <CheckCircle className="h-4 w-4" />
+                    <CheckCircle className="size-4" />
                   ) : (
                     step.id
                   )}
@@ -522,7 +522,7 @@ export default function Onboarding() {
               disabled={currentStep === 1}
               className="flex items-center gap-2"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="size-4" />
               Previous
             </Button>
             
@@ -532,7 +532,7 @@ export default function Onboarding() {
               className="flex items-center gap-2"
             >
               Next Step
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="size-4" />
             </Button>
           </div>
         )}

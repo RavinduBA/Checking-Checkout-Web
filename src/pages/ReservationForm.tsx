@@ -411,11 +411,11 @@ export default function ReservationForm() {
       <div className="flex items-center gap-4">
         <Button asChild variant="ghost" size="icon">
           <Link to="/calendar">
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="size-4" />
           </Link>
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-lg sm:text-2xl font-bold text-foreground">
             {isEdit ? 'Edit Reservation' : 'New Reservation'}
           </h1>
           <p className="text-muted-foreground">
@@ -432,7 +432,7 @@ export default function ReservationForm() {
             <Card className="bg-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
+                  <User className="size-5" />
                   Guest Information
                 </CardTitle>
               </CardHeader>
@@ -522,7 +522,7 @@ export default function ReservationForm() {
             <Card className="bg-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
+                  <Calendar className="size-5" />
                   Reservation Details
                 </CardTitle>
               </CardHeader>
@@ -536,7 +536,7 @@ export default function ReservationForm() {
                         <SelectTrigger className="h-11">
                           <SelectValue placeholder="Select location" />
                         </SelectTrigger>
-                        <SelectContent className="z-50 bg-background border shadow-lg">
+                        <SelectContent className="z-50 bg-background border">
                           {availableLocations.map((location) => (
                             <SelectItem key={location.id} value={location.id}>
                               {location.name}
@@ -560,7 +560,7 @@ export default function ReservationForm() {
                       <SelectTrigger className="h-11">
                         <SelectValue placeholder="Select room" />
                       </SelectTrigger>
-                      <SelectContent className="z-50 bg-background border shadow-lg">
+                      <SelectContent className="z-50 bg-background border">
                         {filteredRooms.map((room) => (
                           <SelectItem key={room.id} value={room.id}>
                             {room.room_number} - {room.room_type} (LKR {room.base_price.toLocaleString()}/night)
@@ -611,7 +611,7 @@ export default function ReservationForm() {
                     <SelectTrigger className="h-11">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="z-50 bg-background border shadow-lg">
+                    <SelectContent className="z-50 bg-background border">
                       <SelectItem value="tentative">Tentative</SelectItem>
                       <SelectItem value="confirmed">Confirmed</SelectItem>
                       <SelectItem value="pending">Pending</SelectItem>
@@ -672,7 +672,7 @@ export default function ReservationForm() {
                   'Saving...'
                 ) : (
                   <>
-                    <Save className="h-5 w-5 mr-2" />
+                    <Save className="size-5 mr-2" />
                     {isEdit ? 'Update Reservation' : 'Create Reservation'}
                   </>
                 )}
@@ -694,7 +694,7 @@ export default function ReservationForm() {
         <Card className="bg-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <UserCheck className="h-5 w-5" />
+              <UserCheck className="size-5" />
               Additional Services
             </CardTitle>
           </CardHeader>
@@ -720,7 +720,7 @@ export default function ReservationForm() {
                       <SelectTrigger className="flex-1">
                         <SelectValue placeholder="Select guide" />
                       </SelectTrigger>
-                      <SelectContent className="z-50 bg-background border shadow-lg">
+                      <SelectContent className="z-50 bg-background border">
                         {guides.map((guide) => (
                           <SelectItem key={guide.id} value={guide.id}>
                             {guide.name} ({guide.commission_rate}%)
@@ -732,7 +732,7 @@ export default function ReservationForm() {
                     <Dialog open={showGuideDialog} onOpenChange={setShowGuideDialog}>
                       <DialogTrigger asChild>
                         <Button type="button" variant="outline" size="icon">
-                          <Plus className="h-4 w-4" />
+                          <Plus className="size-4" />
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
@@ -815,7 +815,7 @@ export default function ReservationForm() {
                       <SelectTrigger className="flex-1">
                         <SelectValue placeholder="Select agent" />
                       </SelectTrigger>
-                      <SelectContent className="z-50 bg-background border shadow-lg">
+                      <SelectContent className="z-50 bg-background border">
                         {agents.map((agent) => (
                           <SelectItem key={agent.id} value={agent.id}>
                             {agent.name} - {agent.agency_name} ({agent.commission_rate}%)
@@ -827,7 +827,7 @@ export default function ReservationForm() {
                     <Dialog open={showAgentDialog} onOpenChange={setShowAgentDialog}>
                       <DialogTrigger asChild>
                         <Button type="button" variant="outline" size="icon">
-                          <Plus className="h-4 w-4" />
+                          <Plus className="size-4" />
                         </Button>
                       </DialogTrigger>
                       <DialogContent>

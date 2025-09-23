@@ -335,7 +335,7 @@ export default function Settings() {
                         onClick={() => deleteExpenseType(type.id)}
                         className="opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="size-4" />
                       </Button>
                     </div>
                   ))}
@@ -384,7 +384,7 @@ export default function Settings() {
                         onClick={() => deleteIncomeType(type.id)}
                         className="opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="size-4" />
                       </Button>
                     </div>
                   ))}
@@ -398,7 +398,7 @@ export default function Settings() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-primary" />
+                <DollarSign className="size-5 text-primary" />
                 Currency Conversion Settings
               </CardTitle>
             </CardHeader>
@@ -504,7 +504,7 @@ export default function Settings() {
                         className="w-full"
                         disabled={!selectedLocationId}
                       >
-                        <Trash2 className="h-4 w-4 mr-2" />
+                        <Trash2 className="size-4 mr-2" />
                         Clear All Bookings
                       </Button>
                     </div>

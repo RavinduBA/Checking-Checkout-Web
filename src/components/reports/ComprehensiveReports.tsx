@@ -373,12 +373,12 @@ export default function ComprehensiveReports() {
       case 'income':
       case 'payment':
       case 'transfer_in':
-        return <ArrowUpRight className="h-4 w-4 text-green-600" />;
+        return <ArrowUpRight className="size-4 text-green-600" />;
       case 'expense':
       case 'transfer_out':
-        return <ArrowDownLeft className="h-4 w-4 text-red-600" />;
+        return <ArrowDownLeft className="size-4 text-red-600" />;
       default:
-        return <DollarSign className="h-4 w-4 text-gray-600" />;
+        return <DollarSign className="size-4 text-gray-600" />;
     }
   };
 
@@ -416,17 +416,17 @@ export default function ComprehensiveReports() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-0 sm:px-4">
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+      <Card className="px-4">
+        <CardHeader className="px-0 sm:px-2">
+          <CardTitle className="flex items-center gap-2 text-md sm:text-lg">
+            <Calendar className="size-5" />
             Financial Report Filters
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <CardContent className="px-0 sm:px-2">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
             <div>
               <Label htmlFor="location">Location</Label>
               <Select value={selectedLocation} onValueChange={setSelectedLocation}>
@@ -475,11 +475,11 @@ export default function ComprehensiveReports() {
             </div>
             <div className="flex items-end gap-2">
               <Button onClick={fetchComprehensiveData} className="flex-1">
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <RefreshCw className="size-4 mr-2" />
                 Refresh
               </Button>
               <Button onClick={exportToCSV} variant="outline">
-                <Download className="h-4 w-4" />
+                <Download className="size-4" />
               </Button>
             </div>
           </div>
@@ -489,62 +489,62 @@ export default function ComprehensiveReports() {
       {/* Financial Summary */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="bg-green-50 border-green-200">
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-green-600">Total Income</p>
-                <p className="text-2xl font-bold text-green-900">
+                <p className="text-lg sm:text-2xl font-bold text-green-900">
                   {formatCurrency(summary.totalIncome, baseCurrency)}
                 </p>
               </div>
-              <TrendingUp className="h-8 w-8 text-green-600" />
+              <TrendingUp className="size-4 text-green-600" />
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-blue-600">Reservation Payments</p>
-                <p className="text-2xl font-bold text-blue-900">
+                <p className="text-lg sm:text-2xl  font-bold text-blue-900">
                   {formatCurrency(summary.totalPayments, baseCurrency)}
                 </p>
               </div>
-              <CreditCard className="h-8 w-8 text-blue-600" />
+              <CreditCard className="size-4 text-blue-600" />
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-red-50 border-red-200">
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-red-600">Total Expenses</p>
-                <p className="text-2xl font-bold text-red-900">
+                <p className="text-lg sm:text-2xl font-bold text-red-900">
                   {formatCurrency(summary.totalExpenses, baseCurrency)}
                 </p>
               </div>
-              <TrendingDown className="h-8 w-8 text-red-600" />
+              <TrendingDown className="size-4 text-red-600" />
             </div>
           </CardContent>
         </Card>
 
         <Card className={`${summary.netProfit >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className={`text-sm font-medium ${summary.netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                   Net Profit
                 </p>
-                <p className={`text-2xl font-bold ${summary.netProfit >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>
+                <p className={`text-lg sm:text-2xl font-bold ${summary.netProfit >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>
                   {formatCurrency(summary.netProfit, baseCurrency)}
                 </p>
                 <p className={`text-sm ${summary.netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                   {summary.profitMargin.toFixed(1)}% margin
                 </p>
               </div>
-              <DollarSign className={`h-8 w-8 ${summary.netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`} />
+              <DollarSign className={`size-4 ${summary.netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`} />
             </div>
           </CardContent>
         </Card>
@@ -552,45 +552,45 @@ export default function ComprehensiveReports() {
 
       {/* Account Details */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="h-6 w-6" />
+        <CardHeader className="px-2">
+          <CardTitle className="flex items-center gap-2 text-md sm:text-lg">
+            <Building2 className="size-6" />
             Account Balances & Transaction History
           </CardTitle>
           <CardDescription>
             Running balances for all accounts with complete transaction history
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2">
           <div className="space-y-4">
             {accounts.map((account) => (
-              <Card key={account.id} className="border-l-4 border-l-primary">
+              <Card key={account.id} className="px-0 border-l-2 sm:border-l-4 border-l-primary">
                 <Collapsible
                   open={expandedAccounts.has(account.id)}
                   onOpenChange={() => toggleAccountExpansion(account.id)}
                 >
                   <CollapsibleTrigger asChild>
-                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {expandedAccounts.has(account.id) ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
-                          <div>
-                            <CardTitle className="text-lg">{account.name}</CardTitle>
+                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors py-4">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                        <div className="flex items-start sm:items-center gap-3">
+                          <div className="flex flex-col">
+                            <CardTitle className="text-md sm:text-lg">{account.name}</CardTitle>
                             <CardDescription className="flex items-center gap-2">
                               <Badge variant="outline">{account.currency}</Badge>
                               <span>{account.transaction_count} transactions</span>
                             </CardDescription>
                           </div>
+                          {expandedAccounts.has(account.id) ? (
+                            <ChevronDown className="size-4" />
+                          ) : (
+                            <ChevronRight className="size-4" />
+                          )}
                         </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold">
+                        <div className="text-left sm:text-right flex flex-col items-start sm:items-end">
+                          <p className="text-lg sm:text-2xl font-bold">
                             {formatCurrency(account.current_balance, account.currency as any)}
                           </p>
-                          <div className="flex gap-4 text-sm text-muted-foreground">
+                          <div className="flex pt-4 sm:pt-0 flex-col sm:flex-row gap-2 sm:gap-4 text-sm text-muted-foreground">
                             <span className="text-green-600">
                               Income: {formatCurrency(account.total_income, account.currency as any)}
                             </span>
@@ -609,12 +609,12 @@ export default function ComprehensiveReports() {
                     <CardContent className="pt-0">
                       <div className="space-y-2 max-h-96 overflow-y-auto">
                         {account.transactions.length === 0 ? (
-                          <p className="text-center text-muted-foreground py-8">
+                          <p className="text-start sm:text-center text-muted-foreground py-8">
                             No transactions found for selected period
                           </p>
                         ) : (
                           account.transactions.map((txn, index) => (
-                            <div key={`${txn.id}-${index}`} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                            <div key={`${txn.id}-${index}`} className="flex items-center justify-between p-1 sm:p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                               <div className="flex items-center gap-3">
                                 {getTransactionIcon(txn.type)}
                                 <div>
@@ -625,7 +625,7 @@ export default function ComprehensiveReports() {
                                   </div>
                                 </div>
                               </div>
-                              <div className="text-right">
+                              <div className="text-left sm:text-right">
                                 <p className={`font-semibold ${
                                   txn.type === 'income' || txn.type === 'payment' || txn.type === 'transfer_in'
                                     ? 'text-green-600' 

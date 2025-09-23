@@ -169,8 +169,8 @@ export default function AgentsTab() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Users className="h-6 w-6" />
+          <h2 className="text-md sm:text-2xl font-bold text-foreground flex items-center gap-2">
+            <Users className="size-6" />
             Travel Agents
           </h2>
           <p className="text-muted-foreground">Manage travel agents and their commission rates</p>
@@ -181,7 +181,7 @@ export default function AgentsTab() {
               setEditingAgent(null);
               resetForm();
             }}>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="size-4 mr-2" />
               Add Agent
             </Button>
           </DialogTrigger>
@@ -335,14 +335,14 @@ export default function AgentsTab() {
                     variant="outline"
                     onClick={() => handleEdit(agent)}
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="size-4" />
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => handleDelete(agent.id)}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="size-4" />
                   </Button>
                 </div>
               </TableCell>

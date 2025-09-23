@@ -31,7 +31,7 @@ export default function Reports() {
   const activeTab = searchParams.get("tab") || "comprehensive";
 
   return (
-    <div className="max-w-full w-full mx-auto p-2 lg:p-6 space-y-4 animate-fade-in">
+    <div className="max-w-full pb-20 w-full mx-auto p-2 lg:p-6 space-y-4 animate-fade-in">
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
@@ -41,7 +41,7 @@ export default function Reports() {
               <div>
                 <p className="text-xs lg:text-sm font-medium text-muted-foreground">Total Revenue</p>
                 <div className="flex items-center gap-1">
-                  <DollarSign className="h-4 w-4 text-emerald-500" />
+                  <DollarSign className="size-4 text-emerald-500" />
                   <p className="text-lg lg:text-2xl font-bold">$24,580</p>
                 </div>
               </div>
@@ -55,7 +55,7 @@ export default function Reports() {
               <div>
                 <p className="text-xs lg:text-sm font-medium text-muted-foreground">Total Expenses</p>
                 <div className="flex items-center gap-1">
-                  <TrendingUp className="h-4 w-4 text-red-500" />
+                  <TrendingUp className="size-4 text-red-500" />
                   <p className="text-lg lg:text-2xl font-bold">$12,450</p>
                 </div>
               </div>
@@ -69,7 +69,7 @@ export default function Reports() {
               <div>
                 <p className="text-xs lg:text-sm font-medium text-muted-foreground">Net Profit</p>
                 <div className="flex items-center gap-1">
-                  <BarChart3 className="h-4 w-4 text-primary" />
+                  <BarChart3 className="size-4 text-primary" />
                   <p className="text-lg lg:text-2xl font-bold">$12,130</p>
                 </div>
               </div>
@@ -83,7 +83,7 @@ export default function Reports() {
               <div>
                 <p className="text-xs lg:text-sm font-medium text-muted-foreground">Commissions</p>
                 <div className="flex items-center gap-1">
-                  <Percent className="h-4 w-4 text-purple-500" />
+                  <Percent className="size-4 text-purple-500" />
                   <p className="text-lg lg:text-2xl font-bold">$2,340</p>
                 </div>
               </div>
@@ -97,22 +97,22 @@ export default function Reports() {
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <div>
-              <CardTitle className="text-base lg:text-lg font-semibold">Reports Dashboard</CardTitle>
+              <CardTitle className="text-base  font-semibold">Reports Dashboard</CardTitle>
               <CardDescription className="text-xs lg:text-sm">
                 Access detailed financial reports and analytics
               </CardDescription>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
               <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
-                <Filter className="h-4 w-4 mr-2" />
+                <Filter className="size-4 mr-2" />
                 <span className="hidden sm:inline">Filter</span>
               </Button>
               <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
-                <Download className="h-4 w-4 mr-2" />
+                <Download className="size-4 mr-2" />
                 <span className="hidden sm:inline">Export</span>
               </Button>
               <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <RefreshCw className="size-4 mr-2" />
                 <span className="hidden sm:inline">Refresh</span>
               </Button>
             </div>
@@ -128,14 +128,14 @@ export default function Reports() {
                   value="comprehensive" 
                   className="flex flex-col items-center gap-1 p-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
-                  <BarChart3 className="h-4 w-4" />
+                  <BarChart3 className="size-4" />
                   <span className="text-xs">Overview</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="detailed" 
                   className="flex flex-col items-center gap-1 p-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
-                  <TrendingUp className="h-4 w-4" />
+                  <TrendingUp className="size-4" />
                   <span className="text-xs">Detailed</span>
                 </TabsTrigger>
               </TabsList>
@@ -145,14 +145,14 @@ export default function Reports() {
                   value="accounts" 
                   className="flex flex-col items-center gap-1 p-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
-                  <CreditCard className="h-4 w-4" />
+                  <CreditCard className="size-4" />
                   <span className="text-xs">Accounts</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="commission" 
                   className="flex flex-col items-center gap-1 p-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
-                  <Percent className="h-4 w-4" />
+                  <Percent className="size-4" />
                   <span className="text-xs">Commission</span>
                 </TabsTrigger>
               </TabsList>
@@ -161,26 +161,26 @@ export default function Reports() {
             {/* Desktop Tab Navigation */}
             <div className="hidden lg:block px-6 pb-4">
               <TabsList className="grid w-full grid-cols-4 h-12">
-                <TabsTrigger value="comprehensive" className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4" />
+                <TabsTrigger value="comprehensive" className="flex items-center gap-2 text-md ">
+                  <BarChart3 className="size-4" />
                   Financial Overview
                 </TabsTrigger>
-                <TabsTrigger value="detailed" className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
+                <TabsTrigger value="detailed" className="flex items-center gap-2 text-md ">
+                  <TrendingUp className="size-4" />
                   Detailed Reports
                 </TabsTrigger>
-                <TabsTrigger value="accounts" className="flex items-center gap-2">
-                  <CreditCard className="h-4 w-4" />
+                <TabsTrigger value="accounts" className="flex items-center gap-2 text-md ">
+                  <CreditCard className="size-4" />
                   Account Statements
                 </TabsTrigger>
-                <TabsTrigger value="commission" className="flex items-center gap-2">
-                  <Percent className="h-4 w-4" />
+                <TabsTrigger value="commission" className="flex items-center gap-2 text-md ">
+                  <Percent className="size-4" />
                   Commissions
                 </TabsTrigger>
               </TabsList>
             </div>
 
-            <div className="px-2 lg:px-6 pb-6">
+            <div className="px-2 pb-2">
               <TabsContent value="comprehensive" className="mt-0">
                 <ComprehensiveReports />
               </TabsContent>

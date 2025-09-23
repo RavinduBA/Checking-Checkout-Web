@@ -30,8 +30,6 @@ export const usePermissions = () => {
       if (!user) return;
 
       try {
-        console.log("Fetching permissions for user:", user.id);
-        
         // Check if user is admin
         const { data: profile } = await supabase
           .from("profiles")

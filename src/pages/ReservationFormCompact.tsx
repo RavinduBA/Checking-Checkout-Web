@@ -461,7 +461,7 @@ export default function ReservationFormCompact() {
         <div className="flex-1">
         </div>
         <Button type="submit" form="reservation-form" disabled={submitting}>
-          <Save className="h-4 w-4 mr-2" />
+          <Save className="size-4 mr-2" />
           {submitting ? 'Saving...' : isEdit ? 'Update' : 'Save'}
         </Button>
       </div>
@@ -474,7 +474,7 @@ export default function ReservationFormCompact() {
             <Card className="bg-card">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <User className="h-4 w-4" />
+                  <User className="size-4" />
                   Guest Information
                 </CardTitle>
               </CardHeader>
@@ -553,7 +553,7 @@ export default function ReservationFormCompact() {
             <Card className="bg-card">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <Calendar className="h-4 w-4" />
+                  <Calendar className="size-4" />
                   Booking Details
                 </CardTitle>
               </CardHeader>
@@ -631,7 +631,7 @@ export default function ReservationFormCompact() {
 
                 {formData.check_in_date && formData.check_out_date && (
                   <div className="flex items-center justify-center py-2 px-4 bg-muted/50 rounded-lg">
-                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <Calendar className="size-4 mr-2 text-muted-foreground" />
                     <span className="text-sm font-medium">
                       {formData.nights} {formData.nights === 1 ? 'night' : 'nights'}
                     </span>
@@ -683,7 +683,7 @@ export default function ReservationFormCompact() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <UserCheck className="h-4 w-4" />
+                  <UserCheck className="size-4" />
                   Services
                 </CardTitle>
               </CardHeader>
@@ -718,7 +718,7 @@ export default function ReservationFormCompact() {
                     <Dialog open={showGuideDialog} onOpenChange={setShowGuideDialog}>
                       <DialogTrigger asChild>
                         <Button type="button" variant="outline" size="icon" className="h-9 w-9">
-                          <Plus className="h-4 w-4" />
+                          <Plus className="size-4" />
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
@@ -802,7 +802,7 @@ export default function ReservationFormCompact() {
                     <Dialog open={showAgentDialog} onOpenChange={setShowAgentDialog}>
                       <DialogTrigger asChild>
                         <Button type="button" variant="outline" size="icon" className="h-9 w-9">
-                          <Plus className="h-4 w-4" />
+                          <Plus className="size-4" />
                         </Button>
                       </DialogTrigger>
                       <DialogContent>

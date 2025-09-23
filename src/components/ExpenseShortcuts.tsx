@@ -93,7 +93,7 @@ export function ExpenseShortcuts({ locationId, accounts, onQuickFill }: ExpenseS
         shortcuts.push({
           id: shortcutId,
           type: 'staff',
-          icon: <Briefcase className="h-4 w-4" />,
+          icon: <Briefcase className="size-4" />,
           title: "Staff - Caretaker",
           amount,
           currency: "Rs.", // Always LKR for these shortcuts
@@ -115,7 +115,7 @@ export function ExpenseShortcuts({ locationId, accounts, onQuickFill }: ExpenseS
           shortcuts.push({
             id: shortcutId,
             type: 'laundry',
-            icon: <Shirt className="h-4 w-4" />,
+            icon: <Shirt className="size-4" />,
             title: "Laundry - External Service", 
             amount: "2000",
             currency: "Rs.", // Always LKR
@@ -170,10 +170,10 @@ export function ExpenseShortcuts({ locationId, accounts, onQuickFill }: ExpenseS
   }
 
   return (
-    <Card className="border-orange-200 bg-orange-50">
+    <Card className="border-border">
       <CardHeader className="pb-3">
         <CardTitle className="text-orange-800 flex items-center gap-2 text-base">
-          <Zap className="h-4 w-4" />
+          <Zap className="size-4" />
           Today's Expense Shortcuts
         </CardTitle>
       </CardHeader>
@@ -183,7 +183,7 @@ export function ExpenseShortcuts({ locationId, accounts, onQuickFill }: ExpenseS
             <Button
               key={shortcut.id}
               variant="outline"
-              className="w-full p-4 h-auto flex flex-col items-start gap-2 hover:shadow-md transition-all border-orange-300 bg-orange-50 hover:bg-orange-100"
+              className="w-full p-4 h-auto flex flex-col items-start gap-2 hover:transition-all border-border bg-primary"
               onClick={() => handleQuickFill(shortcut)}
             >
               <div className="flex items-center justify-between w-full">

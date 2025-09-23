@@ -14,7 +14,7 @@ export function MobileBottomNav() {
   const location = useLocation();
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border shadow-elegant lg:hidden">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border lg:hidden">
       <div className="grid grid-cols-5 h-16">
         {navItems.map((item) => {
           const isActive = location.pathname === item.href;
@@ -29,7 +29,7 @@ export function MobileBottomNav() {
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <item.icon className={cn("h-5 w-5", isActive && "text-primary")} />
+              <item.icon className={cn("size-5", isActive && "text-primary")} />
               <span className="font-medium">{item.name}</span>
             </Link>
           );

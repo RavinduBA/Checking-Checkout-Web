@@ -27,7 +27,7 @@ export const PermissionRoute = ({
     return (
       <div className="flex items-center justify-center min-h-[400px] p-4">
         <Alert className="max-w-md">
-          <AlertTriangle className="h-4 w-4" />
+          <AlertTriangle className="size-4" />
           <AlertDescription className="text-center">
             You don't have permission to access this page. Please contact your administrator if you believe this is an error.
           </AlertDescription>

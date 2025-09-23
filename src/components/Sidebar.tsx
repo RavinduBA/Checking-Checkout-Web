@@ -81,7 +81,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   if (loading) {
     return (
       <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
-        <div className="flex flex-col flex-grow bg-card border-r border-border shadow-elegant items-center justify-center">
+        <div className="flex flex-col flex-grow bg-card border-r border-border items-center justify-center">
           <InlineLoader />
         </div>
       </div>
@@ -94,7 +94,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     <>
       {/* Desktop Sidebar */}
       <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
-        <div className="flex flex-col flex-grow bg-card border-r border-border shadow-elegant">
+        <div className="flex flex-col flex-grow bg-card border-r border-border">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-4">
             <img src={checkinLogo} alt="CHECK-IN CHECK-OUT" className="w-10 h-10 rounded-lg" />
@@ -123,14 +123,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         : "text-muted-foreground hover:text-foreground hover:bg-accent"
                     )}
                   >
-                    <item.icon className="h-5 w-5" />
+                    <item.icon className="size-5" />
                     <Link to={item.href} className="flex-1">
                       {item.name}
                     </Link>
                     {item.subItems && (
                       itemExpanded ?
-                        <ChevronDown className="h-4 w-4" /> :
-                        <ChevronRight className="h-4 w-4" />
+                        <ChevronDown className="size-4" /> :
+                        <ChevronRight className="size-4" />
                     )}
                   </div>
 
@@ -150,7 +150,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                             )}
                           >
-                            <subItem.icon className="h-4 w-4" />
+                            <subItem.icon className="size-4" />
                             {subItem.name}
                           </Link>
                         );
@@ -167,7 +167,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Mobile Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border shadow-elegant transform transition-transform duration-300 lg:hidden",
+          "fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-300 lg:hidden",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -200,14 +200,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         : "text-muted-foreground hover:text-foreground hover:bg-accent"
                     )}
                   >
-                    <item.icon className="h-5 w-5" />
+                    <item.icon className="size-5" />
                     <Link to={item.href} className="flex-1" onClick={item.subItems ? undefined : onClose}>
                       {item.name}
                     </Link>
                     {item.subItems && (
                       itemExpanded ?
-                        <ChevronDown className="h-4 w-4" /> :
-                        <ChevronRight className="h-4 w-4" />
+                        <ChevronDown className="size-4" /> :
+                        <ChevronRight className="size-4" />
                     )}
                   </div>
 
@@ -228,7 +228,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                             )}
                           >
-                            <subItem.icon className="h-4 w-4" />
+                            <subItem.icon className="size-4" />
                             {subItem.name}
                           </Link>
                         );

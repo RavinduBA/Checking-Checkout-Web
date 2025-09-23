@@ -80,7 +80,7 @@ export const ReservationsList = () => {
     const colors = {
       confirmed: "bg-emerald-100 text-emerald-800 border-emerald-200",
       tentative: "bg-amber-100 text-amber-800 border-amber-200",
-      pending: "bg-orange-100 text-orange-800 border-orange-200",
+      pending: "bg-orange-100 text-orange-800 border-border",
       checked_in: "bg-blue-100 text-blue-800 border-blue-200",
       checked_out: "bg-gray-100 text-gray-800 border-gray-200",
       cancelled: "bg-red-100 text-red-800 border-red-200"
@@ -171,9 +171,9 @@ export const ReservationsList = () => {
   }
 
   return (
-    <div className="max-w-full w-full mx-auto p-4 space-y-6">
+    <div className="max-w-full w-full pb-20 sm:pb-0 mx-auto p-4 space-y-6">
       <div className="flex flex-col gap-4">
-        <h1 className="text-2xl font-bold">Reservations & Payments</h1>
+        <h1 className="text-md sm:text-2xl font-bold">Reservations & Payments</h1>
         
         {/* Filters */}
         <div className="flex flex-col lg:flex-row gap-4">
@@ -182,7 +182,7 @@ export const ReservationsList = () => {
               <SelectTrigger className="w-full lg:w-48">
                 <SelectValue placeholder="Select location" />
               </SelectTrigger>
-              <SelectContent className="z-50 bg-background border shadow-lg">
+              <SelectContent className="z-50 bg-background border">
                 <SelectItem value="all">All Locations</SelectItem>
                 {availableLocations.map((location) => (
                   <SelectItem key={location.id} value={location.id}>
@@ -204,7 +204,7 @@ export const ReservationsList = () => {
             <SelectTrigger className="w-full lg:w-48">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
-            <SelectContent className="z-50 bg-background border shadow-lg">
+            <SelectContent className="z-50 bg-background border">
               <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="confirmed">Confirmed</SelectItem>
               <SelectItem value="tentative">Tentative</SelectItem>
@@ -216,7 +216,7 @@ export const ReservationsList = () => {
           </Select>
           
           <Button onClick={() => navigate("/reservations/new")}>
-            <Calendar className="h-4 w-4 mr-2" />
+            <Calendar className="size-4 mr-2" />
             New Reservation
           </Button>
         </div>
@@ -278,14 +278,14 @@ export const ReservationsList = () => {
                               size="icon"
                               onClick={() => navigate(`/reservations/${reservation.id}`)}
                             >
-                              <Eye className="h-4 w-4" />
+                              <Eye className="size-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
                               onClick={() => handlePrintReservation(reservation)}
                             >
-                              <Printer className="h-4 w-4" />
+                              <Printer className="size-4" />
                             </Button>
                             {canShowPaymentButton(reservation.status) && (
                               <Button
@@ -294,14 +294,14 @@ export const ReservationsList = () => {
                                 onClick={() => navigate(`/payments/new?reservation=${reservation.id}&amount=${reservation.balance_amount}&currency=${reservation.currency}`)}
                                 className="text-green-600 hover:text-green-700"
                               >
-                                <CreditCard className="h-4 w-4" />
+                                <CreditCard className="size-4" />
                               </Button>
                             )}
                             <OTPVerification
                               onVerified={() => handleOTPVerified(reservation.id)}
                               triggerComponent={
                                 <Button variant="ghost" size="icon">
-                                  <Edit className="h-4 w-4" />
+                                  <Edit className="size-4" />
                                 </Button>
                               }
                             />
@@ -354,7 +354,7 @@ export const ReservationsList = () => {
                       className="flex-1"
                       onClick={() => navigate(`/reservations/${reservation.id}`)}
                     >
-                      <Eye className="h-4 w-4 mr-1" />
+                      <Eye className="size-4 mr-1" />
                       View
                     </Button>
                     <Button
@@ -362,7 +362,7 @@ export const ReservationsList = () => {
                       size="sm"
                       onClick={() => handlePrintReservation(reservation)}
                     >
-                      <Printer className="h-4 w-4" />
+                      <Printer className="size-4" />
                     </Button>
                     {canShowPaymentButton(reservation.status) && (
                       <Button
@@ -371,14 +371,14 @@ export const ReservationsList = () => {
                         onClick={() => navigate(`/payments/new?reservation=${reservation.id}&amount=${reservation.balance_amount}&currency=${reservation.currency}`)}
                         className="text-green-600 hover:text-green-700"
                       >
-                        <CreditCard className="h-4 w-4" />
+                        <CreditCard className="size-4" />
                       </Button>
                     )}
                     <OTPVerification
                       onVerified={() => handleOTPVerified(reservation.id)}
                       triggerComponent={
                         <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4" />
+                          <Edit className="size-4" />
                         </Button>
                       }
                     />

@@ -34,7 +34,7 @@ export const PricingDisplay = ({
     return (
       <Card className="bg-muted/10">
         <CardContent className="pt-6 text-center">
-          <Calculator className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+          <Calculator className="size-5 mx-auto text-muted-foreground mb-2" />
           <p className="text-muted-foreground">Select dates to see pricing</p>
         </CardContent>
       </Card>
@@ -45,7 +45,7 @@ export const PricingDisplay = ({
     <Card className="bg-primary/5 border-primary/20">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <DollarSign className="h-5 w-5" />
+          <DollarSign className="size-5" />
           Pricing Breakdown
         </CardTitle>
       </CardHeader>

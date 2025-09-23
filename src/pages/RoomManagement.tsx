@@ -275,7 +275,7 @@ export default function RoomManagement() {
             <div className="flex justify-between items-center">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <Bed className="h-5 w-5" />
+                  <Bed className="size-5" />
                   Hotel Rooms
                 </CardTitle>
                 <CardDescription>
@@ -314,7 +314,7 @@ export default function RoomManagement() {
                         property_type: "Room",
                       });
                     }}>
-                      <Plus className="h-4 w-4 mr-2" />
+                      <Plus className="size-4 mr-2" />
                       Add Room
                     </Button>
                   </DialogTrigger>
@@ -556,7 +556,7 @@ export default function RoomManagement() {
                   <TableRow key={room.id}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
-                        <Bed className="h-4 w-4 text-muted-foreground" />
+                        <Bed className="size-4 text-muted-foreground" />
                         <div>
                           <div className="font-medium">{room.room_number}</div>
                           {room.room_type === "Villa" && (
@@ -569,7 +569,7 @@ export default function RoomManagement() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <Building2 className="size-4 text-muted-foreground" />
                         {room.locations?.name}
                       </div>
                     </TableCell>
@@ -577,13 +577,13 @@ export default function RoomManagement() {
                     <TableCell>{room.bed_type}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <Users className="size-4 text-muted-foreground" />
                         {room.max_occupancy}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        <DollarSign className="size-4 text-muted-foreground" />
                         <span className="font-medium">
                           {formatCurrency(room.base_price, room.currency as any)}
                         </span>
@@ -601,7 +601,7 @@ export default function RoomManagement() {
                           variant="outline"
                           onClick={() => handleEdit(room)}
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="size-4" />
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -609,7 +609,7 @@ export default function RoomManagement() {
                               size="sm"
                               variant="outline"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="size-4" />
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>

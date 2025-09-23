@@ -8,7 +8,7 @@ export default function AccessDenied() {
     <div className="flex items-center justify-center min-h-screen p-4">
       <div className="max-w-md w-full space-y-4">
         <Alert>
-          <AlertTriangle className="h-4 w-4" />
+          <AlertTriangle className="size-4" />
           <AlertDescription className="text-center">
             You don't have permission to access any pages in this application. 
             Please contact your administrator to request access.
@@ -18,7 +18,7 @@ export default function AccessDenied() {
         <div className="flex justify-center">
           <Button asChild variant="outline">
             <Link to="/auth">
-              <ArrowLeft className="h-4 w-4 mr-2" />
+              <ArrowLeft className="size-4 mr-2" />
               Return to Login
             </Link>
           </Button>

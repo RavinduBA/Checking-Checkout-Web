@@ -104,7 +104,7 @@ export const AirbnbDatePicker = ({
               !checkInDate && "text-muted-foreground"
             )}
           >
-            <CalendarIcon className="mr-3 h-5 w-5" />
+            <CalendarIcon className="mr-3 size-5" />
             <div className="flex flex-col items-start">
               <span className="text-xs text-muted-foreground mb-1">
                 {selectingCheckIn ? "Check-in" : "Check-out"}
@@ -116,7 +116,7 @@ export const AirbnbDatePicker = ({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
-          <Card className="border-0 shadow-lg">
+          <Card className="border-0">
             <CardContent className="p-4">
               <div className="text-center mb-4">
                 <h3 className="font-semibold text-lg">
@@ -161,7 +161,7 @@ export const AirbnbDatePicker = ({
       {/* Nights Display */}
       {nights > 0 && (
         <div className="flex items-center justify-center py-2 px-4 bg-muted/50 rounded-lg">
-          <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+          <CalendarIcon className="size-4 mr-2 text-muted-foreground" />
           <span className="text-sm font-medium">
             {nights} {nights === 1 ? 'night' : 'nights'}
           </span>

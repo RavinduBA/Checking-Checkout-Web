@@ -39,7 +39,7 @@ export const SignatureCapture = ({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <PenTool className="h-5 w-5" />
+          <PenTool className="size-5" />
           {title}
         </CardTitle>
       </CardHeader>
@@ -49,7 +49,7 @@ export const SignatureCapture = ({
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">
-                  <PenTool className="h-4 w-4 mr-2" />
+                  <PenTool className="size-4 mr-2" />
                   Add Signature
                 </Button>
               </DialogTrigger>
@@ -75,11 +75,11 @@ export const SignatureCapture = ({
                       variant="outline"
                       onClick={clearSignature}
                     >
-                      <RotateCcw className="h-4 w-4 mr-2" />
+                      <RotateCcw className="size-4 mr-2" />
                       Clear
                     </Button>
                     <Button onClick={saveSignature}>
-                      <Save className="h-4 w-4 mr-2" />
+                      <Save className="size-4 mr-2" />
                       Save Signature
                     </Button>
                   </div>
@@ -100,7 +100,7 @@ export const SignatureCapture = ({
               <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
-                    <PenTool className="h-4 w-4 mr-2" />
+                    <PenTool className="size-4 mr-2" />
                     Edit
                   </Button>
                 </DialogTrigger>
@@ -126,11 +126,11 @@ export const SignatureCapture = ({
                         variant="outline"
                         onClick={clearSignature}
                       >
-                        <RotateCcw className="h-4 w-4 mr-2" />
+                        <RotateCcw className="size-4 mr-2" />
                         Clear
                       </Button>
                       <Button onClick={saveSignature}>
-                        <Save className="h-4 w-4 mr-2" />
+                        <Save className="size-4 mr-2" />
                         Save Signature
                       </Button>
                     </div>

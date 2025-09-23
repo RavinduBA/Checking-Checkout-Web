@@ -212,7 +212,7 @@ export default function Expense() {
     return (
       <div className="container mx-auto p-4 sm:p-6">
         <Alert>
-          <AlertCircle className="h-4 w-4" />
+          <AlertCircle className="size-4" />
           <AlertDescription>
             You don't have permission to access this page. Please contact your administrator.
           </AlertDescription>
@@ -269,7 +269,7 @@ export default function Expense() {
           <Card className="bg-card border">
             <CardHeader className="pb-3">
               <CardTitle className="text-red-800 flex items-center gap-2 text-lg">
-                <Minus className="h-5 w-5" />
+                <Minus className="size-5" />
                 New Expense Record
               </CardTitle>
             </CardHeader>
@@ -352,7 +352,7 @@ export default function Expense() {
                   <div>
                     <Label htmlFor="date">Date</Label>
                     <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-muted-foreground" />
                       <Input
                         id="date"
                         type="date"
@@ -378,7 +378,7 @@ export default function Expense() {
 
                 <div className="flex gap-2 pt-4">
                   <Button type="submit" className="flex-1  text-white">
-                    <Minus className="h-4 w-4 mr-2" />
+                    <Minus className="size-4 mr-2" />
                     Add Expense
                   </Button>
                 </div>

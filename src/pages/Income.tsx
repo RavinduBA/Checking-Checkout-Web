@@ -423,7 +423,7 @@ const Income = () => {
     return (
       <div className="p-6">
         <Alert>
-          <AlertCircle className="h-4 w-4" />
+          <AlertCircle className="size-4" />
           <AlertDescription>
             You don't have permission to access this page. Please contact your administrator.
           </AlertDescription>
@@ -433,10 +433,10 @@ const Income = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 pb-20">
       <div className="flex justify-between items-center">
         <Button onClick={() => navigate('/reservations/new')} className="">
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="mr-2 size-4" />
           New Reservation
         </Button>
         
@@ -628,7 +628,7 @@ const Income = () => {
                         <TableCell>{new Date(reservation.check_out_date).toLocaleDateString()}</TableCell>
                         <TableCell>LKR {reservation.total_amount.toLocaleString()}</TableCell>
                         <TableCell>{getStatusBadge(reservation.status)}</TableCell>
-                        <TableCell className="space-x-2">
+                        <TableCell className="space-x-2 flex">
                           <Button
                             variant="outline"
                             size="sm"
@@ -641,7 +641,7 @@ const Income = () => {
                               setIsPaymentDialogOpen(true);
                             }}
                           >
-                            <CreditCard className="h-4 w-4" />
+                            <CreditCard className="size-4" />
                           </Button>
                           <Button
                             variant="outline"
@@ -651,7 +651,7 @@ const Income = () => {
                               setIsPrintDialogOpen(true);
                             }}
                           >
-                            <Printer className="h-4 w-4" />
+                            <Printer className="size-4" />
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -813,7 +813,7 @@ const Income = () => {
                 Cancel
               </Button>
               <Button onClick={handlePrint}>
-                <Printer className="mr-2 h-4 w-4" />
+                <Printer className="mr-2 size-4" />
                 Print
               </Button>
             </div>

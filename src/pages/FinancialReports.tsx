@@ -211,7 +211,7 @@ export default function FinancialReports() {
       <div className="flex items-center gap-4 mb-6">
         <Button asChild variant="ghost" size="icon">
           <Link to="/">
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="size-5" />
           </Link>
         </Button>
         <div>
@@ -223,7 +223,7 @@ export default function FinancialReports() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-orange-500" />
+            <BarChart3 className="size-5 text-primary" />
             Report Filters
           </CardTitle>
         </CardHeader>
@@ -294,7 +294,7 @@ export default function FinancialReports() {
                 variant="outline" 
                 className="w-full"
               >
-                <Download className="h-4 w-4 mr-2" />
+                <Download className="size-4 mr-2" />
                 Download PDF Report
               </Button>
             </div>
@@ -309,14 +309,14 @@ export default function FinancialReports() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-green-800 font-medium">Total Income</p>
-                <p className="text-3xl font-bold text-green-900">
+                <p className="text-lg sm:text-3xl font-bold text-green-900">
                   Rs.{financialData.totalIncome.toLocaleString()}
                 </p>
                 <p className="text-sm text-green-600 mt-1">
                   {financialData.incomeTransactions} transactions
                 </p>
               </div>
-              <TrendingUp className="h-8 w-8 text-green-600" />
+              <TrendingUp className="size-5 text-green-600" />
             </div>
           </CardContent>
         </Card>
@@ -326,14 +326,14 @@ export default function FinancialReports() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-red-800 font-medium">Total Expenses</p>
-                <p className="text-3xl font-bold text-red-900">
+                <p className="text-lg sm:text-3xl font-bold text-red-900">
                   Rs.{financialData.totalExpenses.toLocaleString()}
                 </p>
                 <p className="text-sm text-red-600 mt-1">
                   {financialData.expenseTransactions} transactions
                 </p>
               </div>
-              <TrendingDown className="h-8 w-8 text-red-600" />
+              <TrendingDown className="size-5 text-red-600" />
             </div>
           </CardContent>
         </Card>
@@ -343,14 +343,14 @@ export default function FinancialReports() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-blue-800 font-medium">Net Profit</p>
-                <p className="text-3xl font-bold text-blue-900">
+                <p className="text-lg sm:text-3xl font-bold text-blue-900">
                   Rs.{Math.abs(financialData.netProfit).toLocaleString()}
                 </p>
                 <p className="text-sm text-blue-600 mt-1">
                   {financialData.profitMargin.toFixed(1)}% margin
                 </p>
               </div>
-              <DollarSign className="h-8 w-8 text-blue-600" />
+              <DollarSign className="size-5 text-blue-600" />
             </div>
           </CardContent>
         </Card>
@@ -360,15 +360,15 @@ export default function FinancialReports() {
       <Tabs defaultValue="summary" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="summary" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
+            <BarChart3 className="size-4" />
             Summary
           </TabsTrigger>
           <TabsTrigger value="profit-loss" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
+            <TrendingUp className="size-4" />
             Profit & Loss
           </TabsTrigger>
           <TabsTrigger value="balance-sheet" className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
+            <DollarSign className="size-4" />
             Balance Sheet
           </TabsTrigger>
         </TabsList>
@@ -379,7 +379,7 @@ export default function FinancialReports() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-green-700">
-                  <TrendingUp className="h-5 w-5" />
+                  <TrendingUp className="size-5" />
                   Income Summary
                   <Badge variant="secondary" className="ml-auto">
                     Rs.{financialData.totalIncome.toLocaleString()}
@@ -409,7 +409,7 @@ export default function FinancialReports() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-red-700">
-                  <TrendingDown className="h-5 w-5" />
+                  <TrendingDown className="size-5" />
                   Expense Summary
                   <Badge variant="secondary" className="ml-auto">
                     Rs.{financialData.totalExpenses.toLocaleString()}

@@ -107,7 +107,7 @@ export const OTPVerification = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
+            <Shield className="size-5" />
             OTP Verification Required
           </DialogTitle>
         </DialogHeader>
@@ -129,7 +129,7 @@ export const OTPVerification = ({
                   "Sending..."
                 ) : (
                   <>
-                    <Send className="h-4 w-4 mr-2" />
+                    <Send className="size-4 mr-2" />
                     Send OTP
                   </>
                 )}
@@ -137,7 +137,7 @@ export const OTPVerification = ({
             ) : (
               <div className="space-y-4">
                 <div className="text-center text-sm text-emerald-600">
-                  <Check className="h-4 w-4 inline mr-1" />
+                  <Check className="size-4 inline mr-1" />
                   OTP sent successfully!
                 </div>
                 

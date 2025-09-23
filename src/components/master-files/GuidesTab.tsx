@@ -169,8 +169,8 @@ export default function GuidesTab() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <UserCheck className="h-6 w-6" />
+          <h2 className="text-md sm:text-2xl font-bold text-foreground flex items-center gap-2">
+            <UserCheck className="size-6" />
             Tour Guides
           </h2>
           <p className="text-muted-foreground">Manage tour guides and their commission rates</p>
@@ -181,7 +181,7 @@ export default function GuidesTab() {
               setEditingGuide(null);
               resetForm();
             }}>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="size-4 mr-2" />
               Add Guide
             </Button>
           </DialogTrigger>
@@ -335,14 +335,14 @@ export default function GuidesTab() {
                     variant="outline"
                     onClick={() => handleEdit(guide)}
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="size-4" />
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => handleDelete(guide.id)}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="size-4" />
                   </Button>
                 </div>
               </TableCell>

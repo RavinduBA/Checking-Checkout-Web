@@ -25,7 +25,7 @@ export const CurrencySelector = ({
   return (
     <div className="space-y-2">
       <Label className="flex items-center gap-2">
-        <DollarSign className="h-4 w-4" />
+        <DollarSign className="size-4" />
         {label}
       </Label>
       <Select value={currency} onValueChange={onCurrencyChange}>
@@ -35,12 +35,12 @@ export const CurrencySelector = ({
               <div className="flex items-center gap-2">
                 <span className="font-mono">{selectedCurrency.symbol}</span>
                 <span>{selectedCurrency.code}</span>
-                <span className="text-muted-foreground text-sm">- {selectedCurrency.name}</span>
+                <span className="text-muted-foreground text-sm hidden sm:flex">- {selectedCurrency.name}</span>
               </div>
             )}
           </SelectValue>
         </SelectTrigger>
-        <SelectContent className="z-50 bg-background border shadow-lg">
+        <SelectContent className="z-50 bg-background border">
           {currencies.map((curr) => (
             <SelectItem key={curr.code} value={curr.code}>
               <div className="flex items-center gap-2">

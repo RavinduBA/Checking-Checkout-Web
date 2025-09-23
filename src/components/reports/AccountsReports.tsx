@@ -248,15 +248,15 @@ export default function AccountsReports() {
   const getTransactionIcon = (type: string) => {
     switch (type) {
       case 'income':
-        return <ArrowUpRight className="h-4 w-4 text-green-600" />;
+        return <ArrowUpRight className="size-4 text-green-600" />;
       case 'expense':
-        return <ArrowDownLeft className="h-4 w-4 text-red-600" />;
+        return <ArrowDownLeft className="size-4 text-red-600" />;
       case 'transfer_in':
-        return <ArrowUpRight className="h-4 w-4 text-blue-600" />;
+        return <ArrowUpRight className="size-4 text-blue-600" />;
       case 'transfer_out':
-        return <ArrowDownLeft className="h-4 w-4 text-orange-600" />;
+        return <ArrowDownLeft className="size-4 text-orange-600" />;
       default:
-        return <DollarSign className="h-4 w-4 text-gray-600" />;
+        return <DollarSign className="size-4 text-gray-600" />;
     }
   };
 
@@ -295,14 +295,14 @@ export default function AccountsReports() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <CreditCard className="h-6 w-6" />
+          <h2 className="text-md sm:text-2xl font-bold text-foreground flex items-center gap-2">
+            <CreditCard className="size-6" />
             Accounts Reports
           </h2>
           <p className="text-muted-foreground">Account balances, transactions, and financial overview</p>
         </div>
         <Button onClick={exportData} variant="outline">
-          <Download className="h-4 w-4 mr-2" />
+          <Download className="size-4 mr-2" />
           Export CSV
         </Button>
       </div>

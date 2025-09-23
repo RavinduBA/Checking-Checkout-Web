@@ -114,7 +114,7 @@ export function BookingShortcuts({ locationId, accounts, onQuickFill }: BookingS
     const colors = {
       booking_com: "border-yellow-300 bg-yellow-50",
       airbnb: "border-pink-300 bg-pink-50",
-      direct: "border-orange-300 bg-orange-50"
+      direct: "border-border bg-orange-50"
     };
     return colors[source as keyof typeof colors] || "border-gray-300 bg-gray-50";
   };
@@ -191,7 +191,7 @@ export function BookingShortcuts({ locationId, accounts, onQuickFill }: BookingS
     <Card className="border-blue-200 bg-blue-50">
       <CardHeader className="pb-3">
         <CardTitle className="text-blue-800 flex items-center gap-2 text-base">
-          <Zap className="h-4 w-4" />
+          <Zap className="size-4" />
           Today's Booking Shortcuts
         </CardTitle>
       </CardHeader>
@@ -208,7 +208,7 @@ export function BookingShortcuts({ locationId, accounts, onQuickFill }: BookingS
               <Button
                 key={booking.id}
                 variant="outline"
-                className={`w-full p-4 h-auto flex flex-col items-start gap-2 hover:shadow-md transition-all ${getSourceColor(booking.source)}`}
+                className={`w-full p-4 h-auto flex flex-col items-start gap-2 hover:transition-all ${getSourceColor(booking.source)}`}
                 onClick={() => handleQuickFill(booking)}
               >
                 <div className="flex items-center justify-between w-full">

@@ -40,8 +40,8 @@ export default function CommissionsTab() {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <Percent className="h-6 w-6" />
+        <h2 className="text-md sm:text-2xl font-bold text-foreground flex items-center gap-2">
+          <Percent className="size-6" />
           Commission Settings
         </h2>
         <p className="text-muted-foreground">Configure default commission rates for guides and agents</p>
@@ -164,7 +164,7 @@ export default function CommissionsTab() {
 
       <div className="mt-6 flex justify-end">
         <Button onClick={handleSave} disabled={loading}>
-          <Save className="h-4 w-4 mr-2" />
+          <Save className="size-4 mr-2" />
           {loading ? "Saving..." : "Save Settings"}
         </Button>
       </div>

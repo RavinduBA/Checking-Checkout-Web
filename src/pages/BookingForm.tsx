@@ -185,13 +185,13 @@ export default function BookingForm() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4 space-y-6 animate-fade-in">
+    <div className="w-full pb-20 sm:pb-0 space-y-6 animate-fade-in">
 
       {/* Form */}
-      <Card className="bg-gradient-card border-0 shadow-elegant">
+      <Card className="bg-gradient-card border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Save className="h-5 w-5 text-primary" />
+            <Save className="size-5 text-primary" />
             {isEdit ? 'Update Booking Details' : 'Booking Details'}
           </CardTitle>
         </CardHeader>
@@ -342,7 +342,7 @@ export default function BookingForm() {
 
             <div className="flex gap-4 pt-4">
               <Button type="submit" disabled={loading} className="flex-1">
-                <Save className="h-4 w-4 mr-2" />
+                <Save className="size-4 mr-2" />
                 {loading ? (isEdit ? "Updating..." : "Creating...") : (isEdit ? "Update Booking" : "Create Booking")}
               </Button>
               <Button type="button" variant="outline" onClick={() => navigate("/calendar")}>

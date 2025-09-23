@@ -11,9 +11,9 @@ import { SectionLoader } from "@/components/ui/loading-spinner";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, convertCurrency } from "@/utils/currency";
-import { 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  TrendingUp,
+  TrendingDown,
   DollarSign,
   ChevronDown,
   ChevronRight,
@@ -96,7 +96,7 @@ export default function EnhancedFinancialReports() {
         .from("locations")
         .select("*")
         .eq("is_active", true);
-      
+
       if (error) throw error;
       setLocations(data || []);
     } catch (error) {
@@ -447,10 +447,10 @@ export default function EnhancedFinancialReports() {
   return (
     <div className="space-y-6">
       {/* Filters */}
-      <Card>
+      <Card className="px-0 sm:px-4">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+            <Calendar className="size-5" />
             Report Filters
           </CardTitle>
         </CardHeader>
@@ -504,7 +504,7 @@ export default function EnhancedFinancialReports() {
             </div>
             <div className="flex items-end">
               <Button onClick={fetchData} className="w-full">
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <RefreshCw className="size-4 mr-2" />
                 Refresh
               </Button>
             </div>
@@ -515,50 +515,50 @@ export default function EnhancedFinancialReports() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="bg-green-50 border-green-200">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-green-600">Total Income</p>
-                <p className="text-3xl font-bold text-green-900">
+                <p className="tex-lg sm:text-3xl font-bold text-green-900">
                   {formatCurrency(summary.totalIncome, baseCurrency)}
                 </p>
                 <p className="text-sm text-green-600">{summary.incomeTransactions} transactions</p>
               </div>
-              <TrendingUp className="h-8 w-8 text-green-600" />
+              <TrendingUp className="size-5 text-green-600" />
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-red-50 border-red-200">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-red-600">Total Expenses</p>
-                <p className="text-3xl font-bold text-red-900">
+                <p className="tex-lg sm:text-3xl font-bold text-red-900">
                   {formatCurrency(summary.totalExpenses, baseCurrency)}
                 </p>
                 <p className="text-sm text-red-600">{summary.expenseTransactions} transactions</p>
               </div>
-              <TrendingDown className="h-8 w-8 text-red-600" />
+              <TrendingDown className="size-5 text-red-600" />
             </div>
           </CardContent>
         </Card>
 
         <Card className={`${summary.netProfit >= 0 ? 'bg-blue-50 border-blue-200' : 'bg-red-50 border-red-200'}`}>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className={`text-sm font-medium ${summary.netProfit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
                   Net Profit
                 </p>
-                <p className={`text-3xl font-bold ${summary.netProfit >= 0 ? 'text-blue-900' : 'text-red-900'}`}>
+                <p className={`tex-lg sm:text-3xl font-bold ${summary.netProfit >= 0 ? 'text-blue-900' : 'text-red-900'}`}>
                   {formatCurrency(summary.netProfit, baseCurrency)}
                 </p>
                 <p className={`text-sm ${summary.netProfit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
                   {summary.profitMargin.toFixed(1)}% margin
                 </p>
               </div>
-              <DollarSign className={`h-8 w-8 ${summary.netProfit >= 0 ? 'text-blue-600' : 'text-red-600'}`} />
+              <DollarSign className={`size-5 ${summary.netProfit >= 0 ? 'text-blue-600' : 'text-red-600'}`} />
             </div>
           </CardContent>
         </Card>
@@ -574,24 +574,24 @@ export default function EnhancedFinancialReports() {
         <TabsContent value="summary">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Income Summary */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-green-600 text-xl">
-                  <TrendingUp className="h-6 w-6" />
-                  Income Summary
-                  <span className="ml-auto font-bold">
+            <Card className="px-0 sm:px-4">
+              <CardHeader className="px-2 pb-3">
+                <CardTitle className="flex items-start sm:items-center gap-2 text-green-600 text-md sm:text-xl">
+                  <TrendingUp className="size-6" />
+                  <p>Income Summary</p>
+                  <span className="font-bold">
                     {formatCurrency(summary.totalIncome, baseCurrency)}
                   </span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="px-2 space-y-3">
                 {incomeCategories.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">
                     No income data for selected period
                   </p>
                 ) : (
                   incomeCategories.map((category) => (
-                    <Collapsible 
+                    <Collapsible
                       key={category.type}
                       open={expandedIncome.has(category.type)}
                       onOpenChange={() => toggleIncomeExpansion(category.type)}
@@ -599,9 +599,9 @@ export default function EnhancedFinancialReports() {
                       <CollapsibleTrigger className="w-full">
                         <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                           <div className="flex items-center gap-3">
-                            {expandedIncome.has(category.type) ? 
-                              <ChevronDown className="h-4 w-4" /> : 
-                              <ChevronRight className="h-4 w-4" />
+                            {expandedIncome.has(category.type) ?
+                              <ChevronDown className="size-4" /> :
+                              <ChevronRight className="size-4" />
                             }
                             <div className="text-left">
                               <p className="font-semibold">{category.type}</p>
@@ -612,8 +612,8 @@ export default function EnhancedFinancialReports() {
                           </div>
                           <div className="text-right">
                             <p className="font-bold">
-                              {formatCurrency(category.amount, baseCurrency)} 
-                              <ChevronDown className="h-4 w-4 inline ml-1" />
+                              {formatCurrency(category.amount, baseCurrency)}
+                              <ChevronDown className="size-4 inline ml-1" />
                             </p>
                           </div>
                         </div>
@@ -621,10 +621,10 @@ export default function EnhancedFinancialReports() {
                       <CollapsibleContent className="mt-2">
                         <div className="pl-8 space-y-2">
                           {category.transactions.slice(0, 10).map((txn) => (
-                            <div key={txn.id} className="flex justify-between items-center text-sm p-2 bg-muted/30 rounded border-l-2 border-l-green-200">
+                            <div key={txn.id} className="flex flex-col sm:flex-row items-start justify-between sm:items-center text-sm p-2 bg-muted/30 rounded border-l-2 border-l-green-200">
                               <div>
                                 <p className="font-medium">{new Date(txn.date).toLocaleDateString()} - {txn.account}</p>
-                                <p className="text-muted-foreground truncate">{txn.description}</p>
+                                <p className="text-muted-foreground truncate w-80">{txn.description}</p>
                               </div>
                               <p className="font-semibold text-green-600">
                                 {formatCurrency(txn.amount, baseCurrency)}
@@ -645,24 +645,24 @@ export default function EnhancedFinancialReports() {
             </Card>
 
             {/* Expense Summary */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-red-600 text-xl">
-                  <TrendingDown className="h-6 w-6" />
+            <Card className="px-0 sm:px-4">
+              <CardHeader className="px-2 pb-3">
+                <CardTitle className="flex items-center gap-2 text-red-600 text-md sm:text-xl">
+                  <TrendingDown className="size-6" />
                   Expense Summary
                   <span className="ml-auto font-bold">
                     {formatCurrency(summary.totalExpenses, baseCurrency)}
                   </span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="px-2 space-y-3">
                 {expenseCategories.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">
                     No expense data for selected period
                   </p>
                 ) : (
                   expenseCategories.map((category) => (
-                    <Collapsible 
+                    <Collapsible
                       key={category.type}
                       open={expandedExpenses.has(category.type)}
                       onOpenChange={() => toggleExpenseExpansion(category.type)}
@@ -670,9 +670,9 @@ export default function EnhancedFinancialReports() {
                       <CollapsibleTrigger className="w-full">
                         <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                           <div className="flex items-center gap-3">
-                            {expandedExpenses.has(category.type) ? 
-                              <ChevronDown className="h-4 w-4" /> : 
-                              <ChevronRight className="h-4 w-4" />
+                            {expandedExpenses.has(category.type) ?
+                              <ChevronDown className="size-4" /> :
+                              <ChevronRight className="size-4" />
                             }
                             <div className="text-left">
                               <p className="font-semibold">{category.type}</p>
@@ -683,8 +683,8 @@ export default function EnhancedFinancialReports() {
                           </div>
                           <div className="text-right">
                             <p className="font-bold">
-                              {formatCurrency(category.amount, baseCurrency)} 
-                              <ChevronDown className="h-4 w-4 inline ml-1" />
+                              {formatCurrency(category.amount, baseCurrency)}
+                              <ChevronDown className="size-4 inline ml-1" />
                             </p>
                           </div>
                         </div>

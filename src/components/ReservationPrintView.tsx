@@ -72,7 +72,7 @@ export const ReservationPrintView: React.FC<ReservationPrintViewProps> = ({ rese
 
       {/* Header */}
       <div className="text-center mb-8 border-b-2 border-gray-300 pb-6">
-        <h1 className="text-3xl font-bold mb-2">RESERVATION CONFIRMATION</h1>
+        <h1 className="text-lg sm:text-3xl font-bold mb-2">RESERVATION CONFIRMATION</h1>
         <div className="text-xl font-semibold text-gray-700">
           {reservation.location?.name || 'Hotel'}
         </div>
@@ -170,7 +170,7 @@ export const ReservationPrintView: React.FC<ReservationPrintViewProps> = ({ rese
 
       {/* Financial Summary */}
       <div className="mb-8">
-        <h2 className="text-xl font-bold mb-4 bg-gray-100 p-3 border-l-4 border-orange-500">
+        <h2 className="text-xl font-bold mb-4 bg-gray-100 p-3 border-l-2 sm:border-l-4 border-orange-500">
           Financial Summary
         </h2>
         <div className="bg-gray-50 p-4 rounded border">

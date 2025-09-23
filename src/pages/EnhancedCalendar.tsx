@@ -203,7 +203,7 @@ export default function EnhancedCalendar() {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-4 pb-20">
       {/* Header */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
         <div>
@@ -212,7 +212,7 @@ export default function EnhancedCalendar() {
         
         <div className="flex items-center gap-2">
           <Button onClick={() => navigate('/reservations/new')} className="gap-2">
-            <Plus className="h-4 w-4" />
+            <Plus className="size-4" />
             New Reservation
           </Button>
         </div>
@@ -253,7 +253,7 @@ export default function EnhancedCalendar() {
             size="sm"
             onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="size-4" />
           </Button>
           <span className="text-lg font-semibold px-4">
             {format(currentDate, 'MMMM yyyy')}
@@ -263,7 +263,7 @@ export default function EnhancedCalendar() {
             size="sm"
             onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="size-4" />
           </Button>
         </div>
       </div>
@@ -274,7 +274,7 @@ export default function EnhancedCalendar() {
           <div className="overflow-x-auto">
             <div className="min-w-full">
               {/* Calendar Header */}
-              <div className="grid grid-cols-[200px_1fr] border-b bg-gray-50">
+              <div className="grid grid-cols-[150px_1fr] border-b bg-gray-50">
                 <div className="p-3 font-semibold border-r">Rooms</div>
                 <div className="grid gap-0" style={{ gridTemplateColumns: `repeat(${calendarDays.length}, minmax(40px, 1fr))` }}>
                   {calendarDays.map((day, index) => (
@@ -297,7 +297,7 @@ export default function EnhancedCalendar() {
               {filteredRooms.map((room) => {
                 const location = locations.find(l => l.id === room.location_id);
                 return (
-                  <div key={room.id} className="grid grid-cols-[200px_1fr] border-b hover:bg-gray-50/50">
+                  <div key={room.id} className="grid grid-cols-[150px_1fr] border-b hover:bg-gray-50/50">
                     {/* Room Info */}
                     <div className="p-2 border-r">
                       <div className="flex items-center gap-1">
@@ -384,7 +384,7 @@ export default function EnhancedCalendar() {
                                   }}
                                   title={`Book ${room.room_number} for ${format(day, 'MMM dd, yyyy')}`}
                                 >
-                                  <Plus className="h-4 w-4 text-gray-300 group-hover:text-blue-500 transition-colors" />
+                                  <Plus className="size-4 text-gray-300 group-hover:text-blue-500 transition-colors" />
                                 </button>
                               )}
                             </div>
@@ -433,7 +433,7 @@ export default function EnhancedCalendar() {
               <h3 className="text-lg font-semibold text-gray-600 mb-2">No Reservations Found</h3>
               <p className="text-gray-500 mb-4">No reservations for the selected location and time period.</p>
               <Button onClick={() => navigate('/reservations/new')} className="gap-2">
-                <Plus className="h-4 w-4" />
+                <Plus className="size-4" />
                 Create First Reservation
               </Button>
             </Card>
@@ -445,7 +445,7 @@ export default function EnhancedCalendar() {
                   return isSameMonth(checkIn, currentDate);
                 })
                 .map((reservation) => (
-                <Card key={reservation.id} className="cursor-pointer hover:shadow-md transition-all duration-200 border-l-4" 
+                <Card key={reservation.id} className="cursor-pointer hover:transition-all duration-200 border-l-4" 
                       style={{ borderLeftColor: getStatusBorderColor(reservation.status) }}>
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start mb-3">
@@ -453,7 +453,7 @@ export default function EnhancedCalendar() {
                         <h3 className="font-semibold text-base truncate flex items-center gap-2">
                           {reservation.guest_name}
                           {(reservation.status === 'tentative' || reservation.status === 'pending') && (
-                            <Clock className="h-4 w-4 text-orange-500 animate-pulse" />
+                            <Clock className="size-4 text-orange-500 animate-pulse" />
                           )}
                         </h3>
                         <p className="text-sm text-muted-foreground">#{reservation.reservation_number}</p>

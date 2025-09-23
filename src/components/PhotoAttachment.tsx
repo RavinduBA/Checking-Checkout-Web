@@ -171,7 +171,7 @@ export const PhotoAttachment = ({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <ImageIcon className="h-5 w-5" />
+          <ImageIcon className="size-5" />
           {title}
           {photos.length > 0 && (
             <span className="text-sm text-muted-foreground">({photos.length}/{maxPhotos})</span>
@@ -189,7 +189,7 @@ export const PhotoAttachment = ({
                 size="sm"
                 disabled={photos.length >= maxPhotos}
               >
-                <Camera className="h-4 w-4 mr-2" />
+                <Camera className="size-4 mr-2" />
                 Add Photo
               </Button>
             </DialogTrigger>
@@ -203,7 +203,7 @@ export const PhotoAttachment = ({
                   className="h-20 flex-col"
                   variant="outline"
                 >
-                  <Camera className="h-6 w-6 mb-2" />
+                  <Camera className="size-6 mb-2" />
                   Take Photo
                 </Button>
                 <Button
@@ -211,7 +211,7 @@ export const PhotoAttachment = ({
                   className="h-20 flex-col"
                   variant="outline"
                 >
-                  <Upload className="h-6 w-6 mb-2" />
+                  <Upload className="size-6 mb-2" />
                   From Gallery
                 </Button>
               </div>
@@ -242,10 +242,10 @@ export const PhotoAttachment = ({
                   type="button"
                   variant="destructive"
                   size="icon"
-                  className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute -top-2 -right-2 size-6 opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={() => removePhoto(index)}
                 >
-                  <X className="h-4 w-4" />
+                  <X className="size-4" />
                 </Button>
               </div>
             ))}

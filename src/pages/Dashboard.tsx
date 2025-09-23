@@ -183,7 +183,7 @@ export default function Dashboard() {
             {hasAnyPermission("income") && (
               <Button asChild variant="default" size="sm" className="w-full sm:w-auto">
                 <Link to="/reservations">
-                  <Plus className="h-4 w-4" />
+                  <Plus className="size-4" />
                   Add Income
                 </Link>
               </Button>
@@ -191,7 +191,7 @@ export default function Dashboard() {
             {hasAnyPermission("expenses") && (
               <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
                 <Link to="/expense">
-                  <Plus className="h-4 w-4" />
+                  <Plus className="size-4" />
                   Add Expense
                 </Link>
               </Button>
@@ -236,7 +236,7 @@ export default function Dashboard() {
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {selectedMonth ? 'Monthly Income' : 'Today\'s Income'}
             </CardTitle>
-            <ArrowUpCircle className="h-4 w-4 text-success" />
+            <ArrowUpCircle className="size-4 text-success" />
           </CardHeader>
           <CardContent>
             <div className="text-xl lg:text-2xl font-bold text-success">
@@ -253,7 +253,7 @@ export default function Dashboard() {
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {selectedMonth ? 'Monthly Expenses' : 'Today\'s Expenses'}
             </CardTitle>
-            <ArrowDownCircle className="h-4 w-4 text-destructive" />
+            <ArrowDownCircle className="size-4 text-destructive" />
           </CardHeader>
           <CardContent>
             <div className="text-xl lg:text-2xl font-bold text-destructive">
@@ -270,7 +270,7 @@ export default function Dashboard() {
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {selectedMonth ? 'Monthly Profit' : 'Weekly Profit'}
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-primary" />
+            <TrendingUp className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-xl lg:text-2xl font-bold text-primary">
@@ -287,7 +287,7 @@ export default function Dashboard() {
       <Card className="bg-card border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-primary" />
+            <DollarSign className="size-5 text-primary" />
             Account Balances
           </CardTitle>
         </CardHeader>
@@ -316,13 +316,13 @@ export default function Dashboard() {
       <Card className="bg-card border">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
+            <Calendar className="size-5 text-primary" />
             Upcoming Bookings
           </CardTitle>
           {hasAnyPermission("calendar") && (
             <Button asChild variant="outline" size="sm">
               <Link to="/calendar">
-                <Eye className="h-4 w-4" />
+                <Eye className="size-4" />
                 View All
               </Link>
             </Button>
