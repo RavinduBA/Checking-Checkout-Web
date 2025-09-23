@@ -38,12 +38,12 @@ export default function EnhancedCalendar() {
     fetchData();
   }, []);
 
-  // Auto-switch to grid view on mobile
-  useEffect(() => {
-    if (isMobile && viewMode === 'timeline') {
-      setViewMode('grid');
-    }
-  }, [isMobile, viewMode]);
+  // Auto-switch to grid view on mobile - REMOVED to allow timeline on mobile
+  // useEffect(() => {
+  //   if (isMobile && viewMode === 'timeline') {
+  //     setViewMode('grid');
+  //   }
+  // }, [isMobile, viewMode]);
 
   const fetchData = async () => {
     try {
@@ -80,11 +80,11 @@ export default function EnhancedCalendar() {
     }
   };
 
-  const filteredRooms = rooms.filter(room => 
+  const filteredRooms = rooms.filter(room =>
     selectedLocation === "all" || room.location_id === selectedLocation
   );
 
-  const filteredReservations = reservations.filter(reservation => 
+  const filteredReservations = reservations.filter(reservation =>
     selectedLocation === "all" || reservation.location_id === selectedLocation
   );
 
@@ -99,10 +99,10 @@ export default function EnhancedCalendar() {
       const checkIn = startOfDay(parseISO(reservation.check_in_date));
       const checkOut = startOfDay(parseISO(reservation.check_out_date));
       const checkDate = startOfDay(date);
-      
-      return checkDate >= checkIn && 
-             checkDate < checkOut && 
-             reservation.room_id === roomId;
+
+      return checkDate >= checkIn &&
+        checkDate < checkOut &&
+        reservation.room_id === roomId;
     });
   };
 
@@ -110,11 +110,11 @@ export default function EnhancedCalendar() {
   const calculateBookingSpan = (booking: any, calendarDays: Date[]) => {
     const checkIn = startOfDay(parseISO(booking.check_in_date));
     const checkOut = startOfDay(parseISO(booking.check_out_date));
-    
+
     // Find the start position in the calendar
     const startIndex = calendarDays.findIndex(day => isSameDay(startOfDay(day), checkIn));
     if (startIndex === -1) return { startIndex: -1, spanDays: 0, isVisible: false };
-    
+
     // Calculate how many days the booking spans within the visible calendar
     let spanDays = 0;
     for (let i = startIndex; i < calendarDays.length; i++) {
@@ -125,11 +125,11 @@ export default function EnhancedCalendar() {
         break;
       }
     }
-    
-    return { 
-      startIndex, 
-      spanDays: Math.max(1, spanDays), 
-      isVisible: startIndex >= 0 && spanDays > 0 
+
+    return {
+      startIndex,
+      spanDays: Math.max(1, spanDays),
+      isVisible: startIndex >= 0 && spanDays > 0
     };
   };
 
@@ -138,11 +138,11 @@ export default function EnhancedCalendar() {
     const bookingsInRange = filteredReservations.filter(reservation => {
       const checkIn = parseISO(reservation.check_in_date);
       const checkOut = parseISO(reservation.check_out_date);
-      
-      return reservation.room_id === roomId && 
-             ((checkIn >= startDate && checkIn < endDate) ||
-              (checkOut > startDate && checkOut <= endDate) ||
-              (checkIn <= startDate && checkOut >= endDate));
+
+      return reservation.room_id === roomId &&
+        ((checkIn >= startDate && checkIn < endDate) ||
+          (checkOut > startDate && checkOut <= endDate) ||
+          (checkIn <= startDate && checkOut >= endDate));
     });
     return bookingsInRange;
   };
@@ -151,15 +151,15 @@ export default function EnhancedCalendar() {
   const isRoomAvailable = (roomId: string, checkIn: Date, checkOut: Date, excludeReservationId?: string) => {
     return !filteredReservations.some(reservation => {
       if (excludeReservationId && reservation.id === excludeReservationId) return false;
-      
+
       const resCheckIn = parseISO(reservation.check_in_date);
       const resCheckOut = parseISO(reservation.check_out_date);
-      
+
       return reservation.room_id === roomId &&
-             reservation.status !== 'cancelled' &&
-             ((checkIn >= resCheckIn && checkIn < resCheckOut) ||
-              (checkOut > resCheckIn && checkOut <= resCheckOut) ||
-              (checkIn <= resCheckIn && checkOut >= resCheckOut));
+        reservation.status !== 'cancelled' &&
+        ((checkIn >= resCheckIn && checkIn < resCheckOut) ||
+          (checkOut > resCheckIn && checkOut <= resCheckOut) ||
+          (checkIn <= resCheckIn && checkOut >= resCheckOut));
     });
   };
 
@@ -167,7 +167,7 @@ export default function EnhancedCalendar() {
   const getStatusColor = (status: string) => {
     const colors = {
       confirmed: "bg-green-600",
-      tentative: "bg-yellow-500", 
+      tentative: "bg-yellow-500",
       pending: "bg-blue-600",
       cancelled: "bg-red-600",
       checked_in: "bg-purple-600",
@@ -179,7 +179,7 @@ export default function EnhancedCalendar() {
   const getStatusBorderColor = (status: string) => {
     const colors = {
       confirmed: "#22c55e",
-      tentative: "#eab308", 
+      tentative: "#eab308",
       pending: "#2563eb",
       cancelled: "#dc2626",
       checked_in: "#9333ea",
@@ -203,13 +203,14 @@ export default function EnhancedCalendar() {
   }
 
   return (
-    <div className="p-4 space-y-4 pb-20">
+    <div className="p-2 sm:p-4 space-y-4 pb-20">
       {/* Header */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
         <div>
-          <p className="text-muted-foreground">Visual booking calendar with room timeline</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Enhanced Calendar</h1>
+          <p className="text-sm text-muted-foreground">Visual booking calendar with room timeline</p>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Button onClick={() => navigate('/reservations/new')} className="gap-2">
             <Plus className="size-4" />
@@ -220,9 +221,9 @@ export default function EnhancedCalendar() {
 
       {/* Controls */}
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
           <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Select location" />
             </SelectTrigger>
             <SelectContent>
@@ -235,8 +236,8 @@ export default function EnhancedCalendar() {
             </SelectContent>
           </Select>
 
-          <Select value={viewMode} onValueChange={(value) => setViewMode(value as 'timeline' | 'grid')} disabled={isMobile}>
-            <SelectTrigger className="w-32">
+          <Select value={viewMode} onValueChange={(value) => setViewMode(value as 'timeline' | 'grid')}>
+            <SelectTrigger className="w-full sm:w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -247,21 +248,23 @@ export default function EnhancedCalendar() {
         </div>
 
         {/* Month Navigation */}
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
+        <div className="flex items-center gap-2 w-full md:w-auto justify-center md:justify-end">
+          <Button
+            variant="outline"
+            size={isMobile ? "default" : "sm"}
             onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
+            className="touch-manipulation"
           >
             <ChevronLeft className="size-4" />
           </Button>
-          <span className="text-lg font-semibold px-4">
-            {format(currentDate, 'MMMM yyyy')}
+          <span className="text-base sm:text-lg font-semibold px-2 sm:px-4 text-center min-w-0">
+            {format(currentDate, isMobile ? 'MMM yyyy' : 'MMMM yyyy')}
           </span>
-          <Button 
-            variant="outline" 
-            size="sm"
+          <Button
+            variant="outline"
+            size={isMobile ? "default" : "sm"}
             onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
+            className="touch-manipulation"
           >
             <ChevronRight className="size-4" />
           </Button>
@@ -269,25 +272,26 @@ export default function EnhancedCalendar() {
       </div>
 
       {viewMode === 'timeline' ? (
-        // Timeline View (similar to uploaded image)
+        // Timeline View (responsive for mobile and desktop)
         <div className="bg-white rounded-lg border overflow-hidden">
           <div className="overflow-x-auto">
-            <div className="min-w-full">
+            <div className="min-w-full" style={{ minWidth: isMobile ? `${calendarDays.length * 50 + 150}px` : 'auto' }}>
               {/* Calendar Header */}
               <div className="grid grid-cols-[150px_1fr] border-b bg-gray-50">
-                <div className="p-3 font-semibold border-r">Rooms</div>
-                <div className="grid gap-0" style={{ gridTemplateColumns: `repeat(${calendarDays.length}, minmax(40px, 1fr))` }}>
+                <div className="p-3 font-semibold border-r text-sm">Rooms</div>
+                <div className="grid gap-0" style={{ gridTemplateColumns: `repeat(${calendarDays.length}, ${isMobile ? '50px' : 'minmax(40px, 1fr)'})` }}>
                   {calendarDays.map((day, index) => (
-                    <div 
-                      key={index} 
+                    <div
+                      key={index}
                       className={cn(
                         "p-2 text-center text-xs border-r font-medium",
                         isToday(day) && "bg-blue-100 text-blue-800",
                         !isSameMonth(day, currentDate) && "text-gray-400"
                       )}
                     >
-                      <div>{format(day, 'd')}</div>
-                      <div className="text-xs text-gray-500">{format(day, 'EEE')}</div>
+                      <div className="text-xs">{format(day, 'd')}</div>
+                      <div className="text-xs text-gray-500 hidden sm:block">{format(day, 'EEE')}</div>
+                      <div className="text-xs text-gray-500 sm:hidden">{format(day, 'E').charAt(0)}</div>
                     </div>
                   ))}
                 </div>
@@ -299,20 +303,21 @@ export default function EnhancedCalendar() {
                 return (
                   <div key={room.id} className="grid grid-cols-[150px_1fr] border-b hover:bg-gray-50/50">
                     {/* Room Info */}
-                    <div className="p-2 border-r">
-                      <div className="flex items-center gap-1">
-
-                      <div className="font-medium text-sm">{room.room_number}</div>
-                      <div className="text-xs text-gray-500">{room.room_type}</div>
+                    <div className="p-1 sm:p-2 border-r">
+                      <div className="flex flex-col sm:gap-1">
+                        <div className="flex gap-1 justify-start items-center">
+                          <div className="font-medium text-sm truncate">{room.room_number}</div>
+                          <div className="text-xs text-gray-500 truncate">{room.room_type}</div>
+                        </div>
+                        <Badge variant="outline" className="text-xs sm:mt-1 w-fit">
+                          {location?.name}
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className="text-xs mt-1">
-                        {location?.name}
-                      </Badge>
                     </div>
 
                     {/* Calendar Days for this Room */}
-                    <div className="grid gap-0 relative" style={{ gridTemplateColumns: `repeat(${calendarDays.length}, minmax(40px, 1fr))` }}>
-{(() => {
+                    <div className="grid gap-0 relative" style={{ gridTemplateColumns: `repeat(${calendarDays.length}, ${isMobile ? '50px' : 'minmax(40px, 1fr)'})` }}>
+                      {(() => {
                         // Get all bookings for this room that intersect with the calendar view
                         const roomBookings = filteredReservations
                           .filter(reservation => reservation.room_id === room.id)
@@ -324,41 +329,42 @@ export default function EnhancedCalendar() {
 
                         return calendarDays.map((day, dayIndex) => {
                           // Find booking that starts on this day
-                          const bookingStartingToday = roomBookings.find(booking => 
+                          const bookingStartingToday = roomBookings.find(booking =>
                             booking.span.startIndex === dayIndex
                           );
-                          
+
                           // Check if this day is occupied by any booking
-                          const isOccupied = roomBookings.some(booking => 
-                            dayIndex >= booking.span.startIndex && 
+                          const isOccupied = roomBookings.some(booking =>
+                            dayIndex >= booking.span.startIndex &&
                             dayIndex < booking.span.startIndex + booking.span.spanDays
                           );
 
                           return (
-                            <div 
-                              key={dayIndex} 
+                            <div
+                              key={dayIndex}
                               className={cn(
-                                "h-16 border-r border-gray-200 relative flex items-center justify-center",
+                                "h-12 sm:h-16 border-r border-gray-200 relative flex items-center justify-center",
                                 isOccupied && !bookingStartingToday && "bg-gray-50"
                               )}
                             >
                               {bookingStartingToday && (
-                                <div 
+                                <div
                                   className={cn(
-                                    "absolute inset-0 rounded-lg text-white text-xs px-2 cursor-pointer transition-all z-10 border border-white/20 flex flex-col justify-between overflow-hidden",
+                                    "absolute inset-0 rounded-lg text-white text-xs px-1 sm:px-2 cursor-pointer transition-all z-10 border border-white/20 flex flex-col justify-between overflow-hidden",
                                     getStatusColor(bookingStartingToday.status)
                                   )}
                                   style={{
                                     width: `calc(${bookingStartingToday.span.spanDays * 100}% + ${(bookingStartingToday.span.spanDays - 1) * 1}px)`,
-                                    minWidth: `${bookingStartingToday.span.spanDays * 38}px`
+                                    minWidth: isMobile ? `${bookingStartingToday.span.spanDays * 48}px` : `${bookingStartingToday.span.spanDays * 38}px`
                                   }}
                                   onClick={() => handleBookingClick(bookingStartingToday)}
                                   title={`${bookingStartingToday.guest_name} - ${bookingStartingToday.status} (${format(parseISO(bookingStartingToday.check_in_date), 'MMM dd')} - ${format(parseISO(bookingStartingToday.check_out_date), 'MMM dd')})${(bookingStartingToday.status === 'tentative' || bookingStartingToday.status === 'pending') ? ' - Click to make payment' : ''}`}
                                 >
-                                  <div className="font-semibold truncate text-sm py-1">
-                                    #{bookingStartingToday.reservation_number.slice(-4)} {bookingStartingToday.guest_name.split(' ')[0]}
+                                  <div className="font-semibold truncate text-xs py-1">
+                                    <span className="hidden sm:inline">#{bookingStartingToday.reservation_number.slice(-4)} </span>
+                                    {isMobile ? bookingStartingToday.guest_name.split(' ')[0].slice(0, 6) : `${bookingStartingToday.guest_name.split(' ')[0]}`}
                                   </div>
-                                  {bookingStartingToday.span.spanDays > 2 && (
+                                  {bookingStartingToday.span.spanDays > 2 && !isMobile && (
                                     <div className="text-xs opacity-90 flex items-center gap-1 pb-1">
                                       <span className="truncate">{bookingStartingToday.guest_name.split(' ').slice(1).join(' ')}</span>
                                       {(bookingStartingToday.status === 'tentative' || bookingStartingToday.status === 'pending') && (
@@ -366,14 +372,17 @@ export default function EnhancedCalendar() {
                                       )}
                                     </div>
                                   )}
-                                  {bookingStartingToday.span.spanDays > 4 && (
+                                  {bookingStartingToday.span.spanDays > 4 && !isMobile && (
                                     <div className="text-xs opacity-75 pb-1">
                                       {bookingStartingToday.currency === 'USD' ? '$' : 'Rs. '}{bookingStartingToday.total_amount.toLocaleString()}
                                     </div>
                                   )}
+                                  {(bookingStartingToday.status === 'tentative' || bookingStartingToday.status === 'pending') && isMobile && (
+                                    <div className="text-yellow-200 text-xs">💳</div>
+                                  )}
                                 </div>
                               )}
-                              
+
                               {!isOccupied && (
                                 <button
                                   className="w-full h-full hover:bg-blue-50 transition-colors flex items-center justify-center group"
@@ -384,7 +393,7 @@ export default function EnhancedCalendar() {
                                   }}
                                   title={`Book ${room.room_number} for ${format(day, 'MMM dd, yyyy')}`}
                                 >
-                                  <Plus className="size-4 text-gray-300 group-hover:text-blue-500 transition-colors" />
+                                  <Plus className="size-3 sm:size-4 text-gray-300 group-hover:text-blue-500 transition-colors" />
                                 </button>
                               )}
                             </div>
@@ -399,26 +408,26 @@ export default function EnhancedCalendar() {
           </div>
 
           {/* Legend */}
-          <div className="p-4 bg-gray-50 border-t">
-            <div className="flex flex-wrap gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-green-500 rounded"></div>
+          <div className="p-3 sm:p-4 bg-gray-50 border-t">
+            <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded"></div>
                 <span>Confirmed</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-yellow-500 rounded"></div>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-yellow-500 rounded"></div>
                 <span>Tentative</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-blue-500 rounded"></div>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded"></div>
                 <span>Pending</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-purple-500 rounded"></div>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-purple-500 rounded"></div>
                 <span>Checked In</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-red-500 rounded"></div>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-red-500 rounded"></div>
                 <span>Cancelled</span>
               </div>
             </div>
@@ -445,72 +454,72 @@ export default function EnhancedCalendar() {
                   return isSameMonth(checkIn, currentDate);
                 })
                 .map((reservation) => (
-                <Card key={reservation.id} className="cursor-pointer hover:transition-all duration-200 border-l-4" 
-                      style={{ borderLeftColor: getStatusBorderColor(reservation.status) }}>
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-base truncate flex items-center gap-2">
-                          {reservation.guest_name}
-                          {(reservation.status === 'tentative' || reservation.status === 'pending') && (
-                            <Clock className="size-4 text-orange-500 animate-pulse" />
-                          )}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">#{reservation.reservation_number}</p>
+                  <Card key={reservation.id} className="cursor-pointer hover:transition-all duration-200 border-l-4"
+                    style={{ borderLeftColor: getStatusBorderColor(reservation.status) }}>
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-base truncate flex items-center gap-2">
+                            {reservation.guest_name}
+                            {(reservation.status === 'tentative' || reservation.status === 'pending') && (
+                              <Clock className="size-4 text-orange-500 animate-pulse" />
+                            )}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">#{reservation.reservation_number}</p>
+                        </div>
+                        <Badge className={cn("text-white text-xs shrink-0 ml-2", getStatusColor(reservation.status))}>
+                          {reservation.status}
+                        </Badge>
                       </div>
-                      <Badge className={cn("text-white text-xs shrink-0 ml-2", getStatusColor(reservation.status))}>
-                        {reservation.status}
-                      </Badge>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="font-medium min-w-0">Room:</span>
-                        <span className="truncate">{reservation.rooms?.room_number} - {reservation.rooms?.room_type}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="font-medium">Location:</span>
-                        <span className="truncate">{reservation.locations?.name}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="font-medium">Dates:</span>
-                        <span>{format(parseISO(reservation.check_in_date), 'MMM dd')} - {format(parseISO(reservation.check_out_date), 'MMM dd, yyyy')}</span>
-                      </div>
-                      <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-                        <span className="text-lg font-bold text-primary">
-                          {reservation.currency === 'USD' ? '$' : 'Rs. '}{reservation.total_amount.toLocaleString()}
-                        </span>
-                        <div className="flex gap-2">
-                          {(reservation.status === 'tentative' || reservation.status === 'pending') && (
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span className="font-medium min-w-0">Room:</span>
+                          <span className="truncate">{reservation.rooms?.room_number} - {reservation.rooms?.room_type}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span className="font-medium">Location:</span>
+                          <span className="truncate">{reservation.locations?.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="font-medium">Dates:</span>
+                          <span>{format(parseISO(reservation.check_in_date), 'MMM dd')} - {format(parseISO(reservation.check_out_date), 'MMM dd, yyyy')}</span>
+                        </div>
+                        <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                          <span className="text-lg font-bold text-primary">
+                            {reservation.currency === 'USD' ? '$' : 'Rs. '}{reservation.total_amount.toLocaleString()}
+                          </span>
+                          <div className="flex gap-2">
+                            {(reservation.status === 'tentative' || reservation.status === 'pending') && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/payments/new?reservation=${reservation.id}`);
+                                }}
+                                className="bg-green-600 hover:bg-green-700 gap-1 text-xs px-3"
+                              >
+                                💳 Pay Now
+                              </Button>
+                            )}
                             <Button
-                              variant="default"
+                              variant="outline"
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/payments/new?reservation=${reservation.id}`);
+                                navigate(`/reservations/${reservation.id}`);
                               }}
-                              className="bg-green-600 hover:bg-green-700 gap-1 text-xs px-3"
+                              className="text-xs px-3"
                             >
-                              💳 Pay Now
+                              View
                             </Button>
-                          )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/reservations/${reservation.id}`);
-                            }}
-                            className="text-xs px-3"
-                          >
-                            View
-                          </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))}
             </div>
           )}
         </div>

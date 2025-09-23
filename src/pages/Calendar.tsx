@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Calendar as CalendarIcon, Filter, Plus, RefreshCw, ChevronLeft, ChevronRight, MapPin, Users, DollarSign, Eye } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, Filter, Plus, RefreshCw, ChevronLeft, ChevronRight, MapPin, Users, DollarSign, Eye, Grid3X3, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +67,7 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedBooking, setSelectedBooking] = useState<ExternalBooking | null>(null);
   const [showBookingDialog, setShowBookingDialog] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // Property mappings will be fetched from database or configured dynamically
   const [propertyMappings, setPropertyMappings] = useState<PropertyMapping[]>([]);
@@ -389,6 +390,46 @@ export default function Calendar() {
           </div>
           
           <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+            {/* Debug indicator */}
+            <div className="lg:hidden text-xs bg-blue-100 px-2 py-1 rounded">
+              Mode: {viewMode}
+            </div>
+            
+            {/* View Toggle Buttons */}
+            <div className="flex items-center bg-muted rounded-lg p-1 gap-1 min-w-fit">
+              <Button
+                variant={viewMode === "grid" ? "default" : "ghost"}
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Timeline button clicked, setting viewMode to grid');
+                  setViewMode("grid");
+                }}
+                className="h-8 px-2 sm:px-3 text-xs sm:text-sm touch-manipulation"
+                type="button"
+              >
+                <Grid3X3 className="size-4 mr-1" />
+                <span>Timeline</span>
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "default" : "ghost"}
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('List button clicked, setting viewMode to list');
+                  setViewMode("list");
+                }}
+                className="h-8 px-2 sm:px-3 text-xs sm:text-sm touch-manipulation"
+                type="button"
+              >
+                <List className="size-4 mr-1" />
+                <span>List</span>
+              </Button>
+            </div>
+            
+            {/* Month Navigation */}
             <Button 
               variant="outline" 
               size="sm"
@@ -414,77 +455,228 @@ export default function Calendar() {
           
           {/* Mobile View */}
           <div className="lg:hidden">
-            <Card className="bg-card border">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-medium flex items-center gap-2">
-                  <CalendarIcon className="size-5" />
-                  {selectedLocation === "all" ? "All Locations" : locations.find(l => l.id === selectedLocation)?.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Room List for Mobile */}
-                {allDisplayRooms.map((room) => {
-                  const location = locations.find(l => l.id === room.location_id);
-                  return (
-                    <div key={room.id} className="bg-muted/30 rounded-lg p-3 space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <div className="font-medium text-sm">{room.room_number}</div>
-                          <div className="text-xs text-muted-foreground">{room.room_type}</div>
-                          {room.isVirtual && (
-                            <Badge variant="secondary" className="text-xs">External</Badge>
-                          )}
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {location?.name || 'Unknown'}
-                        </Badge>
-                      </div>
-                      
-                      {/* Current bookings for this room */}
-                      <div className="space-y-2">
-                        {calendarDates.slice(0, 7).map((date, dateIndex) => {
-                          const { internalReservations, externalReservations } = getBookingsForRoomAndDate(room.id, date);
-                          const internalReservation = internalReservations[0];
-                          const externalReservation = externalReservations[0];
-                          
-                          if (!internalReservation && !externalReservation) return null;
-                          
-                          return (
-                            <div key={dateIndex} className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground">
-                                {format(date, 'MMM dd')}
-                              </span>
-                              <div className="flex flex-col gap-1">
-                                {internalReservation && (
-                                  <div 
-                                    className={`px-2 py-1 rounded text-center cursor-pointer ${getStatusColor(internalReservation.status)}`}
-                                    onClick={() => navigate(`/reservations/${internalReservation.id}`)}
-                                  >
-                                    {internalReservation.guest_name.split(' ')[0]}
-                                  </div>
-                                )}
-                                {externalReservation && (
-                                  <div 
-                                    className={`px-2 py-1 rounded text-center cursor-pointer ${getStatusColor(externalReservation.status, true)}`}
-                                    onClick={() => openBookingDetails(externalReservation)}
-                                  >
-                                    {externalReservation.guest_name.split(' ')[0]}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
+            {viewMode === 'grid' ? (
+              // Mobile Timeline View (Responsive Calendar)
+              <div className="space-y-4">
+                {/* Timeline Navigation */}
+                <Card className="bg-card border">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-semibold text-lg">Calendar Timeline</h3>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            const newDate = new Date(currentDate);
+                            newDate.setDate(newDate.getDate() - 1);
+                            setCurrentDate(newDate);
+                          }}
+                        >
+                          <ChevronLeft className="size-4" />
+                        </Button>
+                        <span className="text-sm font-medium px-3">
+                          {format(currentDate, 'EEEE, MMM dd')}
+                        </span>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            const newDate = new Date(currentDate);
+                            newDate.setDate(newDate.getDate() + 1);
+                            setCurrentDate(newDate);
+                          }}
+                        >
+                          <ChevronRight className="size-4" />
+                        </Button>
                       </div>
                     </div>
+                    
+                    {/* Current Date Timeline */}
+                    <div className="space-y-3">
+                      {allDisplayRooms.map((room) => {
+                        const location = locations.find(l => l.id === room.location_id);
+                        const { internalReservations, externalReservations } = getBookingsForRoomAndDate(room.id, currentDate);
+                        const hasBookings = internalReservations.length > 0 || externalReservations.length > 0;
+                        
+                        return (
+                          <div key={room.id} className="border rounded-lg p-3 bg-muted/20">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="font-medium text-sm">{room.room_number}</div>
+                                <div className="text-xs text-muted-foreground">{room.room_type} • {location?.name}</div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {room.isVirtual && (
+                                  <Badge variant="secondary" className="text-xs">External</Badge>
+                                )}
+                                <div className={`w-3 h-3 rounded-full ${hasBookings ? 'bg-green-500' : 'bg-gray-300'}`} />
+                              </div>
+                            </div>
+                            
+                            {hasBookings ? (
+                              <div className="space-y-2">
+                                {internalReservations.map((booking, index) => (
+                                  <div 
+                                    key={index} 
+                                    className="flex items-center justify-between p-2 bg-emerald-50 border border-emerald-200 rounded cursor-pointer"
+                                    onClick={() => navigate(`/reservations/${booking.id}`)}
+                                  >
+                                    <div className="flex-1">
+                                      <div className="font-medium text-sm">{booking.guest_name}</div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {format(new Date(booking.check_in_date), 'MMM dd')} - {format(new Date(booking.check_out_date), 'MMM dd')}
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <Badge variant="default" className="text-xs">{booking.status}</Badge>
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        {booking.adults + booking.children} guests
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                                {externalReservations.map((booking, index) => (
+                                  <div 
+                                    key={index} 
+                                    className="flex items-center justify-between p-2 bg-purple-50 border border-purple-200 rounded cursor-pointer"
+                                    onClick={() => openBookingDetails(booking)}
+                                  >
+                                    <div className="flex-1">
+                                      <div className="font-medium text-sm">{booking.guest_name}</div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {format(new Date(booking.check_in), 'MMM dd')} - {format(new Date(booking.check_out), 'MMM dd')}
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <Badge variant="outline" className="text-xs">{booking.source}</Badge>
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        {booking.adults + booking.children} guests
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div 
+                                className="text-center py-3 text-muted-foreground cursor-pointer hover:bg-muted/50 rounded border-2 border-dashed"
+                                onClick={() => navigate(`/reservations/new?room=${room.id}&date=${currentDate.toISOString().split('T')[0]}`)}
+                              >
+                                <Plus className="size-5 mx-auto mb-1" />
+                                <p className="text-xs">Add booking</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Week Overview */}
+                <Card className="bg-card border">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium">Week Overview</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-7 gap-1">
+                      {Array.from({ length: 7 }, (_, i) => {
+                        const date = new Date(currentDate);
+                        date.setDate(currentDate.getDate() - currentDate.getDay() + i);
+                        const dayBookings = allDisplayRooms.reduce((total, room) => {
+                          const { internalReservations, externalReservations } = getBookingsForRoomAndDate(room.id, date);
+                          return total + internalReservations.length + externalReservations.length;
+                        }, 0);
+                        const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+                        const isSelected = format(date, 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd');
+                        
+                        return (
+                          <div 
+                            key={i}
+                            className={`text-center p-2 rounded cursor-pointer transition-colors ${
+                              isSelected 
+                                ? 'bg-primary text-primary-foreground' 
+                                : isToday 
+                                  ? 'bg-accent text-accent-foreground' 
+                                  : 'hover:bg-muted'
+                            }`}
+                            onClick={() => setCurrentDate(date)}
+                          >
+                            <div className="text-xs font-medium">
+                              {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                            </div>
+                            <div className="text-sm font-bold">{date.getDate()}</div>
+                            {dayBookings > 0 && (
+                              <div className="w-1 h-1 bg-current rounded-full mx-auto mt-1" />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              // Mobile List View (Simple list of bookings)
+              <div className="space-y-3">
+                {allDisplayRooms.map((room) => {
+                  const location = locations.find(l => l.id === room.location_id);
+                  const allRoomBookings = calendarDates.flatMap(date => {
+                    const { internalReservations, externalReservations } = getBookingsForRoomAndDate(room.id, date);
+                    return [
+                      ...internalReservations.map(booking => ({ ...booking, type: 'internal', date })),
+                      ...externalReservations.map(booking => ({ ...booking, type: 'external', date }))
+                    ];
+                  });
+
+                  if (allRoomBookings.length === 0) return null;
+
+                  return (
+                    <Card key={room.id} className="bg-card border">
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-sm font-medium">{room.room_number}</CardTitle>
+                            <p className="text-xs text-muted-foreground">{room.room_type} • {location?.name}</p>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {allRoomBookings.length} booking{allRoomBookings.length !== 1 ? 's' : ''}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="space-y-2">
+                          {allRoomBookings.map((booking, index) => (
+                            <div key={index} className="flex items-center justify-between p-2 border rounded-lg">
+                              <div className="flex-1">
+                                <div className="font-medium text-sm">{booking.guest_name}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {booking.type === 'internal' 
+                                    ? `${format(new Date((booking as any).check_in_date), 'MMM dd')} - ${format(new Date((booking as any).check_out_date), 'MMM dd')}`
+                                    : `${format(new Date((booking as any).check_in), 'MMM dd')} - ${format(new Date((booking as any).check_out), 'MMM dd')}`
+                                  }
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <Badge variant={booking.type === 'internal' ? 'default' : 'outline'} className="text-xs">
+                                  {booking.type === 'internal' ? (booking as any).status : (booking as any).source}
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
                   );
-                })}
-              </CardContent>
-            </Card>
+                }).filter(Boolean)}
+              </div>
+            )}
           </div>
 
           {/* Desktop Calendar Grid */}
           <div className="hidden lg:block">
+            {viewMode === 'grid' ? (
+              // Desktop Grid View (Calendar)
             <Card className="bg-card border">
               <CardContent className="p-0">
                 <div className="overflow-x-auto overflow-y-hidden">
@@ -581,6 +773,66 @@ export default function Calendar() {
                 </div>
               </CardContent>
             </Card>
+            ) : (
+              // Desktop List View (Table-like list)
+              <Card className="bg-card border">
+                <CardContent className="p-0">
+                  <div className="space-y-0">
+                    {/* Header */}
+                    <div className="grid grid-cols-6 gap-4 p-4 bg-muted font-semibold text-sm border-b">
+                      <div className="col-span-2">Room / Villa</div>
+                      <div>Guest</div>
+                      <div>Check In</div>
+                      <div>Check Out</div>
+                      <div>Status</div>
+                    </div>
+                    
+                    {/* Booking rows */}
+                    {allDisplayRooms.flatMap((room) => {
+                      const location = locations.find(l => l.id === room.location_id);
+                      const allRoomBookings = calendarDates.flatMap(date => {
+                        const { internalReservations, externalReservations } = getBookingsForRoomAndDate(room.id, date);
+                        return [
+                          ...internalReservations.map(booking => ({ ...booking, type: 'internal', room, location })),
+                          ...externalReservations.map(booking => ({ ...booking, type: 'external', room, location }))
+                        ];
+                      });
+                      return allRoomBookings;
+                    }).map((booking, index) => (
+                      <div key={index} className="grid grid-cols-6 gap-4 p-4 border-b hover:bg-muted/30">
+                        <div className="col-span-2">
+                          <div className="font-medium text-sm">{(booking as any).room.room_number}</div>
+                          <div className="text-xs text-muted-foreground">{(booking as any).room.room_type} • {(booking as any).location?.name}</div>
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm">{booking.guest_name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {booking.adults + booking.children} guests
+                          </div>
+                        </div>
+                        <div className="text-sm">
+                          {booking.type === 'internal' 
+                            ? format(new Date((booking as any).check_in_date), 'MMM dd, yyyy')
+                            : format(new Date((booking as any).check_in), 'MMM dd, yyyy')
+                          }
+                        </div>
+                        <div className="text-sm">
+                          {booking.type === 'internal' 
+                            ? format(new Date((booking as any).check_out_date), 'MMM dd, yyyy')
+                            : format(new Date((booking as any).check_out), 'MMM dd, yyyy')
+                          }
+                        </div>
+                        <div>
+                          <Badge variant={booking.type === 'internal' ? 'default' : 'outline'} className="text-xs">
+                            {booking.type === 'internal' ? (booking as any).status : (booking as any).source}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
 

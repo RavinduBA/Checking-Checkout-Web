@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Plus, User, Shield, Edit, Trash2, UserCheck, Mail, Settings, ShieldX, ShieldCheck } from "lucide-react";
+import { Plus, User, Shield, Edit, Trash2, UserCheck, Mail, Settings, ShieldX, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -103,6 +102,8 @@ export default function Users() {
         .order('created_at', { ascending: false });
 
       if (profilesError) throw profilesError;
+      
+      console.log('Fetched profiles data:', profilesData);
 
       // Fetch locations (only active ones)
       const { data: locationsData, error: locationsError } = await supabase
@@ -177,6 +178,7 @@ export default function Users() {
       );
 
       setUsers(usersWithPermissions);
+      console.log('Updated users state:', usersWithPermissions);
       setLocations(locationsData || []);
       setAllowedEmails(emailsData || []);
     } catch (error: any) {
@@ -404,20 +406,38 @@ export default function Users() {
     if (!editingUser) return;
 
     try {
+      console.log('Updating user:', editingUser.id, 'with role:', editingUser.role);
+      
       // Update profile role and name
-      await supabase
+      const { data: updateResult, error: profileError } = await supabase
         .from('profiles')
         .update({ 
           role: editingUser.role,
           name: editingUser.name 
         })
-        .eq('id', editingUser.id);
+        .eq('id', editingUser.id)
+        .select();
+
+      console.log('Update result:', updateResult);
+      console.log('Profile update error:', profileError);
+
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+        throw profileError;
+      }
+
+      console.log('Profile updated successfully');
 
       // Delete existing permissions
-      await supabase
+      const { error: deleteError } = await supabase
         .from('user_permissions')
         .delete()
         .eq('user_id', editingUser.id);
+
+      if (deleteError) {
+        console.error('Permission deletion error:', deleteError);
+        // Don't throw here as permissions might not exist, just log it
+      }
 
       // Insert new permissions for each location
       const permissionInserts = [];
@@ -453,7 +473,10 @@ export default function Users() {
 
       setShowEditUser(false);
       setEditingUser(null);
-      fetchData();
+      
+      console.log('About to refresh data...');
+      await fetchData();
+      console.log('Data refreshed');
 
       toast({
         title: "User Updated",
@@ -605,7 +628,7 @@ export default function Users() {
 
           {/* Edit User Dialog */}
           <Dialog open={showEditUser} onOpenChange={setShowEditUser}>
-            <DialogContent className="max-w-[380px] sm:max-w-2xl max-h-[85vh] sm:max-h-[80vh] overflow-y-auto">
+            <DialogContent className="max-w-[380px] sm:max-w-2xl max-h-[90vh] sm:max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Edit User Permissions</DialogTitle>
                 <DialogDescription>
@@ -737,9 +760,9 @@ export default function Users() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={user.role === "admin" ? "default" : "secondary"} className="flex items-center gap-1">
+                  <Badge variant={user.role === "admin" ? "default" : user.role === "manager" ? "outline" : "secondary"} className="flex items-center gap-1">
                     {user.role === "admin" ? <Shield className="h-3 w-3" /> : <UserCheck className="h-3 w-3" />}
-                    {user.role === "admin" ? "Administrator" : "Staff"}
+                    {user.role === "admin" ? "Administrator" : user.role === "manager" ? "Manager" : "Staff"}
                   </Badge>
                   <Button 
                     variant="ghost" 
