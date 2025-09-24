@@ -167,17 +167,6 @@ export default function EnhancedFinancialReports() {
       let totalExpenses = 0;
       let totalTransactions = 0;
 
-      // Process direct income
-      for (const income of incomeResult.data || []) {
-        const convertedAmount = await convertCurrency(
-          parseFloat(income.amount.toString()),
-          income.currency as any,
-          baseCurrency
-        );
-        totalIncome += convertedAmount;
-        totalTransactions++;
-      }
-
       // Process reservation payments as income
       for (const payment of paymentsResult.data || []) {
         const convertedAmount = await convertCurrency(
@@ -273,38 +262,7 @@ export default function EnhancedFinancialReports() {
       const incomeMap = new Map<string, IncomeCategory>();
       let totalIncomeForPercentage = 0;
 
-      // Process direct income
-      for (const income of incomeResult.data || []) {
-        const convertedAmount = await convertCurrency(
-          parseFloat(income.amount.toString()),
-          income.currency as any,
-          baseCurrency
-        );
-        totalIncomeForPercentage += convertedAmount;
-
-        const type = income.type || 'Direct Income';
-        if (!incomeMap.has(type)) {
-          incomeMap.set(type, {
-            type,
-            amount: 0,
-            percentage: 0,
-            transactions: []
-          });
-        }
-
-        const category = incomeMap.get(type)!;
-        category.amount += convertedAmount;
-        category.transactions.push({
-          id: income.id,
-          date: income.date,
-          amount: convertedAmount,
-          description: `${type}${income.note ? ` - ${income.note}` : ''}`,
-          account: (income as any).accounts?.name || 'Unknown',
-          currency: baseCurrency
-        });
-      }
-
-      // Process reservation payments
+      // Process reservation payments as income
       for (const payment of paymentsResult.data || []) {
         const convertedAmount = await convertCurrency(
           parseFloat(payment.amount.toString()),
@@ -445,9 +403,9 @@ export default function EnhancedFinancialReports() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-0 sm:px-4">
       {/* Filters */}
-      <Card className="px-0 sm:px-4">
+      <Card className="">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="size-5" />
@@ -564,195 +522,149 @@ export default function EnhancedFinancialReports() {
         </Card>
       </div>
 
-      <Tabs defaultValue="summary" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="summary">Summary</TabsTrigger>
-          <TabsTrigger value="profit-loss">Profit & Loss</TabsTrigger>
-          <TabsTrigger value="balance-sheet">Balance Sheet</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="summary">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Income Summary */}
-            <Card className="px-0 sm:px-4">
-              <CardHeader className="px-2 pb-3">
-                <CardTitle className="flex items-start sm:items-center gap-2 text-green-600 text-md sm:text-xl">
-                  <TrendingUp className="size-6" />
-                  <p>Income Summary</p>
-                  <span className="font-bold">
-                    {formatCurrency(summary.totalIncome, baseCurrency)}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-2 space-y-3">
-                {incomeCategories.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    No income data for selected period
-                  </p>
-                ) : (
-                  incomeCategories.map((category) => (
-                    <Collapsible
-                      key={category.type}
-                      open={expandedIncome.has(category.type)}
-                      onOpenChange={() => toggleIncomeExpansion(category.type)}
-                    >
-                      <CollapsibleTrigger className="w-full">
-                        <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                          <div className="flex items-center gap-3">
-                            {expandedIncome.has(category.type) ?
-                              <ChevronDown className="size-4" /> :
-                              <ChevronRight className="size-4" />
-                            }
-                            <div className="text-left">
-                              <p className="font-semibold">{category.type}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {category.percentage.toFixed(1)}%
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold">
-                              {formatCurrency(category.amount, baseCurrency)}
-                              <ChevronDown className="size-4 inline ml-1" />
-                            </p>
-                          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Income Summary */}
+        <Card className="px-0 sm:px-4">
+          <CardHeader className="px-2 pb-3">
+            <CardTitle className="flex items-start sm:items-center gap-2 text-green-600 text-md sm:text-xl">
+              <TrendingUp className="size-6" />
+              <p>Income Summary</p>
+              <span className="font-bold">
+                {formatCurrency(summary.totalIncome, baseCurrency)}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-2 space-y-3">
+            {incomeCategories.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                No income data for selected period
+              </p>
+            ) : (
+              incomeCategories.map((category) => (
+                <Collapsible
+                  key={category.type}
+                  open={expandedIncome.has(category.type)}
+                  onOpenChange={() => toggleIncomeExpansion(category.type)}
+                >
+                  <CollapsibleTrigger className="w-full">
+                    <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        {expandedIncome.has(category.type) ?
+                          <ChevronDown className="size-4" /> :
+                          <ChevronRight className="size-4" />
+                        }
+                        <div className="text-left">
+                          <p className="font-semibold">{category.type}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {category.percentage.toFixed(1)}%
+                          </p>
                         </div>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="mt-2">
-                        <div className="pl-8 space-y-2">
-                          {category.transactions.slice(0, 10).map((txn) => (
-                            <div key={txn.id} className="flex flex-col sm:flex-row items-start justify-between sm:items-center text-sm p-2 bg-muted/30 rounded border-l-2 border-l-green-200">
-                              <div>
-                                <p className="font-medium">{new Date(txn.date).toLocaleDateString()} - {txn.account}</p>
-                                <p className="text-muted-foreground truncate w-80">{txn.description}</p>
-                              </div>
-                              <p className="font-semibold text-green-600">
-                                {formatCurrency(txn.amount, baseCurrency)}
-                              </p>
-                            </div>
-                          ))}
-                          {category.transactions.length > 10 && (
-                            <p className="text-sm text-muted-foreground text-center py-2">
-                              +{category.transactions.length - 10} more transactions
-                            </p>
-                          )}
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Expense Summary */}
-            <Card className="px-0 sm:px-4">
-              <CardHeader className="px-2 pb-3">
-                <CardTitle className="flex items-center gap-2 text-red-600 text-md sm:text-xl">
-                  <TrendingDown className="size-6" />
-                  Expense Summary
-                  <span className="ml-auto font-bold">
-                    {formatCurrency(summary.totalExpenses, baseCurrency)}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-2 space-y-3">
-                {expenseCategories.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    No expense data for selected period
-                  </p>
-                ) : (
-                  expenseCategories.map((category) => (
-                    <Collapsible
-                      key={category.type}
-                      open={expandedExpenses.has(category.type)}
-                      onOpenChange={() => toggleExpenseExpansion(category.type)}
-                    >
-                      <CollapsibleTrigger className="w-full">
-                        <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                          <div className="flex items-center gap-3">
-                            {expandedExpenses.has(category.type) ?
-                              <ChevronDown className="size-4" /> :
-                              <ChevronRight className="size-4" />
-                            }
-                            <div className="text-left">
-                              <p className="font-semibold">{category.type}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {category.percentage.toFixed(1)}%
-                              </p>
-                            </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold">
+                          {formatCurrency(category.amount, baseCurrency)}
+                          <ChevronDown className="size-4 inline ml-1" />
+                        </p>
+                      </div>
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2">
+                    <div className="pl-8 space-y-2">
+                      {category.transactions.slice(0, 10).map((txn) => (
+                        <div key={txn.id} className="flex flex-col sm:flex-row items-start justify-between sm:items-center text-sm p-2 bg-muted/30 rounded border-l-2 border-l-green-200">
+                          <div>
+                            <p className="font-medium">{new Date(txn.date).toLocaleDateString()} - {txn.account}</p>
+                            <p className="text-muted-foreground truncate w-80">{txn.description}</p>
                           </div>
-                          <div className="text-right">
-                            <p className="font-bold">
-                              {formatCurrency(category.amount, baseCurrency)}
-                              <ChevronDown className="size-4 inline ml-1" />
-                            </p>
+                          <p className="font-semibold text-green-600">
+                            {formatCurrency(txn.amount, baseCurrency)}
+                          </p>
+                        </div>
+                      ))}
+                      {category.transactions.length > 10 && (
+                        <p className="text-sm text-muted-foreground text-center py-2">
+                          +{category.transactions.length - 10} more transactions
+                        </p>
+                      )}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Expense Summary */}
+        <Card className="px-0 sm:px-4">
+          <CardHeader className="px-2 pb-3">
+            <CardTitle className="flex items-center gap-2 text-red-600 text-md sm:text-xl">
+              <TrendingDown className="size-6" />
+              Expense Summary
+              <span className="ml-auto font-bold">
+                {formatCurrency(summary.totalExpenses, baseCurrency)}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-2 space-y-3">
+            {expenseCategories.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                No expense data for selected period
+              </p>
+            ) : (
+              expenseCategories.map((category) => (
+                <Collapsible
+                  key={category.type}
+                  open={expandedExpenses.has(category.type)}
+                  onOpenChange={() => toggleExpenseExpansion(category.type)}
+                >
+                  <CollapsibleTrigger className="w-full">
+                    <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        {expandedExpenses.has(category.type) ?
+                          <ChevronDown className="size-4" /> :
+                          <ChevronRight className="size-4" />
+                        }
+                        <div className="text-left">
+                          <p className="font-semibold">{category.type}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {category.percentage.toFixed(1)}%
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold">
+                          {formatCurrency(category.amount, baseCurrency)}
+                          <ChevronDown className="size-4 inline ml-1" />
+                        </p>
+                      </div>
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2">
+                    <div className="pl-8 space-y-2">
+                      {category.transactions.slice(0, 10).map((txn) => (
+                        <div key={txn.id} className="flex justify-between items-center text-sm p-2 bg-muted/30 rounded border-l-2 border-l-red-200">
+                          <div>
+                            <p className="font-medium">{new Date(txn.date).toLocaleDateString()} - {txn.account}</p>
+                            <p className="text-muted-foreground truncate">{txn.description}</p>
                           </div>
+                          <p className="font-semibold text-red-600">
+                            {formatCurrency(txn.amount, baseCurrency)}
+                          </p>
                         </div>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="mt-2">
-                        <div className="pl-8 space-y-2">
-                          {category.transactions.slice(0, 10).map((txn) => (
-                            <div key={txn.id} className="flex justify-between items-center text-sm p-2 bg-muted/30 rounded border-l-2 border-l-red-200">
-                              <div>
-                                <p className="font-medium">{new Date(txn.date).toLocaleDateString()} - {txn.account}</p>
-                                <p className="text-muted-foreground truncate">{txn.description}</p>
-                              </div>
-                              <p className="font-semibold text-red-600">
-                                {formatCurrency(txn.amount, baseCurrency)}
-                              </p>
-                            </div>
-                          ))}
-                          {category.transactions.length > 10 && (
-                            <p className="text-sm text-muted-foreground text-center py-2">
-                              +{category.transactions.length - 10} more transactions
-                            </p>
-                          )}
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="profit-loss">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profit & Loss Statement</CardTitle>
-              <CardDescription>
-                Detailed profit and loss breakdown for the selected period
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="text-center text-muted-foreground py-12">
-                  Detailed P&L report coming soon...
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="balance-sheet">
-          <Card>
-            <CardHeader>
-              <CardTitle>Balance Sheet</CardTitle>
-              <CardDescription>
-                Account balances and financial position
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="text-center text-muted-foreground py-12">
-                  Balance sheet view coming soon...
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                      ))}
+                      {category.transactions.length > 10 && (
+                        <p className="text-sm text-muted-foreground text-center py-2">
+                          +{category.transactions.length - 10} more transactions
+                        </p>
+                      )}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

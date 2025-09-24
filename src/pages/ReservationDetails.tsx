@@ -128,7 +128,7 @@ export default function ReservationDetails() {
             <Printer className="size-4 mr-2" />
             Print
           </Button>
-          <Button onClick={() => navigate(`/income?reservation=${reservation.id}`)}>
+          <Button onClick={() => navigate(`/reservations?reservation=${reservation.id}`)}>
             <CreditCard className="size-4 mr-2" />
             Payment
           </Button>

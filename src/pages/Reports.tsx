@@ -34,7 +34,7 @@ export default function Reports() {
     <div className="max-w-full pb-20 w-full mx-auto p-2 lg:p-6 space-y-4 animate-fade-in">
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+      {/* <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         <Card className="bg-card border">
           <CardContent className="p-3 lg:p-6">
             <div className="flex items-center justify-between">
@@ -90,7 +90,7 @@ export default function Reports() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
 
       {/* Reports Content */}
       <Card className="bg-card border">

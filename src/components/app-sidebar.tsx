@@ -96,14 +96,14 @@ export function AppSidebar({
     }
 
     // Income/Payments
-    if (hasAnyPermission("income")) {
-      items.push({
-        title: "Income & Payments",
-        url: "/income",
-        icon: DollarSign,
-        isActive: location.pathname === "/income"
-      })
-    }
+    // if (hasAnyPermission("income")) {
+    //   items.push({
+    //     title: "Income & Payments",
+    //     url: "/income",
+    //     icon: DollarSign,
+    //     isActive: location.pathname === "/income"
+    //   })
+    // }
 
     // Expenses
     if (hasAnyPermission("expenses")) {
@@ -158,16 +158,6 @@ export function AppSidebar({
         url: "/reports?tab=comprehensive",
         icon: BarChart3,
         isActive: location.pathname === "/reports",
-      })
-    }
-
-    // Admin features
-    if (hasAnyPermission("rooms")) {
-      items.push({
-        title: "Room Management",
-        url: "/rooms",
-        icon: Bed,
-        isActive: location.pathname === "/rooms"
       })
     }
 

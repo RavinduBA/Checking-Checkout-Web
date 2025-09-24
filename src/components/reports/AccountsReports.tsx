@@ -95,7 +95,7 @@ export default function AccountsReports() {
       for (const account of accounts) {
         // Fetch income for this account
         let incomeQuery = supabase
-          .from("income")
+          .from("payments")
           .select("amount")
           .eq("account_id", account.id);
 

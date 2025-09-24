@@ -33,7 +33,6 @@ type AccountBalance = {
   currency: string;
   initial_balance: number;
   current_balance: number;
-  total_income: number;
   total_expenses: number;
   total_payments: number;
   transaction_count: number;
@@ -43,7 +42,7 @@ type AccountBalance = {
 type TransactionDetail = {
   id: string;
   date: string;
-  type: 'income' | 'expense' | 'payment' | 'transfer_in' | 'transfer_out';
+  type: 'expense' | 'payment' | 'transfer_in' | 'transfer_out';
   description: string;
   amount: number;
   running_balance: number;
@@ -52,7 +51,6 @@ type TransactionDetail = {
 };
 
 type FinancialSummary = {
-  totalIncome: number;
   totalExpenses: number;
   totalPayments: number;
   netProfit: number;
@@ -64,7 +62,6 @@ export default function ComprehensiveReports() {
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState<AccountBalance[]>([]);
   const [summary, setSummary] = useState<FinancialSummary>({
-    totalIncome: 0,
     totalExpenses: 0,
     totalPayments: 0,
     netProfit: 0,
@@ -115,7 +112,6 @@ export default function ComprehensiveReports() {
 
       const accountBalances: AccountBalance[] = [];
       const globalSummary = {
-        totalIncome: 0,
         totalExpenses: 0,
         totalPayments: 0,
         netProfit: 0,
@@ -127,20 +123,17 @@ export default function ComprehensiveReports() {
         const balance = await calculateAccountBalance(account);
         accountBalances.push(balance);
         
-        // Add to global summary (convert to base currency)
-        const convertedIncome = await convertCurrency(balance.total_income, account.currency as any, baseCurrency);
         const convertedExpenses = await convertCurrency(balance.total_expenses, account.currency as any, baseCurrency);
         const convertedPayments = await convertCurrency(balance.total_payments, account.currency as any, baseCurrency);
         
-        globalSummary.totalIncome += convertedIncome;
         globalSummary.totalExpenses += convertedExpenses;
         globalSummary.totalPayments += convertedPayments;
         globalSummary.totalTransactions += balance.transaction_count;
       }
 
-      globalSummary.netProfit = globalSummary.totalIncome + globalSummary.totalPayments - globalSummary.totalExpenses;
-      globalSummary.profitMargin = (globalSummary.totalIncome + globalSummary.totalPayments) > 0 
-        ? (globalSummary.netProfit / (globalSummary.totalIncome + globalSummary.totalPayments)) * 100 
+      globalSummary.netProfit = globalSummary.totalPayments - globalSummary.totalExpenses;
+      globalSummary.profitMargin = (globalSummary.totalPayments) > 0 
+        ? (globalSummary.netProfit / (globalSummary.totalPayments)) * 100 
         : 0;
 
       setAccounts(accountBalances);
@@ -158,11 +151,6 @@ export default function ComprehensiveReports() {
 
   const calculateAccountBalance = async (account: any): Promise<AccountBalance> => {
     try {
-      // Build base queries
-      let incomeQuery = supabase
-        .from("income")
-        .select("id, date, amount, type, note, currency")
-        .eq("account_id", account.id);
 
       let expenseQuery = supabase
         .from("expenses")
@@ -186,7 +174,6 @@ export default function ComprehensiveReports() {
 
       // Apply location filters (only for income and expenses that have location_id)
       if (selectedLocation !== "all") {
-        incomeQuery = incomeQuery.eq("location_id", selectedLocation);
         expenseQuery = expenseQuery.eq("location_id", selectedLocation);
         // For payments, we filter by reservation location using inner join
         paymentsQuery = supabase
@@ -198,14 +185,12 @@ export default function ComprehensiveReports() {
 
       // Apply date filters
       if (dateFrom) {
-        incomeQuery = incomeQuery.gte("date", dateFrom);
         expenseQuery = expenseQuery.gte("date", dateFrom);
         paymentsQuery = paymentsQuery.gte("created_at", dateFrom);
         transfersFromQuery = transfersFromQuery.gte("created_at", dateFrom);
         transfersToQuery = transfersToQuery.gte("created_at", dateFrom);
       }
       if (dateTo) {
-        incomeQuery = incomeQuery.lte("date", dateTo);
         expenseQuery = expenseQuery.lte("date", dateTo);
         paymentsQuery = paymentsQuery.lte("created_at", dateTo);
         transfersFromQuery = transfersFromQuery.lte("created_at", dateTo);
@@ -214,13 +199,11 @@ export default function ComprehensiveReports() {
 
       // Execute all queries
       const [
-        incomeResult,
         expenseResult,
         paymentsResult,
         transfersFromResult,
         transfersToResult
       ] = await Promise.all([
-        incomeQuery.order("date", { ascending: true }),
         expenseQuery.order("date", { ascending: true }),
         paymentsQuery.order("created_at", { ascending: true }),
         transfersFromQuery.order("created_at", { ascending: true }),
@@ -230,7 +213,6 @@ export default function ComprehensiveReports() {
       // Combine all transactions and calculate running balance
       const transactions: TransactionDetail[] = [];
       let runningBalance = account.initial_balance;
-      let totalIncome = 0;
       let totalExpenses = 0;
       let totalPayments = 0;
 
@@ -244,20 +226,6 @@ export default function ComprehensiveReports() {
         currency: string;
         note?: string;
       }> = [];
-
-      // Add income transactions
-      for (const income of incomeResult.data || []) {
-        allTransactions.push({
-          id: income.id,
-          date: income.date,
-          type: 'income',
-          amount: parseFloat(income.amount.toString()),
-          description: `${income.type} Income`,
-          currency: income.currency,
-          note: income.note
-        });
-        totalIncome += parseFloat(income.amount.toString());
-      }
 
       // Add expense transactions
       for (const expense of expenseResult.data || []) {
@@ -317,7 +285,7 @@ export default function ComprehensiveReports() {
       allTransactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
       for (const txn of allTransactions) {
-        if (txn.type === 'income' || txn.type === 'payment' || txn.type === 'transfer_in') {
+        if ( txn.type === 'payment' || txn.type === 'transfer_in') {
           runningBalance += txn.amount;
         } else {
           runningBalance -= txn.amount;
@@ -335,7 +303,6 @@ export default function ComprehensiveReports() {
         currency: account.currency,
         initial_balance: account.initial_balance,
         current_balance: runningBalance,
-        total_income: totalIncome,
         total_expenses: totalExpenses,
         total_payments: totalPayments,
         transaction_count: transactions.length,
@@ -349,7 +316,6 @@ export default function ComprehensiveReports() {
         currency: account.currency,
         initial_balance: account.initial_balance,
         current_balance: account.initial_balance,
-        total_income: 0,
         total_expenses: 0,
         total_payments: 0,
         transaction_count: 0,
@@ -390,7 +356,6 @@ export default function ComprehensiveReports() {
         acc.currency,
         acc.initial_balance,
         acc.current_balance,
-        acc.total_income,
         acc.total_expenses,
         acc.total_payments,
         acc.current_balance - acc.initial_balance,
@@ -494,7 +459,7 @@ export default function ComprehensiveReports() {
               <div>
                 <p className="text-sm font-medium text-green-600">Total Income</p>
                 <p className="text-lg sm:text-2xl font-bold text-green-900">
-                  {formatCurrency(summary.totalIncome, baseCurrency)}
+                  {formatCurrency(summary.totalPayments, baseCurrency)}
                 </p>
               </div>
               <TrendingUp className="size-4 text-green-600" />
@@ -592,10 +557,7 @@ export default function ComprehensiveReports() {
                           </p>
                           <div className="flex pt-4 sm:pt-0 flex-col sm:flex-row gap-2 sm:gap-4 text-sm text-muted-foreground">
                             <span className="text-green-600">
-                              Income: {formatCurrency(account.total_income, account.currency as any)}
-                            </span>
-                            <span className="text-blue-600">
-                              Payments: {formatCurrency(account.total_payments, account.currency as any)}
+                              Income: {formatCurrency(account.total_payments, account.currency as any)}
                             </span>
                             <span className="text-red-600">
                               Expenses: {formatCurrency(account.total_expenses, account.currency as any)}
@@ -627,11 +589,11 @@ export default function ComprehensiveReports() {
                               </div>
                               <div className="text-left sm:text-right">
                                 <p className={`font-semibold ${
-                                  txn.type === 'income' || txn.type === 'payment' || txn.type === 'transfer_in'
+                                  txn.type === 'payment' || txn.type === 'transfer_in'
                                     ? 'text-green-600' 
                                     : 'text-red-600'
                                 }`}>
-                                  {txn.type === 'income' || txn.type === 'payment' || txn.type === 'transfer_in' ? '+' : '-'}
+                                  {txn.type === 'payment' || txn.type === 'transfer_in' ? '+' : '-'}
                                   {formatCurrency(txn.amount, txn.currency as any)}
                                 </p>
                                 <div className="text-sm text-muted-foreground">

@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { useAutoLocation } from "@/hooks/useAutoLocation";
 import { OTPVerification } from "@/components/OTPVerification";
 import { ReservationEditDialog } from "@/components/ReservationEditDialog";
-import { ReservationPrintView } from "@/components/ReservationPrintView";
+import { ReservationPrintableView } from "@/components/ReservationPrintableView";
 import { useToast } from "@/hooks/use-toast";
 import ReactDOM from "react-dom";
 
@@ -115,37 +115,49 @@ export const ReservationsList = () => {
   };
 
   const handlePrintReservation = (reservation: Reservation) => {
-    // Create a new window for printing
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
+    // Open the reservation details with print option in a new window/modal
+    console.log("Opening print view for reservation:", reservation);
+    
+    // Create a new window to display the printable view
+    const printWindow = window.open('', '_blank', 'width=1000,height=800');
+    if (!printWindow) {
+      toast({
+        title: "Print Error",
+        description: "Unable to open print window. Please allow pop-ups and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     // Create a container for the print component
     const printContainer = document.createElement('div');
     printWindow.document.body.appendChild(printContainer);
 
-    // Set up the print window
+    // Set up the print window with React and Tailwind styles
     printWindow.document.head.innerHTML = `
       <title>Reservation ${reservation.reservation_number}</title>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <script src="https://cdn.tailwindcss.com"></script>
       <style>
-        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; }
+        body { 
+          margin: 0; 
+          padding: 0; 
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; 
+          background: white;
+        }
         @media print {
           body { margin: 0; padding: 0; }
           @page { size: A4; margin: 1cm; }
+          .no-print { display: none !important; }
         }
       </style>
     `;
 
     // Render the print component
     ReactDOM.render(
-      <ReservationPrintView reservation={reservation} />,
-      printContainer,
-      () => {
-        // Trigger print after component renders
-        setTimeout(() => {
-          printWindow.print();
-          printWindow.close();
-        }, 500);
-      }
+      <ReservationPrintableView reservation={reservation} />,
+      printContainer
     );
   };
 

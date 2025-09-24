@@ -94,7 +94,7 @@ const App = () => (
                 </PermissionRoute>
               } />
             </Route>
-            <Route path="/income" element={
+            {/* <Route path="/income" element={
               <ProtectedRoute>
                 <Layout />
               </ProtectedRoute>
@@ -104,7 +104,7 @@ const App = () => (
                   <Income />
                 </PermissionRoute>
               } />
-            </Route>
+            </Route> */}
             <Route path="/payments/new" element={
               <ProtectedRoute>
                 <Layout />
@@ -245,17 +245,6 @@ const App = () => (
               <Route index element={
                 <PermissionRoute permission="settings">
                   <Settings />
-                </PermissionRoute>
-              } />
-            </Route>
-            <Route path="/rooms" element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }>
-              <Route index element={
-                <PermissionRoute permission="rooms">
-                  <RoomManagement />
                 </PermissionRoute>
               } />
             </Route>

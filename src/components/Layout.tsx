@@ -35,8 +35,8 @@ export function Layout() {
         return 'New Reservation';
       case '/reservations/compact':
         return 'Quick Booking';
-      case '/income':
-        return 'Reservations & Payments';
+      // case '/income':
+      //   return 'Reservations & Payments';
       case '/expense':
         return 'Add Expense';
       case '/accounts':
