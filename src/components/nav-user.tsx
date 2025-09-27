@@ -44,7 +44,7 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const { signOut } = useAuth()
-  const { hasAnyPermission } = usePermissions()
+  const { hasPermission, hasAnyPermission } = usePermissions()
 
   const handleSignOut = async () => {
     try {
@@ -94,7 +94,7 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              {hasAnyPermission("settings") && (
+              {hasPermission("access_settings") && (
                 <DropdownMenuItem asChild>
                   <Link to="/settings">
                     <Settings />
@@ -102,7 +102,7 @@ export function NavUser({
                   </Link>
                 </DropdownMenuItem>
               )}
-              {hasAnyPermission("users") && (
+              {hasPermission("access_users") && (
                 <DropdownMenuItem asChild>
                   <Link to="/users">
                     <Users />

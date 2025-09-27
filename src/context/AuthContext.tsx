@@ -1,12 +1,27 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
+
+type Profile = Tables<"profiles">;
+type Tenant = Tables<"tenants">;
+type Subscription = Tables<"subscriptions">;
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  profile: Profile | null;
+  tenant: Tenant | null;
+  subscription: Subscription | null;
   loading: boolean;
+  profileLoading: boolean;
+  tenantLoading: boolean;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
+  refreshTenant: () => Promise<void>;
+  hasActiveTrial: boolean;
+  hasActiveSubscription: boolean;
+  isOwner: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,44 +34,119 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [tenant, setTenant] = useState<Tenant | null>(null);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [tenantLoading, setTenantLoading] = useState(false);
+
+  const fetchProfile = async (userId: string) => {
+    setProfileLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+      
+      setProfile(data);
+      return data;
+    } catch (error) {
+      console.error('Exception fetching profile:', error);
+      return null;
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const fetchTenant = async (tenantId: string) => {
+    setTenantLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('tenants')
+        .select('*')
+        .eq('id', tenantId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching tenant:', error);
+        return null;
+      }
+      
+      setTenant(data);
+      return data;
+    } catch (error) {
+      console.error('Exception fetching tenant:', error);
+      return null;
+    } finally {
+      setTenantLoading(false);
+    }
+  };
+
+  const fetchSubscription = async (tenantId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .in('status', ['active', 'trialing'])
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (error) {
+        console.error('Error fetching subscription:', error);
+        setSubscription(null);
+        return null;
+      }
+      
+      const subscription = data && data.length > 0 ? data[0] : null;
+      setSubscription(subscription);
+      return subscription;
+    } catch (error) {
+      console.error('Exception fetching subscription:', error);
+      return null;
+    }
+  };
+
+  const refreshProfile = async () => {
+    if (user) {
+      await fetchProfile(user.id);
+    }
+  };
+
+  const refreshTenant = async () => {
+    if (profile?.tenant_id) {
+      await fetchTenant(profile.tenant_id);
+      await fetchSubscription(profile.tenant_id);
+    }
+  };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+    const subscription = supabase.auth.onAuthStateChange(
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
         
-        // Check if email is allowed and create profile if user signs up
+        if (event === 'SIGNED_OUT') {
+          setProfile(null);
+          setTenant(null);
+          setSubscription(null);
+        }
+        
         if (event === 'SIGNED_IN' && session?.user) {
-          console.log('SIGNED_IN event triggered for:', session.user.email);
+          // Small delay to ensure the auth state is fully set
           setTimeout(async () => {
             try {
-              console.log('Checking if email is allowed:', session.user.email);
-              // Check if email is in allowed list
-              const { data: isAllowed, error } = await supabase
-                .rpc('is_email_allowed', { email_address: session.user.email });
-              
-              console.log('Email allowed check result:', { isAllowed, error });
-              
-              if (error) {
-                console.error('Error checking email allowance:', error);
-                await supabase.auth.signOut();
-                return;
-              }
-              
-              if (!isAllowed) {
-                console.error('Email not in allowed list:', session.user.email);
-                await supabase.auth.signOut();
-                return;
-              }
-              
-              console.log('Email is allowed, proceeding with profile creation');
+              console.log('Creating/updating profile for user:', session.user.email);
 
               // Create profile - use upsert to handle existing profiles gracefully  
               const { error: profileError } = await supabase
@@ -73,11 +163,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 console.error('Error creating/updating profile:', profileError);
               } else {
                 console.log('Profile created/updated successfully for:', session.user.email);
+                // Fetch the profile data after creation/update
+                const profileData = await fetchProfile(session.user.id);
+                
+                // If the profile has a tenant_id, fetch tenant and subscription data
+                if (profileData?.tenant_id) {
+                  await fetchTenant(profileData.tenant_id);
+                  await fetchSubscription(profileData.tenant_id);
+                }
               }
             } catch (err) {
-              console.error('Exception during email check:', err);
-              await supabase.auth.signOut();
-              return;
+              console.error('Exception during profile creation:', err);
+              // Don't sign out on profile creation errors in SaaS mode
+              console.warn('Continuing despite profile creation error');
             }
           }, 0);
         }
@@ -85,24 +183,54 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        // Fetch profile data for existing session
+        const profileData = await fetchProfile(session.user.id);
+        
+        // If the profile has a tenant_id, fetch tenant and subscription data
+        if (profileData?.tenant_id) {
+          await fetchTenant(profileData.tenant_id);
+          await fetchSubscription(profileData.tenant_id);
+        }
+      }
+      
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => subscription.data.subscription.unsubscribe();
   }, []);
 
   const signOut = async () => {
+    setProfile(null);
+    setTenant(null);
+    setSubscription(null);
     await supabase.auth.signOut();
   };
+
+  // Computed values for subscription status
+  const hasActiveTrial = tenant?.trial_ends_at ? new Date(tenant.trial_ends_at) > new Date() : false;
+  const hasActiveSubscription = subscription?.status === 'active' || subscription?.status === 'trialing';
+  const isOwner = profile?.id === tenant?.owner_profile_id;
 
   const value = {
     user,
     session,
+    profile,
+    tenant,
+    subscription,
     loading,
+    profileLoading,
+    tenantLoading,
     signOut,
+    refreshProfile,
+    refreshTenant,
+    hasActiveTrial,
+    hasActiveSubscription,
+    isOwner,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

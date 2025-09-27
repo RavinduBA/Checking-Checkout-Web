@@ -46,6 +46,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
+    "creem": "^0.3.37",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.3.0",
     "input-otp": "^1.2.4",
@@ -61,11 +62,12 @@
     "react-signature-canvas": "^1.1.0-alpha.2",
     "react-to-print": "^3.1.1",
     "recharts": "^2.12.7",
+    "resend": "^6.1.0",
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
-    "zod": "^3.23.8"
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",

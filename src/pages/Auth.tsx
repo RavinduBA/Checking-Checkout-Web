@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,39 +8,127 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("demo@checkingcheckout.com");
-  const [password, setPassword] = useState("Netronk@123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, profile, loading, profileLoading } = useAuth();
+
+  // Check if this is an invitation flow
+  const isInvitation = searchParams.get('invitation') === 'true';
 
   useEffect(() => {
-    // Check if user is already authenticated
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate("/dashboard");
+    // Handle invitation acceptance when user is authenticated
+    const handleInvitationAcceptance = async () => {
+      if (isInvitation && user && user.user_metadata?.tenant_id) {
+        try {
+          const tenantId = user.user_metadata.tenant_id;
+          const role = user.user_metadata.role || 'staff';
+          const permissions = user.user_metadata.permissions || {};
+
+          // Create user profile with invitation data
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: user.id,
+              email: user.email!,
+              name: user.user_metadata.full_name || user.email!.split('@')[0],
+              tenant_id: tenantId,
+              role: role as any,
+            });
+
+          if (profileError) {
+            console.error('Error creating profile:', profileError);
+            return;
+          }
+
+          // Create user permissions
+          const { error: permissionsError } = await supabase
+            .from('user_permissions')
+            .insert({
+              user_id: user.id,
+              tenant_id: tenantId,
+              location_id: tenantId, // Temporary - should be updated when user selects location
+              ...permissions,
+              tenant_role: role === 'admin' ? 'tenant_admin' : role === 'manager' ? 'tenant_manager' : 'tenant_staff',
+            });
+
+          if (permissionsError) {
+            console.error('Error creating permissions:', permissionsError);
+          }
+
+          toast({
+            title: "Invitation Accepted",
+            description: "Welcome to the team!",
+          });
+
+          navigate("/dashboard");
+        } catch (error) {
+          console.error('Error handling invitation:', error);
+          toast({
+            title: "Error",
+            description: "Failed to process invitation",
+            variant: "destructive",
+          });
+        }
       }
     };
-    checkAuth();
-  }, [navigate]);
+
+    // Only check for navigation if not loading
+    if (!loading && !profileLoading && user) {
+      if (isInvitation) {
+        handleInvitationAcceptance();
+      } else if (profile?.tenant_id) {
+        navigate("/dashboard");
+      } else {
+        navigate("/onboarding");
+      }
+    }
+  }, [user, profile, loading, profileLoading, navigate, isInvitation, toast]);
 
   const handleGoogleSignIn = async () => {
-    toast({
-      title: "Google Login Disabled",
-      description: "Google authentication is disabled in demo mode. Please use the demo credentials below.",
-      variant: "destructive",
-    });
+    setSubmitting(true);
+    try {
+      const redirectTo = isInvitation 
+        ? `${window.location.origin}/auth?invitation=true`
+        : `${window.location.origin}/auth`;
+        
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo
+        }
+      });
+
+      if (error) {
+        toast({
+          title: "Google Sign In Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred with Google sign in",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setSubmitting(true);
 
     try {
       if (isLogin) {
@@ -60,30 +148,41 @@ export default function Auth() {
             title: "Login Successful",
             description: "Welcome back!",
           });
-          
-          // Check if email is allowed
-          const { data: isAllowed } = await supabase
-            .rpc('is_email_allowed', { email_address: email });
-          
-          if (!isAllowed) {
-            await supabase.auth.signOut();
-            toast({
-              title: "Access Denied",
-              description: "Your email is not authorized to access this system.",
-              variant: "destructive",
-            });
-            return;
-          }
-          
-          navigate("/dashboard");
+          // Navigation is handled by useAuth hook
         }
       } else {
-        // Sign up is disabled in demo mode
-        toast({
-          title: "Sign Up Disabled",
-          description: "New account registration is disabled in demo mode. Please use the demo credentials provided.",
-          variant: "destructive",
+        if (!name.trim()) {
+          toast({
+            title: "Name Required",
+            description: "Please enter your full name",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              name: name.trim(),
+            }
+          }
         });
+
+        if (error) {
+          toast({
+            title: "Sign Up Failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Account Created!",
+            description: "Please check your email to verify your account, then complete the setup process.",
+          });
+          setIsLogin(true);
+        }
       }
     } catch (error) {
       toast({
@@ -92,7 +191,7 @@ export default function Auth() {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -107,30 +206,15 @@ export default function Auth() {
             </div>
           </CardTitle>
           <p className="text-muted-foreground">
-            {isLogin ? "Sign in to your account" : "Create a new account"}
+            {isLogin ? "Sign in to your account" : "Create your account"}
           </p>
-          {isLogin && (
-            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="font-semibold text-blue-900 mb-2">Demo Credentials</h3>
-              <div className="text-sm text-blue-800 space-y-1">
-                <p><strong>Email:</strong> demo@checkingcheckout.com</p>
-                <p><strong>Password:</strong> Netronk@123</p>
-              </div>
-              <p className="text-xs text-blue-600 mt-2">
-                Use these credentials to explore the hospitality ERP system
-              </p>
-            </div>
+          {!isLogin && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Start your 14-day free trial today
+            </p>
           )}
         </CardHeader>
         <CardContent>
-          {!isLogin && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800">
-                <strong>Note:</strong> New account registration is disabled in demo mode. 
-                Please use the demo credentials provided above.
-              </p>
-            </div>
-          )}
           <form onSubmit={handleAuth} className="space-y-4">
             {!isLogin && (
               <div>
@@ -181,8 +265,8 @@ export default function Auth() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
+            <Button type="submit" className="w-full" disabled={submitting}>
+              {submitting ? (
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full size-4 border-2 border-transparent border-t-current"></div>
                 </div>
@@ -214,16 +298,20 @@ export default function Auth() {
           <Button 
             type="button" 
             variant="outline" 
-            className="w-full opacity-50 cursor-not-allowed" 
+            className="w-full" 
             onClick={handleGoogleSignIn}
-            disabled={true}
+            disabled={submitting}
           >
-            <svg className="size-4 mr-2" viewBox="0 0 24 24">
-              <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Google Login (Disabled in Demo)
+            {submitting ? (
+              <div className="animate-spin rounded-full size-4 border-2 border-transparent border-t-current mr-2"></div>
+            ) : (
+              <svg className="size-4 mr-2" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+            )}
+            Continue with Google
           </Button>
 
           <div className="mt-4 text-center">

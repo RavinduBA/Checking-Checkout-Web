@@ -1,17 +1,23 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, User, Shield, Edit, Trash2, UserCheck, Mail, Settings, ShieldX, ShieldCheck } from "lucide-react";
+import { User, Shield, Edit, Trash2, UserCheck, Settings, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { SectionLoader } from "@/components/ui/loading-spinner";
+import { createInvitation, getInvitations, revokeInvitation, resendInvitation } from "@/lib/invitations";
+
+import type { Database } from "@/integrations/supabase/types";
 
 interface UserPermissions {
   dashboard: boolean;
@@ -43,11 +49,7 @@ interface Location {
   name: string;
 }
 
-interface AllowedEmail {
-  id: string;
-  email: string;
-  is_active: boolean;
-}
+type UserInvitation = Database["public"]["Tables"]["user_invitations"]["Row"];
 
 const permissionTypes = [
   { key: "dashboard", label: "Dashboard Access" },
@@ -67,26 +69,52 @@ const permissionTypes = [
 export default function Users() {
   const [users, setUsers] = useState<User[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
-  const [allowedEmails, setAllowedEmails] = useState<AllowedEmail[]>([]);
-  const [showAddUser, setShowAddUser] = useState(false);
-  const [showAddEmail, setShowAddEmail] = useState(false);
+  const [invitations, setInvitations] = useState<UserInvitation[]>([]);
+  const [showInviteUser, setShowInviteUser] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [newUser, setNewUser] = useState<{
-    name: string;
-    email: string;
-    permissions: Record<string, UserPermissions>;
-    is_admin: boolean;
-  }>({
-    name: "",
-    email: "",
-    permissions: {},
-    is_admin: false
+  const [invitationsLoading, setInvitationsLoading] = useState(false);
+
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("staff");
+  const [invitePermissions, setInvitePermissions] = useState({
+    access_dashboard: true,
+    access_income: false,
+    access_expenses: false,
+    access_reports: false,
+    access_calendar: true,
+    access_bookings: true,
+    access_rooms: false,
+    access_master_files: false,
+    access_accounts: false,
+    access_users: false,
+    access_settings: false,
+    access_booking_channels: false,
   });
-  const [newEmail, setNewEmail] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showEditUser, setShowEditUser] = useState(false);
   const { toast } = useToast();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, tenant } = useAuth();
+  const { hasPermission } = usePermissions();
+
+
+  const fetchInvitations = useCallback(async () => {
+    if (!tenant?.id) return;
+    
+    try {
+      setInvitationsLoading(true);
+      const result = await getInvitations(tenant.id);
+      if (result.success) {
+        setInvitations(result.data || []);
+      } else {
+        console.error('Error fetching invitations:', result.error);
+      }
+    } catch (error) {
+      console.error('Exception fetching invitations:', error);
+    } finally {
+      setInvitationsLoading(false);
+    }
+  }, [tenant?.id, setInvitations, setInvitationsLoading]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -111,13 +139,7 @@ export default function Users() {
 
       if (locationsError) throw locationsError;
 
-      // Fetch allowed emails
-      const { data: emailsData, error: emailsError } = await supabase
-        .from('allowed_emails')
-        .select('*')
-        .order('email');
 
-      if (emailsError) throw emailsError;
 
       // Get permissions for each user - but only for active locations
       const usersWithPermissions = await Promise.all(
@@ -185,7 +207,11 @@ export default function Users() {
       setUsers(usersWithPermissions);
       console.log('Updated users state:', usersWithPermissions);
       setLocations(locationsData || []);
-      setAllowedEmails(emailsData || []);
+
+      // Fetch invitations if tenant exists
+      if (tenant?.id) {
+        await fetchInvitations();
+      }
     } catch (error: any) {
       console.error('Error fetching data:', error);
       toast({
@@ -196,96 +222,134 @@ export default function Users() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, tenant, fetchInvitations]);
+
+  // Invitation handlers
+  const handleInviteMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tenant?.id || !inviteEmail.trim()) return;
+    
+    // Check permissions
+    if (!hasPermission('access_users')) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to invite users",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setInviteLoading(true);
+      const result = await createInvitation(tenant.id, inviteEmail, inviteRole as any, invitePermissions);
+      
+      if (result.success) {
+        toast({
+          title: "Invitation Sent",
+          description: `Login credentials have been sent to ${inviteEmail}. They will receive an email with their login details.`,
+          duration: 5000,
+        });
+        setInviteEmail('');
+        setInviteRole('staff');
+        setInvitePermissions({
+          access_dashboard: true,
+          access_income: false,
+          access_expenses: false,
+          access_reports: false,
+          access_calendar: true,
+          access_bookings: true,
+          access_rooms: false,
+          access_master_files: false,
+          access_accounts: false,
+          access_users: false,
+          access_settings: false,
+          access_booking_channels: false,
+        });
+        await fetchInvitations();
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to send invitation",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send invitation",
+        variant: "destructive",
+      });
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
+  const handleResendInvitation = async (invitationEmail: string) => {
+    try {
+      setInviteLoading(true);
+      const result = await resendInvitation(invitationEmail);
+
+      if (result.success) {
+        toast({
+          title: "New Credentials Sent",
+          description: `Updated login credentials have been sent to ${invitationEmail}. They will receive an email with their new login details.`,
+          duration: 5000,
+        });
+
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to resend invitation",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to resend invitation",
+        variant: "destructive",
+      });
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
+  const handleRevokeInvitation = async (invitationId: string) => {
+    try {
+      setInviteLoading(true);
+      const result = await revokeInvitation(invitationId);
+      
+      if (result.success) {
+        toast({
+          title: "Invitation Revoked",
+          description: "Invitation has been revoked successfully",
+        });
+        await fetchInvitations();
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to revoke invitation",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to revoke invitation",
+        variant: "destructive",
+      });
+    } finally {
+      setInviteLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const handleAddUser = async () => {
-    if (!newUser.name || !newUser.email) return;
 
-    try {
-      // First add email to allowed list if not already there
-      const emailExists = allowedEmails.some(e => e.email === newUser.email);
-      if (!emailExists) {
-        const { error: emailError } = await supabase
-          .from('allowed_emails')
-          .insert({ email: newUser.email });
 
-        if (emailError) throw emailError;
-      }
 
-      // Note: We can't create a profile or permissions until the user actually signs in
-      // The profile will be created automatically by the handle_new_user trigger
-      // For now, we just add the email to allowed list
-
-      setNewUser({ name: "", email: "", permissions: {}, is_admin: false });
-      setShowAddUser(false);
-      fetchData();
-
-      toast({
-        title: "Email Added",
-        description: `${newUser.email} has been added to allowed emails. They can now sign in with Gmail to complete setup.`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add user",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleAddEmail = async () => {
-    if (!newEmail) return;
-
-    try {
-      const { error } = await supabase
-        .from('allowed_emails')
-        .insert({ email: newEmail });
-
-      if (error) throw error;
-
-      setNewEmail("");
-      setShowAddEmail(false);
-      fetchData();
-
-      toast({
-        title: "Email Added",
-        description: `${newEmail} can now sign in to the system.`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add email",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleToggleEmail = async (emailId: string, isActive: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('allowed_emails')
-        .update({ is_active: !isActive })
-        .eq('id', emailId);
-
-      if (error) throw error;
-      fetchData();
-
-      toast({
-        title: "Email Updated",
-        description: `Email access has been ${!isActive ? 'enabled' : 'disabled'}.`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update email",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleDeleteUser = async (userId: string) => {
     if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
@@ -329,31 +393,7 @@ export default function Users() {
     }
   };
 
-  const updatePermission = (location: string, permission: string, checked: boolean) => {
-    setNewUser(prev => ({
-      ...prev,
-      permissions: {
-        ...prev.permissions,
-        [location]: {
-          ...(prev.permissions[location] || {
-            dashboard: false,
-            income: false,
-            expenses: false,
-            reports: false,
-            calendar: false,
-            bookings: false,
-            rooms: false,
-            master_files: false,
-            accounts: false,
-            users: false,
-            settings: false,
-            booking_channels: false
-          }),
-          [permission]: checked
-        }
-      }
-    }));
-  };
+
 
   const updateEditUserPermission = (location: string, permission: string, checked: boolean) => {
     if (!editingUser) return;
@@ -514,126 +554,6 @@ export default function Users() {
       {/* Action Buttons */}
       <div className="flex items-center justify-end">
         <div className="flex gap-2">
-          <Dialog open={showAddEmail} onOpenChange={setShowAddEmail}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Mail className="size-4 mr-2" />
-                Add Email
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Allowed Email</DialogTitle>
-                <DialogDescription>
-                  Add a new email address to the list of allowed users who can access the application.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Email Address</Label>
-                  <Input
-                    type="email"
-                    placeholder="user@gmail.com"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setShowAddEmail(false)} className="flex-1">
-                    Cancel
-                  </Button>
-                  <Button onClick={handleAddEmail} className="flex-1">
-                    Add Email
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={showAddUser} onOpenChange={setShowAddUser}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="size-4 mr-2" />
-                Add User
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Add New User</DialogTitle>
-                <DialogDescription>
-                  Create a new user account and configure their permissions for different locations and features.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Full Name</Label>
-                    <Input
-                      placeholder="John Doe"
-                      value={newUser.name}
-                      onChange={(e) => setNewUser({...newUser, name: e.target.value})}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Gmail Address</Label>
-                    <Input
-                      type="email"
-                      placeholder="john@gmail.com"
-                      value={newUser.email}
-                      onChange={(e) => setNewUser({...newUser, email: e.target.value})}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="new-user-admin"
-                      checked={newUser.is_admin}
-                      onCheckedChange={(checked) => setNewUser({...newUser, is_admin: !!checked})}
-                    />
-                    <Label htmlFor="new-user-admin" className="flex items-center gap-2">
-                      <Shield className="h-4 w-4" />
-                      Administrator
-                    </Label>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <Label className="text-base font-semibold">Location Permissions</Label>
-                  {locations.map((location) => (
-                    <Card key={location.id} className="p-4">
-                      <h3 className="font-semibold mb-3">{location.name}</h3>
-                      <div className="grid grid-cols-2 gap-3">
-                        {permissionTypes.map((permission) => (
-                          <div key={permission.key} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`${location.name}-${permission.key}`}
-                              checked={newUser.permissions[location.name]?.[permission.key as keyof UserPermissions] || false}
-                              onCheckedChange={(checked) => updatePermission(location.name, permission.key, checked as boolean)}
-                            />
-                            <Label htmlFor={`${location.name}-${permission.key}`} className="text-sm">
-                              {permission.label}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setShowAddUser(false)} className="flex-1">
-                    Cancel
-                  </Button>
-                  <Button onClick={handleAddUser} className="flex-1">
-                    Add User
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
 
           {/* Edit User Dialog */}
           <Dialog open={showEditUser} onOpenChange={setShowEditUser}>
@@ -719,39 +639,220 @@ export default function Users() {
         </div>
       </div>
 
-      {/* Allowed Emails Section */}
-      <Card >
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="size-5" />
-            Allowed Email Addresses
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {allowedEmails.map((email) => (
-              <div key={email.id} className="flex items-center justify-between p-2 border rounded">
-                <span className={email.is_active ? "text-foreground truncate w-48 sm:w-80" : "text-muted-foreground truncate w-48 sm:80"}>
-                  {email.email}
-                </span>
-                <div className="flex items-center gap-2">
-                  <Badge variant={email.is_active ? "default" : "secondary"}>
-                    {email.is_active ? "Active" : "Disabled"}
-                  </Badge>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-1 rounded-md bg-primary/30 border"
-                    onClick={() => handleToggleEmail(email.id, email.is_active)}
-                  >
-                    {email.is_active ? <ShieldCheck /> : <ShieldX />}
-                  </Button>
+
+
+      {/* Invitation Section */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Invite Member Form */}
+        {hasPermission('access_users') ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Invite Member</CardTitle>
+              <CardDescription>
+                Send an invitation to join your organization
+              </CardDescription>
+            </CardHeader>
+          <CardContent>
+            <form onSubmit={handleInviteMember} className="space-y-4">
+              <div>
+                <Label htmlFor="inviteEmail">Email Address</Label>
+                <Input
+                  id="inviteEmail"
+                  type="email"
+                  placeholder="Enter email address"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="inviteRole">Role</Label>
+                <Select value={inviteRole} onValueChange={setInviteRole}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="staff">Staff</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Permissions Section */}
+              <div className="space-y-3">
+                <Label>Permissions</Label>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="access_dashboard" 
+                      checked={invitePermissions.access_dashboard}
+                      onCheckedChange={(checked) => 
+                        setInvitePermissions(prev => ({...prev, access_dashboard: !!checked}))
+                      }
+                    />
+                    <Label htmlFor="access_dashboard" className="text-sm font-normal">Dashboard</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="access_income" 
+                      checked={invitePermissions.access_income}
+                      onCheckedChange={(checked) => 
+                        setInvitePermissions(prev => ({...prev, access_income: !!checked}))
+                      }
+                    />
+                    <Label htmlFor="access_income" className="text-sm font-normal">Income</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="access_expenses" 
+                      checked={invitePermissions.access_expenses}
+                      onCheckedChange={(checked) => 
+                        setInvitePermissions(prev => ({...prev, access_expenses: !!checked}))
+                      }
+                    />
+                    <Label htmlFor="access_expenses" className="text-sm font-normal">Expenses</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="access_reports" 
+                      checked={invitePermissions.access_reports}
+                      onCheckedChange={(checked) => 
+                        setInvitePermissions(prev => ({...prev, access_reports: !!checked}))
+                      }
+                    />
+                    <Label htmlFor="access_reports" className="text-sm font-normal">Reports</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="access_calendar" 
+                      checked={invitePermissions.access_calendar}
+                      onCheckedChange={(checked) => 
+                        setInvitePermissions(prev => ({...prev, access_calendar: !!checked}))
+                      }
+                    />
+                    <Label htmlFor="access_calendar" className="text-sm font-normal">Calendar</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="access_bookings" 
+                      checked={invitePermissions.access_bookings}
+                      onCheckedChange={(checked) => 
+                        setInvitePermissions(prev => ({...prev, access_bookings: !!checked}))
+                      }
+                    />
+                    <Label htmlFor="access_bookings" className="text-sm font-normal">Bookings</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="access_rooms" 
+                      checked={invitePermissions.access_rooms}
+                      onCheckedChange={(checked) => 
+                        setInvitePermissions(prev => ({...prev, access_rooms: !!checked}))
+                      }
+                    />
+                    <Label htmlFor="access_rooms" className="text-sm font-normal">Rooms</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="access_accounts" 
+                      checked={invitePermissions.access_accounts}
+                      onCheckedChange={(checked) => 
+                        setInvitePermissions(prev => ({...prev, access_accounts: !!checked}))
+                      }
+                    />
+                    <Label htmlFor="access_accounts" className="text-sm font-normal">Accounts</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="access_users" 
+                      checked={invitePermissions.access_users}
+                      onCheckedChange={(checked) => 
+                        setInvitePermissions(prev => ({...prev, access_users: !!checked}))
+                      }
+                    />
+                    <Label htmlFor="access_users" className="text-sm font-normal">Users</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="access_settings" 
+                      checked={invitePermissions.access_settings}
+                      onCheckedChange={(checked) => 
+                        setInvitePermissions(prev => ({...prev, access_settings: !!checked}))
+                      }
+                    />
+                    <Label htmlFor="access_settings" className="text-sm font-normal">Settings</Label>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+
+              <Button type="submit" disabled={inviteLoading}>
+                {inviteLoading ? "Sending..." : "Send Invitation"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Access Denied</CardTitle>
+              <CardDescription>
+                You don't have permission to invite users
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        )}
+
+        {/* Pending Invitations */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Pending Invitations</CardTitle>
+            <CardDescription>
+              Invitations that have not been accepted yet
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {invitationsLoading ? (
+              <div className="flex justify-center items-center h-20">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+              </div>
+            ) : invitations.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No pending invitations</p>
+            ) : (
+              <div className="space-y-3">
+                {invitations.map((invitation) => (
+                  <div key={invitation.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <p className="font-medium">{invitation.email}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Role: {invitation.role} • Sent {new Date(invitation.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleResendInvitation(invitation.email)}
+                        disabled={inviteLoading}
+                      >
+                        Resend
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleRevokeInvitation(invitation.id)}
+                        disabled={inviteLoading}
+                      >
+                        Revoke
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Users List */}
       <div className="space-y-4">
@@ -858,18 +959,10 @@ export default function Users() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card border">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Allowed Emails</p>
-                <p className="text-lg sm:text-2xl font-bold">{allowedEmails.filter(e => e.is_active).length}</p>
-              </div>
-              <Mail className="size-5 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
+
       </div>
+      
+
     </div>
   );
 }

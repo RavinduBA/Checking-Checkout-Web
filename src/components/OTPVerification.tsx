@@ -68,8 +68,8 @@ export const OTPVerification = ({
 
     setIsVerifying(true);
     try {
-      // For demo purposes, we'll accept any 6-digit code
-      // In production, you'd verify against the sent OTP
+      // TODO: Implement actual OTP verification with SMS service
+      // For now, accepting any valid 6-digit code
       if (otp.length === 6) {
         onVerified();
         setIsOpen(false);

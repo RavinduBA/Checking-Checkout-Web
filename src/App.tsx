@@ -30,6 +30,9 @@ import ReservationDetails from "./pages/ReservationDetails";
 import ReservationFormCompact from "./pages/ReservationFormCompact";
 import Reservations from "./pages/Reservations";
 import AccessDenied from "./pages/AccessDenied";
+import Onboarding from "./pages/Onboarding";
+import BillingSubscription from "./pages/BillingSubscription";
+import BillingSuccess from "./pages/BillingSuccess";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +47,11 @@ const App = () => (
           <Routes>
             <Route path="/" element={<AuthRedirect />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/onboarding" element={
+              <ProtectedRoute>
+                <Onboarding />
+              </ProtectedRoute>
+            } />
             <Route path="/smart-redirect" element={
               <ProtectedRoute>
                 <SmartRedirect />
@@ -56,7 +64,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={
-                <PermissionRoute permission="dashboard">
+                <PermissionRoute permission={["access_dashboard"]}>
                   <Dashboard />
                 </PermissionRoute>
               } />
@@ -67,7 +75,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={
-                <PermissionRoute permission="calendar">
+                <PermissionRoute permission={["access_calendar"]}>
                   <EnhancedCalendar />
                 </PermissionRoute>
               } />
@@ -78,7 +86,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={
-                <PermissionRoute permission="booking_channels">
+                <PermissionRoute permission={["access_booking_channels"]}>
                   <BookingChannelsIntegration />
                 </PermissionRoute>
               } />
@@ -89,7 +97,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={
-                <PermissionRoute permission="master_files">
+                <PermissionRoute permission={["access_master_files"]}>
                   <MasterFiles />
                 </PermissionRoute>
               } />
@@ -111,7 +119,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={
-                <PermissionRoute permission="income">
+                <PermissionRoute permission={["access_income"]}>
                   <PaymentForm />
                 </PermissionRoute>
               } />
@@ -122,7 +130,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={
-                <PermissionRoute permission="expenses">
+                <PermissionRoute permission={["access_expenses"]}>
                   <Expense />
                 </PermissionRoute>
               } />
@@ -133,7 +141,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={
-                <PermissionRoute permission="bookings">
+                <PermissionRoute permission={["access_bookings"]}>
                   <BookingForm />
                 </PermissionRoute>
               } />
@@ -144,7 +152,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={
-                <PermissionRoute permission="bookings">
+                <PermissionRoute permission={["access_bookings"]}>
                   <BookingForm />
                 </PermissionRoute>
               } />
@@ -155,7 +163,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={
-                <PermissionRoute permission="bookings">
+                <PermissionRoute permission={["access_bookings"]}>
                   <Reservations />
                 </PermissionRoute>
               } />
@@ -166,7 +174,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={
-                <PermissionRoute permission="bookings">
+                <PermissionRoute permission={["access_bookings"]}>
                   <ReservationFormCompact />
                 </PermissionRoute>
               } />
@@ -177,7 +185,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={
-                <PermissionRoute permission="bookings">
+                <PermissionRoute permission={["access_bookings"]}>
                   <ReservationFormCompact />
                 </PermissionRoute>
               } />
@@ -188,7 +196,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={
-                <PermissionRoute permission="bookings">
+                <PermissionRoute permission={["access_bookings"]}>
                   <ReservationDetails />
                 </PermissionRoute>
               } />
@@ -199,7 +207,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={
-                <PermissionRoute permission="reports">
+                <PermissionRoute permission={["access_reports"]}>
                   <Reports />
                 </PermissionRoute>
               } />
@@ -210,7 +218,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={
-                <PermissionRoute permission="reports">
+                <PermissionRoute permission={["access_reports"]}>
                   <FinancialReports />
                 </PermissionRoute>
               } />
@@ -221,7 +229,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={
-                <PermissionRoute permission="accounts">
+                <PermissionRoute permission={["access_accounts"]}>
                   <Accounts />
                 </PermissionRoute>
               } />
@@ -232,7 +240,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={
-                <PermissionRoute permission="users">
+                <PermissionRoute permission={["access_users"]}>
                   <Users />
                 </PermissionRoute>
               } />
@@ -243,11 +251,23 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={
-                <PermissionRoute permission="settings">
+                <PermissionRoute permission={["access_settings"]}>
                   <Settings />
                 </PermissionRoute>
               } />
             </Route>
+            <Route path="/billing" element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<BillingSubscription />} />
+            </Route>
+            <Route path="/billing/success" element={
+              <ProtectedRoute>
+                <BillingSuccess />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

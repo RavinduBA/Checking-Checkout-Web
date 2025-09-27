@@ -126,37 +126,144 @@ export default function Onboarding() {
   const handleComplete = async () => {
     try {
       setLoading(true);
-      // Store onboarding data in localStorage for now
-      const onboardingData = {
-        user_id: user!.id,
-        company_name: formData.companyName,
-        contact_name: formData.contactName,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-        country: formData.country,
-        property_type: formData.propertyType,
-        property_count: formData.propertyCount,
-        total_rooms: formData.totalRooms,
-        description: formData.description,
-        selected_features: formData.selectedFeatures,
-        currency: formData.currency,
-        timezone: formData.timezone,
-        onboarding_completed: true,
-        completed_at: new Date().toISOString()
+      
+      // Generate collision-resistant slug with client-side logic
+      const generateUniqueSlug = async (name: string): Promise<string> => {
+        const baseSlug = name
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .trim() || 'tenant';
+        
+        // Check if base slug exists
+        const { data: existing } = await supabase
+          .from('tenants')
+          .select('slug')
+          .eq('slug', baseSlug)
+          .limit(1);
+        
+        if (!existing || existing.length === 0) {
+          return baseSlug;
+        }
+        
+        // Find the next available slug with counter
+        let counter = 2;
+        let candidateSlug = `${baseSlug}-${counter}`;
+        
+        while (true) {
+          const { data: existingCandidate } = await supabase
+            .from('tenants')
+            .select('slug')
+            .eq('slug', candidateSlug)
+            .limit(1);
+          
+          if (!existingCandidate || existingCandidate.length === 0) {
+            return candidateSlug;
+          }
+          
+          counter++;
+          candidateSlug = `${baseSlug}-${counter}`;
+        }
       };
       
-      localStorage.setItem('onboarding_data', JSON.stringify(onboardingData));
+      const slug = await generateUniqueSlug(formData.companyName);
+      
+      // Create tenant
+      const { data: tenant, error: tenantError } = await supabase
+        .from('tenants')
+        .insert({
+          name: formData.companyName,
+          slug: slug,
+          hotel_name: formData.companyName,
+          hotel_email: formData.email,
+          hotel_phone: formData.phone,
+          hotel_address: formData.address,
+          hotel_timezone: formData.timezone || 'UTC',
+          owner_profile_id: user!.id,
+          onboarding_completed: true,
+          trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days trial
+          subscription_status: 'trial'
+        })
+        .select()
+        .single();
+      
+      if (tenantError) throw tenantError;
+      
+      // Update user profile with tenant_id
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          tenant_id: tenant.id,
+          role: 'admin'
+        })
+        .eq('id', user!.id);
+      
+      if (profileError) throw profileError;
+      
+      // Create default location for the tenant
+      const { data: location, error: locationError } = await supabase
+        .from('locations')
+        .insert({
+          name: formData.companyName,
+          tenant_id: tenant.id,
+          is_active: true,
+          property_type: formData.propertyType
+        })
+        .select()
+        .single();
+      
+      if (locationError) throw locationError;
+      
+        // Create user permissions for the new location
+        const { error: permissionsError } = await supabase
+          .from('user_permissions')
+          .insert([
+            {
+              user_id: user.id,
+              tenant_id: tenant.id,
+              location_id: location.id,
+              tenant_role: 'tenant_admin', // Owner gets tenant admin role
+              is_tenant_admin: true, // Ensure admin flag is set
+              access_dashboard: true,
+              access_income: true,
+              access_expenses: true,
+              access_reports: true,
+              access_calendar: true,
+              access_bookings: true,
+              access_rooms: true,
+              access_master_files: true,
+              access_accounts: true,
+              access_users: true,
+              access_settings: true,
+              access_booking_channels: true,
+            }
+          ]);      if (permissionsError) throw permissionsError;
+
+      // Create trial subscription
+      const { error: subscriptionError } = await supabase
+        .from('subscriptions')
+        .insert({
+          tenant_id: tenant.id,
+          plan_id: 'professional', // Default to professional plan for trial
+          status: 'trialing',
+          current_period_start: new Date().toISOString(),
+          current_period_end: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          trial_end: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        });
+
+      if (subscriptionError) throw subscriptionError;
 
       toast({
         title: "Welcome aboard! 🎉",
-        description: "Your account has been set up successfully. Welcome to Check In_Check Out!",
+        description: `Your ${formData.companyName} account has been set up successfully. You're on a 14-day free trial!`,
       });
 
       // Redirect to main app
       navigate("/dashboard");
       
     } catch (error: any) {
+      console.error('Onboarding error:', error);
       toast({
         title: "Setup Error",
         description: error.message || "Failed to complete setup. Please try again.",

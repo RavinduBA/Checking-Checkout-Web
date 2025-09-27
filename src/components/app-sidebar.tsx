@@ -67,7 +67,7 @@ export function AppSidebar({
     const items = []
 
     // Core features
-    if (hasAnyPermission("dashboard")) {
+    if (hasAnyPermission(["access_dashboard"])) {
       items.push({
         title: "Dashboard",
         url: "/dashboard",
@@ -76,7 +76,7 @@ export function AppSidebar({
       })
     }
 
-    if (hasAnyPermission("calendar")) {
+    if (hasAnyPermission(["access_calendar"])) {
       items.push({
         title: "Calendar",
         url: "/calendar", 
@@ -86,7 +86,7 @@ export function AppSidebar({
     }
 
     // Reservations/Bookings
-    if (hasAnyPermission("bookings")) {
+    if (hasAnyPermission(["access_bookings"])) {
       items.push({
         title: "Reservations",
         url: "/reservations",
@@ -96,7 +96,7 @@ export function AppSidebar({
     }
 
     // Income/Payments
-    // if (hasAnyPermission("income")) {
+    // if (hasAnyPermission(["access_income"])) {
     //   items.push({
     //     title: "Income & Payments",
     //     url: "/income",
@@ -106,7 +106,7 @@ export function AppSidebar({
     // }
 
     // Expenses
-    if (hasAnyPermission("expenses")) {
+    if (hasAnyPermission(["access_expenses"])) {
       items.push({
         title: "Expenses",
         url: "/expense",
@@ -116,7 +116,7 @@ export function AppSidebar({
     }
 
     // Accounts
-    if (hasAnyPermission("accounts")) {
+    if (hasAnyPermission(["access_accounts"])) {
       items.push({
         title: "Accounts",
         url: "/accounts",
@@ -125,7 +125,7 @@ export function AppSidebar({
       })
     }
 
-    if (hasAnyPermission("booking_channels")) {
+    if (hasAnyPermission(["access_booking_channels"])) {
       items.push({
         title: "Booking Channels",
         url: "/booking-channels",
@@ -135,7 +135,7 @@ export function AppSidebar({
     }
 
     // Master Files with sub-items
-    if (hasAnyPermission("master_files")) {
+    if (hasAnyPermission(["access_master_files"])) {
       items.push({
         title: "Master Files",
         url: "/master-files",
@@ -152,7 +152,7 @@ export function AppSidebar({
     }
 
     // Reports with sub-items
-    if (hasAnyPermission("reports")) {
+    if (hasAnyPermission(["access_reports"])) {
       items.push({
         title: "Reports",
         url: "/reports?tab=comprehensive",
@@ -161,7 +161,7 @@ export function AppSidebar({
       })
     }
 
-    if (hasAnyPermission("users")) {
+    if (hasAnyPermission(["access_users"])) {
       items.push({
         title: "Users",
         url: "/users",
@@ -170,7 +170,7 @@ export function AppSidebar({
       })
     }
 
-    if (hasAnyPermission("settings")) {
+    if (hasAnyPermission(["access_settings"])) {
       items.push({
         title: "Settings",
         url: "/settings",
@@ -179,6 +179,14 @@ export function AppSidebar({
       })
     }
 
+    // Billing - always show for SaaS tenants
+    items.push({
+      title: "Billing & Subscription",
+      url: "/billing",
+      icon: CreditCard,
+      isActive: location.pathname.startsWith("/billing")
+    })
+
     return items
   }
 
@@ -186,7 +194,7 @@ export function AppSidebar({
   const getProjectItems = () => {
     const projects = []
 
-    if (hasAnyPermission("bookings")) {
+    if (hasAnyPermission(["access_bookings"])) {
       projects.push({
         name: "New Reservation",
         url: "/reservations/new",
@@ -194,7 +202,7 @@ export function AppSidebar({
       })
     }
 
-    if (hasAnyPermission("income")) {
+    if (hasAnyPermission(["access_income"])) {
       projects.push({
         name: "New Payment",
         url: "/payments/new",
@@ -202,7 +210,7 @@ export function AppSidebar({
       })
     }
 
-    if (hasAnyPermission("expenses")) {
+    if (hasAnyPermission(["access_expenses"])) {
       projects.push({
         name: "Add Expense", 
         url: "/expense",

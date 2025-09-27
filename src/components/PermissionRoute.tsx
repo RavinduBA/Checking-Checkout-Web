@@ -3,10 +3,14 @@ import { Navigate, useLocation } from "react-router-dom";
 import { FullScreenLoader } from "@/components/ui/loading-spinner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
+import { Tables } from "@/integrations/supabase/types";
+
+type UserPermissions = Tables<"user_permissions">;
+type PermissionKey = keyof Omit<UserPermissions, 'id' | 'user_id' | 'tenant_id' | 'created_at'>;
 
 interface PermissionRouteProps {
   children: React.ReactNode;
-  permission: keyof import("@/hooks/usePermissions").UserPermissions[string];
+  permission: PermissionKey[];
   fallbackPath?: string;
 }
 

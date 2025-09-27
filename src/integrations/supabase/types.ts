@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
@@ -141,7 +141,6 @@ export type Database = {
       }
       agents: {
         Row: {
-          address: string | null
           agency_name: string | null
           commission_rate: number
           created_at: string
@@ -149,11 +148,11 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          notes: string | null
           phone: string | null
           updated_at: string
         }
         Insert: {
-          address?: string | null
           agency_name?: string | null
           commission_rate?: number
           created_at?: string
@@ -161,11 +160,11 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          notes?: string | null
           phone?: string | null
           updated_at?: string
         }
         Update: {
-          address?: string | null
           agency_name?: string | null
           commission_rate?: number
           created_at?: string
@@ -173,6 +172,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          notes?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -199,10 +199,10 @@ export type Database = {
         }
         Relationships: []
       }
-      channel_property_mappings: {
+      beds24_property_mappings: {
         Row: {
-          channel_property_id: string
-          channel_property_name: string
+          beds24_property_id: string
+          beds24_property_name: string
           created_at: string
           id: string
           is_active: boolean
@@ -212,8 +212,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          channel_property_id: string
-          channel_property_name: string
+          beds24_property_id: string
+          beds24_property_name: string
           created_at?: string
           id?: string
           is_active?: boolean
@@ -223,8 +223,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          channel_property_id?: string
-          channel_property_name?: string
+          beds24_property_id?: string
+          beds24_property_name?: string
           created_at?: string
           id?: string
           is_active?: boolean
@@ -235,14 +235,14 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "channel_property_mappings_location_id_fkey"
+            foreignKeyName: "beds24_property_mappings_location_id_fkey"
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "locations"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "channel_property_mappings_room_id_fkey"
+            foreignKeyName: "beds24_property_mappings_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
@@ -395,69 +395,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      company_profiles: {
-        Row: {
-          address: string | null
-          company_name: string
-          contact_name: string
-          country: string | null
-          created_at: string
-          currency: string
-          description: string | null
-          email: string
-          id: string
-          onboarding_completed: boolean
-          phone: string | null
-          property_count: number
-          property_type: string
-          selected_features: string[]
-          timezone: string | null
-          total_rooms: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          address?: string | null
-          company_name: string
-          contact_name: string
-          country?: string | null
-          created_at?: string
-          currency?: string
-          description?: string | null
-          email: string
-          id?: string
-          onboarding_completed?: boolean
-          phone?: string | null
-          property_count?: number
-          property_type: string
-          selected_features?: string[]
-          timezone?: string | null
-          total_rooms?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          address?: string | null
-          company_name?: string
-          contact_name?: string
-          country?: string | null
-          created_at?: string
-          currency?: string
-          description?: string | null
-          email?: string
-          id?: string
-          onboarding_completed?: boolean
-          phone?: string | null
-          property_count?: number
-          property_type?: string
-          selected_features?: string[]
-          timezone?: string | null
-          total_rooms?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       currency_rates: {
         Row: {
@@ -624,7 +561,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_external_bookings_location"
+            foreignKeyName: "external_bookings_location_id_fkey"
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "locations"
@@ -634,38 +571,35 @@ export type Database = {
       }
       guides: {
         Row: {
-          address: string | null
           commission_rate: number
           created_at: string
           email: string | null
           id: string
           is_active: boolean
-          license_number: string | null
           name: string
+          notes: string | null
           phone: string | null
           updated_at: string
         }
         Insert: {
-          address?: string | null
           commission_rate?: number
           created_at?: string
           email?: string | null
           id?: string
           is_active?: boolean
-          license_number?: string | null
           name: string
+          notes?: string | null
           phone?: string | null
           updated_at?: string
         }
         Update: {
-          address?: string | null
           commission_rate?: number
           created_at?: string
           email?: string | null
           id?: string
           is_active?: boolean
-          license_number?: string | null
           name?: string
+          notes?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -747,23 +681,65 @@ export type Database = {
           },
         ]
       }
-      income_types: {
+      invoices: {
         Row: {
-          created_at: string
+          amount_cents: number
+          created_at: string | null
+          creem_invoice_id: string | null
+          currency: string
+          description: string | null
+          due_date: string | null
           id: string
-          type_name: string
+          invoice_number: string | null
+          paid_at: string | null
+          status: string
+          subscription_id: string | null
+          tenant_id: string | null
         }
         Insert: {
-          created_at?: string
+          amount_cents: number
+          created_at?: string | null
+          creem_invoice_id?: string | null
+          currency?: string
+          description?: string | null
+          due_date?: string | null
           id?: string
-          type_name: string
+          invoice_number?: string | null
+          paid_at?: string | null
+          status?: string
+          subscription_id?: string | null
+          tenant_id?: string | null
         }
         Update: {
-          created_at?: string
+          amount_cents?: number
+          created_at?: string | null
+          creem_invoice_id?: string | null
+          currency?: string
+          description?: string | null
+          due_date?: string | null
           id?: string
-          type_name?: string
+          invoice_number?: string | null
+          paid_at?: string | null
+          status?: string
+          subscription_id?: string | null
+          tenant_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "invoices_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       locations: {
         Row: {
@@ -771,20 +747,31 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          tenant_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           is_active?: boolean
           name: string
+          tenant_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           is_active?: boolean
           name?: string
+          tenant_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "locations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_rent_payments: {
         Row: {
@@ -891,6 +878,48 @@ export type Database = {
           },
         ]
       }
+      plans: {
+        Row: {
+          billing_interval: string
+          created_at: string | null
+          currency: string
+          description: string | null
+          features: Json | null
+          id: string
+          is_active: boolean | null
+          max_locations: number | null
+          max_rooms: number | null
+          name: string
+          price_cents: number
+        }
+        Insert: {
+          billing_interval?: string
+          created_at?: string | null
+          currency?: string
+          description?: string | null
+          features?: Json | null
+          id: string
+          is_active?: boolean | null
+          max_locations?: number | null
+          max_rooms?: number | null
+          name: string
+          price_cents: number
+        }
+        Update: {
+          billing_interval?: string
+          created_at?: string | null
+          currency?: string
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          max_locations?: number | null
+          max_rooms?: number | null
+          name?: string
+          price_cents?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -898,6 +927,7 @@ export type Database = {
           id: string
           name: string
           role: Database["public"]["Enums"]["user_role"]
+          tenant_id: string | null
         }
         Insert: {
           created_at?: string
@@ -905,6 +935,7 @@ export type Database = {
           id: string
           name: string
           role?: Database["public"]["Enums"]["user_role"]
+          tenant_id?: string | null
         }
         Update: {
           created_at?: string
@@ -912,8 +943,17 @@ export type Database = {
           id?: string
           name?: string
           role?: Database["public"]["Enums"]["user_role"]
+          tenant_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reservations: {
         Row: {
@@ -950,6 +990,7 @@ export type Database = {
           room_rate: number
           special_requests: string | null
           status: Database["public"]["Enums"]["reservation_status"]
+          tenant_id: string | null
           total_amount: number
           updated_at: string
         }
@@ -987,6 +1028,7 @@ export type Database = {
           room_rate: number
           special_requests?: string | null
           status?: Database["public"]["Enums"]["reservation_status"]
+          tenant_id?: string | null
           total_amount: number
           updated_at?: string
         }
@@ -1024,6 +1066,7 @@ export type Database = {
           room_rate?: number
           special_requests?: string | null
           status?: Database["public"]["Enums"]["reservation_status"]
+          tenant_id?: string | null
           total_amount?: number
           updated_at?: string
         }
@@ -1054,6 +1097,13 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -1108,6 +1158,7 @@ export type Database = {
           property_type: string
           room_number: string
           room_type: string
+          tenant_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1124,6 +1175,7 @@ export type Database = {
           property_type?: string
           room_number: string
           room_type: string
+          tenant_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1140,6 +1192,7 @@ export type Database = {
           property_type?: string
           room_number?: string
           room_type?: string
+          tenant_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1148,6 +1201,237 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string | null
+          creem_customer_id: string | null
+          creem_subscription_id: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan_id: string | null
+          status: string
+          tenant_id: string | null
+          trial_end: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string | null
+          creem_customer_id?: string | null
+          creem_subscription_id?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_id?: string | null
+          status?: string
+          tenant_id?: string | null
+          trial_end?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string | null
+          creem_customer_id?: string | null
+          creem_subscription_id?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_id?: string | null
+          status?: string
+          tenant_id?: string | null
+          trial_end?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_limits: {
+        Row: {
+          custom_features: Json | null
+          max_locations: number | null
+          max_rooms: number | null
+          notes: string | null
+          tenant_id: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          custom_features?: Json | null
+          max_locations?: number | null
+          max_rooms?: number | null
+          notes?: string | null
+          tenant_id: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          custom_features?: Json | null
+          max_locations?: number | null
+          max_rooms?: number | null
+          notes?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_limits_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_limits_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          created_at: string | null
+          hotel_address: string | null
+          hotel_email: string | null
+          hotel_name: string | null
+          hotel_phone: string | null
+          hotel_timezone: string | null
+          hotel_website: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          onboarding_completed: boolean | null
+          owner_profile_id: string | null
+          slug: string
+          subscription_status: string | null
+          trial_ends_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          hotel_address?: string | null
+          hotel_email?: string | null
+          hotel_name?: string | null
+          hotel_phone?: string | null
+          hotel_timezone?: string | null
+          hotel_website?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          onboarding_completed?: boolean | null
+          owner_profile_id?: string | null
+          slug: string
+          subscription_status?: string | null
+          trial_ends_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          hotel_address?: string | null
+          hotel_email?: string | null
+          hotel_name?: string | null
+          hotel_phone?: string | null
+          hotel_timezone?: string | null
+          hotel_website?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          onboarding_completed?: boolean | null
+          owner_profile_id?: string | null
+          slug?: string
+          subscription_status?: string | null
+          trial_ends_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenants_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          permissions: Json | null
+          role: string
+          tenant_id: string | null
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          permissions?: Json | null
+          role?: string
+          tenant_id?: string | null
+          token: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          permissions?: Json | null
+          role?: string
+          tenant_id?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_invitations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -1168,7 +1452,10 @@ export type Database = {
           access_users: boolean
           created_at: string
           id: string
+          is_tenant_admin: boolean | null
           location_id: string
+          tenant_id: string | null
+          tenant_role: Database["public"]["Enums"]["tenant_role"] | null
           user_id: string
         }
         Insert: {
@@ -1186,7 +1473,10 @@ export type Database = {
           access_users?: boolean
           created_at?: string
           id?: string
+          is_tenant_admin?: boolean | null
           location_id: string
+          tenant_id?: string | null
+          tenant_role?: Database["public"]["Enums"]["tenant_role"] | null
           user_id: string
         }
         Update: {
@@ -1204,7 +1494,10 @@ export type Database = {
           access_users?: boolean
           created_at?: string
           id?: string
+          is_tenant_admin?: boolean | null
           location_id?: string
+          tenant_id?: string | null
+          tenant_role?: Database["public"]["Enums"]["tenant_role"] | null
           user_id?: string
         }
         Relationships: [
@@ -1213,6 +1506,13 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
           {
@@ -1229,6 +1529,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_invoice_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       generate_payment_number: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1237,9 +1541,23 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      get_user_permissions: {
-        Args: { user_id_param: string }
+      generate_tenant_slug: {
+        Args: { hotel_name: string }
+        Returns: string
+      }
+      get_tenant_limits: {
+        Args: { tenant_id_param: string }
         Returns: Json
+      }
+      get_user_permissions: {
+        Args: { user_id: string }
+        Returns: {
+          has_permission: boolean
+          is_tenant_admin: boolean
+          permission_name: string
+          tenant_id: string
+          tenant_role: string
+        }[]
       }
       is_email_allowed: {
         Args: { email_address: string }
@@ -1247,7 +1565,19 @@ export type Database = {
       }
     }
     Enums: {
-      booking_source: "direct" | "airbnb" | "booking_com"
+      booking_source:
+        | "direct"
+        | "airbnb"
+        | "booking_com"
+        | "expedia"
+        | "agoda"
+        | "beds24"
+        | "manual"
+        | "online"
+        | "phone"
+        | "email"
+        | "walk_in"
+        | "ical"
       booking_status:
         | "pending"
         | "confirmed"
@@ -1263,6 +1593,11 @@ export type Database = {
         | "checked_out"
         | "cancelled"
         | "pending"
+      tenant_role:
+        | "tenant_admin"
+        | "tenant_billing"
+        | "tenant_manager"
+        | "tenant_staff"
       user_role: "admin" | "manager" | "staff"
     }
     CompositeTypes: {
@@ -1391,7 +1726,20 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      booking_source: ["direct", "airbnb", "booking_com"],
+      booking_source: [
+        "direct",
+        "airbnb",
+        "booking_com",
+        "expedia",
+        "agoda",
+        "beds24",
+        "manual",
+        "online",
+        "phone",
+        "email",
+        "walk_in",
+        "ical",
+      ],
       booking_status: [
         "pending",
         "confirmed",
@@ -1408,6 +1756,12 @@ export const Constants = {
         "checked_out",
         "cancelled",
         "pending",
+      ],
+      tenant_role: [
+        "tenant_admin",
+        "tenant_billing",
+        "tenant_manager",
+        "tenant_staff",
       ],
       user_role: ["admin", "manager", "staff"],
     },

@@ -15,29 +15,29 @@ export const SmartRedirect = () => {
   }
 
   // Redirect to the first page the user has access to
-  if (hasAnyPermission("dashboard")) {
+  if (hasAnyPermission(["access_dashboard"])) {
     return <Navigate to="/dashboard" replace />;
-  } else if (hasAnyPermission("calendar")) {
+  } else if (hasAnyPermission(["access_calendar"])) {
     return <Navigate to="/calendar" replace />;
-  } else if (hasAnyPermission("bookings")) {
+  } else if (hasAnyPermission(["access_bookings"])) {
     return <Navigate to="/reservations" replace />;
-  } else if (hasAnyPermission("income")) {
+  } else if (hasAnyPermission(["access_income"])) {
     return <Navigate to="/income" replace />;
-  } else if (hasAnyPermission("expenses")) {
+  } else if (hasAnyPermission(["access_expenses"])) {
     return <Navigate to="/expense" replace />;
-  } else if (hasAnyPermission("reports")) {
+  } else if (hasAnyPermission(["access_reports"])) {
     return <Navigate to="/reports" replace />;
-  } else if (hasAnyPermission("accounts")) {
+  } else if (hasAnyPermission(["access_accounts"])) {
     return <Navigate to="/accounts" replace />;
-  } else if (hasAnyPermission("master_files")) {
+  } else if (hasAnyPermission(["access_master_files"])) {
     return <Navigate to="/master-files" replace />;
-  } else if (hasAnyPermission("booking_channels")) {
+  } else if (hasAnyPermission(["access_booking_channels"])) {
     return <Navigate to="/booking-channels" replace />;
-  } else if (hasAnyPermission("rooms")) {
+  } else if (hasAnyPermission(["access_rooms"])) {
     return <Navigate to="/rooms" replace />;
-  } else if (hasAnyPermission("users")) {
+  } else if (hasAnyPermission(["access_users"])) {
     return <Navigate to="/users" replace />;
-  } else if (hasAnyPermission("settings")) {
+  } else if (hasAnyPermission(["access_settings"])) {
     return <Navigate to="/settings" replace />;
   } else {
     // User has no permissions - show access denied

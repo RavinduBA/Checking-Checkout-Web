@@ -20,6 +20,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useAuth } from "@/context/AuthContext";
 
 type Income = Tables<"income"> & {
   accounts: Tables<"accounts">;
@@ -49,9 +50,16 @@ export default function Dashboard() {
   const [selectedMonth, setSelectedMonth] = useState("");
   const [locations, setLocations] = useState<Location[]>([]);
   const { hasAnyPermission, hasPermission } = usePermissions();
+  const { tenant } = useAuth();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      if (!tenant?.id) {
+        console.log("No tenant available, skipping dashboard data fetch");
+        setLoading(false);
+        return;
+      }
+      
       try {
         // Set date filters based on selected month
         const today = new Date().toISOString().split('T')[0];
@@ -66,7 +74,7 @@ export default function Dashboard() {
           monthEnd = nextMonth.toISOString().split('T')[0];
         }
 
-        // Build query filters
+        // Build query filters - always include tenant filter
         const locationFilter = selectedLocation === "all" ? {} : { location_id: selectedLocation };
         const todayFilter = selectedMonth ? 
           { ...locationFilter, date: { gte: monthStart, lt: monthEnd } } : 
@@ -74,6 +82,28 @@ export default function Dashboard() {
         const weeklyFilter = selectedMonth ? 
           { ...locationFilter, date: { gte: monthStart, lt: monthEnd } } : 
           { ...locationFilter, date: { gte: weekAgo } };
+
+        // Get locations for the tenant first to filter by tenant
+        const { data: tenantLocations } = await supabase
+          .from("locations")
+          .select("id")
+          .eq("tenant_id", tenant.id)
+          .eq("is_active", true);
+        
+        const tenantLocationIds = tenantLocations?.map(loc => loc.id) || [];
+        
+        if (tenantLocationIds.length === 0) {
+          // No locations for this tenant
+          setTodayIncome(0);
+          setTodayExpenses(0);
+          setWeeklyIncome(0);
+          setWeeklyExpenses(0);
+          setAccounts([]);
+          setUpcomingBookings([]);
+          setLocations([]);
+          setLoading(false);
+          return;
+        }
 
         const [
           todayIncomeData,
@@ -85,27 +115,75 @@ export default function Dashboard() {
           locationsData
         ] = await Promise.all([
           selectedMonth ? 
-            supabase.from("income").select("amount").gte("date", monthStart).lt("date", monthEnd).match(locationFilter) :
-            supabase.from("income").select("amount").eq("date", today).match(locationFilter),
+            supabase.from("income")
+              .select("amount")
+              .gte("date", monthStart)
+              .lt("date", monthEnd)
+              .in("location_id", tenantLocationIds)
+              .match(locationFilter) :
+            supabase.from("income")
+              .select("amount")
+              .eq("date", today)
+              .in("location_id", tenantLocationIds)
+              .match(locationFilter),
           selectedMonth ?
-            supabase.from("expenses").select("amount").gte("date", monthStart).lt("date", monthEnd).match(locationFilter) :
-            supabase.from("expenses").select("amount").eq("date", today).match(locationFilter),
+            supabase.from("expenses")
+              .select("amount")
+              .gte("date", monthStart)
+              .lt("date", monthEnd)
+              .in("location_id", tenantLocationIds)
+              .match(locationFilter) :
+            supabase.from("expenses")
+              .select("amount")
+              .eq("date", today)
+              .in("location_id", tenantLocationIds)
+              .match(locationFilter),
           selectedMonth ?
-            supabase.from("income").select("amount").gte("date", monthStart).lt("date", monthEnd).match(locationFilter) :
-            supabase.from("income").select("amount").gte("date", weekAgo).match(locationFilter),
+            supabase.from("income")
+              .select("amount")
+              .gte("date", monthStart)
+              .lt("date", monthEnd)
+              .in("location_id", tenantLocationIds)
+              .match(locationFilter) :
+            supabase.from("income")
+              .select("amount")
+              .gte("date", weekAgo)
+              .in("location_id", tenantLocationIds)
+              .match(locationFilter),
           selectedMonth ?
-            supabase.from("expenses").select("amount").gte("date", monthStart).lt("date", monthEnd).match(locationFilter) :
-            supabase.from("expenses").select("amount").gte("date", weekAgo).match(locationFilter),
+            supabase.from("expenses")
+              .select("amount")
+              .gte("date", monthStart)
+              .lt("date", monthEnd)
+              .in("location_id", tenantLocationIds)
+              .match(locationFilter) :
+            supabase.from("expenses")
+              .select("amount")
+              .gte("date", weekAgo)
+              .in("location_id", tenantLocationIds)
+              .match(locationFilter),
           supabase.from("accounts").select("*"),
-          supabase.from("bookings").select("*, locations(*)").gte("check_in", today).match(selectedLocation === "all" ? {} : { location_id: selectedLocation }).order("check_in").limit(5),
-          supabase.from("locations").select("*").eq("is_active", true)
+          supabase.from("bookings")
+            .select("*, locations(*)")
+            .gte("check_in", today)
+            .in("location_id", tenantLocationIds)
+            .match(selectedLocation === "all" ? {} : { location_id: selectedLocation })
+            .order("check_in")
+            .limit(5),
+          supabase.from("locations").select("*").eq("tenant_id", tenant.id).eq("is_active", true)
         ]);
 
         setTodayIncome(todayIncomeData.data?.reduce((sum, item) => sum + item.amount, 0) || 0);
         setTodayExpenses(todayExpensesData.data?.reduce((sum, item) => sum + item.amount, 0) || 0);
         setWeeklyIncome(weeklyIncomeData.data?.reduce((sum, item) => sum + item.amount, 0) || 0);
         setWeeklyExpenses(weeklyExpensesData.data?.reduce((sum, item) => sum + item.amount, 0) || 0);
-        setAccounts(accountsData.data || []);
+        
+        // Filter accounts to only those that have access to tenant's locations
+        const filteredAccounts = (accountsData.data || []).filter(account => 
+          account.location_access.some(locationId => tenantLocationIds.includes(locationId))
+        );
+        setAccounts(filteredAccounts);
+        
         setUpcomingBookings(bookingsData.data || []);
         setLocations(locationsData.data || []);
 
@@ -119,7 +197,7 @@ export default function Dashboard() {
     };
     
     fetchDashboardData();
-  }, [selectedLocation, selectedMonth]);
+  }, [selectedLocation, selectedMonth, tenant?.id]);
 
 
   const calculateAccountBalances = async (accountsList: Account[]) => {
@@ -180,7 +258,7 @@ export default function Dashboard() {
             <p className="text-sm lg:text-base text-muted-foreground">Financial Management Dashboard</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            {hasAnyPermission("income") && (
+            {hasAnyPermission(["access_income"]) && (
               <Button asChild variant="default" size="sm" className="w-full sm:w-auto">
                 <Link to="/reservations">
                   <Plus className="size-4" />
@@ -188,7 +266,7 @@ export default function Dashboard() {
                 </Link>
               </Button>
             )}
-            {hasAnyPermission("expenses") && (
+            {hasAnyPermission(["access_expenses"]) && (
               <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
                 <Link to="/expense">
                   <Plus className="size-4" />
@@ -319,7 +397,7 @@ export default function Dashboard() {
             <Calendar className="size-5 text-primary" />
             Upcoming Bookings
           </CardTitle>
-          {hasAnyPermission("calendar") && (
+          {hasAnyPermission(["access_calendar"]) && (
             <Button asChild variant="outline" size="sm">
               <Link to="/calendar">
                 <Eye className="size-4" />

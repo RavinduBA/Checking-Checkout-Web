@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
+import { useAuth } from '@/context/AuthContext';
 
 type Location = Tables<"locations">;
 
@@ -18,13 +19,21 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
+  const { tenant } = useAuth();
 
   useEffect(() => {
     const fetchLocations = async () => {
+      if (!tenant?.id) {
+        setLocations([]);
+        setLoading(false);
+        return;
+      }
+
       try {
         const { data, error } = await supabase
           .from("locations")
           .select("*")
+          .eq("tenant_id", tenant.id)
           .eq("is_active", true)
           .order("name");
 
@@ -38,7 +47,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     };
 
     fetchLocations();
-  }, []);
+  }, [tenant?.id]);
 
   const getSelectedLocationData = () => {
     if (selectedLocation === "all") return null;

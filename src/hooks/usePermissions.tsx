@@ -1,178 +1,87 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
 
-export interface UserPermissions {
-  [locationName: string]: {
-    dashboard: boolean;
-    income: boolean;
-    expenses: boolean;
-    reports: boolean;
-    calendar: boolean;
-    bookings: boolean;
-    rooms: boolean;
-    master_files: boolean;
-    accounts: boolean;
-    users: boolean;
-    settings: boolean;
-    booking_channels: boolean;
-    is_admin?: boolean;
-  };
-}
+type UserPermissions = Tables<"user_permissions">;
 
 export const usePermissions = () => {
-  const { user } = useAuth();
-  const [permissions, setPermissions] = useState<UserPermissions>({});
+  const { user, profile, tenant } = useAuth();
+  const [permissions, setPermissions] = useState<UserPermissions | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const fetchPermissions = async () => {
-      if (!user) return;
+      if (!user || !profile?.tenant_id) {
+        setPermissions(null);
+        setLoading(false);
+        return;
+      }
 
       try {
-        // Fetch user permissions using the RPC function
-        const { data: userPermissions } = await supabase
-          .rpc("get_user_permissions", { user_id_param: user.id });
+        // Fetch user permissions for the tenant
+        const { data, error } = await supabase
+          .from("user_permissions")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("tenant_id", profile.tenant_id)
+          .single();
 
-        console.log("User permissions from RPC:", userPermissions);
-        
-        // Check if user is admin from any location permissions
-        const isUserAdmin = userPermissions && Object.values(userPermissions).some(
-          (locationPerms: any) => locationPerms.is_admin === true
-        );
-        
-        setIsAdmin(isUserAdmin || false);
-        console.log("User is admin:", isUserAdmin);
-
-        // If admin, grant all permissions for all locations
-        if (isUserAdmin) {
-          console.log("User is admin - granting all permissions");
-          const { data: locations } = await supabase
-            .from("locations")
-            .select("name")
-            .eq("is_active", true);
-
-          const adminPermissions: UserPermissions = {};
-          locations?.forEach(location => {
-            adminPermissions[location.name] = {
-              dashboard: true,
-              income: true,
-              expenses: true,
-              reports: true,
-              calendar: true,
-              bookings: true,
-              rooms: true,
-              master_files: true,
-              accounts: true,
-              users: true,
-              settings: true,
-              booking_channels: true,
-              is_admin: true,
-            };
-          });
-          console.log("Admin permissions:", adminPermissions);
-          setPermissions(adminPermissions);
+        if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+          console.error("Error fetching permissions:", error);
+          setPermissions(null);
         } else {
-          // Use the permissions as returned from RPC
-          setPermissions((userPermissions as UserPermissions) || {});
+          setPermissions(data || null);
         }
       } catch (error) {
-        console.error("Error fetching permissions:", error);
-        setPermissions({});
+        console.error("Exception fetching permissions:", error);
+        setPermissions(null);
       } finally {
         setLoading(false);
       }
     };
 
-    if (user) {
-      fetchPermissions();
-    } else {
-      setPermissions({});
-      setIsAdmin(false);
-      setLoading(false);
-    }
-  }, [user]);
+    fetchPermissions();
+  }, [user, profile?.tenant_id]);
 
-  const hasPermission = (permission: keyof UserPermissions[string], locationName?: string): boolean => {
+  // Check if user is admin (owner of the tenant)
+  const isAdmin = profile?.role === 'admin' || profile?.id === tenant?.owner_profile_id;
+
+  const hasPermission = (permission: keyof Omit<UserPermissions, 'id' | 'user_id' | 'tenant_id' | 'created_at'>): boolean => {
+    // Admin always has all permissions
     if (isAdmin) return true;
     
-    if (!locationName) {
-      // Check if user has permission in any location
-      return Object.values(permissions).some(locationPerms => locationPerms[permission]);
-    }
+    // If no permissions record, no access
+    if (!permissions) return false;
     
-    return permissions[locationName]?.[permission] || false;
+    return Boolean(permissions[permission]);
   };
 
-  const hasAnyPermission = (permission: keyof UserPermissions[string]): boolean => {
-    if (isAdmin) return true;
-    return Object.values(permissions).some(locationPerms => locationPerms[permission]);
-  };
-
-  const getPermittedLocations = (permission: keyof UserPermissions[string]): string[] => {
-    if (isAdmin) return Object.keys(permissions);
-    
-    return Object.entries(permissions)
-      .filter(([, locationPerms]) => locationPerms[permission])
-      .map(([locationName]) => locationName);
+  const hasAnyPermission = (permissionList: Array<keyof Omit<UserPermissions, 'id' | 'user_id' | 'tenant_id' | 'created_at'>>): boolean => {
+    return permissionList.some(permission => hasPermission(permission));
   };
 
   const refetch = async () => {
-    if (!user) return;
+    if (!user || !profile?.tenant_id) return;
 
     try {
-      console.log("Fetching permissions for user:", user.id);
-      
-      // Fetch user permissions using the RPC function
-      const { data: userPermissions } = await supabase
-        .rpc("get_user_permissions", { user_id_param: user.id });
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("user_permissions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("tenant_id", profile.tenant_id)
+        .single();
 
-      console.log("User permissions from RPC:", userPermissions);
-      
-      // Check if user is admin from any location permissions
-      const isUserAdmin = userPermissions && Object.values(userPermissions).some(
-        (locationPerms: any) => locationPerms.is_admin === true
-      );
-      
-      setIsAdmin(isUserAdmin || false);
-      console.log("User is admin:", isUserAdmin);
-
-      // If admin, grant all permissions for all locations
-      if (isUserAdmin) {
-        console.log("User is admin - granting all permissions");
-        const { data: locations } = await supabase
-          .from("locations")
-          .select("name")
-          .eq("is_active", true);
-
-        const adminPermissions: UserPermissions = {};
-        locations?.forEach(location => {
-          adminPermissions[location.name] = {
-            dashboard: true,
-            income: true,
-            expenses: true,
-            reports: true,
-            calendar: true,
-            bookings: true,
-            rooms: true,
-            master_files: true,
-            accounts: true,
-            users: true,
-            settings: true,
-            booking_channels: true,
-            is_admin: true,
-          };
-        });
-        console.log("Admin permissions:", adminPermissions);
-        setPermissions(adminPermissions);
+      if (error && error.code !== 'PGRST116') {
+        console.error("Error fetching permissions:", error);
+        setPermissions(null);
       } else {
-        // Use the permissions as returned from RPC
-        setPermissions((userPermissions as UserPermissions) || {});
+        setPermissions(data || null);
       }
     } catch (error) {
-      console.error("Error fetching permissions:", error);
-      setPermissions({});
+      console.error("Exception fetching permissions:", error);
+      setPermissions(null);
     } finally {
       setLoading(false);
     }
@@ -184,7 +93,6 @@ export const usePermissions = () => {
     isAdmin,
     hasPermission,
     hasAnyPermission,
-    getPermittedLocations,
     refetch,
   };
 };
