@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { supabase } from '@/integrations/supabase/client';
 
 // Initialize Resend client with API key from environment
 const resend = new Resend(import.meta.env.VITE_RESEND_API_KEY);
@@ -6,6 +7,7 @@ const resend = new Resend(import.meta.env.VITE_RESEND_API_KEY);
 export { resend };
 
 // Utility function to send credentials email
+// For production, this should be moved to a backend/Edge Function to avoid CORS issues
 export const sendCredentialsEmail = async (
   to: string,
   email: string,
@@ -13,6 +15,30 @@ export const sendCredentialsEmail = async (
   loginUrl: string,
   isResend: boolean = false
 ) => {
+  // First try to use Edge Function if available, fallback to direct API call
+  try {
+    const { data, error } = await supabase.functions.invoke('send-invitation-email', {
+      body: {
+        to,
+        email,
+        password,
+        loginUrl,
+        isResend,
+      },
+    });
+
+    if (!error && data?.success) {
+      console.log('📧 Email sent successfully via Edge Function:', { id: data.emailId, to });
+      return { success: true, emailId: data.emailId };
+    }
+    
+    // If Edge Function fails, log and continue to fallback
+    console.log('Edge Function not available or failed, using direct API call');
+  } catch (edgeFunctionError) {
+    console.log('Edge Function not available, using direct API call');
+  }
+
+  // Fallback to direct Resend API call (development only)
   const subject = isResend 
     ? "Your Updated Login Credentials - CheckingCheckout"
     : "Welcome to CheckingCheckout - Your Login Credentials";
@@ -77,6 +103,8 @@ This email contains sensitive login information. Please keep it secure and delet
   `.trim();
 
   try {
+    console.warn('⚠️  Using direct Resend API call from frontend - this may cause CORS issues in production');
+    
     const { data, error } = await resend.emails.send({
       from: 'CheckingCheckout <onboarding@resend.dev>',
       to: [to],
@@ -93,7 +121,7 @@ This email contains sensitive login information. Please keep it secure and delet
     console.log('📧 Email sent successfully:', { id: data?.id, to });
     return { success: true, emailId: data?.id };
   } catch (error: any) {
-    console.error('Failed to send email:', error);
+    console.error('Resend email error:', error);
     return { success: false, error: error.message };
   }
 };
