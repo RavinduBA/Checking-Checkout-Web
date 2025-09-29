@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -332,10 +333,10 @@ export default function Onboarding() {
               </div>
               <div>
                 <Label htmlFor="phone">Phone Number</Label>
-                <Input
+                <PhoneInput
                   id="phone"
                   value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  onChange={(value) => setFormData(prev => ({ ...prev, phone: value || '' }))}
                   placeholder="+1 (555) 123-4567"
                 />
               </div>
@@ -572,13 +573,6 @@ export default function Onboarding() {
       <div className="max-w-4xl mx-auto">
         {/* Progress Header */}
         <div className="text-center mb-8 pt-8">
-          <div className="flex items-center gap-2 justify-center mb-4">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Hotel className="size-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold">HotelVilla Pro</span>
-          </div>
-          
           <div className="flex items-center justify-center gap-4 mb-4">
             {STEPS.map((step) => (
               <div key={step.id} className="flex items-center">

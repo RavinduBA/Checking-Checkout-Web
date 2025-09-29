@@ -27,6 +27,7 @@ import BookingForm from "./pages/BookingForm";
 import MasterFiles from "./pages/MasterFiles";
 import RoomManagement from "./pages/RoomManagement";
 import ReservationDetails from "./pages/ReservationDetails";
+import ReservationForm from "./pages/ReservationForm";
 import ReservationFormCompact from "./pages/ReservationFormCompact";
 import Reservations from "./pages/Reservations";
 import AccessDenied from "./pages/AccessDenied";
@@ -175,7 +176,7 @@ const App = () => (
             }>
               <Route index element={
                 <PermissionRoute permission={["access_bookings"]}>
-                  <ReservationFormCompact />
+                  <ReservationForm />
                 </PermissionRoute>
               } />
             </Route>

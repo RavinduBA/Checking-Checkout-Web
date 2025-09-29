@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { OTPVerification } from "./OTPVerification";
-import { AirbnbDatePicker } from "./AirbnbDatePicker";
+import { AvailabilityCalendarPopover } from "./AvailabilityCalendarPopover";
 
 interface Reservation {
   id: string;
@@ -169,9 +170,9 @@ export function ReservationEditDialog({ reservation, isOpen, onClose, onUpdate }
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Guest Phone</Label>
-              <Input
+              <PhoneInput
                 value={formData.guest_phone || ''}
-                onChange={(e) => setFormData({ ...formData, guest_phone: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, guest_phone: value || '' })}
               />
             </div>
             <div>
@@ -222,18 +223,24 @@ export function ReservationEditDialog({ reservation, isOpen, onClose, onUpdate }
 
           <div>
             <Label>Check-in & Check-out Dates</Label>
-            <AirbnbDatePicker
+            <AvailabilityCalendarPopover
+              selectedRoomId={formData.room_id}
               checkInDate={formData.check_in_date || ''}
               checkOutDate={formData.check_out_date || ''}
-              onCheckInChange={(date) => setFormData({ ...formData, check_in_date: date })}
-              onCheckOutChange={(date) => setFormData({ ...formData, check_out_date: date })}
-              onNightsChange={(nights) => {
+              onDateSelect={(checkIn, checkOut) => {
+                const checkInDate = new Date(checkIn);
+                const checkOutDate = new Date(checkOut);
+                const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
                 setFormData({
                   ...formData,
+                  check_in_date: checkIn,
+                  check_out_date: checkOut,
                   nights,
                   total_amount: (formData.room_rate || 0) * nights
                 });
               }}
+              excludeReservationId={reservation?.id}
+              className="w-full"
             />
           </div>
 

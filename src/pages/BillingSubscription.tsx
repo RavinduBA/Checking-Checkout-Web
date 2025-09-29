@@ -115,6 +115,7 @@ export default function BillingSubscription() {
       return;
     }
 
+
     setProcessingPlanId(plan.id);
     try {
       // Create or get Creem customer
@@ -136,34 +137,34 @@ export default function BillingSubscription() {
 
       // For this demo, we'll use a mock product ID
       // In production, each plan would have a corresponding Creem product
-      const mockProductId = `prod_${plan.id}`;
+      const creemProductId = plan.product_id;
+
       
-      // Create checkout session
+      // Create checkout session with proper Creem.io API format
       const successUrl = `${window.location.origin}/billing/success`;
       const cancelUrl = `${window.location.origin}/billing`;
       
       try {
+        // Use proper Creem.io request format based on documentation
         const checkout = await createCheckoutSession({
-          productId: mockProductId,
-          customerId: creemCustomerId,
-          customerEmail: user.email,
-          successUrl: successUrl,
-          cancelUrl: cancelUrl,
+          product_id: creemProductId, // Note: use snake_case as per Creem API
+          success_url: successUrl,
+          request_id: `checkout_${tenant.id}_${Date.now()}`, // Optional tracking ID
           metadata: {
             tenant_id: tenant.id,
             plan_id: plan.id,
-            user_id: user.id
+            user_id: user.id,
+            customer_email: user.email
           }
         });
 
         // Redirect to Creem checkout
-        // Note: The actual checkout URL property might be different
-        // Check Creem.io documentation for the correct property name
-        const checkoutUrl = (checkout as any)?.checkout_url || (checkout as any)?.url;
+        // Based on Creem.io docs, the response contains checkoutUrl or checkout_url
+        const checkoutUrl = (checkout as any)?.checkoutUrl || (checkout as any)?.checkout_url || (checkout as any)?.url;
         if (checkoutUrl) {
           window.location.href = checkoutUrl;
         } else {
-          throw new Error("No checkout URL returned");
+          throw new Error("No checkout URL returned from Creem.io");
         }
       } catch (creemError) {
         // If Creem is not configured or fails, show a demo message
@@ -171,8 +172,11 @@ export default function BillingSubscription() {
         
         toast({
           title: "Demo Mode",
-          description: `This would redirect to Creem.io checkout for ${plan.name} plan ($${(plan.price_cents / 100).toFixed(2)}/${plan.billing_interval}). Configure VITE_CREEM_API_KEY to enable real payments.`,
+          description: `This would redirect to Creem.io checkout for ${plan.name} plan ($${(plan.price_cents / 100).toFixed(2)}/${plan.billing_interval}). Configure VITE_CREEM_API_KEY environment variable to enable real payments. Error: ${creemError.message || 'Unknown error'}`,
+          variant: "destructive"
         });
+
+        return;
         
         // In demo mode, simulate a successful subscription
         await simulateSuccessfulSubscription(plan, creemCustomerId);

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SectionLoader } from "@/components/ui/loading-spinner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -419,7 +420,7 @@ const Income = () => {
     return <SectionLoader className="min-h-64" />;
   }
 
-  if (!hasAnyPermission("income")) {
+  if (!hasAnyPermission("access_income")) {
     return (
       <div className="p-6">
         <Alert>
@@ -503,10 +504,10 @@ const Income = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="guest_phone">Phone Number</Label>
-                  <Input
+                  <PhoneInput
                     id="guest_phone"
                     value={reservationForm.guest_phone}
-                    onChange={(e) => setReservationForm({...reservationForm, guest_phone: e.target.value})}
+                    onChange={(value) => setReservationForm({...reservationForm, guest_phone: value || ''})}
                   />
                 </div>
                 <div>

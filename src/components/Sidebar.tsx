@@ -27,21 +27,26 @@ import { Button } from "@/components/ui/button";
 import checkinLogo from "@/assets/checkin-checkout-logo.png";
 import { usePermissions } from "@/hooks/usePermissions";
 import { InlineLoader } from "./ui/loading-spinner";
+import { Tables } from "@/integrations/supabase/types";
+
+type UserPermissions = Tables<"user_permissions">;
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const getNavigationItems = (hasAnyPermission: (perm: string) => boolean) => [
-  { name: "Dashboard", href: "/dashboard", icon: Home, permission: "dashboard" },
-  { name: "Calendar", href: "/calendar", icon: Calendar, permission: "calendar" },
-  { name: "Booking Channels", href: "/booking-channels", icon: Wifi, permission: "booking_channels" },
+type PermissionKey = keyof Omit<UserPermissions, 'id' | 'user_id' | 'tenant_id' | 'created_at'>;
+
+const getNavigationItems = (hasAnyPermission: (permissionList: Array<PermissionKey> | PermissionKey) => boolean) => [
+  { name: "Dashboard", href: "/dashboard", icon: Home, permission: "access_dashboard" as PermissionKey },
+  { name: "Calendar", href: "/calendar", icon: Calendar, permission: "access_calendar" as PermissionKey },
+  { name: "Booking Channels", href: "/booking-channels", icon: Wifi, permission: "access_booking_channels" as PermissionKey },
   {
     name: "Master Files",
-    href: "/master-files",
+    href: "/master-files", 
     icon: FolderOpen,
-    permission: "master_files",
+    permission: "access_master_files" as PermissionKey,
     subItems: [
       { name: "Hotel Locations", href: "/master-files?tab=locations", icon: MapPin, description: "Manage hotel locations" },
       { name: "Rooms", href: "/master-files?tab=rooms", icon: Bed, description: "Room details & pricing" },
@@ -50,17 +55,17 @@ const getNavigationItems = (hasAnyPermission: (perm: string) => boolean) => [
       { name: "Commission Settings", href: "/master-files?tab=commissions", icon: Percent, description: "Commission configuration" }
     ]
   },
-  { name: "Reservations", href: "/reservations", icon: PlusCircle, permission: "income" },
-  { name: "Add Expense", href: "/expense", icon: MinusCircle, permission: "expenses" },
+  { name: "Reservations", href: "/reservations", icon: PlusCircle, permission: "access_bookings" as PermissionKey },
+  { name: "Add Expense", href: "/expense", icon: MinusCircle, permission: "access_expenses" as PermissionKey },
   {
     name: "Reports",
     href: "/reports?tab=comprehensive",
     icon: BarChart3,
-    permission: "reports"
+    permission: "access_reports" as PermissionKey
   },
-  { name: "Accounts", href: "/accounts", icon: Building2, permission: "accounts" },
-  { name: "Users", href: "/users", icon: Users, permission: "users" },
-  { name: "Settings", href: "/settings", icon: Settings, permission: "settings" },
+  { name: "Accounts", href: "/accounts", icon: Building2, permission: "access_accounts" as PermissionKey },
+  { name: "Users", href: "/users", icon: Users, permission: "access_users" as PermissionKey },
+  { name: "Settings", href: "/settings", icon: Settings, permission: "access_settings" as PermissionKey },
 ].filter(item => !item.permission || hasAnyPermission(item.permission));
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {

@@ -57,8 +57,13 @@ export const usePermissions = () => {
     return Boolean(permissions[permission]);
   };
 
-  const hasAnyPermission = (permissionList: Array<keyof Omit<UserPermissions, 'id' | 'user_id' | 'tenant_id' | 'created_at'>>): boolean => {
-    return permissionList.some(permission => hasPermission(permission));
+  const hasAnyPermission = (permissionList: Array<keyof Omit<UserPermissions, 'id' | 'user_id' | 'tenant_id' | 'created_at'>> | keyof Omit<UserPermissions, 'id' | 'user_id' | 'tenant_id' | 'created_at'>): boolean => {
+    // Handle single permission string
+    if (typeof permissionList === 'string') {
+      return hasPermission(permissionList);
+    }
+    // Handle array of permissions
+    return Array.isArray(permissionList) && permissionList.some(permission => hasPermission(permission));
   };
 
   const refetch = async () => {

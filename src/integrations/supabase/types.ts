@@ -891,6 +891,7 @@ export type Database = {
           max_rooms: number | null
           name: string
           price_cents: number
+          product_id: string | null
         }
         Insert: {
           billing_interval?: string
@@ -904,6 +905,7 @@ export type Database = {
           max_rooms?: number | null
           name: string
           price_cents: number
+          product_id?: string | null
         }
         Update: {
           billing_interval?: string
@@ -917,6 +919,7 @@ export type Database = {
           max_rooms?: number | null
           name?: string
           price_cents?: number
+          product_id?: string | null
         }
         Relationships: []
       }
@@ -925,25 +928,31 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          is_tenant_admin: boolean | null
           name: string
           role: Database["public"]["Enums"]["user_role"]
           tenant_id: string | null
+          tenant_role: Database["public"]["Enums"]["tenant_role"] | null
         }
         Insert: {
           created_at?: string
           email: string
           id: string
+          is_tenant_admin?: boolean | null
           name: string
           role?: Database["public"]["Enums"]["user_role"]
           tenant_id?: string | null
+          tenant_role?: Database["public"]["Enums"]["tenant_role"] | null
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
+          is_tenant_admin?: boolean | null
           name?: string
           role?: Database["public"]["Enums"]["user_role"]
           tenant_id?: string | null
+          tenant_role?: Database["public"]["Enums"]["tenant_role"] | null
         }
         Relationships: [
           {

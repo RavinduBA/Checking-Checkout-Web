@@ -208,7 +208,7 @@ export default function Expense() {
     return <SectionLoader className="min-h-64" />;
   }
 
-  if (!hasAnyPermission("expenses")) {
+  if (!hasAnyPermission("access_expenses")) {
     return (
       <div className="container mx-auto p-4 sm:p-6">
         <Alert>
@@ -224,7 +224,7 @@ export default function Expense() {
   return (
     <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between gap-4">
-        {hasAnyPermission("reports") && (
+        {hasAnyPermission("access_reports") && (
           <Button asChild variant="outline" className="text-xs sm:text-sm px-2 sm:px-4">
             <Link to="/reports?tab=comprehensive&type=expense">
               <span className="hidden sm:inline">View All Expenses</span>

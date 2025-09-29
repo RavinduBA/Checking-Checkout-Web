@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { ArrowLeft, Save, Calendar, MapPin, User, CreditCard, UserCheck, Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,17 +8,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoLocation } from "@/hooks/useAutoLocation";
+import { useAvailability } from "@/hooks/useAvailability";
 import { PhotoAttachment } from "@/components/PhotoAttachment";
 import { SignatureCapture } from "@/components/SignatureCapture";
-import { DateRangePicker } from "@/components/DateRangePicker";
 import { CurrencySelector } from "@/components/CurrencySelector";
 import { PricingDisplay } from "@/components/PricingDisplay";
+import { AvailabilityDialog } from "@/components/AvailabilityDialog";
+import { AvailabilityCalendarPopover } from "@/components/AvailabilityCalendarPopover";
 
 type Location = Tables<"locations">;
 type Room = Tables<"rooms">;
@@ -42,6 +45,14 @@ export default function ReservationForm() {
   const [showAgentDialog, setShowAgentDialog] = useState(false);
   const [idPhotos, setIdPhotos] = useState<string[]>([]);
   const [guestSignature, setGuestSignature] = useState("");
+
+  // Availability checking state
+  const { checkRoomAvailability, getAlternativeOptions } = useAvailability();
+  const [showAvailabilityDialog, setShowAvailabilityDialog] = useState(false);
+  const [availabilityConflicts, setAvailabilityConflicts] = useState<any[]>([]);
+  const [sameLocationAlternatives, setSameLocationAlternatives] = useState<any[]>([]);
+  const [otherLocationAlternatives, setOtherLocationAlternatives] = useState<any[]>([]);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     location_id: searchParams.get('location') || autoSelectedLocation || '',
@@ -101,13 +112,20 @@ export default function ReservationForm() {
     if (autoSelectedLocation && !shouldShowLocationSelect && !formData.location_id) {
       setFormData(prev => ({ ...prev, location_id: autoSelectedLocation }));
     }
-  }, [autoSelectedLocation, shouldShowLocationSelect]);
+  }, [autoSelectedLocation, shouldShowLocationSelect, formData.location_id]);
 
   useEffect(() => {
-    calculateTotal();
+    const total = formData.room_rate * formData.nights;
+    const balanceAmount = total - formData.advance_amount;
+    setFormData(prev => ({ 
+      ...prev, 
+      total_amount: total,
+      balance_amount: balanceAmount,
+      paid_amount: formData.advance_amount
+    }));
   }, [formData.room_rate, formData.nights, formData.advance_amount]);
 
-  const fetchInitialData = async () => {
+  const fetchInitialData = useCallback(async () => {
     try {
       const [roomsRes, guidesRes, agentsRes] = await Promise.all([
         supabase.from("rooms").select("*").eq("is_active", true).order("room_number"),
@@ -121,9 +139,10 @@ export default function ReservationForm() {
     } catch (error) {
       console.error("Error fetching data:", error);
     }
-  };
+  }, []);
 
-  const fetchReservation = async () => {
+  const fetchReservation = useCallback(async () => {
+    if (!id) return;
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -172,7 +191,7 @@ export default function ReservationForm() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, toast]);
 
   const calculateNights = (checkIn: string, checkOut: string) => {
     if (!checkIn || !checkOut) return 1;
@@ -310,8 +329,75 @@ export default function ReservationForm() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Check room availability and show alternatives if conflicts exist
+  const checkAvailabilityAndProceed = async (forceBook: boolean = false) => {
+    if (!formData.room_id || !formData.check_in_date || !formData.check_out_date) {
+      toast({
+        title: "Missing Information",
+        description: "Please select a room and dates before proceeding",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setAvailabilityLoading(true);
+    try {
+      const { isAvailable, conflicts } = await checkRoomAvailability(
+        formData.room_id,
+        formData.check_in_date,
+        formData.check_out_date,
+        id // exclude current reservation if editing
+      );
+
+      if (isAvailable || forceBook) {
+        return handleSubmit(null, forceBook);
+      }
+
+      // Room is not available, show alternatives dialog
+      const { sameLocationAlternatives, otherLocationAlternatives } = await getAlternativeOptions(
+        formData.room_id,
+        formData.check_in_date,
+        formData.check_out_date,
+        id
+      );
+
+      setAvailabilityConflicts(conflicts);
+      setSameLocationAlternatives(sameLocationAlternatives);
+      setOtherLocationAlternatives(otherLocationAlternatives);
+      setShowAvailabilityDialog(true);
+    } catch (error) {
+      console.error("Error checking availability:", error);
+      // If availability check fails, proceed with booking
+      return handleSubmit(null, forceBook);
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  };
+
+  const handleSelectAlternativeRoom = (room: any) => {
+    setFormData(prev => ({
+      ...prev,
+      room_id: room.id,
+      location_id: room.location_id,
+      room_rate: room.base_price,
+    }));
+    setShowAvailabilityDialog(false);
+    // Recalculate total with new room rate
+    setTimeout(() => {
+      const total = room.base_price * formData.nights;
+      const balanceAmount = total - formData.advance_amount;
+      setFormData(prev => ({ 
+        ...prev, 
+        total_amount: total,
+        balance_amount: balanceAmount
+      }));
+    }, 100);
+  };
+
+  const handleSubmit = async (e: React.FormEvent | null, forceBook: boolean = false) => {
+    if (e) {
+      e.preventDefault();
+    }
     setSubmitting(true);
 
     try {
@@ -424,7 +510,19 @@ export default function ReservationForm() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={(e) => { 
+        e.preventDefault(); 
+        // Always check availability before proceeding, never auto-create
+        if (!formData.room_id || !formData.check_in_date || !formData.check_out_date) {
+          toast({
+            title: "Missing Information",
+            description: "Please select a room and dates before proceeding",
+            variant: "destructive"
+          });
+          return;
+        }
+        checkAvailabilityAndProceed(); 
+      }} className="space-y-6">
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Left Column - Main Form */}
           <div className="xl:col-span-2 space-y-6">
@@ -461,11 +559,10 @@ export default function ReservationForm() {
                 
                 <div>
                   <Label htmlFor="guest_phone">Phone</Label>
-                  <Input
+                  <PhoneInput
                     id="guest_phone"
                     value={formData.guest_phone}
-                    onChange={(e) => handleInputChange('guest_phone', e.target.value)}
-                    className="h-11"
+                    onChange={(value) => handleInputChange('guest_phone', value || '')}
                   />
                 </div>
                 
@@ -571,16 +668,30 @@ export default function ReservationForm() {
                   </div>
                 </div>
 
-                {/* Date Selection */}
-                <div>
-                  <Label className="block mb-3">Check-in & Check-out Dates *</Label>
-                  <DateRangePicker
-                    checkInDate={formData.check_in_date}
-                    checkOutDate={formData.check_out_date}
-                    onCheckInChange={(date) => handleInputChange('check_in_date', date)}
-                    onCheckOutChange={(date) => handleInputChange('check_out_date', date)}
-                    onNightsChange={(nights) => handleInputChange('nights', nights)}
-                  />
+                {/* Date Selection with Availability Calendar */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="col-span-1 md:col-span-2">
+                    <Label>Check-in & Check-out Dates *</Label>
+                    <AvailabilityCalendarPopover
+                      selectedRoomId={formData.room_id}
+                      checkInDate={formData.check_in_date}
+                      checkOutDate={formData.check_out_date}
+                      onDateSelect={(checkIn, checkOut) => {
+                        handleInputChange('check_in_date', checkIn);
+                        handleInputChange('check_out_date', checkOut);
+                      }}
+                      excludeReservationId={id}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <Label>Nights</Label>
+                    <div className="h-11 px-3 py-2 border border-input bg-background rounded-md flex items-center">
+                      <span className="text-sm font-medium">
+                        {formData.nights} {formData.nights === 1 ? 'night' : 'nights'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Currency & Pricing */}
@@ -670,10 +781,12 @@ export default function ReservationForm() {
               >
                 {submitting ? (
                   'Saving...'
+                ) : availabilityLoading ? (
+                  'Checking Availability...'
                 ) : (
                   <>
                     <Save className="size-5 mr-2" />
-                    {isEdit ? 'Update Reservation' : 'Create Reservation'}
+                    {isEdit ? 'Update Reservation' : 'Check Availability & Create'}
                   </>
                 )}
               </Button>
@@ -751,10 +864,10 @@ export default function ReservationForm() {
                           </div>
                           <div>
                             <Label htmlFor="guide_phone">Phone</Label>
-                            <Input
+                            <PhoneInput
                               id="guide_phone"
                               value={newGuide.phone}
-                              onChange={(e) => setNewGuide(prev => ({ ...prev, phone: e.target.value }))}
+                              onChange={(value) => setNewGuide(prev => ({ ...prev, phone: value || '' }))}
                             />
                           </div>
                           <div>
@@ -854,10 +967,10 @@ export default function ReservationForm() {
                           </div>
                           <div>
                             <Label htmlFor="agent_phone">Phone</Label>
-                            <Input
+                            <PhoneInput
                               id="agent_phone"
                               value={newAgent.phone}
-                              onChange={(e) => setNewAgent(prev => ({ ...prev, phone: e.target.value }))}
+                              onChange={(value) => setNewAgent(prev => ({ ...prev, phone: value || '' }))}
                             />
                           </div>
                           <div>
@@ -899,6 +1012,24 @@ export default function ReservationForm() {
           </CardContent>
         </Card>
       </form>
+
+      {/* Availability Dialog */}
+      <AvailabilityDialog
+        open={showAvailabilityDialog}
+        onOpenChange={setShowAvailabilityDialog}
+        checkInDate={formData.check_in_date}
+        checkOutDate={formData.check_out_date}
+        originalRoom={rooms.find(r => r.id === formData.room_id) as any}
+        conflicts={availabilityConflicts}
+        sameLocationAlternatives={sameLocationAlternatives}
+        otherLocationAlternatives={otherLocationAlternatives}
+        onSelectRoom={handleSelectAlternativeRoom}
+        onForceBook={() => {
+          setShowAvailabilityDialog(false);
+          checkAvailabilityAndProceed(true);
+        }}
+        loading={availabilityLoading}
+      />
     </div>
   );
 }

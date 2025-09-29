@@ -40,7 +40,8 @@ interface User {
   name: string;
   email: string;
   permissions: Record<string, UserPermissions>;
-  is_admin: boolean;
+  tenant_role: 'tenant_admin' | 'tenant_billing' | 'tenant_manager' | 'tenant_staff';
+  is_tenant_admin: boolean;
   created_at: string;
 }
 
@@ -191,14 +192,16 @@ export default function Users() {
             return {
               ...profile,
               permissions,
-              is_admin: isUserAdmin
+              tenant_role: (profile as any).tenant_role || 'tenant_staff',
+              is_tenant_admin: (profile as any).is_tenant_admin || false
             };
           } catch (error) {
             console.error('Error processing user permissions for', profile.email, error);
             return {
               ...profile,
               permissions: {},
-              is_admin: false
+              tenant_role: (profile as any).tenant_role || 'tenant_staff',
+              is_tenant_admin: (profile as any).is_tenant_admin || false
             };
           }
         })
@@ -455,13 +458,15 @@ export default function Users() {
     if (!editingUser) return;
 
     try {
-      console.log('Updating user:', editingUser.id, 'admin status:', editingUser.is_admin);
+      console.log('Updating user:', editingUser.id, 'admin status:', editingUser.is_tenant_admin);
       
-      // Update profile name only (no role)
+      // Update profile with name, tenant_role and is_tenant_admin
       const { data: updateResult, error: profileError } = await supabase
         .from('profiles')
         .update({ 
-          name: editingUser.name 
+          name: editingUser.name,
+          tenant_role: editingUser.tenant_role,
+          is_tenant_admin: editingUser.is_tenant_admin
         })
         .eq('id', editingUser.id)
         .select();
@@ -494,6 +499,7 @@ export default function Users() {
         if (locationPerms) {
           permissionInserts.push({
             user_id: editingUser.id,
+            tenant_id: tenant?.id,
             location_id: location.id,
             access_dashboard: locationPerms.dashboard || false,
             access_income: locationPerms.income || false,
@@ -507,7 +513,8 @@ export default function Users() {
             access_users: locationPerms.users || false,
             access_settings: locationPerms.settings || false,
             access_booking_channels: locationPerms.booking_channels || false,
-            is_admin: editingUser.is_admin || false,
+            tenant_role: editingUser.tenant_role,
+            is_tenant_admin: editingUser.is_tenant_admin || false,
           });
         }
       }
@@ -588,17 +595,47 @@ export default function Users() {
                   </div>
                   
                   <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="edit-user-admin"
-                        checked={editingUser.is_admin}
-                        onCheckedChange={(checked) => setEditingUser({...editingUser, is_admin: !!checked})}
-                      />
-                      <Label htmlFor="edit-user-admin" className="flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        Administrator
-                      </Label>
-                    </div>
+                    <Label className="text-sm font-medium">User Role</Label>
+                    <Select
+                      value={editingUser.tenant_role}
+                      onValueChange={(value: 'tenant_admin' | 'tenant_billing' | 'tenant_manager' | 'tenant_staff') => 
+                        setEditingUser({
+                          ...editingUser, 
+                          tenant_role: value,
+                          is_tenant_admin: value === 'tenant_admin'
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="tenant_admin">
+                          <div className="flex items-center gap-2">
+                            <Shield className="h-4 w-4" />
+                            Tenant Administrator
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="tenant_billing">
+                          <div className="flex items-center gap-2">
+                            <Settings className="h-4 w-4" />
+                            Billing Manager
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="tenant_manager">
+                          <div className="flex items-center gap-2">
+                            <UserCheck className="h-4 w-4" />
+                            Manager
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="tenant_staff">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            Staff
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-4">
@@ -870,9 +907,11 @@ export default function Users() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={user.is_admin ? "default" : "secondary"} className="flex items-center gap-1">
-                    {user.is_admin ? <Shield className="h-3 w-3" /> : <UserCheck className="h-3 w-3" />}
-                    {user.is_admin ? "Administrator" : "Staff"}
+                  <Badge variant={user.is_tenant_admin ? "default" : "secondary"} className="flex items-center gap-1">
+                    {user.is_tenant_admin ? <Shield className="h-3 w-3" /> : <UserCheck className="h-3 w-3" />}
+                    {user.tenant_role === 'tenant_admin' ? 'Administrator' : 
+                     user.tenant_role === 'tenant_billing' ? 'Billing Manager' :
+                     user.tenant_role === 'tenant_manager' ? 'Manager' : 'Staff'}
                   </Badge>
                   <Button 
                     variant="ghost" 
@@ -952,7 +991,7 @@ export default function Users() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Administrators</p>
-                <p className="text-lg sm:text-2xl font-bold">{users.filter(u => u.is_admin).length}</p>
+                <p className="text-lg sm:text-2xl font-bold">{users.filter(u => u.is_tenant_admin).length}</p>
               </div>
               <Shield className="size-5 text-primary" />
             </div>
