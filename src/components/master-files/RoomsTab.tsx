@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import { Bed, Plus, Edit, Trash2 } from "lucide-react";
 
 type Room = {
@@ -61,13 +62,14 @@ export default function RoomsTab() {
     "Kitchen", "Washing Machine", "Hair Dryer", "Private Pool", "BBQ Area"
   ];
   const { toast } = useToast();
+  const { tenant } = useAuth();
 
-  useEffect(() => {
-    fetchRooms();
-    fetchLocations();
-  }, []);
+  const fetchRooms = useCallback(async () => {
+    if (!tenant?.id) {
+      setLoading(false);
+      return;
+    }
 
-  const fetchRooms = async () => {
     try {
       const { data, error } = await supabase
         .from("rooms")
@@ -75,6 +77,7 @@ export default function RoomsTab() {
           *,
           locations!inner(name)
         `)
+        .eq("tenant_id", tenant.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -88,13 +91,16 @@ export default function RoomsTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tenant?.id, toast]);
 
-  const fetchLocations = async () => {
+  const fetchLocations = useCallback(async () => {
+    if (!tenant?.id) return;
+
     try {
       const { data, error } = await supabase
         .from("locations")
         .select("id, name, is_active")
+        .eq("tenant_id", tenant.id)
         .eq("is_active", true)
         .order("name");
 
@@ -107,17 +113,32 @@ export default function RoomsTab() {
         variant: "destructive",
       });
     }
-  };
+  }, [tenant?.id, toast]);
+
+  useEffect(() => {
+    fetchRooms();
+    fetchLocations();
+  }, [fetchRooms, fetchLocations]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!tenant?.id) {
+      toast({
+        title: "Error",
+        description: "No tenant information available",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
       if (editingRoom) {
         const { error } = await supabase
           .from("rooms")
           .update(formData)
-          .eq("id", editingRoom.id);
+          .eq("id", editingRoom.id)
+          .eq("tenant_id", tenant.id); // Ensure user can only update their own tenant's rooms
 
         if (error) throw error;
         
@@ -128,7 +149,7 @@ export default function RoomsTab() {
       } else {
         const { error } = await supabase
           .from("rooms")
-          .insert([formData]);
+          .insert([{ ...formData, tenant_id: tenant.id }]);
 
         if (error) throw error;
         
@@ -186,11 +207,21 @@ export default function RoomsTab() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!tenant?.id) {
+      toast({
+        title: "Error",
+        description: "No tenant information available",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from("rooms")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .eq("tenant_id", tenant.id); // Ensure user can only delete their own tenant's rooms
 
       if (error) throw error;
       

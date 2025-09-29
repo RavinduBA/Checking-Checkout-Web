@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import { Building2, Plus, Edit, Trash2 } from "lucide-react";
 
 type Location = {
@@ -29,16 +30,19 @@ export default function LocationsTab() {
     is_active: true,
   });
   const { toast } = useToast();
+  const { tenant } = useAuth();
 
-  useEffect(() => {
-    fetchLocations();
-  }, []);
+  const fetchLocations = useCallback(async () => {
+    if (!tenant?.id) {
+      setLoading(false);
+      return;
+    }
 
-  const fetchLocations = async () => {
     try {
       const { data, error } = await supabase
         .from("locations")
         .select("*")
+        .eq("tenant_id", tenant.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -52,17 +56,31 @@ export default function LocationsTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tenant?.id, toast]);
+
+  useEffect(() => {
+    fetchLocations();
+  }, [fetchLocations]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!tenant?.id) {
+      toast({
+        title: "Error",
+        description: "No tenant information available",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
       if (editingLocation) {
         const { error } = await supabase
           .from("locations")
           .update(formData)
-          .eq("id", editingLocation.id);
+          .eq("id", editingLocation.id)
+          .eq("tenant_id", tenant.id); // Ensure user can only update their own tenant's locations
 
         if (error) throw error;
         
@@ -73,7 +91,7 @@ export default function LocationsTab() {
       } else {
         const { error } = await supabase
           .from("locations")
-          .insert([formData]);
+          .insert([{ ...formData, tenant_id: tenant.id }]);
 
         if (error) throw error;
         
@@ -107,12 +125,22 @@ export default function LocationsTab() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this location?")) return;
+    
+    if (!tenant?.id) {
+      toast({
+        title: "Error",
+        description: "No tenant information available",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       const { error } = await supabase
         .from("locations")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .eq("tenant_id", tenant.id); // Ensure user can only delete their own tenant's locations
 
       if (error) throw error;
       
