@@ -45,74 +45,92 @@ export default function BillingSubscription() {
 		useState<Subscription | null>(subscription);
 	const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
 	const [cancelling, setCancelling] = useState(false);
+	const [trialDaysRemaining, setTrialDaysRemaining] = useState<number | null>(null);
 
 	useEffect(() => {
 		if (tenant) {
+			const fetchPlansAndSubscription = async () => {
+				setLoading(true);
+				try {
+					// Fetch available plans
+					const { data: plansData, error: plansError } = await supabase
+						.from("plans")
+						.select("*")
+						.eq("is_active", true)
+						.order("price_cents");
+
+					if (plansError) throw plansError;
+
+					// Fetch Creem product details for each plan (if needed)
+					const plansWithProducts = await Promise.all(
+						(plansData || []).map(async (plan) => {
+							try {
+								// If plan has a creem_product_id, fetch its details
+								// For now, we'll use mock data since the plans table doesn't have creem_product_id
+								return { ...plan, creemProduct: null };
+							} catch (error) {
+								console.warn(
+									`Failed to fetch Creem product for plan ${plan.id}:`,
+									error,
+								);
+								return { ...plan, creemProduct: null };
+							}
+						}),
+					);
+
+					setPlans(plansWithProducts);
+
+					// Fetch current subscription if not provided by auth context
+					if (!subscription && tenant) {
+						const { data: subData, error: subError } = await supabase
+							.from("subscriptions")
+							.select("*")
+							.eq("tenant_id", tenant.id)
+							.in("status", ["active", "trialing"])
+							.order("created_at", { ascending: false })
+							.limit(1);
+
+						if (subError) {
+							console.error("Error fetching subscription:", subError);
+							setCurrentSubscription(null);
+						} else {
+							const subscription =
+								subData && subData.length > 0 ? subData[0] : null;
+							setCurrentSubscription(subscription);
+						}
+					}
+				} catch (error) {
+					console.error("Error fetching billing data:", error);
+					toast({
+						title: "Error",
+						description: "Failed to load billing information",
+						variant: "destructive",
+					});
+				} finally {
+					setLoading(false);
+				}
+			};
+
 			fetchPlansAndSubscription();
 		}
-	}, [tenant]);
+	}, [tenant, subscription, toast]);
 
-	const fetchPlansAndSubscription = async () => {
-		setLoading(true);
-		try {
-			// Fetch available plans
-			const { data: plansData, error: plansError } = await supabase
-				.from("plans")
-				.select("*")
-				.eq("is_active", true)
-				.order("price_cents");
-
-			if (plansError) throw plansError;
-
-			// Fetch Creem product details for each plan (if needed)
-			const plansWithProducts = await Promise.all(
-				(plansData || []).map(async (plan) => {
-					try {
-						// If plan has a creem_product_id, fetch its details
-						// For now, we'll use mock data since the plans table doesn't have creem_product_id
-						return { ...plan, creemProduct: null };
-					} catch (error) {
-						console.warn(
-							`Failed to fetch Creem product for plan ${plan.id}:`,
-							error,
-						);
-						return { ...plan, creemProduct: null };
-					}
-				}),
-			);
-
-			setPlans(plansWithProducts);
-
-			// Fetch current subscription if not provided by auth context
-			if (!subscription && tenant) {
-				const { data: subData, error: subError } = await supabase
-					.from("subscriptions")
-					.select("*")
-					.eq("tenant_id", tenant.id)
-					.in("status", ["active", "trialing"])
-					.order("created_at", { ascending: false })
-					.limit(1);
-
-				if (subError) {
-					console.error("Error fetching subscription:", subError);
-					setCurrentSubscription(null);
-				} else {
-					const subscription =
-						subData && subData.length > 0 ? subData[0] : null;
-					setCurrentSubscription(subscription);
-				}
-			}
-		} catch (error) {
-			console.error("Error fetching billing data:", error);
-			toast({
-				title: "Error",
-				description: "Failed to load billing information",
-				variant: "destructive",
-			});
-		} finally {
-			setLoading(false);
+	useEffect(() => {
+		// Calculate trial days remaining
+		if (currentSubscription?.trial_end) {
+			const trialEnd = new Date(currentSubscription.trial_end);
+			const now = new Date();
+			const diffTime = trialEnd.getTime() - now.getTime();
+			const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+			setTrialDaysRemaining(Math.max(0, diffDays));
+		} else if (tenant?.trial_ends_at) {
+			const trialEnd = new Date(tenant.trial_ends_at);
+			const now = new Date();
+			const diffTime = trialEnd.getTime() - now.getTime();
+			const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+			setTrialDaysRemaining(Math.max(0, diffDays));
 		}
-	};
+	}, [currentSubscription, tenant]);
 
 	const handleSubscribe = async (plan: Plan) => {
 		if (!tenant || !user) {
@@ -126,76 +144,63 @@ export default function BillingSubscription() {
 
 		setProcessingPlanId(plan.id);
 		try {
-			// Create or get Creem customer
-			let creemCustomerId = currentSubscription?.creem_customer_id;
-
-			if (!creemCustomerId) {
-				// For now, we'll create a placeholder customer ID
-				// In a real implementation, you'd call Creem's customer creation API
-				creemCustomerId = `cust_${tenant.id}_${Date.now()}`;
-
-				// Update subscription record with customer ID
-				if (currentSubscription) {
-					await supabase
-						.from("subscriptions")
-						.update({ creem_customer_id: creemCustomerId })
-						.eq("id", currentSubscription.id);
-				}
+			// Create checkout session with Creem
+			if (!plan.product_id) {
+				throw new Error("Plan does not have a Creem product ID configured");
 			}
 
-			// For this demo, we'll use a mock product ID
-			// In production, each plan would have a corresponding Creem product
-			const creemProductId = plan.product_id;
-
-			// Create checkout session with proper Creem.io API format
-			const successUrl = `${window.location.origin}/billing/success`;
-			const cancelUrl = `${window.location.origin}/billing`;
-
+			const successUrl = `${window.location.origin}/billing/success?plan_id=${plan.id}&tenant_id=${tenant.id}`;
+			
 			try {
-				// Use proper Creem.io request format based on documentation
 				const checkout = await createCheckoutSession({
-					product_id: creemProductId, // Note: use snake_case as per Creem API
+					product_id: plan.product_id,
 					success_url: successUrl,
-					request_id: `checkout_${tenant.id}_${Date.now()}`, // Optional tracking ID
+					customer: {
+						email: user.email,
+					},
 					metadata: {
 						tenant_id: tenant.id,
 						plan_id: plan.id,
 						user_id: user.id,
-						customer_email: user.email,
+						upgrade_from_trial: trialDaysRemaining !== null ? "true" : "false",
 					},
 				});
 
 				// Redirect to Creem checkout
-				// Based on Creem.io docs, the response contains checkoutUrl or checkout_url
-				const checkoutUrl =
-					(checkout as any)?.checkoutUrl ||
-					(checkout as any)?.checkout_url ||
-					(checkout as any)?.url;
-				if (checkoutUrl) {
-					window.location.href = checkoutUrl;
+				if (checkout?.checkoutUrl) {
+					window.location.href = checkout.checkoutUrl;
 				} else {
 					throw new Error("No checkout URL returned from Creem.io");
 				}
-			} catch (creemError) {
-				// If Creem is not configured or fails, show a demo message
-				console.warn("Creem checkout failed, showing demo:", creemError);
+			} catch (creemError: any) {
+				// Enhanced error handling for Creem integration
+				console.warn("Creem checkout failed:", creemError);
 
-				toast({
-					title: "Demo Mode",
-					description: `This would redirect to Creem.io checkout for ${plan.name} plan ($${(plan.price_cents / 100).toFixed(2)}/${plan.billing_interval}). Configure VITE_CREEM_API_KEY environment variable to enable real payments. Error: ${creemError.message || "Unknown error"}`,
-					variant: "destructive",
-				});
-
-				return;
-
-				// In demo mode, simulate a successful subscription
-				await simulateSuccessfulSubscription(plan, creemCustomerId);
+				if (creemError.message?.includes("API key")) {
+					toast({
+						title: "Configuration Error",
+						description: "Payment system is not properly configured. Please contact support or try again later.",
+						variant: "destructive",
+					});
+				} else if (creemError.message?.includes("product_id")) {
+					toast({
+						title: "Plan Configuration Error", 
+						description: `The ${plan.name} plan is not properly configured for payments. Please contact support.`,
+						variant: "destructive",
+					});
+				} else {
+					toast({
+						title: "Payment System Error",
+						description: `Failed to initialize checkout: ${creemError.message || "Unknown error"}. Please try again or contact support.`,
+						variant: "destructive",
+					});
+				}
 			}
-		} catch (error) {
+		} catch (error: any) {
 			console.error("Subscription error:", error);
 			toast({
 				title: "Error",
-				description: "Failed to start subscription process",
+				description: error.message || "Failed to start subscription process",
 				variant: "destructive",
 			});
 		} finally {
@@ -382,23 +387,39 @@ export default function BillingSubscription() {
 			</div>
 
 			{/* Trial Status Alert */}
-			{tenant?.subscription_status === "trial" && (
+			{(tenant?.subscription_status === "trial" || currentSubscription?.status === "trialing") && (
 				<Alert
 					className={
-						isTrialExpired
+						trialDaysRemaining === 0
 							? "border-red-200 bg-red-50"
+							: trialDaysRemaining && trialDaysRemaining <= 2
+							? "border-yellow-200 bg-yellow-50"
 							: "border-blue-200 bg-blue-50"
 					}
 				>
 					<AlertTriangle
-						className={`h-4 w-4 ${isTrialExpired ? "text-red-600" : "text-blue-600"}`}
+						className={`h-4 w-4 ${
+							trialDaysRemaining === 0
+								? "text-red-600"
+								: trialDaysRemaining && trialDaysRemaining <= 2
+								? "text-yellow-600"
+								: "text-blue-600"
+						}`}
 					/>
 					<AlertDescription
-						className={isTrialExpired ? "text-red-800" : "text-blue-800"}
+						className={
+							trialDaysRemaining === 0
+								? "text-red-800"
+								: trialDaysRemaining && trialDaysRemaining <= 2
+								? "text-yellow-800"
+								: "text-blue-800"
+						}
 					>
-						{isTrialExpired
-							? "Your trial has expired. Please subscribe to continue using the service."
-							: `Your trial expires in ${trialDaysLeft} day${trialDaysLeft !== 1 ? "s" : ""}. Subscribe now to continue using all features.`}
+						{trialDaysRemaining === 0
+							? "Your 7-day free trial has expired. Please subscribe to continue using the service."
+							: trialDaysRemaining === 1
+							? "Your 7-day free trial expires tomorrow. Subscribe now to continue using all features."
+							: `Your 7-day free trial expires in ${trialDaysRemaining} days. Subscribe now to continue using all features.`}
 					</AlertDescription>
 				</Alert>
 			)}

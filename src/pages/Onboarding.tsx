@@ -1,14 +1,13 @@
-/** biome-ignore-all lint/correctness/useUniqueElementIds: <explanation> */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
-
 import {
 	ArrowLeft,
 	ArrowRight,
 	BarChart3,
+	Bed,
 	Building2,
 	Calendar,
 	CheckCircle,
+	CreditCard,
+	Crown,
 	DollarSign,
 	Home,
 	Hotel,
@@ -40,12 +39,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { createCheckoutSession } from "@/lib/creem";
+import { Tables } from "@/integrations/supabase/types";
+
+type Plan = Tables<"plans">;
 
 const STEPS = [
 	{ id: 1, title: "Company Info", description: "Tell us about your business" },
 	{ id: 2, title: "Property Details", description: "Describe your properties" },
 	{ id: 3, title: "Features", description: "Choose your features" },
-	{ id: 4, title: "Complete", description: "You're all set!" },
+	{ id: 4, title: "Select Plan", description: "Choose your subscription plan" },
+	{ id: 5, title: "Complete", description: "You're all set!" },
 ];
 
 const PROPERTY_TYPES = [
@@ -125,6 +129,9 @@ const FEATURES = [
 export default function Onboarding() {
 	const [currentStep, setCurrentStep] = useState(1);
 	const [loading, setLoading] = useState(false);
+	const [plans, setPlans] = useState<Plan[]>([]);
+	const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+	const [processingPayment, setProcessingPayment] = useState(false);
 	const [formData, setFormData] = useState({
 		// Company Info
 		companyName: "",
@@ -166,7 +173,30 @@ export default function Onboarding() {
 				contactName: user.user_metadata?.name || "",
 			}));
 		}
-	}, [user, navigate, formData.email]);
+
+		// Fetch available plans
+		const fetchPlans = async () => {
+			try {
+				const { data: plansData, error } = await supabase
+					.from("plans")
+					.select("*")
+					.eq("is_active", true)
+					.order("price_cents");
+
+				if (error) throw error;
+				setPlans(plansData || []);
+			} catch (error) {
+				console.error("Error fetching plans:", error);
+				toast({
+					title: "Error",
+					description: "Failed to load subscription plans",
+					variant: "destructive",
+				});
+			}
+		};
+
+		fetchPlans();
+	}, [user, navigate, formData.email, toast]);
 
 	const handleNext = () => {
 		if (currentStep < STEPS.length) {
@@ -191,7 +221,102 @@ export default function Onboarding() {
 		}));
 	};
 
-	const handleComplete = async () => {
+	const handlePlanSelect = (planId: string) => {
+		setSelectedPlanId(planId);
+	};
+
+	const handleStartTrial = async () => {
+		if (!selectedPlanId) return;
+
+		try {
+			setProcessingPayment(true);
+
+			// First complete the tenant setup without payment
+			await completeOnboarding();
+
+			// Start 7-day trial
+			const selectedPlan = plans.find(p => p.id === selectedPlanId);
+			if (selectedPlan && user?.email) {
+				const { data: subscription, error } = await supabase
+					.from("subscriptions")
+					.insert({
+						tenant_id: formData.companyName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+						plan_id: selectedPlanId,
+						status: "trialing",
+						trial_start_date: new Date().toISOString(),
+						trial_end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+						current_period_start: new Date().toISOString(),
+						current_period_end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+					})
+					.select()
+					.single();
+
+				if (error) throw error;
+
+				toast({
+					title: "Trial Started!",
+					description: "You now have 7 days to explore all features for free.",
+				});
+
+				// Navigate to next step
+				handleNext();
+			}
+		} catch (error) {
+			console.error("Error starting trial:", error);
+			toast({
+				title: "Error",
+				description: "Failed to start trial. Please try again.",
+				variant: "destructive",
+			});
+		} finally {
+			setProcessingPayment(false);
+		}
+	};
+
+	const handlePayNow = async () => {
+		if (!selectedPlanId) return;
+
+		try {
+			setProcessingPayment(true);
+
+			const selectedPlan = plans.find(p => p.id === selectedPlanId);
+			if (!selectedPlan?.product_id) {
+				throw new Error("Plan does not have a Creem product ID");
+			}
+
+			// Create checkout session with Creem
+			const checkoutSession = await createCheckoutSession({
+				product_id: selectedPlan.product_id,
+				success_url: `${window.location.origin}/billing/success?plan_id=${selectedPlanId}`,
+				customer: {
+					email: user?.email,
+				},
+				metadata: {
+					tenant_id: formData.companyName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+					plan_id: selectedPlanId,
+					onboarding: "true",
+				},
+			});
+
+			// Redirect to Creem checkout
+			if (checkoutSession.checkoutUrl) {
+				window.location.href = checkoutSession.checkoutUrl;
+			} else {
+				throw new Error("No checkout URL received from Creem");
+			}
+		} catch (error) {
+			console.error("Error creating checkout session:", error);
+			toast({
+				title: "Payment Error",
+				description: "Failed to initiate payment. Please try again.",
+				variant: "destructive",
+			});
+		} finally {
+			setProcessingPayment(false);
+		}
+	};
+
+	const completeOnboarding = async () => {
 		try {
 			setLoading(true);
 
@@ -252,8 +377,8 @@ export default function Onboarding() {
 					owner_profile_id: user!.id,
 					onboarding_completed: true,
 					trial_ends_at: new Date(
-						Date.now() + 14 * 24 * 60 * 60 * 1000,
-					).toISOString(), // 14 days trial
+						Date.now() + 7 * 24 * 60 * 60 * 1000,
+					).toISOString(), // 7 days trial
 					subscription_status: "trial",
 				})
 				.select()
@@ -322,10 +447,10 @@ export default function Onboarding() {
 					status: "trialing",
 					current_period_start: new Date().toISOString(),
 					current_period_end: new Date(
-						Date.now() + 14 * 24 * 60 * 60 * 1000,
+						Date.now() + 7 * 24 * 60 * 60 * 1000,
 					).toISOString(),
 					trial_end: new Date(
-						Date.now() + 14 * 24 * 60 * 60 * 1000,
+						Date.now() + 7 * 24 * 60 * 60 * 1000,
 					).toISOString(),
 				});
 
@@ -333,7 +458,7 @@ export default function Onboarding() {
 
 			toast({
 				title: "Welcome aboard! 🎉",
-				description: `Your ${formData.companyName} account has been set up successfully. You're on a 14-day free trial!`,
+				description: `Your ${formData.companyName} account has been set up successfully. You're on a 7-day free trial!`,
 			});
 
 			// Redirect to main app
@@ -351,6 +476,30 @@ export default function Onboarding() {
 		}
 	};
 
+	const handleComplete = async () => {
+		try {
+			setLoading(true);
+
+			// Complete onboarding without payment setup - user already went through trial/payment
+			toast({
+				title: "Welcome aboard! 🎉",
+				description: "Your account has been set up successfully. Let's get started!",
+			});
+
+			// Redirect to main app
+			navigate("/dashboard");
+		} catch (error: any) {
+			console.error("Final completion error:", error);
+			toast({
+				title: "Setup Error",
+				description: "Failed to complete setup. Please try again.",
+				variant: "destructive",
+			});
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	const validateStep = () => {
 		switch (currentStep) {
 			case 1:
@@ -359,6 +508,8 @@ export default function Onboarding() {
 				return formData.propertyType && formData.propertyCount;
 			case 3:
 				return formData.selectedFeatures.length > 0;
+			case 4:
+				return selectedPlanId !== null;
 			default:
 				return true;
 		}
@@ -668,6 +819,107 @@ export default function Onboarding() {
 
 			case 4:
 				return (
+					<div className="space-y-6">
+						<div className="text-center mb-8">
+							<CreditCard className="h-12 w-12 text-primary mx-auto mb-4" />
+							<h2 className="text-lg sm:text-2xl font-bold mb-2">
+								Choose Your Plan
+							</h2>
+							<p className="text-muted-foreground">
+								Start with a 7-day free trial, then choose the plan that fits your needs
+							</p>
+						</div>
+
+						<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+							{plans.map((plan) => (
+								<Card
+									key={plan.id}
+									className={`cursor-pointer transition-all hover:shadow-md ${
+										selectedPlanId === plan.id
+											? "ring-2 ring-primary bg-primary/5"
+											: "hover:border-primary/50"
+									}`}
+									onClick={() => handlePlanSelect(plan.id)}
+								>
+									<CardHeader className="text-center">
+										<div className="flex items-center justify-center gap-2 mb-2">
+											{plan.name.toLowerCase().includes("professional") && (
+												<Crown className="h-5 w-5 text-yellow-500" />
+											)}
+											<CardTitle className="text-lg">{plan.name}</CardTitle>
+										</div>
+										<div className="text-2xl font-bold">
+											${(plan.price_cents / 100).toFixed(0)}
+											<span className="text-sm font-normal text-muted-foreground">
+												/{plan.billing_interval}
+											</span>
+										</div>
+										{plan.description && (
+											<p className="text-sm text-muted-foreground">
+												{plan.description}
+											</p>
+										)}
+									</CardHeader>
+									<CardContent className="space-y-3">
+										{plan.features && (
+											<div className="space-y-2">
+												{(plan.features as string[]).map((feature, index) => (
+													<div key={index} className="flex items-center gap-2 text-sm">
+														<CheckCircle className="h-4 w-4 text-green-500" />
+														{feature}
+													</div>
+												))}
+											</div>
+										)}
+										{plan.max_locations && (
+											<div className="flex items-center gap-2 text-sm">
+												<Building2 className="h-4 w-4 text-blue-500" />
+												Up to {plan.max_locations} locations
+											</div>
+										)}
+										{plan.max_rooms && (
+											<div className="flex items-center gap-2 text-sm">
+												<Bed className="h-4 w-4 text-purple-500" />
+												Up to {plan.max_rooms} rooms
+											</div>
+										)}
+									</CardContent>
+								</Card>
+							))}
+						</div>
+
+						{selectedPlanId && (
+							<div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
+								<Button
+									size="lg"
+									variant="outline"
+									onClick={handleStartTrial}
+									disabled={processingPayment}
+									className="flex items-center gap-2"
+								>
+									{processingPayment ? "Starting..." : "Start 7-Day Free Trial"}
+									<Calendar className="h-4 w-4" />
+								</Button>
+								<Button
+									size="lg"
+									onClick={handlePayNow}
+									disabled={processingPayment}
+									className="flex items-center gap-2"
+								>
+									{processingPayment ? "Processing..." : "Pay Now & Save"}
+									<CreditCard className="h-4 w-4" />
+								</Button>
+							</div>
+						)}
+
+						<div className="text-center text-sm text-muted-foreground">
+							<p>✨ 7-day free trial • Cancel anytime • No hidden fees</p>
+						</div>
+					</div>
+				);
+
+			case 5:
+				return (
 					<div className="text-center space-y-6">
 						<CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
 						<h2 className="text-lg sm:text-3xl font-bold">
@@ -768,7 +1020,7 @@ export default function Onboarding() {
 				</Card>
 
 				{/* Navigation */}
-				{currentStep < 4 && (
+				{currentStep < 5 && (
 					<div className="flex justify-between items-center mt-6">
 						<Button
 							variant="outline"
