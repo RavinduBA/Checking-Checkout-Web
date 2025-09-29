@@ -287,7 +287,9 @@ export default function Onboarding() {
 			// Create checkout session with Creem
 			const checkoutSession = await createCheckoutSession({
 				product_id: selectedPlan.product_id,
-				success_url: `${window.location.origin}/billing/success?plan_id=${selectedPlanId}`,
+				success_url: `${window.location.origin}/billing/success?plan_id=${selectedPlanId}&source=onboarding`,
+				error_url: `${window.location.origin}/billing/error?source=onboarding`,
+				cancel_url: `${window.location.origin}/onboarding`,
 				customer: {
 					email: user?.email,
 				},

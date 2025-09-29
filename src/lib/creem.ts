@@ -17,13 +17,18 @@ if (!VITE_CREEM_API_KEY) {
 }
 
 export const creem = new Creem({
-	serverURL: "https://test-api.creem.io",
+	// Use proxy in development to avoid CORS issues, direct API in production
+	serverURL: import.meta.env.DEV 
+		? `${window.location.origin}/api/creem`
+		: 'https://test-api.creem.io',
 });
 
 // Helper function to create a checkout session using proper Creem.io API format
 export const createCheckoutSession = async (params: {
 	product_id: string;
 	success_url?: string;
+	error_url?: string;
+	cancel_url?: string;
 	request_id?: string;
 	metadata?: Record<string, any>;
 	customer?: {
@@ -61,6 +66,8 @@ export const createCheckoutSession = async (params: {
 				customer: params.customer,
 				metadata: {
 					success_url: params.success_url,
+					error_url: params.error_url,
+					cancel_url: params.cancel_url,
 					request_id: params.request_id,
 					...params.metadata,
 				},

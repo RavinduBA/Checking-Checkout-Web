@@ -24,97 +24,98 @@ export default function BillingSuccess() {
 	const subscriptionId = searchParams.get("subscription_id");
 	const productId = searchParams.get("product_id");
 	const signature = searchParams.get("signature");
+	const source = searchParams.get("source"); // 'onboarding' or 'billing'
 
 	useEffect(() => {
+		const processSuccessfulPayment = async () => {
+			if (processed) return;
+
+			setLoading(true);
+			try {
+				// TODO: Verify the signature with your webhook secret
+				// This is important for security to ensure the callback is genuine
+				// const isValid = await validateWebhookSignature(
+				//   searchParams.toString(),
+				//   signature || '',
+				//   WEBHOOK_SECRET
+				// );
+
+				// For now, we'll skip signature validation in demo mode
+				console.log("Processing successful payment:", {
+					checkoutId,
+					orderId,
+					customerId,
+					subscriptionId,
+					productId,
+				});
+
+				// Update or create subscription record
+				if (subscriptionId && customerId && tenant) {
+					const subscriptionData = {
+						tenant_id: tenant.id,
+						status: "active",
+						creem_customer_id: customerId,
+						creem_subscription_id: subscriptionId,
+						current_period_start: new Date().toISOString(),
+						// Set end date based on plan (you might want to get this from Creem API)
+						current_period_end: new Date(
+							Date.now() + 30 * 24 * 60 * 60 * 1000,
+						).toISOString(), // 30 days
+					};
+
+					// Check if subscription already exists
+					const { data: existingSubscription } = await supabase
+						.from("subscriptions")
+						.select("*")
+						.eq("tenant_id", tenant.id)
+						.single();
+
+					if (existingSubscription) {
+						// Update existing subscription
+						await supabase
+							.from("subscriptions")
+							.update(subscriptionData)
+							.eq("id", existingSubscription.id);
+					} else {
+						// Create new subscription
+						await supabase.from("subscriptions").insert(subscriptionData);
+					}
+
+					// Update tenant subscription status
+					await supabase
+						.from("tenants")
+						.update({
+							subscription_status: "active",
+							trial_ends_at: null, // Clear trial end date
+						})
+						.eq("id", tenant.id);
+
+					toast({
+						title: "Payment Successful!",
+						description: "Your subscription has been activated successfully.",
+					});
+
+					setProcessed(true);
+				}
+			} catch (error) {
+				console.error("Error processing payment:", error);
+				toast({
+					title: "Processing Error",
+					description:
+						"Payment was successful, but there was an issue updating your account. Please contact support.",
+					variant: "destructive",
+				});
+			} finally {
+				setLoading(false);
+			}
+		};
+
 		if (checkoutId && tenant) {
 			processSuccessfulPayment();
 		} else {
 			setLoading(false);
 		}
-	}, [checkoutId, tenant]);
-
-	const processSuccessfulPayment = async () => {
-		if (processed) return;
-
-		setLoading(true);
-		try {
-			// TODO: Verify the signature with your webhook secret
-			// This is important for security to ensure the callback is genuine
-			// const isValid = await validateWebhookSignature(
-			//   searchParams.toString(),
-			//   signature || '',
-			//   WEBHOOK_SECRET
-			// );
-
-			// For now, we'll skip signature validation in demo mode
-			console.log("Processing successful payment:", {
-				checkoutId,
-				orderId,
-				customerId,
-				subscriptionId,
-				productId,
-			});
-
-			// Update or create subscription record
-			if (subscriptionId && customerId && tenant) {
-				const subscriptionData = {
-					tenant_id: tenant.id,
-					status: "active",
-					creem_customer_id: customerId,
-					creem_subscription_id: subscriptionId,
-					current_period_start: new Date().toISOString(),
-					// Set end date based on plan (you might want to get this from Creem API)
-					current_period_end: new Date(
-						Date.now() + 30 * 24 * 60 * 60 * 1000,
-					).toISOString(), // 30 days
-				};
-
-				// Check if subscription already exists
-				const { data: existingSubscription } = await supabase
-					.from("subscriptions")
-					.select("*")
-					.eq("tenant_id", tenant.id)
-					.single();
-
-				if (existingSubscription) {
-					// Update existing subscription
-					await supabase
-						.from("subscriptions")
-						.update(subscriptionData)
-						.eq("id", existingSubscription.id);
-				} else {
-					// Create new subscription
-					await supabase.from("subscriptions").insert(subscriptionData);
-				}
-
-				// Update tenant subscription status
-				await supabase
-					.from("tenants")
-					.update({
-						subscription_status: "active",
-						trial_ends_at: null, // Clear trial end date
-					})
-					.eq("id", tenant.id);
-
-				toast({
-					title: "Payment Successful!",
-					description: "Your subscription has been activated successfully.",
-				});
-
-				setProcessed(true);
-			}
-		} catch (error) {
-			console.error("Error processing payment:", error);
-			toast({
-				title: "Processing Error",
-				description:
-					"Payment was successful, but there was an issue updating your account. Please contact support.",
-				variant: "destructive",
-			});
-		} finally {
-			setLoading(false);
-		}
-	};
+	}, [checkoutId, tenant, processed, orderId, customerId, subscriptionId, productId, toast]);
 
 	if (loading) {
 		return (
@@ -179,17 +180,35 @@ export default function BillingSuccess() {
 					)}
 
 					<div className="space-y-3">
-						<Button className="w-full" onClick={() => navigate("/dashboard")}>
-							Go to Dashboard
-							<ArrowRight className="size-4 ml-2" />
-						</Button>
-						<Button
-							variant="outline"
-							className="w-full"
-							onClick={() => navigate("/billing")}
-						>
-							View Billing Details
-						</Button>
+						{source === "onboarding" ? (
+							<>
+								<Button className="w-full" onClick={() => navigate("/onboarding")}>
+									Complete Setup
+									<ArrowRight className="size-4 ml-2" />
+								</Button>
+								<Button
+									variant="outline"
+									className="w-full"
+									onClick={() => navigate("/dashboard")}
+								>
+									Skip to Dashboard
+								</Button>
+							</>
+						) : (
+							<>
+								<Button className="w-full" onClick={() => navigate("/dashboard")}>
+									Go to Dashboard
+									<ArrowRight className="size-4 ml-2" />
+								</Button>
+								<Button
+									variant="outline"
+									className="w-full"
+									onClick={() => navigate("/billing")}
+								>
+									View Billing Details
+								</Button>
+							</>
+						)}
 					</div>
 
 					<p className="text-xs text-muted-foreground">

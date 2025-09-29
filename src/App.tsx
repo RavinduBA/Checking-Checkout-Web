@@ -17,6 +17,7 @@ import Accounts from "./pages/Accounts";
 import Auth from "./pages/Auth";
 import BillingSubscription from "./pages/BillingSubscription";
 import BillingSuccess from "./pages/BillingSuccess";
+import BillingError from "./pages/BillingError";
 import BookingForm from "./pages/BookingForm";
 import Dashboard from "./pages/Dashboard";
 import EnhancedCalendar from "./pages/EnhancedCalendar";
@@ -380,6 +381,14 @@ const App = () => (
 								element={
 									<ProtectedRoute>
 										<BillingSuccess />
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								path="/billing/error"
+								element={
+									<ProtectedRoute>
+										<BillingError />
 									</ProtectedRoute>
 								}
 							/>

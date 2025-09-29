@@ -149,12 +149,14 @@ export default function BillingSubscription() {
 				throw new Error("Plan does not have a Creem product ID configured");
 			}
 
-			const successUrl = `${window.location.origin}/billing/success?plan_id=${plan.id}&tenant_id=${tenant.id}`;
+			const successUrl = `${window.location.origin}/billing/success?plan_id=${plan.id}&tenant_id=${tenant.id}&source=billing`;
 			
 			try {
 				const checkout = await createCheckoutSession({
 					product_id: plan.product_id,
 					success_url: successUrl,
+					error_url: `${window.location.origin}/billing/error?source=billing`,
+					cancel_url: `${window.location.origin}/billing`,
 					customer: {
 						email: user.email,
 					},
