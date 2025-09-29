@@ -1,78 +1,91 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Edit, Printer, CreditCard, Calendar, MapPin, User, Clock, PenTool } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { SectionLoader } from "@/components/ui/loading-spinner";
-import { Separator } from "@/components/ui/separator";
-import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
-import { useToast } from "@/hooks/use-toast";
+import {
+	ArrowLeft,
+	Calendar,
+	Clock,
+	CreditCard,
+	Edit,
+	MapPin,
+	PenTool,
+	Printer,
+	User,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router";
 import { OTPVerification } from "@/components/OTPVerification";
 import { SignatureCapture } from "@/components/SignatureCapture";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SectionLoader } from "@/components/ui/loading-spinner";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
 
 type Reservation = Tables<"reservations"> & {
-  locations: Tables<"locations">;
-  rooms: Tables<"rooms">;
+	locations: Tables<"locations">;
+	rooms: Tables<"rooms">;
 };
 
 export default function ReservationDetails() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [reservation, setReservation] = useState<Reservation | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isOTPVerified, setIsOTPVerified] = useState(false);
-  const [guestSignature, setGuestSignature] = useState("");
+	const { id } = useParams<{ id: string }>();
+	const navigate = useNavigate();
+	const { toast } = useToast();
+	const [reservation, setReservation] = useState<Reservation | null>(null);
+	const [loading, setLoading] = useState(true);
+	const [isOTPVerified, setIsOTPVerified] = useState(false);
+	const [guestSignature, setGuestSignature] = useState("");
 
-  useEffect(() => {
-    if (id) {
-      fetchReservation();
-    }
-  }, [id]);
+	useEffect(() => {
+		if (id) {
+			fetchReservation();
+		}
+	}, [id]);
 
-  const fetchReservation = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("reservations")
-        .select(`
+	const fetchReservation = async () => {
+		try {
+			const { data, error } = await supabase
+				.from("reservations")
+				.select(`
           *,
           locations (*),
           rooms (*)
         `)
-        .eq("id", id)
-        .single();
+				.eq("id", id)
+				.single();
 
-      if (error) throw error;
-      setReservation(data);
-    } catch (error) {
-      console.error("Error fetching reservation:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load reservation details",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+			if (error) throw error;
+			setReservation(data);
+		} catch (error) {
+			console.error("Error fetching reservation:", error);
+			toast({
+				title: "Error",
+				description: "Failed to load reservation details",
+				variant: "destructive",
+			});
+		} finally {
+			setLoading(false);
+		}
+	};
 
-  const getStatusColor = (status: string) => {
-    const colors = {
-      confirmed: "bg-emerald-100 text-emerald-800 border-emerald-200",
-      tentative: "bg-amber-100 text-amber-800 border-amber-200",
-      pending: "bg-orange-100 text-orange-800 border-border",
-      checked_in: "bg-blue-100 text-blue-800 border-blue-200",
-      checked_out: "bg-gray-100 text-gray-800 border-gray-200",
-      cancelled: "bg-red-100 text-red-800 border-red-200"
-    };
-    return colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800 border-gray-200";
-  };
+	const getStatusColor = (status: string) => {
+		const colors = {
+			confirmed: "bg-emerald-100 text-emerald-800 border-emerald-200",
+			tentative: "bg-amber-100 text-amber-800 border-amber-200",
+			pending: "bg-orange-100 text-orange-800 border-border",
+			checked_in: "bg-blue-100 text-blue-800 border-blue-200",
+			checked_out: "bg-gray-100 text-gray-800 border-gray-200",
+			cancelled: "bg-red-100 text-red-800 border-red-200",
+		};
+		return (
+			colors[status as keyof typeof colors] ||
+			"bg-gray-100 text-gray-800 border-gray-200"
+		);
+	};
 
-  const handlePrint = () => {
-    // Custom print styles for better formatting
-    const printStyles = `
+	const handlePrint = () => {
+		// Custom print styles for better formatting
+		const printStyles = `
       <style>
         @media print {
           body * { visibility: hidden; }
@@ -84,277 +97,334 @@ export default function ReservationDetails() {
       </style>
     `;
 
-    const head = document.head.innerHTML;
-    document.head.innerHTML = head + printStyles;
+		const head = document.head.innerHTML;
+		document.head.innerHTML = head + printStyles;
 
-    window.print();
-  };
+		window.print();
+	};
 
-  const handleOTPVerified = () => {
-    setIsOTPVerified(true);
-    toast({
-      title: "Verification Successful",
-      description: "You can now edit this reservation.",
-    });
-  };
+	const handleOTPVerified = () => {
+		setIsOTPVerified(true);
+		toast({
+			title: "Verification Successful",
+			description: "You can now edit this reservation.",
+		});
+	};
 
-  if (loading) {
-    return <SectionLoader className="min-h-64" />;
-  }
+	if (loading) {
+		return <SectionLoader className="min-h-64" />;
+	}
 
-  if (!reservation) {
-    return (
-      <div className="max-w-4xl mx-auto p-4 text-center">
-        <h1 className="text-lg sm:text-2xl font-bold mb-4">Reservation Not Found</h1>
-        <Button asChild>
-          <Link to="/reservations">Back to Reservations</Link>
-        </Button>
-      </div>
-    );
-  }
+	if (!reservation) {
+		return (
+			<div className="max-w-4xl mx-auto p-4 text-center">
+				<h1 className="text-lg sm:text-2xl font-bold mb-4">
+					Reservation Not Found
+				</h1>
+				<Button asChild>
+					<Link to="/reservations">Back to Reservations</Link>
+				</Button>
+			</div>
+		);
+	}
 
-  return (
-    <div className="w-full mx-auto px-0 sm:px-4 space-y-6 print-area">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start px-4 sm:px-0 sm:items-center gap-4 no-print">
-        <div className="flex flex-1 items-center gap-4">
-          <div className="flex-1">
-            <h1 className="text-lg sm:text-2xl font-bold text-foreground">Reservation Details</h1>
-            <p className="text-muted-foreground">#{reservation.reservation_number}</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handlePrint}>
-            <Printer className="size-4 mr-2" />
-            Print
-          </Button>
-          <Button onClick={() => navigate(`/reservations?reservation=${reservation.id}`)}>
-            <CreditCard className="size-4 mr-2" />
-            Payment
-          </Button>
-          {isOTPVerified ? (
-            <Button variant="outline" asChild>
-              <Link to={`/reservations/edit/${reservation.id}`}>
-                <Edit className="size-4 mr-2" />
-                Edit
-              </Link>
-            </Button>
-          ) : (
-            <OTPVerification
-              onVerified={handleOTPVerified}
-              triggerComponent={
-                <Button variant="outline">
-                  <Edit className="size-4 mr-2" />
-                  Edit
-                </Button>
-              }
-            />
-          )}
-        </div>
-      </div>
+	return (
+		<div className="w-full mx-auto px-0 sm:px-4 space-y-6 print-area">
+			{/* Header */}
+			<div className="flex flex-col sm:flex-row items-start px-4 sm:px-0 sm:items-center gap-4 no-print">
+				<div className="flex flex-1 items-center gap-4">
+					<div className="flex-1">
+						<h1 className="text-lg sm:text-2xl font-bold text-foreground">
+							Reservation Details
+						</h1>
+						<p className="text-muted-foreground">
+							#{reservation.reservation_number}
+						</p>
+					</div>
+				</div>
+				<div className="flex gap-2">
+					<Button variant="outline" onClick={handlePrint}>
+						<Printer className="size-4 mr-2" />
+						Print
+					</Button>
+					<Button
+						onClick={() =>
+							navigate(`/reservations?reservation=${reservation.id}`)
+						}
+					>
+						<CreditCard className="size-4 mr-2" />
+						Payment
+					</Button>
+					{isOTPVerified ? (
+						<Button variant="outline" asChild>
+							<Link to={`/reservations/edit/${reservation.id}`}>
+								<Edit className="size-4 mr-2" />
+								Edit
+							</Link>
+						</Button>
+					) : (
+						<OTPVerification
+							onVerified={handleOTPVerified}
+							triggerComponent={
+								<Button variant="outline">
+									<Edit className="size-4 mr-2" />
+									Edit
+								</Button>
+							}
+						/>
+					)}
+				</div>
+			</div>
 
-      {/* Print Header - Only visible when printing */}
-      <div className="hidden print:block text-center mb-6">
-        <h1 className="text-lg sm:text-2xl font-bold">Reservation Details</h1>
-        <p className="text-lg">#{reservation.reservation_number}</p>
-        <p className="text-sm text-muted-foreground">Generated on {new Date().toLocaleString()}</p>
-      </div>
+			{/* Print Header - Only visible when printing */}
+			<div className="hidden print:block text-center mb-6">
+				<h1 className="text-lg sm:text-2xl font-bold">Reservation Details</h1>
+				<p className="text-lg">#{reservation.reservation_number}</p>
+				<p className="text-sm text-muted-foreground">
+					Generated on {new Date().toLocaleString()}
+				</p>
+			</div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-4 pb-20 sm:px-0">
-        {/* Guest Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="size-5" />
-              Guest Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Name</label>
-              <p className="font-semibold">{reservation.guest_name}</p>
-            </div>
-            {reservation.guest_email && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Email</label>
-                <p>{reservation.guest_email}</p>
-              </div>
-            )}
-            {reservation.guest_phone && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Phone</label>
-                <p>{reservation.guest_phone}</p>
-              </div>
-            )}
-            {reservation.guest_address && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Address</label>
-                <p>{reservation.guest_address}</p>
-              </div>
-            )}
-            {reservation.guest_nationality && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Nationality</label>
-                <p>{reservation.guest_nationality}</p>
-              </div>
-            )}
-            <div className="flex gap-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Adults</label>
-                <p className="font-semibold">{reservation.adults}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Children</label>
-                <p className="font-semibold">{reservation.children}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-4 pb-20 sm:px-0">
+				{/* Guest Information */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<User className="size-5" />
+							Guest Information
+						</CardTitle>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<div>
+							<label className="text-sm font-medium text-muted-foreground">
+								Name
+							</label>
+							<p className="font-semibold">{reservation.guest_name}</p>
+						</div>
+						{reservation.guest_email && (
+							<div>
+								<label className="text-sm font-medium text-muted-foreground">
+									Email
+								</label>
+								<p>{reservation.guest_email}</p>
+							</div>
+						)}
+						{reservation.guest_phone && (
+							<div>
+								<label className="text-sm font-medium text-muted-foreground">
+									Phone
+								</label>
+								<p>{reservation.guest_phone}</p>
+							</div>
+						)}
+						{reservation.guest_address && (
+							<div>
+								<label className="text-sm font-medium text-muted-foreground">
+									Address
+								</label>
+								<p>{reservation.guest_address}</p>
+							</div>
+						)}
+						{reservation.guest_nationality && (
+							<div>
+								<label className="text-sm font-medium text-muted-foreground">
+									Nationality
+								</label>
+								<p>{reservation.guest_nationality}</p>
+							</div>
+						)}
+						<div className="flex gap-4">
+							<div>
+								<label className="text-sm font-medium text-muted-foreground">
+									Adults
+								</label>
+								<p className="font-semibold">{reservation.adults}</p>
+							</div>
+							<div>
+								<label className="text-sm font-medium text-muted-foreground">
+									Children
+								</label>
+								<p className="font-semibold">{reservation.children}</p>
+							</div>
+						</div>
+					</CardContent>
+				</Card>
 
-        {/* Reservation Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="size-5" />
-              Reservation Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Status</label>
-              <div className="mt-1">
-                <Badge className={getStatusColor(reservation.status)}>
-                  {reservation.status.toUpperCase()}
-                </Badge>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Check-in</label>
-                <p className="font-semibold">{new Date(reservation.check_in_date).toLocaleDateString()}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Check-out</label>
-                <p className="font-semibold">{new Date(reservation.check_out_date).toLocaleDateString()}</p>
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Nights</label>
-              <p className="font-semibold">{reservation.nights}</p>
-            </div>
-            {reservation.arrival_time && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Arrival Time</label>
-                <p>{reservation.arrival_time}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+				{/* Reservation Details */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<Calendar className="size-5" />
+							Reservation Details
+						</CardTitle>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<div>
+							<label className="text-sm font-medium text-muted-foreground">
+								Status
+							</label>
+							<div className="mt-1">
+								<Badge className={getStatusColor(reservation.status)}>
+									{reservation.status.toUpperCase()}
+								</Badge>
+							</div>
+						</div>
+						<div className="grid grid-cols-2 gap-4">
+							<div>
+								<label className="text-sm font-medium text-muted-foreground">
+									Check-in
+								</label>
+								<p className="font-semibold">
+									{new Date(reservation.check_in_date).toLocaleDateString()}
+								</p>
+							</div>
+							<div>
+								<label className="text-sm font-medium text-muted-foreground">
+									Check-out
+								</label>
+								<p className="font-semibold">
+									{new Date(reservation.check_out_date).toLocaleDateString()}
+								</p>
+							</div>
+						</div>
+						<div>
+							<label className="text-sm font-medium text-muted-foreground">
+								Nights
+							</label>
+							<p className="font-semibold">{reservation.nights}</p>
+						</div>
+						{reservation.arrival_time && (
+							<div>
+								<label className="text-sm font-medium text-muted-foreground">
+									Arrival Time
+								</label>
+								<p>{reservation.arrival_time}</p>
+							</div>
+						)}
+					</CardContent>
+				</Card>
 
-        {/* Location & Room */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="size-5" />
-              Location & Room
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Location</label>
-              <p className="font-semibold">{reservation.locations?.name}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Room</label>
-              <p className="font-semibold">{reservation.rooms?.room_number} - {reservation.rooms?.room_type}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Rate per Night</label>
-              <p className="font-semibold">LKR {reservation.room_rate.toLocaleString()}</p>
-            </div>
-          </CardContent>
-        </Card>
+				{/* Location & Room */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<MapPin className="size-5" />
+							Location & Room
+						</CardTitle>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<div>
+							<label className="text-sm font-medium text-muted-foreground">
+								Location
+							</label>
+							<p className="font-semibold">{reservation.locations?.name}</p>
+						</div>
+						<div>
+							<label className="text-sm font-medium text-muted-foreground">
+								Room
+							</label>
+							<p className="font-semibold">
+								{reservation.rooms?.room_number} -{" "}
+								{reservation.rooms?.room_type}
+							</p>
+						</div>
+						<div>
+							<label className="text-sm font-medium text-muted-foreground">
+								Rate per Night
+							</label>
+							<p className="font-semibold">
+								LKR {reservation.room_rate.toLocaleString()}
+							</p>
+						</div>
+					</CardContent>
+				</Card>
 
-        {/* Payment Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="size-5" />
-              Payment Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Total Amount</span>
-              <span className="font-semibold">LKR {reservation.total_amount.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Advance Paid</span>
-              <span className="font-semibold text-emerald-600">LKR {reservation.advance_amount?.toLocaleString() || '0'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Total Paid</span>
-              <span className="font-semibold text-emerald-600">LKR {reservation.paid_amount?.toLocaleString() || '0'}</span>
-            </div>
-            <Separator />
-            <div className="flex justify-between text-lg">
-              <span className="font-medium">Balance</span>
-              <span className="font-bold text-red-600">LKR {reservation.balance_amount?.toLocaleString() || '0'}</span>
-            </div>
-          </CardContent>
-        </Card>
+				{/* Payment Information */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<CreditCard className="size-5" />
+							Payment Information
+						</CardTitle>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<div className="flex justify-between">
+							<span className="text-muted-foreground">Total Amount</span>
+							<span className="font-semibold">
+								LKR {reservation.total_amount.toLocaleString()}
+							</span>
+						</div>
+						<div className="flex justify-between">
+							<span className="text-muted-foreground">Advance Paid</span>
+							<span className="font-semibold text-emerald-600">
+								LKR {reservation.advance_amount?.toLocaleString() || "0"}
+							</span>
+						</div>
+						<div className="flex justify-between">
+							<span className="text-muted-foreground">Total Paid</span>
+							<span className="font-semibold text-emerald-600">
+								LKR {reservation.paid_amount?.toLocaleString() || "0"}
+							</span>
+						</div>
+						<Separator />
+						<div className="flex justify-between text-lg">
+							<span className="font-medium">Balance</span>
+							<span className="font-bold text-red-600">
+								LKR {reservation.balance_amount?.toLocaleString() || "0"}
+							</span>
+						</div>
+					</CardContent>
+				</Card>
 
-        {/* Special Requests */}
-        {reservation.special_requests && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Special Requests</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>{reservation.special_requests}</p>
-            </CardContent>
-          </Card>
-        )}
+				{/* Special Requests */}
+				{reservation.special_requests && (
+					<Card>
+						<CardHeader>
+							<CardTitle>Special Requests</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<p>{reservation.special_requests}</p>
+						</CardContent>
+					</Card>
+				)}
 
-        {/* Guest Signature */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <PenTool className="size-5" />
-              Guest Signature
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <SignatureCapture
-              signature={guestSignature}
-              onSignatureChange={setGuestSignature}
-              title="Update Guest Signature"
-            />
-          </CardContent>
-        </Card>
+				{/* Guest Signature */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<PenTool className="size-5" />
+							Guest Signature
+						</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<SignatureCapture
+							signature={guestSignature}
+							onSignatureChange={setGuestSignature}
+							title="Update Guest Signature"
+						/>
+					</CardContent>
+				</Card>
 
-        {/* System Information */}
-        <Card className="no-print">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="size-5" />
-              System Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Created</span>
-              <span>{new Date(reservation.created_at).toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Last Updated</span>
-              <span>{new Date(reservation.updated_at).toLocaleString()}</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-
-    </div>
-  );
+				{/* System Information */}
+				<Card className="no-print">
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<Clock className="size-5" />
+							System Information
+						</CardTitle>
+					</CardHeader>
+					<CardContent className="space-y-2">
+						<div className="flex justify-between text-sm">
+							<span className="text-muted-foreground">Created</span>
+							<span>{new Date(reservation.created_at).toLocaleString()}</span>
+						</div>
+						<div className="flex justify-between text-sm">
+							<span className="text-muted-foreground">Last Updated</span>
+							<span>{new Date(reservation.updated_at).toLocaleString()}</span>
+						</div>
+					</CardContent>
+				</Card>
+			</div>
+		</div>
+	);
 }

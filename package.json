@@ -7,11 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
-    "lint": "eslint .",
+    "lint": "biome lint --write",
+    "format": "biome format --write",
+    "check": "biome check --write",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@base-ui-components/react": "^1.0.0-beta.3",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
@@ -43,7 +44,7 @@
     "@supabase/supabase-js": "^2.56.0",
     "@tanstack/react-query": "^5.56.2",
     "@types/react-signature-canvas": "^1.0.7",
-    "caniuse-lite": "^1.0.30001743",
+    "caniuse-lite": "^1.0.30001745",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
@@ -61,7 +62,7 @@
     "react-hook-form": "^7.53.0",
     "react-phone-number-input": "^3.4.12",
     "react-resizable-panels": "^2.1.3",
-    "react-router-dom": "^6.26.2",
+    "react-router": "^7.9.3",
     "react-signature-canvas": "^1.1.0-alpha.2",
     "react-to-print": "^3.1.1",
     "recharts": "^2.12.7",
@@ -70,26 +71,20 @@
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
+    "vite-plugin-vercel": "^9.0.7",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@eslint/js": "^9.9.0",
+    "@biomejs/biome": "2.2.4",
     "@tailwindcss/typography": "^0.5.15",
     "@types/node": "^22.5.5",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "autoprefixer": "^10.4.20",
-    "eslint": "^9.9.0",
-    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
-    "eslint-plugin-react-refresh": "^0.4.9",
-    "globals": "^15.9.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.11",
     "typescript": "^5.5.3",
-    "typescript-eslint": "^8.0.1",
-    "vite": "^5.4.1",
-    "vite-plugin-vercel": "^9.0.7"
-  },
-  "packageManager": "pnpm@10.17.1+sha512.17c560fca4867ae9473a3899ad84a88334914f379be46d455cbf92e5cf4b39d34985d452d2583baf19967fa76cb5c17bc9e245529d0b98745721aa7200ecaf7a"
+    "vite": "^5.4.1"
+  }
 }

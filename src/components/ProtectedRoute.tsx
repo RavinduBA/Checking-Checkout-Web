@@ -1,22 +1,22 @@
-import { useAuth } from "@/context/AuthContext";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router";
 import { FullScreenLoader } from "@/components/ui/loading-spinner";
+import { useAuth } from "@/context/AuthContext";
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
+	children: React.ReactNode;
 }
 
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, loading } = useAuth();
-  const location = useLocation();
+	const { user, loading } = useAuth();
+	const location = useLocation();
 
-  if (loading) {
-    return <FullScreenLoader />;
-  }
+	if (loading) {
+		return <FullScreenLoader />;
+	}
 
-  if (!user) {
-    return <Navigate to="/" state={{ from: location }} replace />;
-  }
+	if (!user) {
+		return <Navigate to="/" state={{ from: location }} replace />;
+	}
 
-  return <>{children}</>;
+	return <>{children}</>;
 };

@@ -7,57 +7,57 @@ All colors MUST be HSL.
 */
 
 @layer base {
-  :root {
-    /* Villa-inspired color palette */
-    --background: hsl(0, 0%, 100%);
-    --foreground: hsl(0, 0%, 4%);
-    --card: hsl(0, 0%, 100%);
-    --card-foreground: hsl(0, 0%, 4%);
-    --popover: hsl(0, 0%, 100%);
-    --popover-foreground: hsl(0, 0%, 4%);
-    --primary: hsl(0, 0%, 9%);
-    --primary-foreground: hsl(0, 0%, 98%);
-    --secondary: hsl(0, 0%, 96%);
-    --secondary-foreground: hsl(0, 0%, 9%);
-    --muted: hsl(0, 0%, 96%);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: hsl(0, 0%, 96%);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: hsl(357, 100%, 45%);
-    --destructive-foreground: hsl(0, 0%, 100%);
-    --border: hsl(0, 0%, 90%);
-    --input: hsl(0, 0%, 90%);
-    --ring: hsl(0, 0%, 63%);
+	:root {
+		/* Villa-inspired color palette */
+		--background: hsl(0, 0%, 100%);
+		--foreground: hsl(0, 0%, 4%);
+		--card: hsl(0, 0%, 100%);
+		--card-foreground: hsl(0, 0%, 4%);
+		--popover: hsl(0, 0%, 100%);
+		--popover-foreground: hsl(0, 0%, 4%);
+		--primary: hsl(0, 0%, 9%);
+		--primary-foreground: hsl(0, 0%, 98%);
+		--secondary: hsl(0, 0%, 96%);
+		--secondary-foreground: hsl(0, 0%, 9%);
+		--muted: hsl(0, 0%, 96%);
+		--muted-foreground: oklch(0.556 0 0);
+		--accent: hsl(0, 0%, 96%);
+		--accent-foreground: oklch(0.205 0 0);
+		--destructive: hsl(357, 100%, 45%);
+		--destructive-foreground: hsl(0, 0%, 100%);
+		--border: hsl(0, 0%, 90%);
+		--input: hsl(0, 0%, 90%);
+		--ring: hsl(0, 0%, 63%);
 
-    /* Success and financial colors */
-    --success: hsl(142, 76%, 36%);
-    --success-foreground: hsl(0 0% 98%);
-    --warning: hsl(45 93% 47%);
-    --warning-foreground: hsl(25 25% 15%);
+		/* Success and financial colors */
+		--success: hsl(142, 76%, 36%);
+		--success-foreground: hsl(0 0% 98%);
+		--warning: hsl(45 93% 47%);
+		--warning-foreground: hsl(25 25% 15%);
 
-    --radius: 0.5rem;
+		--radius: 0.5rem;
 
-    --sidebar-background: hsl(0 0% 98%);
+		--sidebar-background: hsl(0 0% 98%);
 
-    --sidebar-foreground: hsl(240 5.3% 26.1%);
+		--sidebar-foreground: hsl(240 5.3% 26.1%);
 
-    --sidebar-primary: hsl(240 5.9% 10%);
+		--sidebar-primary: hsl(240 5.9% 10%);
 
-    --sidebar-primary-foreground: hsl(0 0% 98%);
+		--sidebar-primary-foreground: hsl(0 0% 98%);
 
-    --sidebar-accent: hsl(240 4.8% 95.9%);
-    --sidebar-accent-foreground: hsl(240 5.9% 10%);
-    --sidebar-border: hsl(220 13% 91%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-  }
+		--sidebar-accent: hsl(240 4.8% 95.9%);
+		--sidebar-accent-foreground: hsl(240 5.9% 10%);
+		--sidebar-border: hsl(220 13% 91%);
+		--sidebar-ring: hsl(217.2 91.2% 59.8%);
+	}
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+	* {
+		@apply border-border;
+	}
 
-  body {
-    @apply bg-background text-foreground;
-  }
+	body {
+		@apply bg-background text-foreground;
+	}
 }

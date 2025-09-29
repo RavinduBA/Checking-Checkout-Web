@@ -1,5 +1,5 @@
-import { Resend } from 'resend';
-import { supabase } from '@/integrations/supabase/client';
+import { Resend } from "resend";
+import { supabase } from "@/integrations/supabase/client";
 
 // Initialize Resend client with API key from environment
 const resend = new Resend(import.meta.env.VITE_RESEND_API_KEY);
@@ -9,44 +9,50 @@ export { resend };
 // Utility function to send credentials email
 // For production, this should be moved to a backend/Edge Function to avoid CORS issues
 export const sendCredentialsEmail = async (
-  to: string,
-  email: string,
-  password: string,
-  loginUrl: string,
-  isResend: boolean = false
+	to: string,
+	email: string,
+	password: string,
+	loginUrl: string,
+	isResend: boolean = false,
 ) => {
-  // First try to use Edge Function if available, fallback to direct API call
-  try {
-    const { data, error } = await supabase.functions.invoke('send-invitation-email', {
-      body: {
-        to,
-        email,
-        password,
-        loginUrl,
-        isResend,
-      },
-    });
+	// First try to use Edge Function if available, fallback to direct API call
+	try {
+		const { data, error } = await supabase.functions.invoke(
+			"send-invitation-email",
+			{
+				body: {
+					to,
+					email,
+					password,
+					loginUrl,
+					isResend,
+				},
+			},
+		);
 
-    if (!error && data?.success) {
-      console.log('📧 Email sent successfully via Edge Function:', { id: data.emailId, to });
-      return { success: true, emailId: data.emailId };
-    }
-    
-    // If Edge Function fails, log and continue to fallback
-    console.log('Edge Function not available or failed, using direct API call');
-  } catch (edgeFunctionError) {
-    console.log('Edge Function not available, using direct API call');
-  }
+		if (!error && data?.success) {
+			console.log("📧 Email sent successfully via Edge Function:", {
+				id: data.emailId,
+				to,
+			});
+			return { success: true, emailId: data.emailId };
+		}
 
-  // Fallback to direct Resend API call (development only)
-  const subject = isResend 
-    ? "Your Updated Login Credentials - CheckingCheckout"
-    : "Welcome to CheckingCheckout - Your Login Credentials";
-  
-  const textContent = `
+		// If Edge Function fails, log and continue to fallback
+		console.log("Edge Function not available or failed, using direct API call");
+	} catch (edgeFunctionError) {
+		console.log("Edge Function not available, using direct API call");
+	}
+
+	// Fallback to direct Resend API call (development only)
+	const subject = isResend
+		? "Your Updated Login Credentials - CheckingCheckout"
+		: "Welcome to CheckingCheckout - Your Login Credentials";
+
+	const textContent = `
 Hello,
 
-${isResend ? 'Your login credentials have been updated' : 'You\'ve been invited to join CheckingCheckout'}. Here are your login details:
+${isResend ? "Your login credentials have been updated" : "You've been invited to join CheckingCheckout"}. Here are your login details:
 
 Email: ${email}
 Temporary Password: ${password}
@@ -61,7 +67,7 @@ CheckingCheckout Team
 This email contains sensitive login information. Please keep it secure and delete it after changing your password.
   `.trim();
 
-  const htmlContent = `
+	const htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -73,13 +79,13 @@ This email contains sensitive login information. Please keep it secure and delet
     <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
         <h1 style="color: #2563eb; margin: 0 0 10px 0;">CheckingCheckout</h1>
         <h2 style="margin: 0; font-size: 18px; color: #374151;">
-            ${isResend ? 'Your Updated Login Credentials' : 'Welcome! Your Login Credentials'}
+            ${isResend ? "Your Updated Login Credentials" : "Welcome! Your Login Credentials"}
         </h2>
     </div>
     
     <p>Hello,</p>
     
-    <p>${isResend ? 'Your login credentials have been updated' : 'You\'ve been invited to join CheckingCheckout'}. Here are your login details:</p>
+    <p>${isResend ? "Your login credentials have been updated" : "You've been invited to join CheckingCheckout"}. Here are your login details:</p>
     
     <div style="background-color: #f3f4f6; padding: 20px; border-radius: 6px; margin: 20px 0;">
         <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
@@ -102,26 +108,28 @@ This email contains sensitive login information. Please keep it secure and delet
 </html>
   `.trim();
 
-  try {
-    console.warn('⚠️  Using direct Resend API call from frontend - this may cause CORS issues in production');
-    
-    const { data, error } = await resend.emails.send({
-      from: 'CheckingCheckout <onboarding@resend.dev>',
-      to: [to],
-      subject,
-      html: htmlContent,
-      text: textContent,
-    });
+	try {
+		console.warn(
+			"⚠️  Using direct Resend API call from frontend - this may cause CORS issues in production",
+		);
 
-    if (error) {
-      console.error('Resend email error:', error);
-      return { success: false, error: error.message };
-    }
+		const { data, error } = await resend.emails.send({
+			from: "CheckingCheckout <onboarding@resend.dev>",
+			to: [to],
+			subject,
+			html: htmlContent,
+			text: textContent,
+		});
 
-    console.log('📧 Email sent successfully:', { id: data?.id, to });
-    return { success: true, emailId: data?.id };
-  } catch (error: any) {
-    console.error('Resend email error:', error);
-    return { success: false, error: error.message };
-  }
+		if (error) {
+			console.error("Resend email error:", error);
+			return { success: false, error: error.message };
+		}
+
+		console.log("📧 Email sent successfully:", { id: data?.id, to });
+		return { success: true, emailId: data?.id };
+	} catch (error: any) {
+		console.error("Resend email error:", error);
+		return { success: false, error: error.message };
+	}
 };

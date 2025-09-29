@@ -1,425 +1,539 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { format } from "date-fns";
+import { AlertCircle, ArrowLeft, Calendar, Minus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router";
+import { ExpenseShortcuts } from "@/components/ExpenseShortcuts";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionLoader } from "@/components/ui/loading-spinner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import { format } from "date-fns";
-import { ArrowLeft, Minus, Calendar, AlertCircle } from "lucide-react";
-import { Link } from "react-router-dom";
-import { ExpenseShortcuts } from "@/components/ExpenseShortcuts";
-import { usePermissions } from "@/hooks/usePermissions";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type Location = Tables<"locations">;
 type Account = Tables<"accounts">;
 type ExpenseType = Tables<"expense_types">;
 type Expense = Tables<"expenses"> & {
-  locations?: Location;
-  accounts?: Account;
+	locations?: Location;
+	accounts?: Account;
 };
 
 export default function Expense() {
-  const [formData, setFormData] = useState({
-    mainCategory: "",
-    subCategory: "",
-    amount: "",
-    accountId: "",
-    locationId: "",
-    date: format(new Date(), "yyyy-MM-dd"),
-    note: "",
-  });
+	const [formData, setFormData] = useState({
+		mainCategory: "",
+		subCategory: "",
+		amount: "",
+		accountId: "",
+		locationId: "",
+		date: format(new Date(), "yyyy-MM-dd"),
+		note: "",
+	});
 
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);
-  const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-  const { hasAnyPermission, hasPermission } = usePermissions();
+	const [locations, setLocations] = useState<Location[]>([]);
+	const [accounts, setAccounts] = useState<Account[]>([]);
+	const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);
+	const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
+	const [loading, setLoading] = useState(true);
+	const { toast } = useToast();
+	const { hasAnyPermission, hasPermission } = usePermissions();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+	useEffect(() => {
+		fetchData();
+	}, []);
 
-  const fetchData = async () => {
-    try {
-      const [locationsData, accountsData, expenseTypesData, recentExpensesData] = await Promise.all([
-        supabase.from("locations").select("*").eq("is_active", true),
-        supabase.from("accounts").select("*"),
-        supabase.from("expense_types").select("*").order("main_type"),
-        supabase.from("expenses").select("*, accounts(*), locations(*)").order("created_at", { ascending: false }).limit(10)
-      ]);
+	const fetchData = async () => {
+		try {
+			const [
+				locationsData,
+				accountsData,
+				expenseTypesData,
+				recentExpensesData,
+			] = await Promise.all([
+				supabase.from("locations").select("*").eq("is_active", true),
+				supabase.from("accounts").select("*"),
+				supabase.from("expense_types").select("*").order("main_type"),
+				supabase
+					.from("expenses")
+					.select("*, accounts(*), locations(*)")
+					.order("created_at", { ascending: false })
+					.limit(10),
+			]);
 
-      setLocations(locationsData.data || []);
-      setAccounts(accountsData.data || []);
-      setExpenseTypes(expenseTypesData.data || []);
-      setRecentExpenses(recentExpensesData.data || []);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+			setLocations(locationsData.data || []);
+			setAccounts(accountsData.data || []);
+			setExpenseTypes(expenseTypesData.data || []);
+			setRecentExpenses(recentExpensesData.data || []);
+		} catch (error) {
+			console.error("Error fetching data:", error);
+		} finally {
+			setLoading(false);
+		}
+	};
 
-  const selectedAccount = accounts.find(a => a.id === formData.accountId);
-  const currencySymbol = selectedAccount?.currency === "USD" ? "$" : "Rs.";
+	const selectedAccount = accounts.find((a) => a.id === formData.accountId);
+	const currencySymbol = selectedAccount?.currency === "USD" ? "$" : "Rs.";
 
-  const mainCategories = [...new Set(expenseTypes.map(et => et.main_type))];
-  const subCategories = expenseTypes.filter(et => et.main_type === formData.mainCategory).map(et => et.sub_type);
+	const mainCategories = [...new Set(expenseTypes.map((et) => et.main_type))];
+	const subCategories = expenseTypes
+		.filter((et) => et.main_type === formData.mainCategory)
+		.map((et) => et.sub_type);
 
-  const handleQuickFill = (data: {
-    mainCategory: string;
-    subCategory: string;
-    amount: string;
-    accountId: string;
-    date: string;
-    note: string;
-  }) => {
-    console.log('Expense page - handleQuickFill received exact data:', data);
-    
-    // Update form data immediately with exact values from shortcut
-    setFormData({
-      ...formData,
-      mainCategory: data.mainCategory,
-      subCategory: data.subCategory,
-      amount: data.amount,
-      accountId: data.accountId,
-      date: data.date,
-      note: data.note,
-    });
-    
-    console.log('Expense page - Auto-filled form with shortcut data');
-  };
+	const handleQuickFill = (data: {
+		mainCategory: string;
+		subCategory: string;
+		amount: string;
+		accountId: string;
+		date: string;
+		note: string;
+	}) => {
+		console.log("Expense page - handleQuickFill received exact data:", data);
 
-  const handleMainCategoryChange = (value: string) => {
-    // Only clear subCategory if this is a manual user selection, not from shortcut
-    const newSubCategory = formData.subCategory && subCategories.includes(formData.subCategory) ? formData.subCategory : "";
-    setFormData({...formData, mainCategory: value, subCategory: newSubCategory});
-  };
+		// Update form data immediately with exact values from shortcut
+		setFormData({
+			...formData,
+			mainCategory: data.mainCategory,
+			subCategory: data.subCategory,
+			amount: data.amount,
+			accountId: data.accountId,
+			date: data.date,
+			note: data.note,
+		});
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const { error } = await supabase.from("expenses").insert([{
-        main_type: formData.mainCategory,
-        sub_type: formData.subCategory,
-        amount: parseFloat(formData.amount),
-        account_id: formData.accountId,
-        location_id: formData.locationId,
-        date: formData.date,
-        note: formData.note || null,
-      }]);
+		console.log("Expense page - Auto-filled form with shortcut data");
+	};
 
-      if (error) throw error;
+	const handleMainCategoryChange = (value: string) => {
+		// Only clear subCategory if this is a manual user selection, not from shortcut
+		const newSubCategory =
+			formData.subCategory && subCategories.includes(formData.subCategory)
+				? formData.subCategory
+				: "";
+		setFormData({
+			...formData,
+			mainCategory: value,
+			subCategory: newSubCategory,
+		});
+	};
 
-      // Calculate new account balance
-      const selectedAccount = accounts.find(acc => acc.id === formData.accountId);
-      if (selectedAccount) {
-        // Fetch current account transactions to calculate balance
-        const [incomesRes, expensesRes, outgoingTransfersRes, incomingTransfersRes] = await Promise.all([
-          supabase.from("income").select("amount").eq("account_id", formData.accountId),
-          supabase.from("expenses").select("amount").eq("account_id", formData.accountId),
-          supabase.from("account_transfers").select("amount").eq("from_account_id", formData.accountId),
-          supabase.from("account_transfers").select("amount, conversion_rate").eq("to_account_id", formData.accountId)
-        ]);
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		try {
+			const { error } = await supabase.from("expenses").insert([
+				{
+					main_type: formData.mainCategory,
+					sub_type: formData.subCategory,
+					amount: parseFloat(formData.amount),
+					account_id: formData.accountId,
+					location_id: formData.locationId,
+					date: formData.date,
+					note: formData.note || null,
+				},
+			]);
 
-        let currentBalance = selectedAccount.initial_balance;
-        
-        // Add all income
-        const totalIncome = (incomesRes.data || []).reduce((sum, item) => sum + parseFloat(item.amount.toString()), 0);
-        currentBalance += totalIncome;
-        
-        // Subtract all expenses (including the new one we just added)
-        const totalExpenses = (expensesRes.data || []).reduce((sum, item) => sum + parseFloat(item.amount.toString()), 0);
-        currentBalance -= totalExpenses;
-        
-        // Subtract outgoing transfers
-        const totalOutgoingTransfers = (outgoingTransfersRes.data || []).reduce((sum, item) => sum + parseFloat(item.amount.toString()), 0);
-        currentBalance -= totalOutgoingTransfers;
-        
-        // Add incoming transfers (with conversion rate)
-        const totalIncomingTransfers = (incomingTransfersRes.data || []).reduce((sum, item) => 
-          sum + (parseFloat(item.amount.toString()) * item.conversion_rate), 0);
-        currentBalance += totalIncomingTransfers;
+			if (error) throw error;
 
-        const currencySymbol = selectedAccount.currency === "USD" ? "$" : "Rs.";
-        
-        // Send SMS notification for expense
-        try {
-          const locationData = locations.find(l => l.id === formData.locationId);
-          
-          await supabase.functions.invoke('send-sms-notification', {
-            body: {
-              type: 'expense',
-              amount: parseFloat(formData.amount),
-              currency: selectedAccount.currency,
-              category: `${formData.mainCategory} - ${formData.subCategory}`,
-              account: selectedAccount.name,
-              location: locationData?.name || 'N/A',
-              date: format(new Date(formData.date), 'MMM dd, yyyy'),
-              note: formData.note,
-              accountBalance: currentBalance
-            }
-          });
-        } catch (smsError) {
-          console.error('SMS notification failed:', smsError);
-        }
-        
-        toast({
-          title: "Success",
-          description: `Expense record added successfully\n${selectedAccount.name} - ${currencySymbol}${currentBalance.toLocaleString()}`,
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: "Expense record added successfully",
-        });
-      }
+			// Calculate new account balance
+			const selectedAccount = accounts.find(
+				(acc) => acc.id === formData.accountId,
+			);
+			if (selectedAccount) {
+				// Fetch current account transactions to calculate balance
+				const [
+					incomesRes,
+					expensesRes,
+					outgoingTransfersRes,
+					incomingTransfersRes,
+				] = await Promise.all([
+					supabase
+						.from("income")
+						.select("amount")
+						.eq("account_id", formData.accountId),
+					supabase
+						.from("expenses")
+						.select("amount")
+						.eq("account_id", formData.accountId),
+					supabase
+						.from("account_transfers")
+						.select("amount")
+						.eq("from_account_id", formData.accountId),
+					supabase
+						.from("account_transfers")
+						.select("amount, conversion_rate")
+						.eq("to_account_id", formData.accountId),
+				]);
 
-      // Reset form but keep locationId
-      setFormData({
-        mainCategory: "",
-        subCategory: "",
-        amount: "",
-        accountId: "",
-        locationId: formData.locationId, // Keep selected location
-        date: format(new Date(), "yyyy-MM-dd"),
-        note: "",
-      });
+				let currentBalance = selectedAccount.initial_balance;
 
-      fetchData(); // Refresh recent expenses
-    } catch (error) {
-      console.error("Error adding expense:", error);
-      toast({
-        title: "Error",
-        description: "Failed to add expense record",
-        variant: "destructive",
-      });
-    }
-  };
+				// Add all income
+				const totalIncome = (incomesRes.data || []).reduce(
+					(sum, item) => sum + parseFloat(item.amount.toString()),
+					0,
+				);
+				currentBalance += totalIncome;
 
-  if (loading) {
-    return <SectionLoader className="min-h-64" />;
-  }
+				// Subtract all expenses (including the new one we just added)
+				const totalExpenses = (expensesRes.data || []).reduce(
+					(sum, item) => sum + parseFloat(item.amount.toString()),
+					0,
+				);
+				currentBalance -= totalExpenses;
 
-  if (!hasAnyPermission("access_expenses")) {
-    return (
-      <div className="container mx-auto p-4 sm:p-6">
-        <Alert>
-          <AlertCircle className="size-4" />
-          <AlertDescription>
-            You don't have permission to access this page. Please contact your administrator.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+				// Subtract outgoing transfers
+				const totalOutgoingTransfers = (outgoingTransfersRes.data || []).reduce(
+					(sum, item) => sum + parseFloat(item.amount.toString()),
+					0,
+				);
+				currentBalance -= totalOutgoingTransfers;
 
-  return (
-    <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        {hasAnyPermission("access_reports") && (
-          <Button asChild variant="outline" className="text-xs sm:text-sm px-2 sm:px-4">
-            <Link to="/reports?tab=comprehensive&type=expense">
-              <span className="hidden sm:inline">View All Expenses</span>
-              <span className="sm:hidden">View All</span>
-            </Link>
-          </Button>
-        )}
-      </div>
+				// Add incoming transfers (with conversion rate)
+				const totalIncomingTransfers = (incomingTransfersRes.data || []).reduce(
+					(sum, item) =>
+						sum + parseFloat(item.amount.toString()) * item.conversion_rate,
+					0,
+				);
+				currentBalance += totalIncomingTransfers;
 
-      {/* Location Filter at Top */}
-      <Card className="border-red-200 bg-red-50">
-        <CardContent className="p-4">
-          <div>
-            <Label htmlFor="locationFilter" className="text-red-800 font-medium">Select Location</Label>
-            <Select value={formData.locationId} onValueChange={(value) => setFormData({...formData, locationId: value})}>
-              <SelectTrigger className="bg-white border-red-200">
-                <SelectValue placeholder="Select Location" />
-              </SelectTrigger>
-              <SelectContent>
-                {locations.map((location) => (
-                  <SelectItem key={location.id} value={location.id}>
-                    {location.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+				const currencySymbol = selectedAccount.currency === "USD" ? "$" : "Rs.";
 
-      {/* Only show content after location is selected */}
-      {formData.locationId && (
-        <div className="space-y-4 sm:space-y-6">
-          {/* Expense Shortcuts - Show First */}
-          <ExpenseShortcuts 
-            locationId={formData.locationId} 
-            accounts={accounts} 
-            onQuickFill={handleQuickFill} 
-          />
+				// Send SMS notification for expense
+				try {
+					const locationData = locations.find(
+						(l) => l.id === formData.locationId,
+					);
 
-          {/* Expense Form - Show Second */}
-          <Card className="bg-card border">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-red-800 flex items-center gap-2 text-lg">
-                <Minus className="size-5" />
-                New Expense Record
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="mainCategory">Main Category</Label>
-                    <Select key={`main-${formData.mainCategory}`} value={formData.mainCategory} onValueChange={handleMainCategoryChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select main category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {mainCategories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+					await supabase.functions.invoke("send-sms-notification", {
+						body: {
+							type: "expense",
+							amount: parseFloat(formData.amount),
+							currency: selectedAccount.currency,
+							category: `${formData.mainCategory} - ${formData.subCategory}`,
+							account: selectedAccount.name,
+							location: locationData?.name || "N/A",
+							date: format(new Date(formData.date), "MMM dd, yyyy"),
+							note: formData.note,
+							accountBalance: currentBalance,
+						},
+					});
+				} catch (smsError) {
+					console.error("SMS notification failed:", smsError);
+				}
 
-                  <div>
-                    <Label htmlFor="subCategory">Sub Category</Label>
-                    <Select key={`sub-${formData.subCategory}`} value={formData.subCategory} onValueChange={(value) => setFormData({...formData, subCategory: value})} disabled={!formData.mainCategory}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select sub category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {subCategories.map((subCategory) => (
-                          <SelectItem key={subCategory} value={subCategory}>
-                            {subCategory}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+				toast({
+					title: "Success",
+					description: `Expense record added successfully\n${selectedAccount.name} - ${currencySymbol}${currentBalance.toLocaleString()}`,
+				});
+			} else {
+				toast({
+					title: "Success",
+					description: "Expense record added successfully",
+				});
+			}
 
-                <div>
-                  <Label htmlFor="amount">Amount</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
-                      {currencySymbol}
-                    </span>
-                    <Input
-                      id="amount"
-                      type="number"
-                      placeholder="0.00"
-                      value={formData.amount}
-                      onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
+			// Reset form but keep locationId
+			setFormData({
+				mainCategory: "",
+				subCategory: "",
+				amount: "",
+				accountId: "",
+				locationId: formData.locationId, // Keep selected location
+				date: format(new Date(), "yyyy-MM-dd"),
+				note: "",
+			});
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="accountId">Pay From Account</Label>
-                    <Select key={`account-${formData.accountId}`} value={formData.accountId} onValueChange={(value) => setFormData({...formData, accountId: value})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select account" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {accounts
-                          .filter(account => 
-                            account.location_access.length === 0 || 
-                            account.location_access.includes(formData.locationId)
-                          )
-                          .map((account) => (
-                          <SelectItem key={account.id} value={account.id}>
-                            {account.name} ({account.currency})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+			fetchData(); // Refresh recent expenses
+		} catch (error) {
+			console.error("Error adding expense:", error);
+			toast({
+				title: "Error",
+				description: "Failed to add expense record",
+				variant: "destructive",
+			});
+		}
+	};
 
-                  <div>
-                    <Label htmlFor="date">Date</Label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-muted-foreground" />
-                      <Input
-                        id="date"
-                        type="date"
-                        value={formData.date}
-                        onChange={(e) => setFormData({...formData, date: e.target.value})}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
+	if (loading) {
+		return <SectionLoader className="min-h-64" />;
+	}
 
-                <div>
-                  <Label htmlFor="note">Note (Optional)</Label>
-                  <Textarea
-                    id="note"
-                    placeholder="Add details about this expense..."
-                    value={formData.note}
-                    onChange={(e) => setFormData({...formData, note: e.target.value})}
-                    rows={3}
-                  />
-                </div>
+	if (!hasAnyPermission("access_expenses")) {
+		return (
+			<div className="container mx-auto p-4 sm:p-6">
+				<Alert>
+					<AlertCircle className="size-4" />
+					<AlertDescription>
+						You don't have permission to access this page. Please contact your
+						administrator.
+					</AlertDescription>
+				</Alert>
+			</div>
+		);
+	}
 
-                <div className="flex gap-2 pt-4">
-                  <Button type="submit" className="flex-1  text-white">
-                    <Minus className="size-4 mr-2" />
-                    Add Expense
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+	return (
+		<div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+			<div className="flex items-center justify-between gap-4">
+				{hasAnyPermission("access_reports") && (
+					<Button
+						asChild
+						variant="outline"
+						className="text-xs sm:text-sm px-2 sm:px-4"
+					>
+						<Link to="/reports?tab=comprehensive&type=expense">
+							<span className="hidden sm:inline">View All Expenses</span>
+							<span className="sm:hidden">View All</span>
+						</Link>
+					</Button>
+				)}
+			</div>
 
-          {/* Recent Expenses - Show Second */}
-          <Card className="bg-card border">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-red-800 text-lg">Recent Expenses</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6">
-              <div className="space-y-2 max-h-80 sm:max-h-96 overflow-y-auto">
-                {recentExpenses.map((expense) => (
-                  <div key={expense.id} className="p-3 bg-white/60 rounded-lg border border-red-100">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-                      <div className="flex-1">
-                        <div className="font-medium text-red-900 text-sm sm:text-base">
-                          {expense.main_type} - {expense.sub_type} • {expense.accounts?.currency === "LKR" ? "Rs." : "$"}{expense.amount.toLocaleString()}
-                        </div>
-                        <div className="text-xs sm:text-sm text-red-700 mt-1">
-                          <div>{expense.locations?.name}</div>
-                          <div>Account: {expense.accounts?.name} ({expense.accounts?.currency})</div>
-                          <div>{format(new Date(expense.date), "MMM dd, yyyy")}</div>
-                          {expense.note && <div className="mt-1 italic">"{expense.note}"</div>}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {recentExpenses.length === 0 && (
-                  <div className="text-center py-8 text-red-600">
-                    No expense records yet. Add your first expense above!
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-    </div>
-  );
+			{/* Location Filter at Top */}
+			<Card className="border-red-200 bg-red-50">
+				<CardContent className="p-4">
+					<div>
+						<Label
+							htmlFor="locationFilter"
+							className="text-red-800 font-medium"
+						>
+							Select Location
+						</Label>
+						<Select
+							value={formData.locationId}
+							onValueChange={(value) =>
+								setFormData({ ...formData, locationId: value })
+							}
+						>
+							<SelectTrigger className="bg-white border-red-200">
+								<SelectValue placeholder="Select Location" />
+							</SelectTrigger>
+							<SelectContent>
+								{locations.map((location) => (
+									<SelectItem key={location.id} value={location.id}>
+										{location.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+				</CardContent>
+			</Card>
+
+			{/* Only show content after location is selected */}
+			{formData.locationId && (
+				<div className="space-y-4 sm:space-y-6">
+					{/* Expense Shortcuts - Show First */}
+					<ExpenseShortcuts
+						locationId={formData.locationId}
+						accounts={accounts}
+						onQuickFill={handleQuickFill}
+					/>
+
+					{/* Expense Form - Show Second */}
+					<Card className="bg-card border">
+						<CardHeader className="pb-3">
+							<CardTitle className="text-red-800 flex items-center gap-2 text-lg">
+								<Minus className="size-5" />
+								New Expense Record
+							</CardTitle>
+						</CardHeader>
+						<CardContent className="p-4 sm:p-6">
+							<form onSubmit={handleSubmit} className="space-y-4">
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+									<div>
+										<Label htmlFor="mainCategory">Main Category</Label>
+										<Select
+											key={`main-${formData.mainCategory}`}
+											value={formData.mainCategory}
+											onValueChange={handleMainCategoryChange}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder="Select main category" />
+											</SelectTrigger>
+											<SelectContent>
+												{mainCategories.map((category) => (
+													<SelectItem key={category} value={category}>
+														{category}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+
+									<div>
+										<Label htmlFor="subCategory">Sub Category</Label>
+										<Select
+											key={`sub-${formData.subCategory}`}
+											value={formData.subCategory}
+											onValueChange={(value) =>
+												setFormData({ ...formData, subCategory: value })
+											}
+											disabled={!formData.mainCategory}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder="Select sub category" />
+											</SelectTrigger>
+											<SelectContent>
+												{subCategories.map((subCategory) => (
+													<SelectItem key={subCategory} value={subCategory}>
+														{subCategory}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+								</div>
+
+								<div>
+									<Label htmlFor="amount">Amount</Label>
+									<div className="relative">
+										<span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
+											{currencySymbol}
+										</span>
+										<Input
+											id="amount"
+											type="number"
+											placeholder="0.00"
+											value={formData.amount}
+											onChange={(e) =>
+												setFormData({ ...formData, amount: e.target.value })
+											}
+											className="pl-10"
+											required
+										/>
+									</div>
+								</div>
+
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+									<div>
+										<Label htmlFor="accountId">Pay From Account</Label>
+										<Select
+											key={`account-${formData.accountId}`}
+											value={formData.accountId}
+											onValueChange={(value) =>
+												setFormData({ ...formData, accountId: value })
+											}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder="Select account" />
+											</SelectTrigger>
+											<SelectContent>
+												{accounts
+													.filter(
+														(account) =>
+															account.location_access.length === 0 ||
+															account.location_access.includes(
+																formData.locationId,
+															),
+													)
+													.map((account) => (
+														<SelectItem key={account.id} value={account.id}>
+															{account.name} ({account.currency})
+														</SelectItem>
+													))}
+											</SelectContent>
+										</Select>
+									</div>
+
+									<div>
+										<Label htmlFor="date">Date</Label>
+										<div className="relative">
+											<Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-muted-foreground" />
+											<Input
+												id="date"
+												type="date"
+												value={formData.date}
+												onChange={(e) =>
+													setFormData({ ...formData, date: e.target.value })
+												}
+												className="pl-10"
+												required
+											/>
+										</div>
+									</div>
+								</div>
+
+								<div>
+									<Label htmlFor="note">Note (Optional)</Label>
+									<Textarea
+										id="note"
+										placeholder="Add details about this expense..."
+										value={formData.note}
+										onChange={(e) =>
+											setFormData({ ...formData, note: e.target.value })
+										}
+										rows={3}
+									/>
+								</div>
+
+								<div className="flex gap-2 pt-4">
+									<Button type="submit" className="flex-1  text-white">
+										<Minus className="size-4 mr-2" />
+										Add Expense
+									</Button>
+								</div>
+							</form>
+						</CardContent>
+					</Card>
+
+					{/* Recent Expenses - Show Second */}
+					<Card className="bg-card border">
+						<CardHeader className="pb-3">
+							<CardTitle className="text-red-800 text-lg">
+								Recent Expenses
+							</CardTitle>
+						</CardHeader>
+						<CardContent className="p-4 sm:p-6">
+							<div className="space-y-2 max-h-80 sm:max-h-96 overflow-y-auto">
+								{recentExpenses.map((expense) => (
+									<div
+										key={expense.id}
+										className="p-3 bg-white/60 rounded-lg border border-red-100"
+									>
+										<div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+											<div className="flex-1">
+												<div className="font-medium text-red-900 text-sm sm:text-base">
+													{expense.main_type} - {expense.sub_type} •{" "}
+													{expense.accounts?.currency === "LKR" ? "Rs." : "$"}
+													{expense.amount.toLocaleString()}
+												</div>
+												<div className="text-xs sm:text-sm text-red-700 mt-1">
+													<div>{expense.locations?.name}</div>
+													<div>
+														Account: {expense.accounts?.name} (
+														{expense.accounts?.currency})
+													</div>
+													<div>
+														{format(new Date(expense.date), "MMM dd, yyyy")}
+													</div>
+													{expense.note && (
+														<div className="mt-1 italic">"{expense.note}"</div>
+													)}
+												</div>
+											</div>
+										</div>
+									</div>
+								))}
+								{recentExpenses.length === 0 && (
+									<div className="text-center py-8 text-red-600">
+										No expense records yet. Add your first expense above!
+									</div>
+								)}
+							</div>
+						</CardContent>
+					</Card>
+				</div>
+			)}
+		</div>
+	);
 }
