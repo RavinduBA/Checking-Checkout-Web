@@ -16,12 +16,14 @@ import { supabase } from "@/integrations/supabase/client";
 interface OTPVerificationProps {
 	onVerified: () => void;
 	phoneNumber?: string;
+	locationId?: string; // Add locationId prop for admin notification
 	triggerComponent: React.ReactNode;
 }
 
 export const OTPVerification = ({
 	onVerified,
-	phoneNumber = "94760351335",
+	phoneNumber,
+	locationId,
 	triggerComponent,
 }: OTPVerificationProps) => {
 	const { toast } = useToast();
@@ -34,13 +36,17 @@ export const OTPVerification = ({
 	const sendOTP = async () => {
 		setIsSending(true);
 		try {
+			// Generate OTP code
+			const otpCode = Math.floor(100000 + Math.random() * 900000);
+			
 			// Call Supabase Edge Function to send SMS
 			const { data, error } = await supabase.functions.invoke(
 				"send-sms-notification",
 				{
 					body: {
 						phoneNumber,
-						message: `Your OTP for reservation editing is: ${Math.floor(100000 + Math.random() * 900000)}. This code expires in 5 minutes.`,
+						locationId, // Use the locationId prop
+						message: `Your OTP for reservation editing is: ${otpCode}. This code expires in 5 minutes.`,
 						type: "otp_verification",
 					},
 				},

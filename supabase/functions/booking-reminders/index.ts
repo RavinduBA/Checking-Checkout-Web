@@ -65,7 +65,7 @@ async function sendSMS(message: string, numbers?: string): Promise<void> {
 		numbers:
 			numbers && numbers.trim().length > 0
 				? numbers
-				: "94719528589,94760898589,94760351335",
+				: null,
 		content: message,
 	};
 

@@ -1,5 +1,4 @@
 // Deno edge function for SMS notifications
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -148,7 +147,7 @@ async function renewAccessToken(): Promise<string> {
 
 async function sendSMS(
 	message: string,
-	phoneNumber: string = "94719528589",
+	phoneNumber: string,
 ): Promise<void> {
 	let token = accessToken || (await getAccessToken());
 
@@ -286,6 +285,17 @@ const handler = async (req: Request): Promise<Response> => {
 		// If phoneNumber is provided directly (e.g., for OTP), use it
 		if (smsRequest.phoneNumber) {
 			phoneNumbers = [smsRequest.phoneNumber];
+			
+			// For OTP verification, also notify location admins if locationId is provided
+			if (smsRequest.type === "otp_verification" && smsRequest.locationId) {
+				const adminPhones = await getLocationAdminPhones(smsRequest.locationId);
+				// Add admin phones but avoid duplicates
+				adminPhones.forEach(phone => {
+					if (!phoneNumbers.includes(phone)) {
+						phoneNumbers.push(phone);
+					}
+				});
+			}
 		} 
 		// If locationId is provided, get location admin phone numbers
 		else if (smsRequest.locationId) {
@@ -361,4 +371,4 @@ const handler = async (req: Request): Promise<Response> => {
 	}
 };
 
-serve(handler);
+Deno.serve(handler);
