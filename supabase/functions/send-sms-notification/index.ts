@@ -41,6 +41,17 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Function to format phone number for SMS API (remove + symbol)
+function formatPhoneNumber(phoneNumber: string): string {
+	if (!phoneNumber) return "";
+	
+	// Simply remove + symbol and any spaces/dashes - keep the number as is
+	const formatted = phoneNumber.replace(/[+\s\-()]/g, "");
+	
+	console.log(`Formatted phone number: ${phoneNumber} -> ${formatted}`);
+	return formatted;
+}
+
 // Function to get location admin phone numbers
 async function getLocationAdminPhones(locationId: string): Promise<string[]> {
 	try {
@@ -58,10 +69,12 @@ async function getLocationAdminPhones(locationId: string): Promise<string[]> {
 			return [];
 		}
 
-		// Extract phone numbers and filter out null/empty values
+		// Extract phone numbers, format them, and filter out null/empty values
 		const phoneNumbers = adminUsers
 			.map((user: any) => user.profiles?.phone)
-			.filter((phone: string | null) => phone && phone.trim().length > 0);
+			.filter((phone: string | null) => phone && phone.trim().length > 0)
+			.map((phone: string) => formatPhoneNumber(phone))
+			.filter((phone: string) => phone.length > 0);
 
 		console.log(`Found ${phoneNumbers.length} admin phone numbers for location ${locationId}`);
 		return phoneNumbers;
@@ -152,12 +165,21 @@ async function sendSMS(
 ): Promise<void> {
 	let token = accessToken || (await getAccessToken());
 
+	// Format phone number for SMS API
+	const formattedPhoneNumber = formatPhoneNumber(phoneNumber);
+	
+	if (!formattedPhoneNumber) {
+		throw new Error(`Invalid phone number format: ${phoneNumber}`);
+	}
+
 	const smsData = {
 		campaignName: "Financial Alert",
 		mask: "RathnaSuper",
-		numbers: phoneNumber,
+		numbers: formattedPhoneNumber,
 		content: message,
 	};
+
+	console.log(`Sending SMS to: ${formattedPhoneNumber} (original: ${phoneNumber})`);
 
 	try {
 		let response = await fetch("https://bsms.hutch.lk/api/sendsms", {
@@ -291,7 +313,10 @@ const handler = async (req: Request): Promise<Response> => {
 
 		// If phoneNumber is provided directly (e.g., for OTP), use it
 		if (smsRequest.phoneNumber) {
-			phoneNumbers = [smsRequest.phoneNumber];
+			const formattedPhoneNumber = formatPhoneNumber(smsRequest.phoneNumber);
+			if (formattedPhoneNumber) {
+				phoneNumbers = [formattedPhoneNumber];
+			}
 			
 			// For OTP verification, also notify location admins if locationId is provided
 			if (smsRequest.type === "otp_verification" && smsRequest.locationId) {
@@ -306,7 +331,10 @@ const handler = async (req: Request): Promise<Response> => {
 		}
 		// If locationPhone is provided, use it as primary recipient 
 		else if (smsRequest.locationPhone) {
-			phoneNumbers = [smsRequest.locationPhone];
+			const formattedLocationPhone = formatPhoneNumber(smsRequest.locationPhone);
+			if (formattedLocationPhone) {
+				phoneNumbers = [formattedLocationPhone];
+			}
 			
 			// Also add location admin phones as secondary recipients if locationId provided
 			if (smsRequest.locationId) {
