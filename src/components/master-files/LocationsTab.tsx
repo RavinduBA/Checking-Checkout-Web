@@ -49,6 +49,7 @@ type Location = {
 export default function LocationsTab() {
 	const [locations, setLocations] = useState<Location[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [deletingLocationId, setDeletingLocationId] = useState<string | null>(null);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [editingLocation, setEditingLocation] = useState<Location | null>(null);
 	const [formData, setFormData] = useState({
@@ -150,8 +151,6 @@ export default function LocationsTab() {
 	};
 
 	const handleDelete = async (id: string) => {
-		if (!confirm("Are you sure you want to delete this location?")) return;
-
 		if (!tenant?.id) {
 			toast({
 				title: "Error",
@@ -161,26 +160,109 @@ export default function LocationsTab() {
 			return;
 		}
 
+		// First, check for dependent records
 		try {
+			setDeletingLocationId(id);
+			
+			const [
+				{ count: reservationsCount },
+				{ count: incomeCount },
+				{ count: expensesCount },
+				{ count: bookingsCount },
+				{ count: externalBookingsCount }
+			] = await Promise.all([
+				supabase.from("reservations").select("*", { count: "exact", head: true }).eq("location_id", id),
+				supabase.from("income").select("*", { count: "exact", head: true }).eq("location_id", id),
+				supabase.from("expenses").select("*", { count: "exact", head: true }).eq("location_id", id),
+				supabase.from("bookings").select("*", { count: "exact", head: true }).eq("location_id", id),
+				supabase.from("external_bookings").select("*", { count: "exact", head: true }).eq("location_id", id)
+			]);
+
+			const totalDependents = (reservationsCount || 0) + (incomeCount || 0) + (expensesCount || 0) + (bookingsCount || 0) + (externalBookingsCount || 0);
+
+			if (totalDependents > 0) {
+				const dependencyDetails = [];
+				if (reservationsCount) dependencyDetails.push(`${reservationsCount} reservation${reservationsCount > 1 ? 's' : ''}`);
+				if (incomeCount) dependencyDetails.push(`${incomeCount} income record${incomeCount > 1 ? 's' : ''}`);
+				if (expensesCount) dependencyDetails.push(`${expensesCount} expense record${expensesCount > 1 ? 's' : ''}`);
+				if (bookingsCount) dependencyDetails.push(`${bookingsCount} booking${bookingsCount > 1 ? 's' : ''}`);
+				if (externalBookingsCount) dependencyDetails.push(`${externalBookingsCount} external booking${externalBookingsCount > 1 ? 's' : ''}`);
+
+				const confirmed = confirm(
+					`This location has ${dependencyDetails.join(', ')}.\n\n` +
+					`Deleting this location will permanently remove:\n` +
+					`• All financial records (income/expenses)\n` +
+					`• All booking data (reservations/bookings)\n` +
+					`• All rooms and user permissions\n\n` +
+					`This action cannot be undone. Are you sure you want to continue?`
+				);
+
+				if (!confirmed) {
+					setDeletingLocationId(null);
+					return;
+				}
+			} else {
+				if (!confirm("Are you sure you want to delete this location?")) {
+					setDeletingLocationId(null);
+					return;
+				}
+			}
+
+			// Perform cascading delete in the correct order
+			toast({
+				title: "Deleting location...",
+				description: "This may take a moment for locations with many records.",
+			});
+
+			// Delete dependent records that have NO ACTION constraints
+			// Order matters: delete children before parents
+			
+			// 1. Delete booking payments first (references bookings)
+			await supabase
+				.from("booking_payments")
+				.delete()
+				.in("booking_id", 
+					(await supabase.from("bookings").select("id").eq("location_id", id)).data?.map(b => b.id) || []
+				);
+
+			// 2. Delete external bookings
+			await supabase.from("external_bookings").delete().eq("location_id", id);
+
+			// 3. Delete income records
+			await supabase.from("income").delete().eq("location_id", id);
+
+			// 4. Delete expense records
+			await supabase.from("expenses").delete().eq("location_id", id);
+
+			// 5. Delete bookings
+			await supabase.from("bookings").delete().eq("location_id", id);
+
+			// 6. Delete reservations
+			await supabase.from("reservations").delete().eq("location_id", id);
+
+			// 7. Finally delete the location (rooms and user_permissions will cascade automatically)
 			const { error } = await supabase
 				.from("locations")
 				.delete()
 				.eq("id", id)
-				.eq("tenant_id", tenant.id); // Ensure user can only delete their own tenant's locations
+				.eq("tenant_id", tenant.id);
 
 			if (error) throw error;
 
 			toast({
 				title: "Success",
-				description: "Location deleted successfully",
+				description: "Location and all associated records deleted successfully",
 			});
 			fetchLocations();
 		} catch (error) {
+			console.error("Delete location error:", error);
 			toast({
 				title: "Error",
-				description: "Failed to delete location",
+				description: "Failed to delete location. Please try again or contact support.",
 				variant: "destructive",
 			});
+		} finally {
+			setDeletingLocationId(null);
 		}
 	};
 
@@ -308,8 +390,13 @@ export default function LocationsTab() {
 										size="sm"
 										variant="outline"
 										onClick={() => handleDelete(location.id)}
+										disabled={deletingLocationId === location.id}
 									>
-										<Trash2 className="size-4" />
+										{deletingLocationId === location.id ? (
+											<InlineLoader />
+										) : (
+											<Trash2 className="size-4" />
+										)}
 									</Button>
 								</div>
 							</TableCell>
