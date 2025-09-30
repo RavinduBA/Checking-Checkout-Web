@@ -79,39 +79,53 @@ export function ReservationEditDialog({
 	const [rooms, setRooms] = useState<any[]>([]);
 	const [agents, setAgents] = useState<any[]>([]);
 	const [guides, setGuides] = useState<any[]>([]);
+	const [location, setLocation] = useState<any>(null);
 
 	useEffect(() => {
+		const fetchRooms = async () => {
+			const { data } = await supabase
+				.from("rooms")
+				.select("id, room_number, room_type, location_id, base_price")
+				.eq("is_active", true);
+			setRooms(data || []);
+		};
+
+		const fetchAgents = async () => {
+			const { data } = await supabase
+				.from("agents")
+				.select("id, name, commission_rate")
+				.eq("is_active", true);
+			setAgents(data || []);
+		};
+
+		const fetchGuides = async () => {
+			const { data } = await supabase
+				.from("guides")
+				.select("id, name, commission_rate")
+				.eq("is_active", true);
+			setGuides(data || []);
+		};
+
+		const fetchLocation = async () => {
+			if (!reservation?.location_id) return;
+			
+			const { data } = await supabase
+				.from("locations")
+				.select("id, name, phone, email")
+				.eq("id", reservation.location_id)
+				.single();
+				
+			setLocation(data);
+		};
+
 		if (reservation && isOpen) {
 			setFormData({ ...reservation });
 			fetchRooms();
 			fetchAgents();
 			fetchGuides();
+			fetchLocation();
 		}
 	}, [reservation, isOpen]);
-
-	const fetchRooms = async () => {
-		const { data } = await supabase
-			.from("rooms")
-			.select("id, room_number, room_type, location_id, base_price")
-			.eq("is_active", true);
-		setRooms(data || []);
-	};
-
-	const fetchAgents = async () => {
-		const { data } = await supabase
-			.from("agents")
-			.select("id, name, commission_rate")
-			.eq("is_active", true);
-		setAgents(data || []);
-	};
-
-	const fetchGuides = async () => {
-		const { data } = await supabase
-			.from("guides")
-			.select("id, name, commission_rate")
-			.eq("is_active", true);
-		setGuides(data || []);
-	};
 
 	const handleOTPVerified = () => {
 		setIsOTPVerified(true);
@@ -440,6 +454,8 @@ export function ReservationEditDialog({
 							{!isOTPVerified ? (
 								<OTPVerification
 									onVerified={handleOTPVerified}
+									phoneNumber={location?.phone || reservation?.guest_phone || "+94719528589"}
+									locationId={reservation?.location_id}
 									triggerComponent={
 										<Button variant="default">Verify & Enable Editing</Button>
 									}
