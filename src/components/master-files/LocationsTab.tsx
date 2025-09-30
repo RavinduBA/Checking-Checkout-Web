@@ -17,6 +17,16 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InlineLoader } from "@/components/ui/loading-spinner";
@@ -52,6 +62,19 @@ export default function LocationsTab() {
 	const [deletingLocationId, setDeletingLocationId] = useState<string | null>(null);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [editingLocation, setEditingLocation] = useState<Location | null>(null);
+	const [deleteAlert, setDeleteAlert] = useState<{
+		open: boolean;
+		locationId: string | null;
+		locationName: string;
+		dependencyDetails: string[];
+		totalDependents: number;
+	}>({ 
+		open: false, 
+		locationId: null, 
+		locationName: "", 
+		dependencyDetails: [], 
+		totalDependents: 0 
+	});
 	const [formData, setFormData] = useState({
 		name: "",
 		is_active: true,
@@ -180,33 +203,41 @@ export default function LocationsTab() {
 
 			const totalDependents = (reservationsCount || 0) + (incomeCount || 0) + (expensesCount || 0) + (bookingsCount || 0) + (externalBookingsCount || 0);
 
-			if (totalDependents > 0) {
-				const dependencyDetails = [];
-				if (reservationsCount) dependencyDetails.push(`${reservationsCount} reservation${reservationsCount > 1 ? 's' : ''}`);
-				if (incomeCount) dependencyDetails.push(`${incomeCount} income record${incomeCount > 1 ? 's' : ''}`);
-				if (expensesCount) dependencyDetails.push(`${expensesCount} expense record${expensesCount > 1 ? 's' : ''}`);
-				if (bookingsCount) dependencyDetails.push(`${bookingsCount} booking${bookingsCount > 1 ? 's' : ''}`);
-				if (externalBookingsCount) dependencyDetails.push(`${externalBookingsCount} external booking${externalBookingsCount > 1 ? 's' : ''}`);
+			const dependencyDetails = [];
+			if (reservationsCount) dependencyDetails.push(`${reservationsCount} reservation${reservationsCount > 1 ? 's' : ''}`);
+			if (incomeCount) dependencyDetails.push(`${incomeCount} income record${incomeCount > 1 ? 's' : ''}`);
+			if (expensesCount) dependencyDetails.push(`${expensesCount} expense record${expensesCount > 1 ? 's' : ''}`);
+			if (bookingsCount) dependencyDetails.push(`${bookingsCount} booking${bookingsCount > 1 ? 's' : ''}`);
+			if (externalBookingsCount) dependencyDetails.push(`${externalBookingsCount} external booking${externalBookingsCount > 1 ? 's' : ''}`);
 
-				const confirmed = confirm(
-					`This location has ${dependencyDetails.join(', ')}.\n\n` +
-					`Deleting this location will permanently remove:\n` +
-					`• All financial records (income/expenses)\n` +
-					`• All booking data (reservations/bookings)\n` +
-					`• All rooms and user permissions\n\n` +
-					`This action cannot be undone. Are you sure you want to continue?`
-				);
+			const locationName = locations.find(loc => loc.id === id)?.name || "this location";
+			
+			// Show alert dialog for confirmation
+			setDeleteAlert({
+				open: true,
+				locationId: id,
+				locationName,
+				dependencyDetails,
+				totalDependents
+			});
+			setDeletingLocationId(null);
+		} catch (error) {
+			console.error("Error checking dependencies:", error);
+			setDeletingLocationId(null);
+			toast({
+				title: "Error",
+				description: "Failed to check location dependencies. Please try again.",
+				variant: "destructive",
+			});
+		}
+	};
 
-				if (!confirmed) {
-					setDeletingLocationId(null);
-					return;
-				}
-			} else {
-				if (!confirm("Are you sure you want to delete this location?")) {
-					setDeletingLocationId(null);
-					return;
-				}
-			}
+	const confirmDelete = async () => {
+		if (!deleteAlert.locationId || !tenant?.id) return;
+
+		try {
+			setDeletingLocationId(deleteAlert.locationId);
+			setDeleteAlert({ open: false, locationId: null, locationName: "", dependencyDetails: [], totalDependents: 0 });
 
 			// Perform cascading delete in the correct order
 			toast({
@@ -222,29 +253,29 @@ export default function LocationsTab() {
 				.from("booking_payments")
 				.delete()
 				.in("booking_id", 
-					(await supabase.from("bookings").select("id").eq("location_id", id)).data?.map(b => b.id) || []
+					(await supabase.from("bookings").select("id").eq("location_id", deleteAlert.locationId)).data?.map(b => b.id) || []
 				);
 
 			// 2. Delete external bookings
-			await supabase.from("external_bookings").delete().eq("location_id", id);
+			await supabase.from("external_bookings").delete().eq("location_id", deleteAlert.locationId);
 
 			// 3. Delete income records
-			await supabase.from("income").delete().eq("location_id", id);
+			await supabase.from("income").delete().eq("location_id", deleteAlert.locationId);
 
 			// 4. Delete expense records
-			await supabase.from("expenses").delete().eq("location_id", id);
+			await supabase.from("expenses").delete().eq("location_id", deleteAlert.locationId);
 
 			// 5. Delete bookings
-			await supabase.from("bookings").delete().eq("location_id", id);
+			await supabase.from("bookings").delete().eq("location_id", deleteAlert.locationId);
 
 			// 6. Delete reservations
-			await supabase.from("reservations").delete().eq("location_id", id);
+			await supabase.from("reservations").delete().eq("location_id", deleteAlert.locationId);
 
 			// 7. Finally delete the location (rooms and user_permissions will cascade automatically)
 			const { error } = await supabase
 				.from("locations")
 				.delete()
-				.eq("id", id)
+				.eq("id", deleteAlert.locationId)
 				.eq("tenant_id", tenant.id);
 
 			if (error) throw error;
@@ -404,6 +435,51 @@ export default function LocationsTab() {
 					))}
 				</TableBody>
 			</Table>
+
+			{/* Delete Confirmation Alert Dialog */}
+			<AlertDialog open={deleteAlert.open} onOpenChange={(open) => 
+				setDeleteAlert({ ...deleteAlert, open })
+			}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							{deleteAlert.totalDependents > 0 ? "Delete Location with Dependencies?" : "Delete Location?"}
+						</AlertDialogTitle>
+						<AlertDialogDescription className="space-y-2">
+							{deleteAlert.totalDependents > 0 ? (
+								<>
+									<p>
+										<strong>{deleteAlert.locationName}</strong> has {deleteAlert.dependencyDetails.join(", ")}.
+									</p>
+									<p>Deleting this location will permanently remove:</p>
+									<ul className="list-disc list-inside space-y-1 text-sm">
+										<li>All financial records (income/expenses)</li>
+										<li>All booking data (reservations/bookings)</li>
+										<li>All rooms and user permissions</li>
+									</ul>
+									<p className="font-semibold text-destructive">
+										This action cannot be undone.
+									</p>
+								</>
+							) : (
+								<p>
+									Are you sure you want to delete <strong>{deleteAlert.locationName}</strong>? 
+									This action cannot be undone.
+								</p>
+							)}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction 
+							onClick={confirmDelete}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							Delete Location
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }
