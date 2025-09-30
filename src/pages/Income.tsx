@@ -315,6 +315,7 @@ const Income = () => {
 						account: selectedAccount?.name || "",
 						location: location?.name || "",
 						locationId: selectedReservation.location_id, // Added for location admin SMS
+						locationPhone: location?.phone, // Primary SMS recipient
 						date: new Date().toISOString().split("T")[0],
 						note: paymentForm.notes || undefined,
 					},

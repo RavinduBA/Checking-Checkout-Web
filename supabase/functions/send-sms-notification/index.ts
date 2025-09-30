@@ -1,5 +1,5 @@
 // Deno edge function for SMS notifications
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
 const corsHeaders = {
 	"Access-Control-Allow-Origin": "*",
@@ -11,6 +11,7 @@ interface SMSRequest {
 	type?: "income" | "expense" | "otp_verification" | "reservation" | "payment";
 	phoneNumber?: string;
 	locationId?: string; // Added to get location admin phone numbers
+	locationPhone?: string; // Primary location phone number
 	message?: string;
 	amount?: number;
 	currency?: string;
@@ -282,6 +283,12 @@ const handler = async (req: Request): Promise<Response> => {
 		let message: string;
 		let phoneNumbers: string[] = [];
 
+		// Determine recipient phone numbers based on priority:
+		// 1. Direct phoneNumber (for OTP)
+		// 2. locationPhone (primary location contact)  
+		// 3. Location admin phones via locationId
+		// 4. Fallback default
+
 		// If phoneNumber is provided directly (e.g., for OTP), use it
 		if (smsRequest.phoneNumber) {
 			phoneNumbers = [smsRequest.phoneNumber];
@@ -296,22 +303,28 @@ const handler = async (req: Request): Promise<Response> => {
 					}
 				});
 			}
-		} 
-		// If locationId is provided, get location admin phone numbers
+		}
+		// If locationPhone is provided, use it as primary recipient 
+		else if (smsRequest.locationPhone) {
+			phoneNumbers = [smsRequest.locationPhone];
+			
+			// Also add location admin phones as secondary recipients if locationId provided
+			if (smsRequest.locationId) {
+				const adminPhones = await getLocationAdminPhones(smsRequest.locationId);
+				// Add admin phones but avoid duplicates
+				adminPhones.forEach(phone => {
+					if (!phoneNumbers.includes(phone)) {
+						phoneNumbers.push(phone);
+					}
+				});
+			}
+		}
+		// If locationId is provided but no locationPhone, get location admin phone numbers
 		else if (smsRequest.locationId) {
 			phoneNumbers = await getLocationAdminPhones(smsRequest.locationId);
 			if (phoneNumbers.length === 0) {
-				console.log(`No admin phone numbers found for location ${smsRequest.locationId}. Skipping SMS.`);
-				return new Response(
-					JSON.stringify({ 
-						success: true, 
-						message: "No admin phone numbers configured. SMS skipped." 
-					}),
-					{
-						status: 200,
-						headers: { ...corsHeaders, "Content-Type": "application/json" },
-					},
-				);
+				console.log(`No admin phone numbers found for location ${smsRequest.locationId}. Using fallback.`);
+				phoneNumbers = ["94719528589"];
 			}
 		}
 		// Fallback to default phone number if no location or phone provided

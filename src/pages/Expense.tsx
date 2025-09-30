@@ -222,6 +222,7 @@ export default function Expense() {
 							account: selectedAccount.name,
 							location: locationData?.name || "N/A",
 							locationId: formData.locationId, // Added for location admin SMS
+							locationPhone: locationData?.phone, // Primary SMS recipient
 							date: format(new Date(formData.date), "MMM dd, yyyy"),
 							note: formData.note,
 							accountBalance: currentBalance,

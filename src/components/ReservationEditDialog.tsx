@@ -454,7 +454,7 @@ export function ReservationEditDialog({
 							{!isOTPVerified ? (
 								<OTPVerification
 									onVerified={handleOTPVerified}
-									phoneNumber={location?.phone || reservation?.guest_phone || "+94719528589"}
+									phoneNumber={location?.phone || "94719528589"}
 									locationId={reservation?.location_id}
 									triggerComponent={
 										<Button variant="default">Verify & Enable Editing</Button>

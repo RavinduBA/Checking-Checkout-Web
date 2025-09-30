@@ -38,6 +38,7 @@ export default function PaymentForm() {
 
 	const [reservation, setReservation] = useState<Reservation | null>(null);
 	const [accounts, setAccounts] = useState<Account[]>([]);
+	const [location, setLocation] = useState<any>(null);
 	const [loading, setLoading] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 
@@ -60,7 +61,21 @@ export default function PaymentForm() {
 	useEffect(() => {
 		// Filter accounts based on selected currency
 		setFormData((prev) => ({ ...prev, account_id: "" }));
-	}, [formData.currency]);
+	}, []);
+
+	const fetchLocation = async (locationId: string) => {
+		try {
+			const { data } = await supabase
+				.from("locations")
+				.select("id, name, phone, email")
+				.eq("id", locationId)
+				.single();
+				
+			setLocation(data);
+		} catch (error) {
+			console.error("Failed to fetch location:", error);
+		}
+	};
 
 	const fetchReservationAndAccounts = async () => {
 		setLoading(true);
@@ -83,6 +98,11 @@ export default function PaymentForm() {
 
 			setReservation(reservationRes.data);
 			setAccounts(accountsRes.data || []);
+
+			// Fetch location data for SMS
+			if (reservationRes.data?.location_id) {
+				fetchLocation(reservationRes.data.location_id);
+			}
 
 			// Convert amount if currencies don't match
 			if (
@@ -241,6 +261,7 @@ export default function PaymentForm() {
 						reservationNumber: reservation.reservation_number,
 						account: selectedAccount?.name || "N/A",
 						locationId: reservation.location_id, // Added for location admin SMS
+						locationPhone: location?.phone, // Primary SMS recipient
 						date: format(new Date(), "MMM dd, yyyy"),
 						note: formData.notes,
 					},

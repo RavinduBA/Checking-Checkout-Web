@@ -580,6 +580,7 @@ export default function ReservationFormCompact() {
 							status: calculatedData.status,
 							location: locationData?.name || "N/A",
 							locationId: calculatedData.location_id, // Added for location admin SMS
+							locationPhone: locationData?.phone, // Primary SMS recipient
 						},
 					});
 				} catch (smsError) {
