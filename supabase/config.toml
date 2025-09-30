@@ -1,19 +1,28 @@
 project_id = "takovelbhvoqnvfmnhaq"
 
+[functions.beds24-token-exchange]
+verify_jwt = false
+
 [functions.booking-reminders]
 verify_jwt = false
 
 [functions.clear-bookings]
 verify_jwt = false
 
-[functions.send-sms-notification]
+[functions.fetch-beds24-bookings]
 verify_jwt = false
 
 [functions.scheduled-calendar-sync]
 verify_jwt = false
 
-[functions.sync-ical]
+[functions.send-invitation-email]
 verify_jwt = false
 
-[functions.fetch-beds24-bookings]
+[functions.send-sms-notification]
+verify_jwt = false
+
+[functions.setup-beds24-integration]
+verify_jwt = false
+
+[functions.sync-ical]
 verify_jwt = false

@@ -7,7 +7,7 @@ import {
 	DollarSign,
 	Download,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,13 +26,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionLoader } from "@/components/ui/loading-spinner";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import {
 	Table,
 	TableBody,
 	TableCell,
@@ -42,7 +35,8 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { convertCurrency, formatCurrency } from "@/utils/currency";
+import { convertCurrency, formatCurrency, type Currency } from "@/utils/currency";
+import { CurrencySelector } from "@/components/CurrencySelector";
 
 type AccountDetail = {
 	id: string;
@@ -78,7 +72,7 @@ export default function DetailedBalanceSheet() {
 	const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(
 		new Set(),
 	);
-	const [baseCurrency, setBaseCurrency] = useState<"LKR" | "USD">("LKR");
+	const [baseCurrency, setBaseCurrency] = useState<Currency>("LKR");
 	const [accountSummary, setAccountSummary] = useState({
 		totalInitialBalance: 0,
 		totalCurrentBalance: 0,
@@ -87,11 +81,7 @@ export default function DetailedBalanceSheet() {
 	});
 	const { toast } = useToast();
 
-	useEffect(() => {
-		fetchAccountDetails();
-	}, [baseCurrency]);
-
-	const fetchAccountDetails = async () => {
+	const fetchAccountDetails = useCallback(async () => {
 		setLoading(true);
 		try {
 			// Fetch all accounts
@@ -302,7 +292,11 @@ export default function DetailedBalanceSheet() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [baseCurrency, toast]);
+
+	useEffect(() => {
+		fetchAccountDetails();
+	}, [fetchAccountDetails]);
 
 	const toggleAccountExpansion = (accountId: string) => {
 		const newExpanded = new Set(expandedAccounts);
@@ -383,18 +377,11 @@ export default function DetailedBalanceSheet() {
 					</p>
 				</div>
 				<div className="flex gap-2">
-					<Select
-						value={baseCurrency}
-						onValueChange={(value: "LKR" | "USD") => setBaseCurrency(value)}
-					>
-						<SelectTrigger className="w-32">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="LKR">LKR</SelectItem>
-							<SelectItem value="USD">USD</SelectItem>
-						</SelectContent>
-					</Select>
+					<CurrencySelector
+						currency={baseCurrency}
+						onCurrencyChange={(currency) => setBaseCurrency(currency as Currency)}
+						label=""
+					/>
 					<Button onClick={exportBalanceSheet} variant="outline">
 						<Download className="size-4 mr-2" />
 						Export CSV

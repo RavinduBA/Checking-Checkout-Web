@@ -115,7 +115,16 @@ export default function BillingSuccess() {
 		} else {
 			setLoading(false);
 		}
-	}, [checkoutId, tenant, processed, orderId, customerId, subscriptionId, productId, toast]);
+	}, [
+		checkoutId,
+		tenant,
+		processed,
+		orderId,
+		customerId,
+		subscriptionId,
+		productId,
+		toast,
+	]);
 
 	if (loading) {
 		return (
@@ -182,7 +191,10 @@ export default function BillingSuccess() {
 					<div className="space-y-3">
 						{source === "onboarding" ? (
 							<>
-								<Button className="w-full" onClick={() => navigate("/onboarding")}>
+								<Button
+									className="w-full"
+									onClick={() => navigate("/onboarding")}
+								>
 									Complete Setup
 									<ArrowRight className="size-4 ml-2" />
 								</Button>
@@ -196,7 +208,10 @@ export default function BillingSuccess() {
 							</>
 						) : (
 							<>
-								<Button className="w-full" onClick={() => navigate("/dashboard")}>
+								<Button
+									className="w-full"
+									onClick={() => navigate("/dashboard")}
+								>
 									Go to Dashboard
 									<ArrowRight className="size-4 ml-2" />
 								</Button>

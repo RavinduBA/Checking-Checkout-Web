@@ -148,7 +148,8 @@ Use `"all"` for cross-location reporting when user has appropriate permissions.
 
 ## File Conventions
 
-- TypeScript throughout with strict types from Supabase
+- TypeScript throughout with strict types from Supabase 
+- generate types using Supabase CLI : npx supabase gen types typescript --project-id "$PROJECT_REF" --schema public > src/integrations/supabase/types.ts
 - Kebab-case for files/directories
 - PascalCase for components
 - Database types auto-generated, never edit manually

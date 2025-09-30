@@ -1,5 +1,5 @@
 import { Edit, Plus, Trash2, UserCheck } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
 
 type Guide = {
@@ -48,6 +49,7 @@ type Guide = {
 export default function GuidesTab() {
 	const [guides, setGuides] = useState<Guide[]>([]);
 	const [loading, setLoading] = useState(true);
+	const { tenant } = useTenant();
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [editingGuide, setEditingGuide] = useState<Guide | null>(null);
 	const [formData, setFormData] = useState({
@@ -61,15 +63,14 @@ export default function GuidesTab() {
 	});
 	const { toast } = useToast();
 
-	useEffect(() => {
-		fetchGuides();
-	}, []);
-
-	const fetchGuides = async () => {
+	const fetchGuides = useCallback(async () => {
+		if (!tenant?.id) return;
+		
 		try {
 			const { data, error } = await supabase
 				.from("guides")
 				.select("*")
+				.eq("tenant_id", tenant?.id)
 				.order("created_at", { ascending: false });
 
 			if (error) throw error;
@@ -83,7 +84,11 @@ export default function GuidesTab() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [tenant?.id, toast]);
+
+	useEffect(() => {
+		fetchGuides();
+	}, [fetchGuides]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -102,7 +107,10 @@ export default function GuidesTab() {
 					description: "Guide updated successfully",
 				});
 			} else {
-				const { error } = await supabase.from("guides").insert([formData]);
+				const { error } = await supabase.from("guides").insert([{
+					...formData,
+					tenant_id: tenant?.id
+				}]);
 
 				if (error) throw error;
 

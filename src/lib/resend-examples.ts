@@ -1,41 +1,29 @@
 /**
- * Resend Integration Example
+ * Email Integration Examples via Supabase Edge Functions
  *
- * This file demonstrates how to use the Resend SDK setup in your CheckingCheckout application.
+ * This file demonstrates how to use the Edge Function approach for email sending.
+ * The Resend SDK has been replaced with Supabase Edge Functions for better security.
  */
 
-// Import the Resend utilities
-import { resend, sendCredentialsEmail } from "@/lib/resend";
+// Import the Edge Function-based email utilities
+import { sendCredentialsEmail } from "@/lib/resend";
 
 /**
- * Example 1: Direct Resend usage for custom emails
+ * Example 1: Custom email via Edge Function
+ * Note: For custom emails, you would need to create additional Edge Functions
+ * or extend the existing send-invitation-email function to handle different email types
  */
 export const sendWelcomeEmail = async (userEmail: string, userName: string) => {
-	try {
-		const { data, error } = await resend.emails.send({
-			from: "CheckingCheckout <onboarding@resend.dev>",
-			to: [userEmail],
-			subject: "Welcome to CheckingCheckout!",
-			html: `
-        <h1>Welcome ${userName}!</h1>
-        <p>Thank you for joining CheckingCheckout. We're excited to have you on board.</p>
-        <p>If you need any help getting started, don't hesitate to reach out.</p>
-        <p>Best regards,<br>The CheckingCheckout Team</p>
-      `,
-			text: `Welcome ${userName}! Thank you for joining CheckingCheckout.`,
-		});
+	// This is a placeholder - you would need to implement a custom Edge Function
+	// for welcome emails or extend the existing invitation email function
+	console.log("Custom emails require additional Edge Function implementation");
+	console.log("Parameters:", { userEmail, userName });
 
-		if (error) {
-			console.error("Email sending failed:", error);
-			return { success: false, error: error.message };
-		}
-
-		console.log("Welcome email sent:", data?.id);
-		return { success: true, emailId: data?.id };
-	} catch (err: any) {
-		console.error("Welcome email error:", err);
-		return { success: false, error: err.message };
-	}
+	return {
+		success: false,
+		error:
+			"Custom email sending requires Edge Function implementation. Please create a dedicated Edge Function for welcome emails.",
+	};
 };
 
 /**
@@ -61,19 +49,19 @@ export const sendLoginCredentials = async (
 
 /**
  * Example 3: Batch email sending
+ * Note: This would require implementing batch functionality in Edge Functions
  */
 export const sendBatchEmails = async (
-	emails: Array<{ to: string; subject: string; html: string }>,
+	emails: Array<{ to: string; password: string; isPasswordReset?: boolean }>,
 ) => {
 	try {
 		const results = await Promise.all(
 			emails.map(async (email) => {
-				const { data, error } = await resend.emails.send({
-					from: "CheckingCheckout <onboarding@resend.dev>",
-					...email,
-				});
-
-				return { success: !error, data, error };
+				return await sendLoginCredentials(
+					email.to,
+					email.password,
+					email.isPasswordReset || false,
+				);
 			}),
 		);
 
@@ -84,14 +72,15 @@ export const sendBatchEmails = async (
 			`Batch email results: ${successful} successful, ${failed} failed`,
 		);
 		return { successful, failed, results };
-	} catch (error) {
+	} catch (error: any) {
 		console.error("Batch email error:", error);
-		return { successful: 0, failed: emails.length, error };
+		return { successful: 0, failed: emails.length, error: error.message };
 	}
 };
 
 /**
  * Example 4: Email with attachment (if needed in the future)
+ * Note: This would require implementing attachment functionality in Edge Functions
  */
 export const sendEmailWithAttachment = async (
 	to: string,
@@ -100,34 +89,22 @@ export const sendEmailWithAttachment = async (
 	attachmentUrl: string,
 	filename: string,
 ) => {
-	try {
-		const { data, error } = await resend.emails.send({
-			from: "CheckingCheckout <onboarding@resend.dev>",
-			to: [to],
-			subject,
-			html,
-			attachments: [
-				{
-					path: attachmentUrl,
-					filename: filename,
-				},
-			],
-		});
+	console.log(
+		"Email attachments require additional Edge Function implementation",
+	);
+	console.log("Parameters:", { to, subject, attachmentUrl, filename });
 
-		if (error) {
-			return { success: false, error: error.message };
-		}
-
-		return { success: true, emailId: data?.id };
-	} catch (err: any) {
-		return { success: false, error: err.message };
-	}
+	return {
+		success: false,
+		error:
+			"Email attachments require Edge Function implementation. Please extend the Edge Function to support attachments.",
+	};
 };
 
 /**
  * Usage Examples:
  *
- * // Send welcome email
+ * // Send welcome email (requires custom Edge Function)
  * await sendWelcomeEmail('user@example.com', 'John Doe');
  *
  * // Send login credentials
@@ -135,4 +112,10 @@ export const sendEmailWithAttachment = async (
  *
  * // Send password reset
  * await sendLoginCredentials('user@example.com', 'NewPass456!', true);
+ *
+ * // Send batch credentials
+ * await sendBatchEmails([
+ *   { to: 'user1@example.com', password: 'Pass1!' },
+ *   { to: 'user2@example.com', password: 'Pass2!', isPasswordReset: true }
+ * ]);
  */

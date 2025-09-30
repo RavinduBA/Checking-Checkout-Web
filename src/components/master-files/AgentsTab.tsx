@@ -1,5 +1,5 @@
 import { Edit, Plus, Trash2, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
 
 type Agent = {
@@ -38,7 +39,6 @@ type Agent = {
 	name: string;
 	phone?: string;
 	email?: string;
-	address?: string;
 	agency_name?: string;
 	commission_rate: number;
 	is_active: boolean;
@@ -54,22 +54,21 @@ export default function AgentsTab() {
 		name: "",
 		phone: "",
 		email: "",
-		address: "",
 		agency_name: "",
 		commission_rate: 0,
 		is_active: true,
 	});
 	const { toast } = useToast();
+	const { tenant } = useTenant();
 
-	useEffect(() => {
-		fetchAgents();
-	}, []);
-
-	const fetchAgents = async () => {
+	const fetchAgents = useCallback(async () => {
+		if (!tenant?.id) return;
+		
 		try {
 			const { data, error } = await supabase
 				.from("agents")
 				.select("*")
+				.eq("tenant_id", tenant.id)
 				.order("created_at", { ascending: false });
 
 			if (error) throw error;
@@ -83,7 +82,11 @@ export default function AgentsTab() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [tenant?.id, toast]);
+
+	useEffect(() => {
+		fetchAgents();
+	}, [fetchAgents]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -102,7 +105,14 @@ export default function AgentsTab() {
 					description: "Agent updated successfully",
 				});
 			} else {
-				const { error } = await supabase.from("agents").insert([formData]);
+				if (!tenant?.id) {
+					throw new Error("No tenant selected");
+				}
+				
+				const { error } = await supabase.from("agents").insert([{
+					...formData,
+					tenant_id: tenant.id
+				}]);
 
 				if (error) throw error;
 
@@ -130,7 +140,6 @@ export default function AgentsTab() {
 			name: "",
 			phone: "",
 			email: "",
-			address: "",
 			agency_name: "",
 			commission_rate: 0,
 			is_active: true,
@@ -143,7 +152,6 @@ export default function AgentsTab() {
 			name: agent.name,
 			phone: agent.phone || "",
 			email: agent.email || "",
-			address: agent.address || "",
 			agency_name: agent.agency_name || "",
 			commission_rate: agent.commission_rate,
 			is_active: agent.is_active,
@@ -269,19 +277,6 @@ export default function AgentsTab() {
 										placeholder="Email address"
 									/>
 								</div>
-							</div>
-
-							<div>
-								<Label htmlFor="address">Address</Label>
-								<Textarea
-									id="address"
-									value={formData.address}
-									onChange={(e) =>
-										setFormData({ ...formData, address: e.target.value })
-									}
-									placeholder="Full address"
-									rows={2}
-								/>
 							</div>
 
 							<div className="grid grid-cols-2 gap-4">

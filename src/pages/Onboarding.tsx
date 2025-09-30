@@ -39,8 +39,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { createCheckoutSession } from "@/lib/creem";
 import { Tables } from "@/integrations/supabase/types";
+import { createCheckoutSession } from "@/lib/creem";
 
 type Plan = Tables<"plans">;
 
@@ -132,6 +132,7 @@ export default function Onboarding() {
 	const [plans, setPlans] = useState<Plan[]>([]);
 	const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 	const [processingPayment, setProcessingPayment] = useState(false);
+	const [hasExistingTenant, setHasExistingTenant] = useState(false);
 	const [formData, setFormData] = useState({
 		// Company Info
 		companyName: "",
@@ -157,12 +158,22 @@ export default function Onboarding() {
 
 	const navigate = useNavigate();
 	const { toast } = useToast();
-	const { user } = useAuth();
+	const { user, profile, tenant } = useAuth();
 
 	useEffect(() => {
 		if (!user) {
 			navigate("/");
 			return;
+		}
+
+		// Check if user already has a tenant (returning user with no locations)
+		if (profile?.tenant_id && tenant) {
+			setHasExistingTenant(true);
+			// Pre-fill company name from existing tenant
+			setFormData((prev) => ({
+				...prev,
+				companyName: tenant.name || prev.companyName,
+			}));
 		}
 
 		// Pre-fill user email if available
@@ -196,7 +207,7 @@ export default function Onboarding() {
 		};
 
 		fetchPlans();
-	}, [user, navigate, formData.email, toast]);
+	}, [user, navigate, formData.email, toast, profile?.tenant_id, tenant]);
 
 	const handleNext = () => {
 		if (currentStep < STEPS.length) {
@@ -221,6 +232,85 @@ export default function Onboarding() {
 		}));
 	};
 
+	// Simplified location creation for users who already have a tenant
+	const createLocationForExistingTenant = async () => {
+		if (!tenant || !user) return;
+
+		try {
+			setLoading(true);
+
+			// Validate required fields
+			if (!formData.companyName.trim()) {
+				toast({
+					title: "Validation Error",
+					description: "Location name is required",
+					variant: "destructive",
+				});
+				return;
+			}
+
+			// Create location for existing tenant
+			const { data: location, error: locationError } = await supabase
+				.from("locations")
+				.insert({
+					name: formData.companyName.trim(),
+					tenant_id: tenant.id,
+					is_active: true,
+					property_type: formData.propertyType || "hotel",
+				})
+				.select()
+				.single();
+
+			if (locationError) throw locationError;
+
+			// Create user permissions for the new location
+			const { error: permissionsError } = await supabase
+				.from("user_permissions")
+				.insert([
+					{
+						user_id: user.id,
+						tenant_id: tenant.id,
+						location_id: location.id,
+						tenant_role: "tenant_admin",
+						is_tenant_admin: true,
+						// Grant all permissions
+						access_dashboard: true,
+						access_calendar: true,
+						access_bookings: true,
+						access_income: true,
+						access_expenses: true,
+						access_reports: true,
+						access_accounts: true,
+						access_master_files: true,
+						access_booking_channels: true,
+						access_rooms: true,
+						access_users: true,
+						access_settings: true,
+					},
+				]);
+
+			if (permissionsError) throw permissionsError;
+
+			toast({
+				title: "Location Created! 🎉",
+				description: `${formData.companyName} has been added successfully.`,
+			});
+
+			// Redirect to dashboard
+			navigate("/dashboard");
+		} catch (error: any) {
+			console.error("Location creation error:", error);
+			toast({
+				title: "Creation Error",
+				description:
+					error.message || "Failed to create location. Please try again.",
+				variant: "destructive",
+			});
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	const handlePlanSelect = (planId: string) => {
 		setSelectedPlanId(planId);
 	};
@@ -235,18 +325,24 @@ export default function Onboarding() {
 			await completeOnboarding();
 
 			// Start 7-day trial
-			const selectedPlan = plans.find(p => p.id === selectedPlanId);
+			const selectedPlan = plans.find((p) => p.id === selectedPlanId);
 			if (selectedPlan && user?.email) {
 				const { data: subscription, error } = await supabase
 					.from("subscriptions")
 					.insert({
-						tenant_id: formData.companyName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+						tenant_id: formData.companyName
+							.toLowerCase()
+							.replace(/[^a-z0-9]/g, "-"),
 						plan_id: selectedPlanId,
 						status: "trialing",
 						trial_start_date: new Date().toISOString(),
-						trial_end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+						trial_end_date: new Date(
+							Date.now() + 7 * 24 * 60 * 60 * 1000,
+						).toISOString(), // 7 days
 						current_period_start: new Date().toISOString(),
-						current_period_end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+						current_period_end: new Date(
+							Date.now() + 7 * 24 * 60 * 60 * 1000,
+						).toISOString(),
 					})
 					.select()
 					.single();
@@ -279,7 +375,7 @@ export default function Onboarding() {
 		try {
 			setProcessingPayment(true);
 
-			const selectedPlan = plans.find(p => p.id === selectedPlanId);
+			const selectedPlan = plans.find((p) => p.id === selectedPlanId);
 			if (!selectedPlan?.product_id) {
 				throw new Error("Plan does not have a Creem product ID");
 			}
@@ -294,7 +390,9 @@ export default function Onboarding() {
 					email: user?.email,
 				},
 				metadata: {
-					tenant_id: formData.companyName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+					tenant_id: formData.companyName
+						.toLowerCase()
+						.replace(/[^a-z0-9]/g, "-"),
 					plan_id: selectedPlanId,
 					onboarding: "true",
 				},
@@ -485,7 +583,8 @@ export default function Onboarding() {
 			// Complete onboarding without payment setup - user already went through trial/payment
 			toast({
 				title: "Welcome aboard! 🎉",
-				description: "Your account has been set up successfully. Let's get started!",
+				description:
+					"Your account has been set up successfully. Let's get started!",
 			});
 
 			// Redirect to main app
@@ -828,66 +927,78 @@ export default function Onboarding() {
 								Choose Your Plan
 							</h2>
 							<p className="text-muted-foreground">
-								Start with a 7-day free trial, then choose the plan that fits your needs
+								Start with a 7-day free trial, then choose the plan that fits
+								your needs
 							</p>
 						</div>
 
 						<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-							{plans.map((plan) => (
-								<Card
-									key={plan.id}
-									className={`cursor-pointer transition-all hover:shadow-md ${
-										selectedPlanId === plan.id
-											? "ring-2 ring-primary bg-primary/5"
-											: "hover:border-primary/50"
-									}`}
-									onClick={() => handlePlanSelect(plan.id)}
-								>
-									<CardHeader className="text-center">
-										<div className="flex items-center justify-center gap-2 mb-2">
-											{plan.name.toLowerCase().includes("professional") && (
-												<Crown className="h-5 w-5 text-yellow-500" />
+							{Array.isArray(plans) ? (
+								plans.map((plan) => (
+									<Card
+										key={plan.id}
+										className={`cursor-pointer transition-all hover:shadow-md ${
+											selectedPlanId === plan.id
+												? "ring-2 ring-primary bg-primary/5"
+												: "hover:border-primary/50"
+										}`}
+										onClick={() => handlePlanSelect(plan.id)}
+									>
+										<CardHeader className="text-center">
+											<div className="flex items-center justify-center gap-2 mb-2">
+												{plan.name.toLowerCase().includes("professional") && (
+													<Crown className="h-5 w-5 text-yellow-500" />
+												)}
+												<CardTitle className="text-lg">{plan.name}</CardTitle>
+											</div>
+											<div className="text-2xl font-bold">
+												${(plan.price_cents / 100).toFixed(0)}
+												<span className="text-sm font-normal text-muted-foreground">
+													/{plan.billing_interval}
+												</span>
+											</div>
+											{plan.description && (
+												<p className="text-sm text-muted-foreground">
+													{plan.description}
+												</p>
 											)}
-											<CardTitle className="text-lg">{plan.name}</CardTitle>
-										</div>
-										<div className="text-2xl font-bold">
-											${(plan.price_cents / 100).toFixed(0)}
-											<span className="text-sm font-normal text-muted-foreground">
-												/{plan.billing_interval}
-											</span>
-										</div>
-										{plan.description && (
-											<p className="text-sm text-muted-foreground">
-												{plan.description}
-											</p>
-										)}
-									</CardHeader>
-									<CardContent className="space-y-3">
-										{plan.features && (
-											<div className="space-y-2">
-												{(plan.features as string[]).map((feature, index) => (
-													<div key={index} className="flex items-center gap-2 text-sm">
-														<CheckCircle className="h-4 w-4 text-green-500" />
-														{feature}
+										</CardHeader>
+										<CardContent className="space-y-3">
+											{plan.feature_list &&
+												Array.isArray(plan.feature_list) &&
+												plan.feature_list.length > 0 && (
+													<div className="space-y-2">
+														{plan.feature_list.map((feature, index) => (
+															<div
+																key={index}
+																className="flex items-center gap-2 text-sm"
+															>
+																<CheckCircle className="h-4 w-4 text-green-500" />
+																{feature}
+															</div>
+														))}
 													</div>
-												))}
-											</div>
-										)}
-										{plan.max_locations && (
-											<div className="flex items-center gap-2 text-sm">
-												<Building2 className="h-4 w-4 text-blue-500" />
-												Up to {plan.max_locations} locations
-											</div>
-										)}
-										{plan.max_rooms && (
-											<div className="flex items-center gap-2 text-sm">
-												<Bed className="h-4 w-4 text-purple-500" />
-												Up to {plan.max_rooms} rooms
-											</div>
-										)}
-									</CardContent>
-								</Card>
-							))}
+												)}
+											{plan.max_locations && (
+												<div className="flex items-center gap-2 text-sm">
+													<Building2 className="h-4 w-4 text-blue-500" />
+													Up to {plan.max_locations} locations
+												</div>
+											)}
+											{plan.max_rooms && (
+												<div className="flex items-center gap-2 text-sm">
+													<Bed className="h-4 w-4 text-purple-500" />
+													Up to {plan.max_rooms} rooms
+												</div>
+											)}
+										</CardContent>
+									</Card>
+								))
+							) : (
+								<div className="col-span-full text-center text-muted-foreground">
+									Loading plans...
+								</div>
+							)}
 						</div>
 
 						{selectedPlanId && (
@@ -970,79 +1081,162 @@ export default function Onboarding() {
 	return (
 		<div className="min-h-screen bg-background p-4">
 			<div className="max-w-4xl mx-auto">
-				{/* Progress Header */}
-				<div className="text-center mb-8 pt-8">
-					<div className="flex items-center justify-center gap-4 mb-4">
-						{STEPS.map((step) => (
-							<div key={step.id} className="flex items-center">
-								<div
-									className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-										currentStep >= step.id
-											? "bg-primary text-primary-foreground border-primary"
-											: "border-muted-foreground text-muted-foreground"
-									}`}
-								>
-									{currentStep > step.id ? (
-										<CheckCircle className="size-4" />
-									) : (
-										step.id
-									)}
+				{/* Simplified form for users who already have a tenant */}
+				{hasExistingTenant ? (
+					<div className="pt-8">
+						<Card className="max-w-2xl mx-auto">
+							<CardHeader className="text-center">
+								<CardTitle className="text-2xl mb-2">
+									Add New Location
+								</CardTitle>
+								<p className="text-muted-foreground">
+									You need to create at least one location to continue using the
+									system.
+								</p>
+							</CardHeader>
+							<CardContent className="space-y-6">
+								<div className="space-y-4">
+									<div>
+										<Label htmlFor="locationName">Location Name</Label>
+										<Input
+											id="locationName"
+											placeholder="e.g., Main Hotel, Downtown Branch"
+											value={formData.companyName}
+											onChange={(e) =>
+												setFormData((prev) => ({
+													...prev,
+													companyName: e.target.value,
+												}))
+											}
+										/>
+									</div>
+
+									<div>
+										<Label htmlFor="propertyType">Property Type</Label>
+										<Select
+											value={formData.propertyType}
+											onValueChange={(value) =>
+												setFormData((prev) => ({
+													...prev,
+													propertyType: value,
+												}))
+											}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder="Select property type" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="hotel">Hotel</SelectItem>
+												<SelectItem value="villa">Villa</SelectItem>
+												<SelectItem value="apartment">Apartment</SelectItem>
+												<SelectItem value="guesthouse">Guest House</SelectItem>
+												<SelectItem value="hostel">Hostel</SelectItem>
+												<SelectItem value="resort">Resort</SelectItem>
+												<SelectItem value="other">Other</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
 								</div>
-								{step.id < STEPS.length && (
-									<div
-										className={`w-12 h-0.5 mx-2 ${
-											currentStep > step.id
-												? "bg-primary"
-												: "bg-muted-foreground/30"
-										}`}
-									/>
-								)}
+
+								<div className="flex gap-3 pt-4">
+									<Button
+										variant="outline"
+										onClick={() => navigate("/dashboard")}
+										className="flex-1"
+									>
+										Cancel
+									</Button>
+									<Button
+										onClick={createLocationForExistingTenant}
+										disabled={loading || !formData.companyName.trim()}
+										className="flex-1"
+									>
+										{loading ? "Creating..." : "Create Location"}
+									</Button>
+								</div>
+							</CardContent>
+						</Card>
+					</div>
+				) : (
+					<>
+						{/* Original onboarding flow for new users */}
+						{/* Progress Header */}
+						<div className="text-center mb-8 pt-8">
+							<div className="flex items-center justify-center gap-4 mb-4">
+								{STEPS.map((step) => (
+									<div key={step.id} className="flex items-center">
+										<div
+											className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+												currentStep >= step.id
+													? "bg-primary text-primary-foreground border-primary"
+													: "border-muted-foreground text-muted-foreground"
+											}`}
+										>
+											{currentStep > step.id ? (
+												<CheckCircle className="size-4" />
+											) : (
+												step.id
+											)}
+										</div>
+										{step.id < STEPS.length && (
+											<div
+												className={`w-12 h-0.5 mx-2 ${
+													currentStep > step.id
+														? "bg-primary"
+														: "bg-muted-foreground/30"
+												}`}
+											/>
+										)}
+									</div>
+								))}
 							</div>
-						))}
-					</div>
 
-					<Progress
-						value={(currentStep / STEPS.length) * 100}
-						className="w-full max-w-md mx-auto mb-2"
-					/>
-					<p className="text-sm text-muted-foreground">
-						Step {currentStep} of {STEPS.length}:{" "}
-						{STEPS[currentStep - 1]?.description}
-					</p>
-				</div>
+							<Progress
+								value={(currentStep / STEPS.length) * 100}
+								className="w-full max-w-md mx-auto mb-2"
+							/>
+							<p className="text-sm text-muted-foreground">
+								Step {currentStep} of {STEPS.length}:{" "}
+								{STEPS[currentStep - 1]?.description}
+							</p>
+						</div>
 
-				{/* Main Content */}
-				<Card className="bg-card border">
-					<CardHeader className="pb-6">
-						<CardTitle className="text-center text-2xl">
-							{STEPS[currentStep - 1]?.title}
-						</CardTitle>
-					</CardHeader>
-					<CardContent className="px-8 pb-8">{renderStepContent()}</CardContent>
-				</Card>
+						{/* Main Content */}
+						<Card className="bg-card border">
+							<CardHeader className="pb-6">
+								<CardTitle className="text-center text-2xl">
+									{STEPS[currentStep - 1]?.title}
+								</CardTitle>
+							</CardHeader>
+							<CardContent className="px-8 pb-8">
+								{renderStepContent()}
+							</CardContent>
+						</Card>
 
-				{/* Navigation */}
-				{currentStep < 5 && (
-					<div className="flex justify-between items-center mt-6">
-						<Button
-							variant="outline"
-							onClick={handlePrevious}
-							disabled={currentStep === 1}
-							className="flex items-center gap-2"
-						>
-							<ArrowLeft className="size-4" />
-							Previous
-						</Button>
+						{/* Navigation */}
+						{currentStep < 5 && (
+							<div className="flex justify-between items-center mt-6">
+								<Button
+									variant="outline"
+									onClick={handlePrevious}
+									disabled={currentStep === 1}
+									className="flex items-center gap-2"
+								>
+									<ArrowLeft className="size-4" />
+									Previous
+								</Button>
 
-						<Button
-							onClick={handleNext}
-							disabled={!validateStep()}
-							className="flex items-center gap-2"
-						>
-							Next Step
-							<ArrowRight className="size-4" />
-						</Button>
-					</div>
+								<Button
+									onClick={handleNext}
+									disabled={!validateStep()}
+									className="flex items-center gap-2"
+								>
+									Next Step
+									<ArrowRight className="size-4" />
+								</Button>
+							</div>
+						)}
+					</>
 				)}
 			</div>
 		</div>

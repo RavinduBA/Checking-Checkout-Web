@@ -15,15 +15,16 @@ import { SmartRedirect } from "./components/SmartRedirect";
 import AccessDenied from "./pages/AccessDenied";
 import Accounts from "./pages/Accounts";
 import Auth from "./pages/Auth";
+import BillingError from "./pages/BillingError";
 import BillingSubscription from "./pages/BillingSubscription";
 import BillingSuccess from "./pages/BillingSuccess";
-import BillingError from "./pages/BillingError";
 import BookingForm from "./pages/BookingForm";
 import Dashboard from "./pages/Dashboard";
 import EnhancedCalendar from "./pages/EnhancedCalendar";
 import Expense from "./pages/Expense";
 import FinancialReports from "./pages/FinancialReports";
 import Income from "./pages/Income";
+import { InvitationAuth } from "./pages/InvitationAuth";
 import MasterFiles from "./pages/MasterFiles";
 import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
@@ -49,6 +50,7 @@ const App = () => (
 						<Routes>
 							<Route path="/" element={<AuthRedirect />} />
 							<Route path="/auth" element={<Auth />} />
+							<Route path="/invitation" element={<InvitationAuth />} />
 							<Route
 								path="/onboarding"
 								element={

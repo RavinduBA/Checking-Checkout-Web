@@ -1,5 +1,6 @@
 // Deno edge function for SMS notifications
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
 	"Access-Control-Allow-Origin": "*",
@@ -10,6 +11,7 @@ const corsHeaders = {
 interface SMSRequest {
 	type?: "income" | "expense" | "otp_verification" | "reservation" | "payment";
 	phoneNumber?: string;
+	locationId?: string; // Added to get location admin phone numbers
 	message?: string;
 	amount?: number;
 	currency?: string;
@@ -33,6 +35,41 @@ interface SMSRequest {
 
 let accessToken: string | null = null;
 let refreshToken: string | null = null;
+
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+// Function to get location admin phone numbers
+async function getLocationAdminPhones(locationId: string): Promise<string[]> {
+	try {
+		const { data: adminUsers, error } = await supabase
+			.from("user_permissions")
+			.select(`
+				profiles!inner(phone)
+			`)
+			.eq("location_id", locationId)
+			.or("is_tenant_admin.eq.true,tenant_role.eq.tenant_admin,tenant_role.eq.tenant_manager")
+			.not("profiles.phone", "is", null);
+
+		if (error) {
+			console.error("Error fetching location admin phones:", error);
+			return [];
+		}
+
+		// Extract phone numbers and filter out null/empty values
+		const phoneNumbers = adminUsers
+			.map((user: any) => user.profiles?.phone)
+			.filter((phone: string | null) => phone && phone.trim().length > 0);
+
+		console.log(`Found ${phoneNumbers.length} admin phone numbers for location ${locationId}`);
+		return phoneNumbers;
+	} catch (error) {
+		console.error("Exception getting location admin phones:", error);
+		return [];
+	}
+}
 
 async function getAccessToken(): Promise<string> {
 	const username = Deno.env.get("BULK_SMS_USERNAME");
@@ -244,7 +281,33 @@ const handler = async (req: Request): Promise<Response> => {
 		const smsRequest: SMSRequest = await req.json();
 
 		let message: string;
-		let phoneNumber = smsRequest.phoneNumber || "94719528589";
+		let phoneNumbers: string[] = [];
+
+		// If phoneNumber is provided directly (e.g., for OTP), use it
+		if (smsRequest.phoneNumber) {
+			phoneNumbers = [smsRequest.phoneNumber];
+		} 
+		// If locationId is provided, get location admin phone numbers
+		else if (smsRequest.locationId) {
+			phoneNumbers = await getLocationAdminPhones(smsRequest.locationId);
+			if (phoneNumbers.length === 0) {
+				console.log(`No admin phone numbers found for location ${smsRequest.locationId}. Skipping SMS.`);
+				return new Response(
+					JSON.stringify({ 
+						success: true, 
+						message: "No admin phone numbers configured. SMS skipped." 
+					}),
+					{
+						status: 200,
+						headers: { ...corsHeaders, "Content-Type": "application/json" },
+					},
+				);
+			}
+		}
+		// Fallback to default phone number if no location or phone provided
+		else {
+			phoneNumbers = ["94719528589"];
+		}
 
 		if (smsRequest.type === "otp_verification") {
 			// Handle OTP verification SMS
@@ -274,10 +337,16 @@ const handler = async (req: Request): Promise<Response> => {
 			message = createSMSMessage(smsRequest);
 		}
 
-		await sendSMS(message, phoneNumber);
+		// Send SMS to all admin phone numbers
+		const smsPromises = phoneNumbers.map(phone => sendSMS(message, phone));
+		await Promise.all(smsPromises);
 
 		return new Response(
-			JSON.stringify({ success: true, message: "SMS sent successfully" }),
+			JSON.stringify({ 
+				success: true, 
+				message: `SMS sent successfully to ${phoneNumbers.length} recipient(s)`,
+				recipients: phoneNumbers.length
+			}),
 			{
 				status: 200,
 				headers: { ...corsHeaders, "Content-Type": "application/json" },

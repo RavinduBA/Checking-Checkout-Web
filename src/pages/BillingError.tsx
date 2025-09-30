@@ -6,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function BillingError() {
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
-	
+
 	// Get URL parameters from Creem.io callback
 	const errorType = searchParams.get("error") || "unknown";
-	const errorDescription = searchParams.get("error_description") || "An unexpected error occurred during payment processing.";
+	const errorDescription =
+		searchParams.get("error_description") ||
+		"An unexpected error occurred during payment processing.";
 	const source = searchParams.get("source"); // 'onboarding' or 'billing'
 
 	const getErrorTitle = () => {
@@ -56,9 +58,7 @@ export default function BillingError() {
 
 					<div className="space-y-2">
 						<h3 className="text-lg font-semibold">Payment Not Completed</h3>
-						<p className="text-muted-foreground">
-							{getErrorMessage()}
-						</p>
+						<p className="text-muted-foreground">{getErrorMessage()}</p>
 					</div>
 
 					{errorType !== "cancelled" && (
@@ -71,7 +71,10 @@ export default function BillingError() {
 					<div className="space-y-3">
 						{source === "onboarding" ? (
 							<>
-								<Button className="w-full" onClick={() => navigate("/onboarding")}>
+								<Button
+									className="w-full"
+									onClick={() => navigate("/onboarding")}
+								>
 									Return to Setup
 									<ArrowRight className="size-4 ml-2" />
 								</Button>

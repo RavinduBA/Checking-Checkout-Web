@@ -240,6 +240,7 @@ export default function PaymentForm() {
 						guestName: reservation.guest_name,
 						reservationNumber: reservation.reservation_number,
 						account: selectedAccount?.name || "N/A",
+						locationId: reservation.location_id, // Added for location admin SMS
 						date: format(new Date(), "MMM dd, yyyy"),
 						note: formData.notes,
 					},

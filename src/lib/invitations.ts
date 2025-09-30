@@ -1,12 +1,15 @@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { sendCredentialsEmail as sendResendEmail } from "@/lib/resend";
+import {
+	sendCredentialsEmail as sendResendEmail,
+	sendInvitationEmail,
+} from "@/lib/resend";
 
 type UserInvitation = Database["public"]["Tables"]["user_invitations"]["Row"];
 
 /**
- * Sends credentials email using Resend SDK
+ * Sends credentials email using Resend SDK (Legacy)
  */
 const sendCredentialsEmail = async (
 	email: string,
@@ -40,43 +43,47 @@ const generateInvitationToken = (): string => {
 };
 
 /**
- * Creates a new user invitation for a specific tenant
+ * Creates a new user invitation for a specific tenant using secure token-based approach
  */
 export const createInvitation = async (
 	tenantId: string,
 	email: string,
 	role: string = "staff",
 	permissions: Record<string, boolean> = {},
+	inviterName?: string,
+	organizationName?: string,
+	locationName?: string,
+	locationId?: string,
 ): Promise<{
 	success: boolean;
-	data?: UserInvitation & { temporaryPassword?: string; loginUrl?: string };
+	data?: UserInvitation & { invitationToken?: string; loginUrl?: string };
 	error?: string;
 }> => {
 	try {
-		// Generate a temporary password
-		const temporaryPassword = generateTemporaryPassword();
-
-		// Create user directly with admin API
-		const { data: userData, error: userError } =
-			await supabase.auth.admin.createUser({
-				email: email,
-				password: temporaryPassword,
-				email_confirm: true, // Skip email confirmation
-				user_metadata: {
-					invited_via: "admin_invitation",
-					tenant_id: tenantId,
-					role: role,
-					permissions: permissions,
-				},
-			});
-
-		if (userError) {
-			console.error("Error creating user:", userError);
-			return { success: false, error: userError.message };
-		}
-
-		// Generate unique token for our tracking
+		// Generate unique token for invitation
 		const token = generateInvitationToken();
+
+		// Get current user for inviter context
+		const {
+			data: { user: currentUser },
+		} = await supabase.auth.getUser();
+
+		// Ensure permissions have proper structure for the invitation processor
+		const processedPermissions = {
+			access_dashboard: permissions.access_dashboard ?? true,
+			access_income: permissions.access_income ?? false,
+			access_expenses: permissions.access_expenses ?? false,
+			access_reports: permissions.access_reports ?? false,
+			access_calendar: permissions.access_calendar ?? true,
+			access_bookings: permissions.access_bookings ?? true,
+			access_rooms: permissions.access_rooms ?? false,
+			access_master_files: permissions.access_master_files ?? false,
+			access_accounts: permissions.access_accounts ?? false,
+			access_users: permissions.access_users ?? false,
+			access_settings: permissions.access_settings ?? false,
+			access_booking_channels: permissions.access_booking_channels ?? false,
+			...permissions, // Override with provided permissions
+		};
 
 		// Create invitation record for tracking
 		const { data: invitationData, error: invitationError } = await supabase
@@ -86,11 +93,12 @@ export const createInvitation = async (
 				email,
 				role,
 				token,
-				permissions,
+				permissions: processedPermissions,
+				location_id: locationId, // Include location_id if provided
 				expires_at: new Date(
 					Date.now() + 7 * 24 * 60 * 60 * 1000,
 				).toISOString(), // 7 days from now
-				invited_by: userData.user?.id || "", // Track who was invited
+				invited_by: currentUser?.id || "",
 			})
 			.select()
 			.single();
@@ -100,26 +108,62 @@ export const createInvitation = async (
 			return { success: false, error: invitationError.message };
 		}
 
-		// Send credentials via email
-		const loginUrl = `${window.location.origin}/auth`;
-		const emailResult = await sendCredentialsEmail(
-			email,
-			temporaryPassword,
-			loginUrl,
-			false,
-		);
+		// Send invitation email with token using Edge Function
+		try {
+			const { error: emailError } = await supabase.functions.invoke(
+				"send-invitation-email",
+				{
+					body: {
+						to: email,
+						email: email,
+						invitationToken: token,
+						loginUrl: `${window.location.origin}/invitation?token=${token}`,
+						inviterName: inviterName || "Team Admin",
+						organizationName: organizationName || "CheckingCheckout",
+						locationName: locationName || "Your Location",
+						role: role || "staff",
+						isResend: false,
+					},
+				},
+			);
 
-		if (!emailResult.success) {
-			console.error("Failed to send invitation email:", emailResult.error);
+			if (emailError) {
+				console.error("Failed to send invitation email:", emailError);
+
+				// Clean up invitation record if email failed
+				await supabase
+					.from("user_invitations")
+					.delete()
+					.eq("id", invitationData.id);
+
+				return {
+					success: false,
+					error: `Failed to send invitation email: ${emailError.message}`,
+				};
+			}
+
+			console.log("Invitation email sent successfully");
+		} catch (emailException) {
+			console.error("Exception sending invitation email:", emailException);
+
+			// Clean up invitation record if email failed
+			await supabase
+				.from("user_invitations")
+				.delete()
+				.eq("id", invitationData.id);
+
 			return {
 				success: false,
-				error: `User was created but failed to send invitation email: ${emailResult.error}`,
+				error: `Failed to send invitation email: ${emailException}`,
 			};
 		}
 
 		return {
 			success: true,
-			data: invitationData,
+			data: {
+				...invitationData,
+				invitationToken: token,
+			},
 		};
 	} catch (error) {
 		console.error("Exception creating invitation:", error);
@@ -128,13 +172,48 @@ export const createInvitation = async (
 };
 
 /**
- * Accepts an invitation using the invitation token
+ * Validates an invitation token and returns invitation details
  */
-export const acceptInvitation = async (
+export const validateInvitationToken = async (
 	token: string,
 ): Promise<{
 	success: boolean;
-	data?: { tenant_id: string; role: string };
+	data?: UserInvitation;
+	error?: string;
+}> => {
+	try {
+		// Find the invitation
+		const { data: invitation, error: fetchError } = await supabase
+			.from("user_invitations")
+			.select("*")
+			.eq("token", token)
+			.gt("expires_at", new Date().toISOString())
+			.is("accepted_at", null)
+			.single();
+
+		if (fetchError || !invitation) {
+			return { success: false, error: "Invalid or expired invitation token" };
+		}
+
+		return {
+			success: true,
+			data: invitation,
+		};
+	} catch (error) {
+		console.error("Exception validating invitation token:", error);
+		return { success: false, error: "Failed to validate invitation token" };
+	}
+};
+
+/**
+ * Accepts an invitation using the invitation token and creates user account with permissions
+ */
+export const acceptInvitation = async (
+	token: string,
+	password: string,
+): Promise<{
+	success: boolean;
+	data?: { tenant_id: string; role: string; user_id: string };
 	error?: string;
 }> => {
 	try {
@@ -151,15 +230,77 @@ export const acceptInvitation = async (
 			return { success: false, error: "Invalid or expired invitation" };
 		}
 
+		// Create user account with the provided password
+		const { data: userData, error: userError } =
+			await supabase.auth.admin.createUser({
+				email: invitation.email,
+				password: password,
+				email_confirm: true, // Skip email confirmation
+				user_metadata: {
+					invited_via: "token_invitation",
+					tenant_id: invitation.tenant_id,
+					role: invitation.role,
+					permissions: invitation.permissions,
+				},
+			});
+
+		if (userError) {
+			console.error("Error creating user account:", userError);
+			return { success: false, error: userError.message };
+		}
+
+		const userId = userData.user?.id;
+		if (!userId) {
+			return { success: false, error: "Failed to get user ID after creation" };
+		}
+
+		// Create user profile
+		const { error: profileError } = await supabase.from("profiles").upsert({
+			id: userId,
+			email: invitation.email,
+			tenant_id: invitation.tenant_id,
+			role: invitation.role as any,
+			name: invitation.email, // Use email as default name
+		});
+
+		if (profileError) {
+			console.error("Error creating user profile:", profileError);
+			return { success: false, error: profileError.message };
+		}
+
+		// Create user permissions directly since invitation-processor doesn't export the required function
+		const permissionsData =
+			invitation.permissions && typeof invitation.permissions === "object"
+				? (invitation.permissions as Record<string, any>)
+				: {};
+
+		const { error: permissionsError } = await supabase
+			.from("user_permissions")
+			.insert({
+				user_id: userId,
+				tenant_id: invitation.tenant_id,
+				location_id: invitation.location_id,
+				...permissionsData,
+				tenant_role: invitation.role as any,
+			});
+
+		if (permissionsError) {
+			console.error("Error creating user permissions:", permissionsError);
+			// Don't fail the whole process, just log the error
+		}
+
 		// Mark invitation as accepted
 		const { error: updateError } = await supabase
 			.from("user_invitations")
-			.update({ accepted_at: new Date().toISOString() })
+			.update({
+				accepted_at: new Date().toISOString(),
+				accepted_by: userId,
+			})
 			.eq("id", invitation.id);
 
 		if (updateError) {
 			console.error("Error updating invitation:", updateError);
-			return { success: false, error: updateError.message };
+			// Don't fail the process for this
 		}
 
 		return {
@@ -167,6 +308,7 @@ export const acceptInvitation = async (
 			data: {
 				tenant_id: invitation.tenant_id || "",
 				role: invitation.role,
+				user_id: userId,
 			},
 		};
 	} catch (error) {
@@ -226,13 +368,17 @@ export const revokeInvitation = async (
 
 /**
  * Resends an invitation by creating a new token
+ * Now checks if user has signed up since invitation was sent
  */
 export const resendInvitation = async (
 	invitationEmail: string,
+	inviterName?: string,
+	organizationName?: string,
+	locationName?: string,
 ): Promise<{
 	success: boolean;
 	error?: string;
-	data?: { email: string; temporaryPassword: string; loginUrl: string };
+	data?: { email: string; invitationToken: string };
 }> => {
 	try {
 		// Get the existing invitation details
@@ -240,52 +386,85 @@ export const resendInvitation = async (
 			.from("user_invitations")
 			.select("*")
 			.eq("email", invitationEmail)
+			.is("accepted_at", null)
 			.single();
 
 		if (invitationError || !invitationData) {
-			return { success: false, error: "Invitation not found" };
+			return { success: false, error: "Active invitation not found" };
 		}
 
-		// Generate a new temporary password
-		const newTemporaryPassword = generateTemporaryPassword();
+		// Check if user has signed up since invitation was sent
+		const { data: userProfile } = await supabase
+			.from("profiles")
+			.select("id")
+			.eq("email", invitationEmail)
+			.single();
 
-		// Find the user by email to get their ID
-		const { data: userData, error: userError } =
-			await supabase.auth.admin.listUsers();
-		const user = userData?.users?.find((u: any) => u.email === invitationEmail);
+		const userExists = !!userProfile;
+		console.log(`Resending invitation: user exists = ${userExists}`);
 
-		if (!user) {
-			return { success: false, error: "User not found" };
-		}
+		// Generate a new invitation token
+		const newToken = generateInvitationToken();
 
-		// Update the user's password
-		const { error: updateError } = await supabase.auth.admin.updateUserById(
-			user.id,
-			{ password: newTemporaryPassword },
-		);
+		// Update the invitation with new token and extended expiry
+		const { error: updateError } = await supabase
+			.from("user_invitations")
+			.update({
+				token: newToken,
+				expires_at: new Date(
+					Date.now() + 7 * 24 * 60 * 60 * 1000,
+				).toISOString(), // 7 days from now
+			})
+			.eq("id", invitationData.id);
 
 		if (updateError) {
-			console.error("Error updating user password:", updateError);
+			console.error("Error updating invitation:", updateError);
 			return { success: false, error: updateError.message };
 		}
 
-		// Send new credentials via email
-		const loginUrl = `${window.location.origin}/auth`;
-		const emailResult = await sendCredentialsEmail(
-			invitationEmail,
-			newTemporaryPassword,
-			loginUrl,
-			true,
-		);
+		// Send new invitation email with token using Edge Function
+		// Use appropriate email type based on whether user has signed up
+		try {
+			const emailType = userExists
+				? "location_access_granted"
+				: "signup_invitation";
+			console.log(`Sending ${emailType} email for resend`);
 
-		if (!emailResult.success) {
+			const { error: emailError } = await supabase.functions.invoke(
+				"send-invitation-email",
+				{
+					body: {
+						to: invitationEmail,
+						email: invitationEmail,
+						invitationToken: newToken,
+						loginUrl: `${window.location.origin}/invitation?token=${newToken}`,
+						inviterName: inviterName || "Team Admin",
+						organizationName: organizationName || "CheckingCheckout",
+						locationName: locationName || "Your Location",
+						role: invitationData.role || "staff",
+						isResend: true,
+						emailType: emailType,
+					},
+				},
+			);
+
+			if (emailError) {
+				console.error("Error sending resend invitation email:", emailError);
+				return {
+					success: false,
+					error: `New invitation token was generated but failed to send email: ${emailError.message}`,
+				};
+			}
+
+			console.log("Resend invitation email sent successfully");
+		} catch (emailException) {
 			console.error(
-				"Failed to send resend invitation email:",
-				emailResult.error,
+				"Exception sending resend invitation email:",
+				emailException,
 			);
 			return {
 				success: false,
-				error: `New password was generated but failed to send email: ${emailResult.error}`,
+				error: `New invitation token was generated but failed to send email: ${emailException}`,
 			};
 		}
 
@@ -293,13 +472,107 @@ export const resendInvitation = async (
 			success: true,
 			data: {
 				email: invitationEmail,
-				temporaryPassword: newTemporaryPassword,
-				loginUrl: loginUrl,
+				invitationToken: newToken,
 			},
 		};
 	} catch (error) {
 		console.error("Exception resending invitation:", error);
 		return { success: false, error: "Failed to resend invitation" };
+	}
+};
+
+/**
+ * Auto-accept pending invitations when user logs in
+ * Called from AuthContext when user session is established
+ */
+export const handlePendingInvitationsOnLogin = async (
+	userEmail: string,
+	userId: string,
+): Promise<{ acceptedCount: number; errors: string[] }> => {
+	try {
+		console.log("Checking for pending invitations for:", userEmail);
+
+		// Get all pending invitations for this user
+		const { data: pendingInvitations, error: fetchError } = await supabase
+			.from("user_invitations")
+			.select("*")
+			.eq("email", userEmail)
+			.is("accepted_at", null)
+			.gt("expires_at", new Date().toISOString());
+
+		if (fetchError) {
+			console.error("Error fetching pending invitations:", fetchError);
+			return { acceptedCount: 0, errors: [fetchError.message] };
+		}
+
+		if (!pendingInvitations || pendingInvitations.length === 0) {
+			console.log("No pending invitations found");
+			return { acceptedCount: 0, errors: [] };
+		}
+
+		console.log(`Found ${pendingInvitations.length} pending invitations`);
+		const errors: string[] = [];
+		let acceptedCount = 0;
+
+		// Process each pending invitation using the RPC function
+		for (const invitation of pendingInvitations) {
+			try {
+				// Use the RPC function to accept the invitation
+				const { data: result, error: rpcError } = await supabase.rpc(
+					"accept_invitation",
+					{
+						p_token: invitation.token,
+					},
+				);
+
+				if (rpcError) {
+					console.error(
+						`RPC error accepting invitation ${invitation.id}:`,
+						rpcError,
+					);
+					errors.push(
+						`Failed to accept invitation for ${invitation.tenant_id}: ${rpcError.message}`,
+					);
+					continue;
+				}
+
+				// Parse the result as our expected response format
+				const response = result as {
+					success: boolean;
+					error?: string;
+					data?: any;
+				};
+
+				if (!response?.success) {
+					console.error(
+						`Invitation acceptance failed for ${invitation.id}:`,
+						response?.error,
+					);
+					errors.push(
+						`Failed to accept invitation for ${invitation.tenant_id}: ${response?.error || "Unknown error"}`,
+					);
+				} else {
+					console.log(
+						`Successfully accepted invitation ${invitation.id} for tenant ${invitation.tenant_id}`,
+					);
+					acceptedCount++;
+				}
+			} catch (invitationError: any) {
+				console.error(
+					`Exception processing invitation ${invitation.id}:`,
+					invitationError,
+				);
+				errors.push(`Failed to process invitation: ${invitationError.message}`);
+			}
+		}
+
+		console.log(
+			`Accepted ${acceptedCount} invitations with ${errors.length} errors`,
+		);
+		return { acceptedCount, errors };
+	} catch (error: any) {
+		console.error("Exception handling pending invitations:", error);
+		return { acceptedCount: 0, errors: [error.message || "Unknown error"] };
 	}
 };
 

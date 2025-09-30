@@ -11,7 +11,6 @@ import {
 import { useState } from "react";
 import { useSearchParams } from "react-router";
 import AgentsTab from "@/components/master-files/AgentsTab";
-import CommissionsTab from "@/components/master-files/CommissionsTab";
 import GuidesTab from "@/components/master-files/GuidesTab";
 import LocationsTab from "@/components/master-files/LocationsTab";
 import RoomsTab from "@/components/master-files/RoomsTab";
@@ -114,34 +113,6 @@ const masterFilesTabs = [
 			},
 		],
 	},
-	{
-		id: "commissions",
-		name: "Commission Settings",
-		icon: Percent,
-		description: "Commission configuration",
-		subItems: [
-			{
-				id: "rates",
-				name: "Commission Rates",
-				description: "Default commission percentages",
-			},
-			{
-				id: "tiers",
-				name: "Tier Structure",
-				description: "Performance-based tiers",
-			},
-			{
-				id: "payments",
-				name: "Payment Schedule",
-				description: "Commission payment terms",
-			},
-			{
-				id: "rules",
-				name: "Calculation Rules",
-				description: "Commission calculation logic",
-			},
-		],
-	},
 ];
 
 export default function MasterFiles() {
@@ -158,8 +129,6 @@ export default function MasterFiles() {
 				return <GuidesTab />;
 			case "agents":
 				return <AgentsTab />;
-			case "commissions":
-				return <CommissionsTab />;
 			default:
 				return <LocationsTab />;
 		}

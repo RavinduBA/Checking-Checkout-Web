@@ -45,7 +45,9 @@ export default function BillingSubscription() {
 		useState<Subscription | null>(subscription);
 	const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
 	const [cancelling, setCancelling] = useState(false);
-	const [trialDaysRemaining, setTrialDaysRemaining] = useState<number | null>(null);
+	const [trialDaysRemaining, setTrialDaysRemaining] = useState<number | null>(
+		null,
+	);
 
 	useEffect(() => {
 		if (tenant) {
@@ -150,7 +152,7 @@ export default function BillingSubscription() {
 			}
 
 			const successUrl = `${window.location.origin}/billing/success?plan_id=${plan.id}&tenant_id=${tenant.id}&source=billing`;
-			
+
 			try {
 				const checkout = await createCheckoutSession({
 					product_id: plan.product_id,
@@ -181,12 +183,13 @@ export default function BillingSubscription() {
 				if (creemError.message?.includes("API key")) {
 					toast({
 						title: "Configuration Error",
-						description: "Payment system is not properly configured. Please contact support or try again later.",
+						description:
+							"Payment system is not properly configured. Please contact support or try again later.",
 						variant: "destructive",
 					});
 				} else if (creemError.message?.includes("product_id")) {
 					toast({
-						title: "Plan Configuration Error", 
+						title: "Plan Configuration Error",
 						description: `The ${plan.name} plan is not properly configured for payments. Please contact support.`,
 						variant: "destructive",
 					});
@@ -389,14 +392,15 @@ export default function BillingSubscription() {
 			</div>
 
 			{/* Trial Status Alert */}
-			{(tenant?.subscription_status === "trial" || currentSubscription?.status === "trialing") && (
+			{(tenant?.subscription_status === "trial" ||
+				currentSubscription?.status === "trialing") && (
 				<Alert
 					className={
 						trialDaysRemaining === 0
 							? "border-red-200 bg-red-50"
 							: trialDaysRemaining && trialDaysRemaining <= 2
-							? "border-yellow-200 bg-yellow-50"
-							: "border-blue-200 bg-blue-50"
+								? "border-yellow-200 bg-yellow-50"
+								: "border-blue-200 bg-blue-50"
 					}
 				>
 					<AlertTriangle
@@ -404,8 +408,8 @@ export default function BillingSubscription() {
 							trialDaysRemaining === 0
 								? "text-red-600"
 								: trialDaysRemaining && trialDaysRemaining <= 2
-								? "text-yellow-600"
-								: "text-blue-600"
+									? "text-yellow-600"
+									: "text-blue-600"
 						}`}
 					/>
 					<AlertDescription
@@ -413,15 +417,15 @@ export default function BillingSubscription() {
 							trialDaysRemaining === 0
 								? "text-red-800"
 								: trialDaysRemaining && trialDaysRemaining <= 2
-								? "text-yellow-800"
-								: "text-blue-800"
+									? "text-yellow-800"
+									: "text-blue-800"
 						}
 					>
 						{trialDaysRemaining === 0
 							? "Your 7-day free trial has expired. Please subscribe to continue using the service."
 							: trialDaysRemaining === 1
-							? "Your 7-day free trial expires tomorrow. Subscribe now to continue using all features."
-							: `Your 7-day free trial expires in ${trialDaysRemaining} days. Subscribe now to continue using all features.`}
+								? "Your 7-day free trial expires tomorrow. Subscribe now to continue using all features."
+								: `Your 7-day free trial expires in ${trialDaysRemaining} days. Subscribe now to continue using all features.`}
 					</AlertDescription>
 				</Alert>
 			)}

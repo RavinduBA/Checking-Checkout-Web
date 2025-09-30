@@ -12,7 +12,7 @@ import {
 	TrendingDown,
 	TrendingUp,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,7 +48,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { convertCurrency, formatCurrency } from "@/utils/currency";
+import { convertCurrency, formatCurrency, getAvailableCurrencies } from "@/utils/currency";
 
 type AccountBalance = {
 	id: string;
@@ -95,17 +95,26 @@ export default function ComprehensiveReports() {
 	const [selectedLocation, setSelectedLocation] = useState("all");
 	const [dateFrom, setDateFrom] = useState("");
 	const [dateTo, setDateTo] = useState("");
-	const [baseCurrency, setBaseCurrency] = useState<"LKR" | "USD">("LKR");
+	const [baseCurrency, setBaseCurrency] = useState<string>("LKR");
+	const [availableCurrencies, setAvailableCurrencies] = useState<string[]>([]);
 	const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(
 		new Set(),
 	);
 	const { toast } = useToast();
 
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	useEffect(() => {
-		fetchLocations();
-		fetchComprehensiveData();
+		const loadData = async () => {
+			await Promise.all([
+				fetchLocations(),
+				fetchAvailableCurrencies(),
+				fetchComprehensiveData()
+			]);
+		};
+		loadData();
 	}, []);
 
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	useEffect(() => {
 		fetchComprehensiveData();
 	}, [selectedLocation, dateFrom, dateTo, baseCurrency]);
@@ -121,6 +130,20 @@ export default function ComprehensiveReports() {
 			setLocations(data || []);
 		} catch (error) {
 			console.error("Error fetching locations:", error);
+		}
+	};
+
+	const fetchAvailableCurrencies = async () => {
+		try {
+			const currencies = await getAvailableCurrencies();
+			setAvailableCurrencies(currencies);
+			// Set default currency to LKR if available, otherwise use the first available currency
+			if (currencies.length > 0 && !currencies.includes(baseCurrency)) {
+				setBaseCurrency(currencies.includes("LKR") ? "LKR" : currencies[0]);
+			}
+		} catch (error) {
+			console.error("Error fetching available currencies:", error);
+			setAvailableCurrencies(["LKR", "USD"]); // Fallback currencies
 		}
 	};
 
@@ -474,14 +497,17 @@ export default function ComprehensiveReports() {
 							<Label htmlFor="currency">Base Currency</Label>
 							<Select
 								value={baseCurrency}
-								onValueChange={(value: "LKR" | "USD") => setBaseCurrency(value)}
+								onValueChange={(value: string) => setBaseCurrency(value)}
 							>
 								<SelectTrigger>
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="LKR">LKR</SelectItem>
-									<SelectItem value="USD">USD</SelectItem>
+									{availableCurrencies.map((currency) => (
+										<SelectItem key={currency} value={currency}>
+											{currency}
+										</SelectItem>
+									))}
 								</SelectContent>
 							</Select>
 						</div>

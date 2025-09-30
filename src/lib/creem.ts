@@ -18,9 +18,9 @@ if (!VITE_CREEM_API_KEY) {
 
 export const creem = new Creem({
 	// Use proxy in development to avoid CORS issues, direct API in production
-	serverURL: import.meta.env.DEV 
+	serverURL: import.meta.env.DEV
 		? `${window.location.origin}/api/creem`
-		: 'https://test-api.creem.io',
+		: "https://test-api.creem.io",
 });
 
 // Helper function to create a checkout session using proper Creem.io API format

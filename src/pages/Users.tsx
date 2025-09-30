@@ -1,12 +1,4 @@
-import {
-	Edit,
-	Settings,
-	Shield,
-	Trash2,
-	User,
-	UserCheck,
-	X,
-} from "lucide-react";
+import { Edit, Settings, Shield, Trash2, User, UserCheck } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,7 +16,6 @@ import {
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,18 +27,21 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import {
-	createInvitation,
 	getInvitations,
 	resendInvitation,
 	revokeInvitation,
 } from "@/lib/invitations";
+import {
+	inviteUserToLocation,
+	type LocationPermissions,
+} from "@/lib/multi-location-invitations";
+import { useLocationContext } from "@/context/LocationContext";
 
 interface UserPermissions {
 	dashboard: boolean;
@@ -63,6 +57,17 @@ interface UserPermissions {
 	settings: boolean;
 	booking_channels: boolean;
 	is_admin?: boolean;
+}
+
+interface RpcResponse {
+	success: boolean;
+	message?: string;
+	error?: string;
+	user_id?: string;
+	tenant_id?: string;
+	updated_by?: string;
+	updated_at?: string;
+	[key: string]: any;
 }
 
 interface User {
@@ -103,7 +108,6 @@ const permissionTypes = [
 
 export default function Users() {
 	const [users, setUsers] = useState<User[]>([]);
-	const [locations, setLocations] = useState<Location[]>([]);
 	const [invitations, setInvitations] = useState<UserInvitation[]>([]);
 	const [showInviteUser, setShowInviteUser] = useState(false);
 	const [loading, setLoading] = useState(true);
@@ -111,6 +115,7 @@ export default function Users() {
 
 	const [inviteEmail, setInviteEmail] = useState("");
 	const [inviteRole, setInviteRole] = useState("staff");
+	const [inviteLocationId, setInviteLocationId] = useState("");
 	const [invitePermissions, setInvitePermissions] = useState({
 		access_dashboard: true,
 		access_income: false,
@@ -131,6 +136,8 @@ export default function Users() {
 	const { toast } = useToast();
 	const { user: currentUser, tenant } = useAuth();
 	const { hasPermission } = usePermissions();
+	const { selectedLocation, getSelectedLocationData, locations } =
+		useLocationContext();
 
 	const fetchInvitations = useCallback(async () => {
 		if (!tenant?.id) return;
@@ -148,7 +155,7 @@ export default function Users() {
 		} finally {
 			setInvitationsLoading(false);
 		}
-	}, [tenant?.id, setInvitations, setInvitationsLoading]);
+	}, [tenant?.id]);
 
 	const fetchData = useCallback(async () => {
 		try {
@@ -163,15 +170,6 @@ export default function Users() {
 			if (profilesError) throw profilesError;
 
 			console.log("Fetched profiles data:", profilesData);
-
-			// Fetch locations (only active ones)
-			const { data: locationsData, error: locationsError } = await supabase
-				.from("locations")
-				.select("*")
-				.eq("is_active", true)
-				.order("name");
-
-			if (locationsError) throw locationsError;
 
 			// Get permissions for each user - but only for active locations
 			const usersWithPermissions = await Promise.all(
@@ -245,7 +243,6 @@ export default function Users() {
 
 			setUsers(usersWithPermissions);
 			console.log("Updated users state:", usersWithPermissions);
-			setLocations(locationsData || []);
 
 			// Fetch invitations if tenant exists
 			if (tenant?.id) {
@@ -266,7 +263,27 @@ export default function Users() {
 	// Invitation handlers
 	const handleInviteMember = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!tenant?.id || !inviteEmail.trim()) return;
+		if (!tenant?.id || !inviteEmail.trim() || !currentUser?.id) return;
+
+		// Check if a specific location is selected
+		if (!inviteLocationId) {
+			toast({
+				title: "Location Required",
+				description: "Please select a location to invite the user to",
+				variant: "destructive",
+			});
+			return;
+		}
+
+		const locationData = locations.find((loc) => loc.id === inviteLocationId);
+		if (!locationData) {
+			toast({
+				title: "Invalid Location",
+				description: "Selected location not found",
+				variant: "destructive",
+			});
+			return;
+		}
 
 		// Check permissions
 		if (!hasPermission("access_users")) {
@@ -280,21 +297,45 @@ export default function Users() {
 
 		try {
 			setInviteLoading(true);
-			const result = await createInvitation(
-				tenant.id,
-				inviteEmail,
-				inviteRole as any,
-				invitePermissions,
-			);
+
+			// Convert permissions to LocationPermissions format
+			const locationPermissions: LocationPermissions = {
+				access_dashboard: invitePermissions.access_dashboard,
+				access_income: invitePermissions.access_income,
+				access_expenses: invitePermissions.access_expenses,
+				access_reports: invitePermissions.access_reports,
+				access_calendar: invitePermissions.access_calendar,
+				access_bookings: invitePermissions.access_bookings,
+				access_rooms: invitePermissions.access_rooms,
+				access_master_files: invitePermissions.access_master_files,
+				access_accounts: invitePermissions.access_accounts,
+				access_users: invitePermissions.access_users,
+				access_settings: invitePermissions.access_settings,
+				access_booking_channels: invitePermissions.access_booking_channels,
+			};
+
+			const result = await inviteUserToLocation({
+				email: inviteEmail,
+				tenantId: tenant.id,
+				locationId: inviteLocationId,
+				invitedBy: currentUser.id,
+				permissions: locationPermissions,
+				role: inviteRole,
+			});
 
 			if (result.success) {
+				const actionText = result.user_exists
+					? "User has been granted access to this location"
+					: "Invitation sent and login credentials have been emailed";
+
 				toast({
-					title: "Invitation Sent",
-					description: `Login credentials have been sent to ${inviteEmail}. They will receive an email with their login details.`,
+					title: result.user_exists ? "Access Granted" : "Invitation Sent",
+					description: `${actionText} for ${inviteEmail} to ${locationData.name}.`,
 					duration: 5000,
 				});
 				setInviteEmail("");
 				setInviteRole("staff");
+				setInviteLocationId("");
 				setInvitePermissions({
 					access_dashboard: true,
 					access_income: false,
@@ -310,6 +351,7 @@ export default function Users() {
 					access_booking_channels: false,
 				});
 				await fetchInvitations();
+				await fetchData(); // Refresh user list to show new permissions
 			} else {
 				toast({
 					title: "Error",
@@ -335,8 +377,8 @@ export default function Users() {
 
 			if (result.success) {
 				toast({
-					title: "New Credentials Sent",
-					description: `Updated login credentials have been sent to ${invitationEmail}. They will receive an email with their new login details.`,
+					title: "Invitation Resent",
+					description: `A new invitation has been sent to ${invitationEmail}.`,
 					duration: 5000,
 				});
 			} else {
@@ -498,7 +540,7 @@ export default function Users() {
 	};
 
 	const handleSaveEditUser = async () => {
-		if (!editingUser) return;
+		if (!editingUser || !tenant?.id) return;
 
 		try {
 			console.log(
@@ -508,72 +550,55 @@ export default function Users() {
 				editingUser.is_tenant_admin,
 			);
 
-			// Update profile with name, tenant_role and is_tenant_admin
-			const { data: updateResult, error: profileError } = await supabase
-				.from("profiles")
-				.update({
-					name: editingUser.name,
-					tenant_role: editingUser.tenant_role,
-					is_tenant_admin: editingUser.is_tenant_admin,
-				})
-				.eq("id", editingUser.id)
-				.select();
+			// Update profile using RPC function
+			const { data: profileResult, error: profileError } = await supabase.rpc(
+				"update_user_profile",
+				{
+					p_user_id: editingUser.id,
+					p_tenant_id: tenant.id,
+					p_name: editingUser.name,
+					p_tenant_role: editingUser.tenant_role,
+					p_is_tenant_admin: editingUser.is_tenant_admin || false,
+				},
+			);
 
-			console.log("Update result:", updateResult);
-			console.log("Profile update error:", profileError);
+			console.log("Profile update result:", profileResult);
 
 			if (profileError) {
 				console.error("Profile update error:", profileError);
 				throw profileError;
 			}
 
+			const profileResponse = profileResult as RpcResponse;
+			if (!profileResponse?.success) {
+				throw new Error(profileResponse?.error || "Failed to update profile");
+			}
+
 			console.log("Profile updated successfully");
 
-			// Delete existing permissions
-			const { error: deleteError } = await supabase
-				.from("user_permissions")
-				.delete()
-				.eq("user_id", editingUser.id);
+			// Update permissions using RPC function
+			const { data: permissionResult, error: permissionError } =
+				await supabase.rpc("update_user_permissions", {
+					p_user_id: editingUser.id,
+					p_tenant_id: tenant.id,
+					p_permissions: editingUser.permissions as any,
+				});
 
-			if (deleteError) {
-				console.error("Permission deletion error:", deleteError);
-				// Don't throw here as permissions might not exist, just log it
+			console.log("Permission update result:", permissionResult);
+
+			if (permissionError) {
+				console.error("Permission update error:", permissionError);
+				throw permissionError;
 			}
 
-			// Insert new permissions for each location
-			const permissionInserts = [];
-			for (const location of locations) {
-				const locationPerms = editingUser.permissions[location.name];
-				if (locationPerms) {
-					permissionInserts.push({
-						user_id: editingUser.id,
-						tenant_id: tenant?.id,
-						location_id: location.id,
-						access_dashboard: locationPerms.dashboard || false,
-						access_income: locationPerms.income || false,
-						access_expenses: locationPerms.expenses || false,
-						access_reports: locationPerms.reports || false,
-						access_calendar: locationPerms.calendar || false,
-						access_bookings: locationPerms.bookings || false,
-						access_rooms: locationPerms.rooms || false,
-						access_master_files: locationPerms.master_files || false,
-						access_accounts: locationPerms.accounts || false,
-						access_users: locationPerms.users || false,
-						access_settings: locationPerms.settings || false,
-						access_booking_channels: locationPerms.booking_channels || false,
-						tenant_role: editingUser.tenant_role,
-						is_tenant_admin: editingUser.is_tenant_admin || false,
-					});
-				}
+			const permissionResponse = permissionResult as RpcResponse;
+			if (!permissionResponse?.success) {
+				throw new Error(
+					permissionResponse?.error || "Failed to update permissions",
+				);
 			}
 
-			if (permissionInserts.length > 0) {
-				const { error: permError } = await supabase
-					.from("user_permissions")
-					.insert(permissionInserts);
-
-				if (permError) throw permError;
-			}
+			console.log("Permissions updated successfully");
 
 			setShowEditUser(false);
 			setEditingUser(null);
@@ -765,7 +790,8 @@ export default function Users() {
 						<CardHeader>
 							<CardTitle>Invite Member</CardTitle>
 							<CardDescription>
-								Send an invitation to join your organization
+								Send an invitation to join your organization at a specific
+								location.
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
@@ -780,6 +806,24 @@ export default function Users() {
 										onChange={(e) => setInviteEmail(e.target.value)}
 										required
 									/>
+								</div>
+								<div>
+									<Label htmlFor="inviteLocation">Location</Label>
+									<Select
+										value={inviteLocationId}
+										onValueChange={setInviteLocationId}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="Select location" />
+										</SelectTrigger>
+										<SelectContent>
+											{locations.map((location) => (
+												<SelectItem key={location.id} value={location.id}>
+													{location.name}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
 								</div>
 								<div>
 									<Label htmlFor="inviteRole">Role</Label>
@@ -982,8 +1026,18 @@ export default function Users() {
 									</div>
 								</div>
 
-								<Button type="submit" disabled={inviteLoading}>
-									{inviteLoading ? "Sending..." : "Send Invitation"}
+								<Button
+									type="submit"
+									disabled={inviteLoading || !inviteLocationId}
+									className={
+										!inviteLocationId ? "opacity-50 cursor-not-allowed" : ""
+									}
+								>
+									{inviteLoading
+										? "Sending..."
+										: !inviteLocationId
+											? "Select Location First"
+											: "Send Invitation"}
 								</Button>
 							</form>
 						</CardContent>

@@ -314,6 +314,7 @@ const Income = () => {
 						category: "booking",
 						account: selectedAccount?.name || "",
 						location: location?.name || "",
+						locationId: selectedReservation.location_id, // Added for location admin SMS
 						date: new Date().toISOString().split("T")[0],
 						note: paymentForm.notes || undefined,
 					},

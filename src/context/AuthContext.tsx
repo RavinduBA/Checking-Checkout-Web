@@ -2,6 +2,7 @@ import { Session, User } from "@supabase/supabase-js";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
+import { processPendingInvitations } from "@/lib/invitation-processor";
 
 type Profile = Tables<"profiles">;
 type Tenant = Tables<"tenants">;
@@ -26,7 +27,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
+const useAuth = () => {
 	const context = useContext(AuthContext);
 	if (context === undefined) {
 		throw new Error("useAuth must be used within an AuthProvider");
@@ -101,24 +102,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 				.select("*")
 				.eq("tenant_id", tenantId)
 				.in("status", ["active", "trialing"])
-				.order("created_at", { ascending: false })
-				.limit(1);
+				.single();
 
-			if (error) {
+			if (error && error.code !== "PGRST116") {
 				console.error("Error fetching subscription:", error);
-				setSubscription(null);
 				return null;
 			}
 
-			const subscription = data && data.length > 0 ? data[0] : null;
-			setSubscription(subscription);
-			return subscription;
+			setSubscription(data);
+			return data;
 		} catch (error) {
 			console.error("Exception fetching subscription:", error);
 			return null;
 		}
 	};
-
 	const refreshProfile = async () => {
 		if (user) {
 			await fetchProfile(user.id);
@@ -132,6 +129,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 		}
 	};
 
+	// These functions only depend on stable setter functions, safe to omit from dependencies
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Functions only depend on stable setters
 	useEffect(() => {
 		const subscription = supabase.auth.onAuthStateChange(
 			async (event, session) => {
@@ -153,22 +152,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 								session.user.email,
 							);
 
+							// Check and process any pending invitations
+							const invitationResult = await processPendingInvitations(
+								session.user.id,
+								session.user.email!,
+							);
+
+							// Create or update profile
+							const profileData = {
+								id: session.user.id,
+								email: session.user.email!,
+								name:
+									session.user.user_metadata?.name ||
+									session.user.user_metadata?.full_name ||
+									session.user.email!,
+							};
+
 							// Create profile - use upsert to handle existing profiles gracefully
 							const { error: profileError } = await supabase
 								.from("profiles")
-								.upsert(
-									{
-										id: session.user.id,
-										email: session.user.email!,
-										name:
-											session.user.user_metadata?.name ||
-											session.user.user_metadata?.full_name ||
-											session.user.email!,
-									},
-									{
-										onConflict: "id",
-									},
-								);
+								.upsert(profileData, {
+									onConflict: "id",
+								});
 
 							if (profileError) {
 								console.error("Error creating/updating profile:", profileError);
@@ -177,6 +182,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 									"Profile created/updated successfully for:",
 									session.user.email,
 								);
+
 								// Fetch the profile data after creation/update
 								const profileData = await fetchProfile(session.user.id);
 
@@ -184,6 +190,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 								if (profileData?.tenant_id) {
 									await fetchTenant(profileData.tenant_id);
 									await fetchSubscription(profileData.tenant_id);
+								}
+							}
+
+							if (
+								invitationResult.success &&
+								"processedInvitations" in invitationResult &&
+								invitationResult.processedInvitations > 0
+							) {
+								console.log(
+									"Processed invitation successfully, refreshing profile...",
+								);
+								// Refresh profile data after invitation processing
+								const updatedProfile = await fetchProfile(session.user.id);
+								if (updatedProfile?.tenant_id) {
+									await fetchTenant(updatedProfile.tenant_id);
+									await fetchSubscription(updatedProfile.tenant_id);
 								}
 							}
 						} catch (err) {
@@ -216,6 +238,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 		});
 
 		return () => subscription.data.subscription.unsubscribe();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	const signOut = async () => {
@@ -252,3 +275,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+
+export default AuthProvider;
+export { useAuth };

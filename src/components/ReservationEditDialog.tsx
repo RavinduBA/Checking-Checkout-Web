@@ -19,7 +19,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { AvailabilityCalendarPopover } from "./AvailabilityCalendarPopover";
+import { AvailabilityCalendar } from "./AvailabilityCalendar";
 import { OTPVerification } from "./OTPVerification";
 
 interface Reservation {
@@ -270,8 +270,7 @@ export function ReservationEditDialog({
 					</div>
 
 					<div>
-						<Label>Check-in & Check-out Dates</Label>
-						<AvailabilityCalendarPopover
+						<AvailabilityCalendar
 							selectedRoomId={formData.room_id}
 							checkInDate={formData.check_in_date || ""}
 							checkOutDate={formData.check_out_date || ""}

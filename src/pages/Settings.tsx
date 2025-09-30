@@ -1,10 +1,20 @@
-import { ArrowLeft, DollarSign, Trash2 } from "lucide-react";
+import {
+	ArrowLeft,
+	DollarSign,
+	Edit,
+	ExternalLink,
+	MapPin,
+	Save,
+	Trash2,
+	User,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PhoneInput } from "@/components/ui/phone-input";
 import {
 	Select,
 	SelectContent,
@@ -14,8 +24,10 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useProfile } from "@/hooks/useProfile";
+import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
-import { getCurrencyRates } from "@/utils/currency";
+import { getCurrencyDetails, addCustomCurrency, removeCustomCurrency, updateCurrencyRate, getCurrencyConversionSearchUrl, type CurrencyRate } from "@/utils/currency";
 
 type ExpenseType = {
 	id: string;
@@ -34,11 +46,21 @@ type Location = {
 	id: string;
 	name: string;
 	is_active: boolean;
+	address?: string;
+	phone?: string;
+	email?: string;
+	tenant_id?: string;
 };
 
 export default function Settings() {
 	const navigate = useNavigate();
 	const { toast } = useToast();
+	const {
+		profile,
+		loading: profileLoading,
+		refetch: refetchProfile,
+	} = useProfile();
+	const { tenant } = useTenant();
 	const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);
 	const [incomeTypes, setIncomeTypes] = useState<IncomeType[]>([]);
 	const [locations, setLocations] = useState<Location[]>([]);
@@ -46,8 +68,34 @@ export default function Settings() {
 	const [newMainType, setNewMainType] = useState("");
 	const [newSubType, setNewSubType] = useState("");
 	const [newIncomeType, setNewIncomeType] = useState("");
-	const [usdToLkrRate, setUsdToLkrRate] = useState<number>(300);
+	const [currencyRates, setCurrencyRates] = useState<CurrencyRate[]>([]);
+	
+	// Custom currency form state
+	const [newCurrencyCode, setNewCurrencyCode] = useState("");
+	const [newCurrencyRate, setNewCurrencyRate] = useState<number>(1);
+	const [isAddingCurrency, setIsAddingCurrency] = useState(false);
 
+	// Profile editing state
+	const [isEditingProfile, setIsEditingProfile] = useState(false);
+	const [profileForm, setProfileForm] = useState({
+		name: "",
+		email: "",
+		phone: "",
+	});
+
+	// Location editing state
+	const [isEditingLocation, setIsEditingLocation] = useState(false);
+	const [editingLocationId, setEditingLocationId] = useState<string | null>(
+		null,
+	);
+	const [locationForm, setLocationForm] = useState({
+		name: "",
+		address: "",
+		phone: "",
+		email: "",
+	});
+
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	useEffect(() => {
 		fetchExpenseTypes();
 		fetchIncomeTypes();
@@ -57,26 +105,103 @@ export default function Settings() {
 
 	const fetchCurrencyRates = async () => {
 		try {
-			const rates = await getCurrencyRates();
-			// Handle currency rates state if needed
+			const rates = await getCurrencyDetails();
+			setCurrencyRates(rates);
 		} catch (error) {
 			console.error("Error fetching currency rates:", error);
 		}
 	};
 
-	const loadCurrencySettings = () => {
-		const savedRate = localStorage.getItem("usdToLkrRate");
-		if (savedRate) {
-			setUsdToLkrRate(Number(savedRate));
+	const addCurrency = async () => {
+		if (!newCurrencyCode.trim() || newCurrencyRate <= 0) {
+			toast({
+				title: "Error",
+				description: "Please enter a valid currency code and rate",
+				variant: "destructive",
+			});
+			return;
+		}
+
+		setIsAddingCurrency(true);
+		try {
+			const result = await addCustomCurrency(newCurrencyCode.toUpperCase(), newCurrencyRate);
+			if (result.success) {
+				toast({
+					title: "Success",
+					description: `${newCurrencyCode.toUpperCase()} currency added successfully`,
+				});
+				setNewCurrencyCode("");
+				setNewCurrencyRate(1);
+				await fetchCurrencyRates();
+			} else {
+				toast({
+					title: "Error",
+					description: result.error || "Failed to add currency",
+					variant: "destructive",
+				});
+			}
+		} catch (error) {
+			console.error("Error adding currency:", error);
+			toast({
+				title: "Error",
+				description: "Failed to add currency",
+				variant: "destructive",
+			});
+		} finally {
+			setIsAddingCurrency(false);
 		}
 	};
 
-	const saveCurrencySettings = () => {
-		localStorage.setItem("usdToLkrRate", usdToLkrRate.toString());
-		toast({
-			title: "Success",
-			description: "Currency conversion rate updated successfully",
-		});
+	const updateCurrency = async (currencyCode: string, newRate: number) => {
+		try {
+			const result = await updateCurrencyRate(currencyCode, newRate);
+			if (result.success) {
+				toast({
+					title: "Success",
+					description: `${currencyCode} rate updated successfully`,
+				});
+				await fetchCurrencyRates();
+			} else {
+				toast({
+					title: "Error",
+					description: result.error || "Failed to update currency rate",
+					variant: "destructive",
+				});
+			}
+		} catch (error) {
+			console.error("Error updating currency:", error);
+			toast({
+				title: "Error",
+				description: "Failed to update currency rate",
+				variant: "destructive",
+			});
+		}
+	};
+
+	const deleteCurrency = async (currencyCode: string) => {
+		try {
+			const result = await removeCustomCurrency(currencyCode);
+			if (result.success) {
+				toast({
+					title: "Success",
+					description: `${currencyCode} currency removed successfully`,
+				});
+				await fetchCurrencyRates();
+			} else {
+				toast({
+					title: "Error",
+					description: result.error || "Failed to remove currency",
+					variant: "destructive",
+				});
+			}
+		} catch (error) {
+			console.error("Error removing currency:", error);
+			toast({
+				title: "Error",
+				description: "Failed to remove currency",
+				variant: "destructive",
+			});
+		}
 	};
 
 	const fetchExpenseTypes = async () => {
@@ -288,15 +413,444 @@ export default function Settings() {
 		}
 	};
 
+	// Profile management functions
+	useEffect(() => {
+		if (profile) {
+			setProfileForm({
+				name: profile.name || "",
+				email: profile.email || "",
+				phone: profile.phone || "",
+			});
+		}
+	}, [profile]);
+
+	const handleProfileEdit = () => {
+		setIsEditingProfile(true);
+	};
+
+	const handleProfileSave = async () => {
+		try {
+			const { error } = await supabase
+				.from("profiles")
+				.update({
+					name: profileForm.name,
+					phone: profileForm.phone,
+				})
+				.eq("id", profile?.id);
+
+			if (error) throw error;
+
+			toast({
+				title: "Success",
+				description: "Profile updated successfully",
+			});
+
+			setIsEditingProfile(false);
+			refetchProfile();
+		} catch (error) {
+			console.error("Error updating profile:", error);
+			toast({
+				title: "Error",
+				description: "Failed to update profile",
+				variant: "destructive",
+			});
+		}
+	};
+
+	const handleProfileCancel = () => {
+		if (profile) {
+			setProfileForm({
+				name: profile.name || "",
+				email: profile.email || "",
+				phone: profile.phone || "",
+			});
+		}
+		setIsEditingProfile(false);
+	};
+
+	// Location management functions
+	const handleLocationEdit = (location: Location) => {
+		setEditingLocationId(location.id);
+		setLocationForm({
+			name: location.name,
+			address: location.address || "",
+			phone: location.phone || "",
+			email: location.email || "",
+		});
+		setIsEditingLocation(true);
+	};
+
+	const handleLocationSave = async () => {
+		try {
+			const { error } = await supabase
+				.from("locations")
+				.update({
+					name: locationForm.name,
+					address: locationForm.address,
+					phone: locationForm.phone,
+					email: locationForm.email,
+				})
+				.eq("id", editingLocationId);
+
+			if (error) throw error;
+
+			toast({
+				title: "Success",
+				description: "Location updated successfully",
+			});
+
+			setIsEditingLocation(false);
+			setEditingLocationId(null);
+			fetchLocations();
+		} catch (error) {
+			console.error("Error updating location:", error);
+			toast({
+				title: "Error",
+				description: "Failed to update location",
+				variant: "destructive",
+			});
+		}
+	};
+
+	const handleLocationCancel = () => {
+		setLocationForm({
+			name: "",
+			address: "",
+			phone: "",
+			email: "",
+		});
+		setIsEditingLocation(false);
+		setEditingLocationId(null);
+	};
+
+	const handleAddNewLocation = async () => {
+		try {
+			const { error } = await supabase.from("locations").insert([
+				{
+					name: locationForm.name,
+					address: locationForm.address,
+					phone: locationForm.phone,
+					email: locationForm.email,
+					tenant_id: tenant?.id,
+					is_active: true,
+				},
+			]);
+
+			if (error) throw error;
+
+			toast({
+				title: "Success",
+				description: "Location added successfully",
+			});
+
+			setLocationForm({
+				name: "",
+				address: "",
+				phone: "",
+				email: "",
+			});
+			fetchLocations();
+		} catch (error) {
+			console.error("Error adding location:", error);
+			toast({
+				title: "Error",
+				description: "Failed to add location",
+				variant: "destructive",
+			});
+		}
+	};
+
 	return (
 		<div className="w-full pb-8 mx-auto p-6">
-			<Tabs defaultValue="expenses" className="w-full">
-				<TabsList className="grid w-full grid-cols-4">
+			<Tabs defaultValue="profile" className="w-full">
+				<TabsList className="grid w-full grid-cols-6">
+					<TabsTrigger value="profile">Profile</TabsTrigger>
+					<TabsTrigger value="locations">Locations</TabsTrigger>
 					<TabsTrigger value="expenses">Expense Categories</TabsTrigger>
 					<TabsTrigger value="income">Income Types</TabsTrigger>
 					<TabsTrigger value="currency">Currency Settings</TabsTrigger>
 					<TabsTrigger value="bookings">Booking Management</TabsTrigger>
 				</TabsList>
+
+				<TabsContent value="profile">
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center gap-2">
+								<User className="h-5 w-5" />
+								Profile Settings
+							</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<div className="space-y-4">
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+									<div>
+										<Label htmlFor="profileName">Name</Label>
+										<Input
+											id="profileName"
+											value={profileForm.name}
+											onChange={(e) =>
+												setProfileForm((prev) => ({
+													...prev,
+													name: e.target.value,
+												}))
+											}
+											disabled={!isEditingProfile}
+											placeholder="Enter your name"
+										/>
+									</div>
+									<div>
+										<Label htmlFor="profileEmail">Email</Label>
+										<Input
+											id="profileEmail"
+											value={profileForm.email}
+											disabled={true}
+											placeholder="Email cannot be changed"
+											className="bg-gray-50"
+										/>
+									</div>
+									<div>
+										<Label htmlFor="profilePhone">Phone</Label>
+										<PhoneInput
+											value={profileForm.phone}
+											defaultCountry="LK"
+											international
+											onChange={(value) =>
+												setProfileForm((prev) => ({ ...prev, phone: value }))
+											}
+											disabled={!isEditingProfile}
+											placeholder="Enter your phone number"
+										/>
+									</div>
+								</div>
+								<div className="flex gap-2">
+									{!isEditingProfile ? (
+										<Button
+											onClick={handleProfileEdit}
+											className="flex items-center gap-2"
+										>
+											<Edit className="h-4 w-4" />
+											Edit Profile
+										</Button>
+									) : (
+										<>
+											<Button
+												onClick={handleProfileSave}
+												className="flex items-center gap-2"
+											>
+												<Save className="h-4 w-4" />
+												Save Changes
+											</Button>
+											<Button variant="outline" onClick={handleProfileCancel}>
+												Cancel
+											</Button>
+										</>
+									)}
+								</div>
+							</div>
+						</CardContent>
+					</Card>
+				</TabsContent>
+
+				<TabsContent value="locations">
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center gap-2">
+								<MapPin className="h-5 w-5" />
+								Location Management
+							</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<div className="space-y-6">
+								{/* Add New Location Form */}
+								{!isEditingLocation && (
+									<div className="border rounded-lg p-4 bg-gray-50">
+										<h3 className="font-medium mb-4">Add New Location</h3>
+										<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+											<div>
+												<Label htmlFor="newLocationName">Location Name</Label>
+												<Input
+													id="newLocationName"
+													value={locationForm.name}
+													onChange={(e) =>
+														setLocationForm((prev) => ({
+															...prev,
+															name: e.target.value,
+														}))
+													}
+													placeholder="Enter location name"
+												/>
+											</div>
+											<div>
+												<Label htmlFor="newLocationAddress">Address</Label>
+												<Input
+													id="newLocationAddress"
+													value={locationForm.address}
+													onChange={(e) =>
+														setLocationForm((prev) => ({
+															...prev,
+															address: e.target.value,
+														}))
+													}
+													placeholder="Enter location address"
+												/>
+											</div>
+											<div>
+												<Label htmlFor="newLocationPhone">Phone</Label>
+												<PhoneInput
+													defaultCountry="LK"
+													international
+													value={locationForm.phone}
+													onChange={(value) =>
+														setLocationForm((prev) => ({
+															...prev,
+															phone: value,
+														}))
+													}
+													placeholder="Enter location phone"
+												/>
+											</div>
+											<div>
+												<Label htmlFor="newLocationEmail">Email</Label>
+												<Input
+													id="newLocationEmail"
+													type="email"
+													value={locationForm.email}
+													onChange={(e) =>
+														setLocationForm((prev) => ({
+															...prev,
+															email: e.target.value,
+														}))
+													}
+													placeholder="Enter location email"
+												/>
+											</div>
+										</div>
+										<Button
+											onClick={handleAddNewLocation}
+											className="mt-4"
+											disabled={!locationForm.name.trim()}
+										>
+											Add Location
+										</Button>
+									</div>
+								)}
+
+								{/* Existing Locations */}
+								<div>
+									<h3 className="font-medium mb-4">Existing Locations</h3>
+									<div className="space-y-4">
+										{locations.map((location) => (
+											<div key={location.id} className="border rounded-lg p-4">
+												{editingLocationId === location.id &&
+												isEditingLocation ? (
+													<div className="space-y-4">
+														<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+															<div>
+																<Label htmlFor="editLocationName">
+																	Location Name
+																</Label>
+																<Input
+																	id="editLocationName"
+																	value={locationForm.name}
+																	onChange={(e) =>
+																		setLocationForm((prev) => ({
+																			...prev,
+																			name: e.target.value,
+																		}))
+																	}
+																	placeholder="Enter location name"
+																/>
+															</div>
+															<div>
+																<Label htmlFor="editLocationAddress">
+																	Address
+																</Label>
+																<Input
+																	id="editLocationAddress"
+																	value={locationForm.address}
+																	onChange={(e) =>
+																		setLocationForm((prev) => ({
+																			...prev,
+																			address: e.target.value,
+																		}))
+																	}
+																	placeholder="Enter location address"
+																/>
+															</div>
+															<div>
+																<Label htmlFor="editLocationPhone">Phone</Label>
+																<PhoneInput
+																	defaultCountry="LK"
+																	international
+																	value={locationForm.phone}
+																	onChange={(value) =>
+																		setLocationForm((prev) => ({
+																			...prev,
+																			phone: value,
+																		}))
+																	}
+																	placeholder="Enter location phone"
+																/>
+															</div>
+															<div>
+																<Label htmlFor="editLocationEmail">Email</Label>
+																<Input
+																	id="editLocationEmail"
+																	type="email"
+																	value={locationForm.email}
+																	onChange={(e) =>
+																		setLocationForm((prev) => ({
+																			...prev,
+																			email: e.target.value,
+																		}))
+																	}
+																	placeholder="Enter location email"
+																/>
+															</div>
+														</div>
+														<div className="flex gap-2">
+															<Button
+																onClick={handleLocationSave}
+																className="flex items-center gap-2"
+															>
+																<Save className="h-4 w-4" />
+																Save Changes
+															</Button>
+															<Button
+																variant="outline"
+																onClick={handleLocationCancel}
+															>
+																Cancel
+															</Button>
+														</div>
+													</div>
+												) : (
+													<div className="flex items-center justify-between">
+														<div>
+															<h4 className="font-medium">{location.name}</h4>
+															<p className="text-sm text-gray-500">
+																{location.is_active ? "Active" : "Inactive"}
+															</p>
+														</div>
+														<Button
+															variant="outline"
+															size="sm"
+															onClick={() => handleLocationEdit(location)}
+															className="flex items-center gap-2"
+														>
+															<Edit className="h-4 w-4" />
+															Edit
+														</Button>
+													</div>
+												)}
+											</div>
+										))}
+									</div>
+								</div>
+							</div>
+						</CardContent>
+					</Card>
+				</TabsContent>
 
 				<TabsContent value="expenses">
 					<Card>
@@ -413,77 +967,180 @@ export default function Settings() {
 						<CardHeader>
 							<CardTitle className="flex items-center gap-2">
 								<DollarSign className="size-5 text-primary" />
-								Currency Conversion Settings
+								Currency Management
 							</CardTitle>
 						</CardHeader>
 						<CardContent>
 							<div className="space-y-6">
 								<div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
 									<h3 className="font-medium text-blue-800 mb-2">
-										Currency Conversion
+										USD-Based Currency System
 									</h3>
 									<p className="text-sm text-blue-700 mb-4">
-										Set the conversion rate from USD to LKR. This rate will be
-										used in reports to calculate total values in LKR equivalent.
-										All amounts will be displayed in LKR after conversion.
+										All currency conversions are based on USD exchange rates. Add custom currencies with their USD rates for automatic cross-currency conversions.
 									</p>
 								</div>
 
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-									<div className="space-y-4">
-										<div>
-											<Label htmlFor="conversionRate">
-												USD to LKR Conversion Rate
-											</Label>
-											<Input
-												id="conversionRate"
-												type="number"
-												step="0.01"
-												value={usdToLkrRate}
-												onChange={(e) =>
-													setUsdToLkrRate(Number(e.target.value))
-												}
-												placeholder="300.00"
-												className="text-lg font-medium"
-											/>
-											<p className="text-sm text-muted-foreground mt-2">
-												1 USD = {usdToLkrRate} LKR
-											</p>
+								{/* Add New Currency */}
+								<Card>
+									<CardHeader>
+										<CardTitle className="text-lg">Add Custom Currency</CardTitle>
+									</CardHeader>
+									<CardContent>
+										<div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+											<div className="space-y-2">
+												<Label htmlFor="newCurrencyCode">Currency Code</Label>
+												<Input
+													id="newCurrencyCode"
+													value={newCurrencyCode}
+													onChange={(e) => setNewCurrencyCode(e.target.value.toUpperCase())}
+													placeholder="e.g. LKR, EUR, GBP"
+													maxLength={5}
+													className="uppercase"
+												/>
+												<p className="text-xs text-muted-foreground">
+													3-5 uppercase letters
+												</p>
+											</div>
+											<div className="space-y-2">
+												<Label htmlFor="newCurrencyRate">USD Rate</Label>
+												<Input
+													id="newCurrencyRate"
+													type="number"
+													step="0.001"
+													min="0.001"
+													value={newCurrencyRate}
+													onChange={(e) => setNewCurrencyRate(Number(e.target.value))}
+													placeholder="e.g. 300.50"
+												/>
+												<p className="text-xs text-muted-foreground">
+													1 USD = {newCurrencyRate} {newCurrencyCode || "XXX"}
+												</p>
+											</div>
+											<div className="flex gap-2">
+												<Button 
+													onClick={addCurrency} 
+													disabled={isAddingCurrency || !newCurrencyCode.trim() || newCurrencyRate <= 0}
+													className="flex-1"
+												>
+													{isAddingCurrency ? "Adding..." : "Add Currency"}
+												</Button>
+												{newCurrencyCode && (
+													<Button
+														type="button"
+														variant="outline"
+														size="sm"
+														onClick={() => window.open(getCurrencyConversionSearchUrl(newCurrencyCode), '_blank')}
+														title={`Search USD to ${newCurrencyCode} conversion rate`}
+													>
+														Search Rate
+													</Button>
+												)}
+											</div>
 										</div>
+									</CardContent>
+								</Card>
 
-										<Button onClick={saveCurrencySettings} className="w-full">
-											Save Conversion Rate
-										</Button>
-									</div>
-
-									<div className="bg-muted/50 p-4 rounded-lg">
-										<h4 className="font-medium mb-3">Example Conversion</h4>
-										<div className="space-y-2 text-sm">
-											<div className="flex justify-between">
-												<span>$100 USD</span>
-												<span>Rs.{(100 * usdToLkrRate).toLocaleString()}</span>
-											</div>
-											<div className="flex justify-between">
-												<span>$500 USD</span>
-												<span>Rs.{(500 * usdToLkrRate).toLocaleString()}</span>
-											</div>
-											<div className="flex justify-between">
-												<span>$1,000 USD</span>
-												<span>Rs.{(1000 * usdToLkrRate).toLocaleString()}</span>
-											</div>
+								{/* Current Currencies */}
+								<Card>
+									<CardHeader>
+										<CardTitle className="text-lg">Current Currencies</CardTitle>
+									</CardHeader>
+									<CardContent>
+										<div className="space-y-4">
+											{currencyRates.length === 0 ? (
+												<p className="text-muted-foreground text-center py-8">
+													No currencies found. Add a custom currency to get started.
+												</p>
+											) : (
+												currencyRates.map((currency) => (
+													<div 
+														key={currency.currency_code} 
+														className="flex items-center justify-between p-4 border rounded-lg"
+													>
+														<div className="flex items-center gap-4">
+															<div className="font-medium text-lg">
+																{currency.currency_code}
+															</div>
+															<div className="text-sm text-muted-foreground">
+																{currency.currency_code === "USD" 
+																	? "US Dollar (Base Currency)" 
+																	: currency.is_custom 
+																		? "Custom Currency" 
+																		: currency.currency_code
+																}
+															</div>
+														</div>
+														<div className="flex items-center gap-4">
+															<div className="text-right">
+																<div className="font-medium">
+																	1 USD = {currency.usd_rate}
+																</div>
+																<div className="text-xs text-muted-foreground">
+																	Last updated: {new Date(currency.updated_at).toLocaleDateString()}
+																</div>
+															</div>
+															<div className="flex gap-2">
+																{currency.currency_code !== "USD" && (
+																	<>
+																		<Button
+																			variant="outline"
+																			size="sm"
+																			onClick={() => {
+																				const newRate = prompt(
+																					`Enter new USD rate for ${currency.currency_code}:`,
+																					currency.usd_rate.toString()
+																				);
+																				if (newRate && Number(newRate) > 0) {
+																					updateCurrency(currency.currency_code, Number(newRate));
+																				}
+																			}}
+																		>
+																			<Edit className="size-4" />
+																		</Button>
+																		<Button
+																			variant="outline"
+																			size="sm"
+																			onClick={() => window.open(getCurrencyConversionSearchUrl(currency.currency_code), '_blank')}
+																			title={`Search USD to ${currency.currency_code} conversion rate`}
+																		>
+																			Search
+																		</Button>
+																		{currency.is_custom && (
+																			<Button
+																				variant="outline"
+																				size="sm"
+																				onClick={() => {
+																					if (confirm(`Are you sure you want to delete ${currency.currency_code}?`)) {
+																						deleteCurrency(currency.currency_code);
+																					}
+																				}}
+																			>
+																				<Trash2 className="size-4" />
+																			</Button>
+																		)}
+																	</>
+																)}
+															</div>
+														</div>
+													</div>
+												))
+											)}
 										</div>
-									</div>
-								</div>
+									</CardContent>
+								</Card>
 
 								<div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
 									<h4 className="font-medium text-amber-800 mb-2">
-										Important Note
+										Important Notes
 									</h4>
-									<p className="text-sm text-amber-700">
-										After updating the conversion rate, refresh the Reports page
-										to see the updated calculations. The new rate will apply to
-										all future calculations.
-									</p>
+									<ul className="text-sm text-amber-700 space-y-1">
+										<li>• USD is the base currency and cannot be modified or deleted</li>
+										<li>• All currency conversions are calculated via USD rates</li>
+										<li>• Use the "Search Rate" button to find current exchange rates on Google</li>
+										<li>• Custom currencies can be edited or deleted anytime</li>
+										<li>• Changes apply to all reports and calculations immediately</li>
+									</ul>
 								</div>
 							</div>
 						</CardContent>

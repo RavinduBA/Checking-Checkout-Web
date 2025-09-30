@@ -221,6 +221,7 @@ export default function Expense() {
 							category: `${formData.mainCategory} - ${formData.subCategory}`,
 							account: selectedAccount.name,
 							location: locationData?.name || "N/A",
+							locationId: formData.locationId, // Added for location admin SMS
 							date: format(new Date(formData.date), "MMM dd, yyyy"),
 							note: formData.note,
 							accountBalance: currentBalance,

@@ -17,12 +17,22 @@ export default {
         headers: {
           'Origin': 'https://test-api.creem.io'
         }
+      },
+      // Proxy Resend API requests to handle CORS
+      '/api/resend': {
+        target: 'https://api.resend.com',
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/api\/resend/, ''),
+        secure: true,
+        headers: {
+          'Origin': 'https://api.resend.com'
+        }
       }
     }
   },
-  	resolve: {
-		alias: {
-			"@": path.resolve(__dirname, "./src"),
-		},
-	},
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
 };

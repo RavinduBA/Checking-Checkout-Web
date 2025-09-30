@@ -1,12 +1,19 @@
 import { Navigate } from "react-router";
 import { FullScreenLoader } from "@/components/ui/loading-spinner";
+import { useLocationContext } from "@/context/LocationContext";
 import { usePermissions } from "@/hooks/usePermissions";
 
 export const SmartRedirect = () => {
 	const { hasAnyPermission, loading, isAdmin } = usePermissions();
+	const { locations, loading: locationsLoading } = useLocationContext();
 
-	if (loading) {
+	if (loading || locationsLoading) {
 		return <FullScreenLoader />;
+	}
+
+	// If user has no locations, redirect to onboarding to set up their first location
+	if (locations.length === 0) {
+		return <Navigate to="/onboarding" replace />;
 	}
 
 	// Admins always get dashboard access

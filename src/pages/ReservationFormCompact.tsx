@@ -11,12 +11,7 @@ import {
 	Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import {
-	Link,
-	useNavigate,
-	useParams,
-	useSearchParams,
-} from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { AvailabilityDialog } from "@/components/AvailabilityDialog";
 import { AvailabilityInput } from "@/components/AvailabilityInput";
 import { CurrencySelector } from "@/components/CurrencySelector";
@@ -49,6 +44,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoLocation } from "@/hooks/useAutoLocation";
 import { useAvailability } from "@/hooks/useAvailability";
+import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { convertCurrency } from "@/utils/currency";
@@ -62,6 +58,7 @@ export default function ReservationFormCompact() {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
 	const { toast } = useToast();
+	const { tenant } = useTenant();
 	const [searchParams] = useSearchParams();
 	const {
 		autoSelectedLocation,
@@ -352,6 +349,7 @@ export default function ReservationFormCompact() {
 						email: newGuide.email,
 						commission_rate: newGuide.commission_rate,
 						is_active: true,
+						tenant_id: tenant?.id,
 					},
 				])
 				.select()
@@ -389,6 +387,7 @@ export default function ReservationFormCompact() {
 						agency_name: newAgent.agency_name,
 						commission_rate: newAgent.commission_rate,
 						is_active: true,
+						tenant_id: tenant?.id,
 					},
 				])
 				.select()
@@ -580,6 +579,7 @@ export default function ReservationFormCompact() {
 							currency: calculatedData.currency,
 							status: calculatedData.status,
 							location: locationData?.name || "N/A",
+							locationId: calculatedData.location_id, // Added for location admin SMS
 						},
 					});
 				} catch (smsError) {

@@ -10,9 +10,14 @@ const corsHeaders = {
 interface RequestBody {
 	to: string;
 	email: string;
-	password: string;
+	invitationToken: string;
+	inviterName?: string;
+	organizationName?: string;
+	locationName?: string;
+	role?: string;
 	loginUrl: string;
 	isResend?: boolean;
+	emailType?: 'signup_invitation' | 'location_access_granted';
 }
 
 serve(async (req) => {
@@ -25,42 +30,27 @@ serve(async (req) => {
 	}
 
 	try {
-		// Verify the request is authenticated
-		const authHeader = req.headers.get("Authorization");
-		if (!authHeader) {
-			throw new Error("Missing authorization header");
-		}
-
-		// Initialize Supabase client
+		// Initialize Supabase client with service role
 		const supabaseClient = createClient(
 			Deno.env.get("SUPABASE_URL") ?? "",
-			Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-			{
-				global: {
-					headers: { Authorization: authHeader },
-				},
-			},
+			Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 		);
-
-		// Verify user is authenticated
-		const {
-			data: { user },
-			error: userError,
-		} = await supabaseClient.auth.getUser();
-		if (userError || !user) {
-			throw new Error("Unauthorized");
-		}
 
 		const {
 			to,
 			email,
-			password,
+			invitationToken,
+			inviterName,
+			organizationName = "CheckingCheckout",
+			locationName,
+			role = "team member",
 			loginUrl,
 			isResend = false,
+			emailType = "signup_invitation",
 		}: RequestBody = await req.json();
 
-		if (!to || !email || !password || !loginUrl) {
-			throw new Error("Missing required fields: to, email, password, loginUrl");
+		if (!to || !email || !invitationToken || !loginUrl) {
+			throw new Error("Missing required fields: to, email, invitationToken, loginUrl");
 		}
 
 		const resendApiKey = Deno.env.get("RESEND_API_KEY");
@@ -68,29 +58,112 @@ serve(async (req) => {
 			throw new Error("RESEND_API_KEY not configured");
 		}
 
-		const subject = isResend
-			? "Your Updated Login Credentials - CheckingCheckout"
-			: "Welcome to CheckingCheckout - Your Login Credentials";
+		let subject: string;
+		let textContent: string;
+		let htmlContent: string;
+		let invitationUrl: string;
 
-		const textContent = `
+		if (emailType === "location_access_granted") {
+			// Existing user - location access granted
+			invitationUrl = `${loginUrl}?message=location_access_granted`;
+			subject = `Access Granted: ${organizationName}${locationName ? ` - ${locationName}` : ""}`;
+			
+			textContent = `
 Hello,
 
-${isResend ? "Your login credentials have been updated" : "You've been invited to join CheckingCheckout"}. Here are your login details:
+Great news! You've been granted access to ${organizationName}${locationName ? ` at ${locationName}` : ""} as a ${role}.
 
-Email: ${email}
-Temporary Password: ${password}
-Login URL: ${loginUrl}
+${inviterName ? `${inviterName} has added you to their location.` : "You've been added to a new location."}
 
-Please log in and change your password on your first visit for security.
+You can now log in to your existing account and access the new location:
+
+Login: ${invitationUrl}
+
+Your new permissions include:
+- Access to ${locationName || "the location"} management
+- ${role} level permissions
+- Immediate access to all assigned features
 
 Best regards,
-CheckingCheckout Team
+${organizationName} Team
+			`.trim();
+
+			htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${subject}</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #10b981; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+        <h1 style="margin: 0 0 10px 0;">🎉 Access Granted!</h1>
+        <h2 style="margin: 0; font-size: 18px; opacity: 0.9;">${organizationName}</h2>
+    </div>
+    
+    <p>Hello,</p>
+    
+    <p><strong>Great news!</strong> You've been granted access to <strong>${organizationName}</strong>${locationName ? ` at <strong>${locationName}</strong>` : ""} as a <strong>${role}</strong>.</p>
+    
+    ${inviterName ? `<p><strong>${inviterName}</strong> has added you to their location.` : "<p>You've been added to a new location.</p>"}
+    
+    <div style="background-color: #f3f4f6; padding: 20px; border-radius: 6px; margin: 20px 0; text-align: center;">
+        <p style="margin: 0 0 15px 0; font-size: 16px;"><strong>Ready to access your new location?</strong></p>
+        <a href="${invitationUrl}" style="display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Log In Now</a>
+    </div>
+    
+    <div style="background-color: #f0f9ff; padding: 15px; border-radius: 6px; border-left: 4px solid #10b981; margin: 20px 0;">
+        <p style="margin: 0; font-size: 14px;"><strong>Your new permissions include:</strong></p>
+        <ul style="margin: 10px 0 0 0; padding-left: 20px; font-size: 14px;">
+            <li>Access to ${locationName || "the location"} management</li>
+            <li>${role} level permissions</li>
+            <li>Immediate access to all assigned features</li>
+        </ul>
+    </div>
+    
+    <p>Best regards,<br>
+    ${organizationName} Team</p>
+    
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+    <p style="font-size: 12px; color: #6b7280;">
+        You received this email because you were granted access to a new location in ${organizationName}.
+    </p>
+</body>
+</html>
+			`.trim();
+		} else {
+			// New user - signup invitation (original logic)
+			invitationUrl = `${loginUrl}?token=${invitationToken}&invitation=true`;
+			subject = isResend
+				? `Reminder: Join ${organizationName} - Your Invitation`
+				: `You're invited to join ${organizationName}`;
+			
+			textContent = `
+Hello,
+
+${isResend ? "This is a reminder that you've been invited" : "You've been invited"} to join ${organizationName}${locationName ? ` at ${locationName}` : ""} as a ${role}.
+
+${inviterName ? `${inviterName} has invited you to collaborate on the hospitality management platform.` : "You've been invited to collaborate on the hospitality management platform."}
+
+To accept this invitation and set up your account:
+
+1. Click the link below
+2. Complete your account setup
+3. Start managing your hospitality operations
+
+Invitation Link: ${invitationUrl}
+
+This invitation will expire in 7 days for security reasons.
+
+Best regards,
+${organizationName} Team
 
 ---
-This email contains sensitive login information. Please keep it secure and delete it after changing your password.
-    `.trim();
+If you didn't expect this invitation, you can safely ignore this email.
+			`.trim();
 
-		const htmlContent = `
+			htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -100,24 +173,34 @@ This email contains sensitive login information. Please keep it secure and delet
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-        <h1 style="color: #2563eb; margin: 0 0 10px 0;">CheckingCheckout</h1>
+        <h1 style="color: #2563eb; margin: 0 0 10px 0;">${organizationName}</h1>
         <h2 style="margin: 0; font-size: 18px; color: #374151;">
-            ${isResend ? "Your Updated Login Credentials" : "Welcome! Your Login Credentials"}
+            ${isResend ? "Reminder: You're Invited!" : "You're Invited to Join!"}
         </h2>
     </div>
     
     <p>Hello,</p>
     
-    <p>${isResend ? "Your login credentials have been updated" : "You've been invited to join CheckingCheckout"}. Here are your login details:</p>
+    <p>${isResend ? "This is a reminder that you've been invited" : "You've been invited"} to join <strong>${organizationName}</strong>${locationName ? ` at <strong>${locationName}</strong>` : ""} as a <strong>${role}</strong>.</p>
     
-    <div style="background-color: #f3f4f6; padding: 20px; border-radius: 6px; margin: 20px 0;">
-        <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
-        <p style="margin: 5px 0;"><strong>Temporary Password:</strong> <code style="background-color: #e5e7eb; padding: 2px 4px; border-radius: 3px; font-family: monospace;">${password}</code></p>
-        <p style="margin: 5px 0;"><strong>Login URL:</strong> <a href="${loginUrl}" style="color: #2563eb; text-decoration: none;">${loginUrl}</a></p>
+    ${inviterName ? `<p><strong>${inviterName}</strong> has invited you to collaborate on the hospitality management platform.</p>` : "<p>You've been invited to collaborate on the hospitality management platform.</p>"}
+    
+    <div style="background-color: #f3f4f6; padding: 20px; border-radius: 6px; margin: 20px 0; text-align: center;">
+        <p style="margin: 0 0 15px 0; font-size: 16px;"><strong>Ready to get started?</strong></p>
+        <a href="${invitationUrl}" style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Accept Invitation & Set Up Account</a>
+    </div>
+    
+    <div style="background-color: #f0f9ff; padding: 15px; border-radius: 6px; border-left: 4px solid #2563eb; margin: 20px 0;">
+        <p style="margin: 0; font-size: 14px;"><strong>What's next?</strong></p>
+        <ul style="margin: 10px 0 0 0; padding-left: 20px; font-size: 14px;">
+            <li>Click the invitation link above</li>
+            <li>Complete your account setup</li>
+            <li>Start managing your hospitality operations</li>
+        </ul>
     </div>
     
     <p style="background-color: #fef3c7; padding: 15px; border-radius: 6px; border-left: 4px solid #f59e0b;">
-        <strong>Important:</strong> Please log in and change your password on your first visit for security.
+        <strong>⚡ Important:</strong> This invitation expires in 7 days for security reasons.
     </p>
     
     <p>Best regards,<br>
@@ -129,7 +212,12 @@ This email contains sensitive login information. Please keep it secure and delet
     </p>
 </body>
 </html>
-    `.trim();
+			`.trim();
+		}
+
+		// Use verified email address for testing environment
+		// In production, this should be updated to use a verified domain
+		const fromEmail = "CheckingCheckout <checkingcheckout@mail.netronk.com>"; // Use verified email in testing
 
 		// Send email via Resend API
 		const response = await fetch("https://api.resend.com/emails", {
@@ -139,11 +227,10 @@ This email contains sensitive login information. Please keep it secure and delet
 				"Content-Type": "application/json",
 			},
 			body: JSON.stringify({
-				from: "CheckingCheckout <onboarding@resend.dev>",
+				from: fromEmail,
 				to: [to],
-				subject,
+				subject: subject,
 				html: htmlContent,
-				text: textContent,
 			}),
 		});
 
@@ -175,7 +262,7 @@ This email contains sensitive login information. Please keep it secure and delet
 		return new Response(
 			JSON.stringify({
 				success: false,
-				error: error.message,
+				error: error instanceof Error ? error.message : "An unknown error occurred",
 			}),
 			{
 				headers: { ...corsHeaders, "Content-Type": "application/json" },

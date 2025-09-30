@@ -1,6 +1,3 @@
-/** biome-ignore-all lint/a11y/noSvgWithoutTitle: <explanation> */
-/** biome-ignore-all lint/correctness/useUniqueElementIds: <explanation> */
-
 import { Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
@@ -8,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,60 +23,100 @@ export default function Auth() {
 
 	// Check if this is an invitation flow
 	const isInvitation = searchParams.get("invitation") === "true";
+	const invitationToken = searchParams.get("token");
 
 	useEffect(() => {
-		// Handle invitation acceptance when user is authenticated
-		const handleInvitationAcceptance = async () => {
-			if (isInvitation && user && user.user_metadata?.tenant_id) {
+		// Handle magic link token hash verification
+		const handleTokenHash = async () => {
+			const tokenHash = searchParams.get("token_hash");
+			const type = searchParams.get("type");
+
+			if (tokenHash && type === "email") {
 				try {
-					const tenantId = user.user_metadata.tenant_id;
-					const role = user.user_metadata.role || "staff";
-					const permissions = user.user_metadata.permissions || {};
+					const { error } = await supabase.auth.verifyOtp({
+						token_hash: tokenHash,
+						type: "email",
+					});
 
-					// Create user profile with invitation data
-					const { error: profileError } = await supabase
-						.from("profiles")
-						.upsert({
-							id: user.id,
-							email: user.email!,
-							name: user.user_metadata.full_name || user.email!.split("@")[0],
-							tenant_id: tenantId,
-							role: role as any,
+					if (error) {
+						console.error("Magic link verification failed:", error);
+						toast({
+							title: "Verification Failed",
+							description: error.message,
+							variant: "destructive",
 						});
-
-					if (profileError) {
-						console.error("Error creating profile:", profileError);
 						return;
 					}
 
-					// Create user permissions
-					const { error: permissionsError } = await supabase
-						.from("user_permissions")
-						.insert({
-							user_id: user.id,
-							tenant_id: tenantId,
-							location_id: tenantId, // Temporary - should be updated when user selects location
-							...permissions,
-							tenant_role:
-								role === "admin"
-									? "tenant_admin"
-									: role === "manager"
-										? "tenant_manager"
-										: "tenant_staff",
-						});
+					toast({
+						title: "Verification Successful",
+						description: "You have been signed in successfully!",
+					});
+					// Clear the URL parameters
+					navigate("/auth", { replace: true });
+				} catch (error) {
+					console.error("Exception during magic link verification:", error);
+					toast({
+						title: "Error",
+						description: "Failed to verify magic link",
+						variant: "destructive",
+					});
+				}
+			}
+		};
 
-					if (permissionsError) {
-						console.error("Error creating permissions:", permissionsError);
+		// Handle invitation acceptance when user is authenticated
+		const handleInvitationAcceptance = async () => {
+			if (isInvitation && invitationToken && user) {
+				try {
+					console.log("Processing invitation token:", invitationToken);
+
+					// Use the RPC function to accept the invitation
+					const { data: result, error: rpcError } = await supabase.rpc(
+						"accept_invitation",
+						{
+							p_token: invitationToken,
+						},
+					);
+
+					if (rpcError) {
+						console.error("RPC error accepting invitation:", rpcError);
+						toast({
+							title: "Error",
+							description: `Failed to process invitation: ${rpcError.message}`,
+							variant: "destructive",
+						});
+						return;
 					}
 
+					// Parse the result as our expected response format
+					const response = result as {
+						success: boolean;
+						error?: string;
+						data?: any;
+					};
+
+					if (!response?.success) {
+						console.error("Invitation acceptance failed:", response?.error);
+						toast({
+							title: "Invitation Error",
+							description: response?.error || "Failed to process invitation",
+							variant: "destructive",
+						});
+						return;
+					}
+
+					console.log("Invitation accepted successfully:", response.data);
 					toast({
 						title: "Invitation Accepted",
-						description: "Welcome to the team!",
+						description:
+							"Welcome to the team! Your permissions have been set up.",
 					});
 
-					navigate("/dashboard");
+					// Clear the URL parameters and navigate to dashboard
+					navigate("/dashboard", { replace: true });
 				} catch (error) {
-					console.error("Error handling invitation:", error);
+					console.error("Exception handling invitation:", error);
 					toast({
 						title: "Error",
 						description: "Failed to process invitation",
@@ -89,6 +125,9 @@ export default function Auth() {
 				}
 			}
 		};
+
+		// Handle magic link verification first
+		handleTokenHash();
 
 		// Only check for navigation if not loading
 		if (!loading && !profileLoading && user) {
@@ -105,39 +144,17 @@ export default function Auth() {
 				navigate("/onboarding");
 			}
 		}
-	}, [user, profile, loading, profileLoading, navigate, isInvitation, toast]);
-
-	const handleGoogleSignIn = async () => {
-		setSubmitting(true);
-		try {
-			const redirectTo = isInvitation
-				? `${window.location.origin}/auth?invitation=true`
-				: `${window.location.origin}/auth`;
-
-			const { error } = await supabase.auth.signInWithOAuth({
-				provider: "google",
-				options: {
-					redirectTo,
-				},
-			});
-
-			if (error) {
-				toast({
-					title: "Google Sign In Failed",
-					description: error.message,
-					variant: "destructive",
-				});
-			}
-		} catch (error) {
-			toast({
-				title: "Error",
-				description: "An unexpected error occurred with Google sign in",
-				variant: "destructive",
-			});
-		} finally {
-			setSubmitting(false);
-		}
-	};
+	}, [
+		user,
+		profile,
+		loading,
+		profileLoading,
+		navigate,
+		isInvitation,
+		invitationToken,
+		toast,
+		searchParams,
+	]);
 
 	const handleAuth = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -240,6 +257,7 @@ export default function Auth() {
 									onChange={(e) => setName(e.target.value)}
 									required={!isLogin}
 									placeholder="Enter your full name"
+									disabled={submitting}
 								/>
 							</div>
 						)}
@@ -253,6 +271,7 @@ export default function Auth() {
 								onChange={(e) => setEmail(e.target.value)}
 								required
 								placeholder="Enter your email"
+								disabled={submitting}
 							/>
 						</div>
 
@@ -266,6 +285,7 @@ export default function Auth() {
 									onChange={(e) => setPassword(e.target.value)}
 									required
 									placeholder="Enter your password"
+									disabled={submitting}
 								/>
 								<Button
 									type="button"
@@ -273,6 +293,7 @@ export default function Auth() {
 									size="icon"
 									className="absolute right-2 top-1/2 -translate-y-1/2 size-5"
 									onClick={() => setShowPassword(!showPassword)}
+									disabled={submitting}
 								>
 									{showPassword ? (
 										<EyeOff className="size-4" />
@@ -302,52 +323,12 @@ export default function Auth() {
 						</Button>
 					</form>
 
-					<div className="my-6">
-						<div className="relative">
-							<div className="absolute inset-0 flex items-center">
-								<Separator className="w-full" />
-							</div>
-							<div className="relative flex justify-center text-xs uppercase">
-								<span className="bg-background px-2 text-muted-foreground">
-									Or continue with
-								</span>
-							</div>
-						</div>
-					</div>
-
-					<Button
-						type="button"
-						variant="outline"
-						className="w-full"
-						onClick={handleGoogleSignIn}
-						disabled={submitting}
-					>
-						{submitting ? (
-							<div className="animate-spin rounded-full size-4 border-2 border-transparent border-t-current mr-2"></div>
-						) : (
-							<svg className="size-4 mr-2" viewBox="0 0 24 24">
-								<path
-									fill="currentColor"
-									d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-								/>
-								<path
-									fill="currentColor"
-									d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-								/>
-								<path
-									fill="currentColor"
-									d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-								/>
-							</svg>
-						)}
-						Continue with Google
-					</Button>
-
 					<div className="mt-4 text-center">
 						<button
 							type="button"
 							onClick={() => setIsLogin(!isLogin)}
 							className="text-primary hover:underline"
+							disabled={submitting}
 						>
 							{isLogin
 								? "Don't have an account? Sign up"

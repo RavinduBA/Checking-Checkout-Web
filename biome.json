@@ -9,7 +9,7 @@
 	"linter": {
 		"enabled": true,
 		"rules": { "recommended": false },
-		"includes": ["**", "!dist", "**", "!dist"]
+		"includes": ["**", "!dist", "**", "!dist", "!node_modules", "!supabase"]
 	},
 	"javascript": { "formatter": { "quoteStyle": "double" } },
 	"overrides": [
@@ -534,7 +534,7 @@
 						"useExhaustiveDependencies": "warn",
 						"useHookAtTopLevel": "error"
 					},
-					"style": { "useComponentExportOnlyModules": "warn" },
+					"style": { "useComponentExportOnlyModules": "off" },
 					"suspicious": { "noExplicitAny": "off" }
 				}
 			}

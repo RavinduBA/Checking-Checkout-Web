@@ -10,13 +10,8 @@ import {
 	Users,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import {
-	Link,
-	useNavigate,
-	useParams,
-	useSearchParams,
-} from "react-router";
-import { AvailabilityCalendarPopover } from "@/components/AvailabilityCalendarPopover";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
+import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
 import { AvailabilityDialog } from "@/components/AvailabilityDialog";
 import { CurrencySelector } from "@/components/CurrencySelector";
 import { PhotoAttachment } from "@/components/PhotoAttachment";
@@ -48,6 +43,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoLocation } from "@/hooks/useAutoLocation";
 import { useAvailability } from "@/hooks/useAvailability";
+import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -60,6 +56,7 @@ export default function ReservationForm() {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
 	const { toast } = useToast();
+	const { tenant } = useTenant();
 	const [searchParams] = useSearchParams();
 	const {
 		autoSelectedLocation,
@@ -321,6 +318,7 @@ export default function ReservationForm() {
 						email: newGuide.email,
 						commission_rate: newGuide.commission_rate,
 						is_active: true,
+						tenant_id: tenant?.id,
 					},
 				])
 				.select()
@@ -358,6 +356,7 @@ export default function ReservationForm() {
 						agency_name: newAgent.agency_name,
 						commission_rate: newAgent.commission_rate,
 						is_active: true,
+						tenant_id: tenant?.id,
 					},
 				])
 				.select()
@@ -776,8 +775,7 @@ export default function ReservationForm() {
 								{/* Date Selection with Availability Calendar */}
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 									<div className="col-span-1 md:col-span-2">
-										<Label>Check-in & Check-out Dates *</Label>
-										<AvailabilityCalendarPopover
+										<AvailabilityCalendar
 											selectedRoomId={formData.room_id}
 											checkInDate={formData.check_in_date}
 											checkOutDate={formData.check_out_date}
