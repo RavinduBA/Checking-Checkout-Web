@@ -233,19 +233,23 @@ function createSMSMessage(data: SMSRequest): string {
 	const currencyAmount = formatCurrency(data.amount!, data.currency!);
 	const type = data.type!.toUpperCase();
 
-	let message = `${type} ALERT\n`;
-	message += `Amount: ${currencyAmount}\n`;
-	message += `Category: ${data.category}\n`;
-	message += `Account: ${data.account}`;
-	if (typeof data.accountBalance === "number") {
+	// Keep message concise for SMS 160 character limit
+	let message = `${type}: ${currencyAmount}\n`;
+	message += `${data.category}\n`;
+	message += `${data.account}`;
+	
+	// Only add balance if provided and message is still short
+	if (typeof data.accountBalance === "number" && message.length < 100) {
 		const bal = formatCurrency(data.accountBalance, data.currency!);
-		message += `\nAfter Balance: ${bal}`;
+		message += `\nBal: ${bal}`;
 	}
-	message += `\nLocation: ${data.location}\n`;
-	message += `Date: ${data.date}`;
+	
+	message += `\n${data.location}`;
 
-	if (data.note) {
-		message += `\nNote: ${data.note}`;
+	// Only add note if message is still short enough
+	if (data.note && message.length < 120) {
+		const shortNote = data.note.length > 30 ? data.note.substring(0, 30) + "..." : data.note;
+		message += `\n${shortNote}`;
 	}
 
 	return message;
@@ -254,15 +258,13 @@ function createSMSMessage(data: SMSRequest): string {
 function createReservationSMSMessage(data: SMSRequest): string {
 	const currencyAmount = formatCurrency(data.amount!, data.currency!);
 
-	let message = `RESERVATION CREATED\n`;
-	message += `Guest: ${data.guestName}\n`;
-	message += `Reservation: ${data.reservationNumber}\n`;
-	message += `Room: ${data.roomNumber}\n`;
-	message += `Check-in: ${data.checkIn}\n`;
-	message += `Check-out: ${data.checkOut}\n`;
-	message += `Amount: ${currencyAmount}\n`;
-	message += `Status: ${data.status!.toUpperCase()}\n`;
-	message += `Location: ${data.location}`;
+	// Keep reservation message concise
+	let message = `NEW BOOKING\n`;
+	message += `${data.guestName}\n`;
+	message += `${data.reservationNumber}\n`;
+	message += `Room ${data.roomNumber}\n`;
+	message += `${data.checkIn} to ${data.checkOut}\n`;
+	message += `${currencyAmount} - ${data.status!.toUpperCase()}`;
 
 	return message;
 }
@@ -270,17 +272,17 @@ function createReservationSMSMessage(data: SMSRequest): string {
 function createPaymentSMSMessage(data: SMSRequest): string {
 	const currencyAmount = formatCurrency(data.amount!, data.currency!);
 
-	let message = `PAYMENT RECEIVED\n`;
-	message += `Amount: ${currencyAmount}\n`;
-	message += `Payment #: ${data.paymentNumber}\n`;
-	message += `Method: ${data.paymentMethod}\n`;
-	message += `Guest: ${data.guestName}\n`;
-	message += `Reservation: ${data.reservationNumber}\n`;
-	message += `Account: ${data.account}\n`;
-	message += `Date: ${data.date}`;
+	// Keep payment message concise
+	let message = `PAYMENT: ${currencyAmount}\n`;
+	message += `${data.paymentNumber}\n`;
+	message += `${data.paymentMethod}\n`;
+	message += `${data.guestName}\n`;
+	message += `${data.reservationNumber}`;
 
-	if (data.note) {
-		message += `\nNote: ${data.note}`;
+	// Only add note if message is still short
+	if (data.note && message.length < 120) {
+		const shortNote = data.note.length > 20 ? data.note.substring(0, 20) + "..." : data.note;
+		message += `\n${shortNote}`;
 	}
 
 	return message;
