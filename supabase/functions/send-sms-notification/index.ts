@@ -231,27 +231,11 @@ function formatCurrency(amount: number, currency: string): string {
 
 function createSMSMessage(data: SMSRequest): string {
 	const currencyAmount = formatCurrency(data.amount!, data.currency!);
-	const type = data.type!.toUpperCase();
-
-	// Keep message concise for SMS 160 character limit
-	let message = `${type}: ${currencyAmount}\n`;
-	message += `${data.category}\n`;
-	message += `${data.account}`;
 	
-	// Only add balance if provided and message is still short
-	if (typeof data.accountBalance === "number" && message.length < 100) {
-		const bal = formatCurrency(data.accountBalance, data.currency!);
-		message += `\nBal: ${bal}`;
-	}
+	// Ultra-simple SMS format to ensure delivery
+	let message = `${currencyAmount} ${data.category} ${data.account}`;
 	
-	message += `\n${data.location}`;
-
-	// Only add note if message is still short enough
-	if (data.note && message.length < 120) {
-		const shortNote = data.note.length > 30 ? data.note.substring(0, 30) + "..." : data.note;
-		message += `\n${shortNote}`;
-	}
-
+	console.log(`SMS message created: "${message}" (${message.length} chars)`);
 	return message;
 }
 
