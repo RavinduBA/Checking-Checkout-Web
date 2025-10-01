@@ -46,6 +46,7 @@ import { useLocationContext } from "@/context/LocationContext";
 import { useToast } from "@/hooks/use-toast";
 import { useProfile } from "@/hooks/useProfile";
 import { useTenant } from "@/hooks/useTenant";
+import { useFormFieldPreferences } from "@/hooks/useFormFieldPreferences";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { convertCurrency } from "@/utils/currency";
@@ -61,6 +62,7 @@ export default function ReservationForm() {
 	const { toast } = useToast();
 	const { profile } = useProfile();
 	const { tenant } = useTenant();
+	const { preferences: fieldPreferences } = useFormFieldPreferences();
 	const [searchParams] = useSearchParams();
 	const { locations: availableLocations, loading: locationLoading } =
 		useLocationContext();
@@ -86,6 +88,7 @@ export default function ReservationForm() {
 		guest_phone: "",
 		guest_address: "",
 		guest_nationality: "",
+		guest_passport_number: "",
 		adults: 1,
 		children: 0,
 		check_in_date: searchParams.get("date") || "",
@@ -190,6 +193,7 @@ export default function ReservationForm() {
 				guest_phone: data.guest_phone || "",
 				guest_address: data.guest_address || "",
 				guest_nationality: data.guest_nationality || "",
+				guest_passport_number: data.guest_passport_number || "",
 				adults: data.adults,
 				children: data.children,
 				check_in_date: data.check_in_date,
@@ -643,86 +647,112 @@ export default function ReservationForm() {
 									/>
 								</div>
 
-								<div>
-									<Label htmlFor="guest_email">Email</Label>
-									<Input
-										id="guest_email"
-										type="email"
-										value={formData.guest_email}
-										onChange={(e) =>
-											handleInputChange("guest_email", e.target.value)
-										}
-										className="h-11"
-									/>
-								</div>
+								{fieldPreferences?.show_guest_email !== false && (
+									<div>
+										<Label htmlFor="guest_email">Email</Label>
+										<Input
+											id="guest_email"
+											type="email"
+											value={formData.guest_email}
+											onChange={(e) =>
+												handleInputChange("guest_email", e.target.value)
+											}
+											className="h-11"
+										/>
+									</div>
+								)}
 
-								<div>
-									<Label htmlFor="guest_phone">Phone</Label>
-									<PhoneInput
-										id="guest_phone"
-										defaultCountry="LK"
-										international
-										value={formData.guest_phone}
-										onChange={(value) =>
-											handleInputChange("guest_phone", value || "")
-										}
-									/>
-								</div>
+								{fieldPreferences?.show_guest_phone !== false && (
+									<div>
+										<Label htmlFor="guest_phone">Phone</Label>
+										<PhoneInput
+											id="guest_phone"
+											defaultCountry="LK"
+											international
+											value={formData.guest_phone}
+											onChange={(value) =>
+												handleInputChange("guest_phone", value || "")
+											}
+										/>
+									</div>
+								)}
 
-								<div>
-									<Label htmlFor="guest_nationality">Nationality</Label>
-									<Input
-										id="guest_nationality"
-										value={formData.guest_nationality}
-										onChange={(e) =>
-											handleInputChange("guest_nationality", e.target.value)
-										}
-										className="h-11"
-									/>
-								</div>
+								{fieldPreferences?.show_guest_nationality !== false && (
+									<div>
+										<Label htmlFor="guest_nationality">Nationality</Label>
+										<Input
+											id="guest_nationality"
+											value={formData.guest_nationality}
+											onChange={(e) =>
+												handleInputChange("guest_nationality", e.target.value)
+											}
+											className="h-11"
+										/>
+									</div>
+								)}
+
+								{fieldPreferences?.show_guest_passport_number !== false && (
+									<div>
+										<Label htmlFor="guest_passport_number">Passport Number</Label>
+										<Input
+											id="guest_passport_number"
+											value={formData.guest_passport_number}
+											onChange={(e) =>
+												handleInputChange("guest_passport_number", e.target.value)
+											}
+											className="h-11"
+										/>
+									</div>
+								)}
 
 								<div className="grid grid-cols-2 gap-4">
-									<div>
-										<Label htmlFor="adults">Adults *</Label>
-										<Input
-											id="adults"
-											type="number"
-											min="1"
-											value={formData.adults}
-											onChange={(e) =>
-												handleInputChange("adults", parseInt(e.target.value))
-											}
-											required
-											className="h-11"
-										/>
-									</div>
-									<div>
-										<Label htmlFor="children">Children</Label>
-										<Input
-											id="children"
-											type="number"
-											min="0"
-											value={formData.children}
-											onChange={(e) =>
-												handleInputChange("children", parseInt(e.target.value))
-											}
-											className="h-11"
-										/>
-									</div>
+									{fieldPreferences?.show_adults !== false && (
+										<div>
+											<Label htmlFor="adults">Adults *</Label>
+											<Input
+												id="adults"
+												type="number"
+												min="1"
+												value={formData.adults}
+												onChange={(e) =>
+													handleInputChange("adults", parseInt(e.target.value))
+												}
+												required
+												className="h-11"
+											/>
+										</div>
+									)}
+									{fieldPreferences?.show_children !== false && (
+										<div>
+											<Label htmlFor="children">Children</Label>
+											<Input
+												id="children"
+												type="number"
+												min="0"
+												value={formData.children}
+												onChange={(e) =>
+													handleInputChange("children", parseInt(e.target.value))
+												}
+												className="h-11"
+											/>
+										</div>
+									)}
 								</div>
 
-								<div className="md:col-span-2">
-									<Label htmlFor="guest_address">Address</Label>
-									<Textarea
-										id="guest_address"
-										value={formData.guest_address}
-										onChange={(e) =>
-											handleInputChange("guest_address", e.target.value)
-										}
-										rows={3}
-										className="resize-none"
-									/>
-								</div>
+								{fieldPreferences?.show_guest_address !== false && (
+									<div className="md:col-span-2">
+										<Label htmlFor="guest_address">Address</Label>
+										<Textarea
+											id="guest_address"
+											value={formData.guest_address}
+											onChange={(e) =>
+												handleInputChange("guest_address", e.target.value)
+											}
+											rows={3}
+											className="resize-none"
+										/>
+									</div>
+								)}
 							</CardContent>
 						</Card>
 
@@ -849,23 +879,25 @@ export default function ReservationForm() {
 										}
 									/>
 
-									<div>
-										<Label htmlFor="advance_amount">Advance Payment</Label>
-										<Input
-											id="advance_amount"
-											type="number"
-											min="0"
-											step="0.01"
-											value={formData.advance_amount}
-											onChange={(e) =>
-												handleInputChange(
-													"advance_amount",
-													parseFloat(e.target.value) || 0,
-												)
-											}
-											className="h-11"
-										/>
-									</div>
+									{fieldPreferences?.show_advance_amount !== false && (
+										<div>
+											<Label htmlFor="advance_amount">Advance Payment</Label>
+											<Input
+												id="advance_amount"
+												type="number"
+												min="0"
+												step="0.01"
+												value={formData.advance_amount}
+												onChange={(e) =>
+													handleInputChange(
+														"advance_amount",
+														parseFloat(e.target.value) || 0,
+													)
+												}
+												className="h-11"
+											/>
+										</div>
+									)}
 								</div>
 
 								{/* Status */}
@@ -889,19 +921,21 @@ export default function ReservationForm() {
 								</div>
 
 								{/* Special Requests */}
-								<div>
-									<Label htmlFor="special_requests">Special Requests</Label>
-									<Textarea
-										id="special_requests"
-										value={formData.special_requests}
-										onChange={(e) =>
-											handleInputChange("special_requests", e.target.value)
-										}
-										rows={3}
-										placeholder="Any special requirements or notes..."
-										className="resize-none"
-									/>
-								</div>
+								{fieldPreferences?.show_special_requests !== false && (
+									<div>
+										<Label htmlFor="special_requests">Special Requests</Label>
+										<Textarea
+											id="special_requests"
+											value={formData.special_requests}
+											onChange={(e) =>
+												handleInputChange("special_requests", e.target.value)
+											}
+											rows={3}
+											placeholder="Any special requirements or notes..."
+											className="resize-none"
+										/>
+									</div>
+								)}
 							</CardContent>
 						</Card>
 					</div>
@@ -994,19 +1028,23 @@ export default function ReservationForm() {
 						</Card>
 
 						{/* Photo Attachments */}
-						<PhotoAttachment
-							photos={idPhotos}
-							onPhotosChange={setIdPhotos}
-							title="ID Photos & Documents"
-							maxPhotos={5}
-						/>
+						{fieldPreferences?.show_id_photos !== false && (
+							<PhotoAttachment
+								photos={idPhotos}
+								onPhotosChange={setIdPhotos}
+								title="ID Photos & Documents"
+								maxPhotos={5}
+							/>
+						)}
 
 						{/* Guest Signature */}
-						<SignatureCapture
-							signature={guestSignature}
-							onSignatureChange={setGuestSignature}
-							title="Guest Signature"
-						/>
+						{fieldPreferences?.show_guest_signature !== false && (
+							<SignatureCapture
+								signature={guestSignature}
+								onSignatureChange={setGuestSignature}
+								title="Guest Signature"
+							/>
+						)}
 
 						{/* Action Buttons */}
 						<div className="sticky top-6 space-y-4">
@@ -1052,280 +1090,284 @@ export default function ReservationForm() {
 					</CardHeader>
 					<CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 						{/* Guide Services */}
-						<div className="space-y-4">
-							<div className="flex items-center space-x-2">
-								<Checkbox
-									id="has_guide"
-									checked={formData.has_guide}
-									onCheckedChange={(checked) =>
-										handleInputChange("has_guide", checked)
-									}
-								/>
-								<Label htmlFor="has_guide" className="font-medium">
-									Include Guide Services
-								</Label>
-							</div>
-
-							{formData.has_guide && (
-								<div className="space-y-4 pl-6 border-l-2 border-primary/20">
-									<div className="flex gap-2">
-										<Select
-											value={formData.guide_id}
-											onValueChange={(value) =>
-												handleInputChange("guide_id", value)
-											}
-										>
-											<SelectTrigger className="flex-1">
-												<SelectValue placeholder="Select guide" />
-											</SelectTrigger>
-											<SelectContent className="z-50 bg-background border">
-												{guides.map((guide) => (
-													<SelectItem key={guide.id} value={guide.id}>
-														{guide.name} ({guide.commission_rate}%)
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-
-										<Dialog
-											open={showGuideDialog}
-											onOpenChange={setShowGuideDialog}
-										>
-											<DialogTrigger asChild>
-												<Button type="button" variant="outline" size="icon">
-													<Plus className="size-4" />
-												</Button>
-											</DialogTrigger>
-											<DialogContent>
-												<DialogHeader>
-													<DialogTitle>Add New Guide</DialogTitle>
-													<DialogDescription>
-														Create a new guide profile
-													</DialogDescription>
-												</DialogHeader>
-												<div className="space-y-4">
-													<div>
-														<Label htmlFor="guide_name">Name</Label>
-														<Input
-															id="guide_name"
-															value={newGuide.name}
-															onChange={(e) =>
-																setNewGuide((prev) => ({
-																	...prev,
-																	name: e.target.value,
-																}))
-															}
-														/>
-													</div>
-													<div>
-														<Label htmlFor="guide_phone">Phone</Label>
-														<PhoneInput
-															id="guide_phone"
-															defaultCountry="LK"
-															international
-															value={newGuide.phone}
-															onChange={(value) =>
-																setNewGuide((prev) => ({
-																	...prev,
-																	phone: value || "",
-																}))
-															}
-														/>
-													</div>
-													<div>
-														<Label htmlFor="guide_email">Email</Label>
-														<Input
-															id="guide_email"
-															type="email"
-															value={newGuide.email}
-															onChange={(e) =>
-																setNewGuide((prev) => ({
-																	...prev,
-																	email: e.target.value,
-																}))
-															}
-														/>
-													</div>
-													<div>
-														<Label htmlFor="guide_commission">
-															Commission Rate (%)
-														</Label>
-														<Input
-															id="guide_commission"
-															type="number"
-															min="0"
-															max="100"
-															value={newGuide.commission_rate}
-															onChange={(e) =>
-																setNewGuide((prev) => ({
-																	...prev,
-																	commission_rate: parseFloat(e.target.value),
-																}))
-															}
-														/>
-													</div>
-													<Button onClick={createGuide} className="w-full">
-														Create Guide
-													</Button>
-												</div>
-											</DialogContent>
-										</Dialog>
-									</div>
-
-									{formData.guide_commission > 0 && (
-										<div className="text-sm text-muted-foreground">
-											Commission: {formData.currency}{" "}
-											{formData.guide_commission.toLocaleString()}
-										</div>
-									)}
+						{fieldPreferences?.show_guide !== false && (
+							<div className="space-y-4">
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="has_guide"
+										checked={formData.has_guide}
+										onCheckedChange={(checked) =>
+											handleInputChange("has_guide", checked)
+										}
+									/>
+									<Label htmlFor="has_guide" className="font-medium">
+										Include Guide Services
+									</Label>
 								</div>
-							)}
-						</div>
+
+								{formData.has_guide && (
+									<div className="space-y-4 pl-6 border-l-2 border-primary/20">
+										<div className="flex gap-2">
+											<Select
+												value={formData.guide_id}
+												onValueChange={(value) =>
+													handleInputChange("guide_id", value)
+												}
+											>
+												<SelectTrigger className="flex-1">
+													<SelectValue placeholder="Select guide" />
+												</SelectTrigger>
+												<SelectContent className="z-50 bg-background border">
+													{guides.map((guide) => (
+														<SelectItem key={guide.id} value={guide.id}>
+															{guide.name} ({guide.commission_rate}%)
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+
+											<Dialog
+												open={showGuideDialog}
+												onOpenChange={setShowGuideDialog}
+											>
+												<DialogTrigger asChild>
+													<Button type="button" variant="outline" size="icon">
+														<Plus className="size-4" />
+													</Button>
+												</DialogTrigger>
+												<DialogContent>
+													<DialogHeader>
+														<DialogTitle>Add New Guide</DialogTitle>
+														<DialogDescription>
+															Create a new guide profile
+														</DialogDescription>
+													</DialogHeader>
+													<div className="space-y-4">
+														<div>
+															<Label htmlFor="guide_name">Name</Label>
+															<Input
+																id="guide_name"
+																value={newGuide.name}
+																onChange={(e) =>
+																	setNewGuide((prev) => ({
+																		...prev,
+																		name: e.target.value,
+																	}))
+																}
+															/>
+														</div>
+														<div>
+															<Label htmlFor="guide_phone">Phone</Label>
+															<PhoneInput
+																id="guide_phone"
+																defaultCountry="LK"
+																international
+																value={newGuide.phone}
+																onChange={(value) =>
+																	setNewGuide((prev) => ({
+																		...prev,
+																		phone: value || "",
+																	}))
+																}
+															/>
+														</div>
+														<div>
+															<Label htmlFor="guide_email">Email</Label>
+															<Input
+																id="guide_email"
+																type="email"
+																value={newGuide.email}
+																onChange={(e) =>
+																	setNewGuide((prev) => ({
+																		...prev,
+																		email: e.target.value,
+																	}))
+																}
+															/>
+														</div>
+														<div>
+															<Label htmlFor="guide_commission">
+																Commission Rate (%)
+															</Label>
+															<Input
+																id="guide_commission"
+																type="number"
+																min="0"
+																max="100"
+																value={newGuide.commission_rate}
+																onChange={(e) =>
+																	setNewGuide((prev) => ({
+																		...prev,
+																		commission_rate: parseFloat(e.target.value),
+																	}))
+																}
+															/>
+														</div>
+														<Button onClick={createGuide} className="w-full">
+															Create Guide
+														</Button>
+													</div>
+												</DialogContent>
+											</Dialog>
+										</div>
+
+										{formData.guide_commission > 0 && (
+											<div className="text-sm text-muted-foreground">
+												Commission: {formData.currency}{" "}
+												{formData.guide_commission.toLocaleString()}
+											</div>
+										)}
+									</div>
+								)}
+							</div>
+						)}
 
 						{/* Agent Services */}
-						<div className="space-y-4">
-							<div className="flex items-center space-x-2">
-								<Checkbox
-									id="has_agent"
-									checked={formData.has_agent}
-									onCheckedChange={(checked) =>
-										handleInputChange("has_agent", checked)
-									}
-								/>
-								<Label htmlFor="has_agent" className="font-medium">
-									Include Agent Services
-								</Label>
-							</div>
-
-							{formData.has_agent && (
-								<div className="space-y-4 pl-6 border-l-2 border-primary/20">
-									<div className="flex gap-2">
-										<Select
-											value={formData.agent_id}
-											onValueChange={(value) =>
-												handleInputChange("agent_id", value)
-											}
-										>
-											<SelectTrigger className="flex-1">
-												<SelectValue placeholder="Select agent" />
-											</SelectTrigger>
-											<SelectContent className="z-50 bg-background border">
-												{agents.map((agent) => (
-													<SelectItem key={agent.id} value={agent.id}>
-														{agent.name} - {agent.agency_name} (
-														{agent.commission_rate}%)
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-
-										<Dialog
-											open={showAgentDialog}
-											onOpenChange={setShowAgentDialog}
-										>
-											<DialogTrigger asChild>
-												<Button type="button" variant="outline" size="icon">
-													<Plus className="size-4" />
-												</Button>
-											</DialogTrigger>
-											<DialogContent>
-												<DialogHeader>
-													<DialogTitle>Add New Agent</DialogTitle>
-													<DialogDescription>
-														Create a new agent profile
-													</DialogDescription>
-												</DialogHeader>
-												<div className="space-y-4">
-													<div>
-														<Label htmlFor="agent_name">Name</Label>
-														<Input
-															id="agent_name"
-															value={newAgent.name}
-															onChange={(e) =>
-																setNewAgent((prev) => ({
-																	...prev,
-																	name: e.target.value,
-																}))
-															}
-														/>
-													</div>
-													<div>
-														<Label htmlFor="agent_agency">Agency Name</Label>
-														<Input
-															id="agent_agency"
-															value={newAgent.agency_name}
-															onChange={(e) =>
-																setNewAgent((prev) => ({
-																	...prev,
-																	agency_name: e.target.value,
-																}))
-															}
-														/>
-													</div>
-													<div>
-														<Label htmlFor="agent_phone">Phone</Label>
-														<PhoneInput
-															id="agent_phone"
-															defaultCountry="LK"
-															international
-															value={newAgent.phone}
-															onChange={(value) =>
-																setNewAgent((prev) => ({
-																	...prev,
-																	phone: value || "",
-																}))
-															}
-														/>
-													</div>
-													<div>
-														<Label htmlFor="agent_email">Email</Label>
-														<Input
-															id="agent_email"
-															type="email"
-															value={newAgent.email}
-															onChange={(e) =>
-																setNewAgent((prev) => ({
-																	...prev,
-																	email: e.target.value,
-																}))
-															}
-														/>
-													</div>
-													<div>
-														<Label htmlFor="agent_commission">
-															Commission Rate (%)
-														</Label>
-														<Input
-															id="agent_commission"
-															type="number"
-															min="0"
-															max="100"
-															value={newAgent.commission_rate}
-															onChange={(e) =>
-																setNewAgent((prev) => ({
-																	...prev,
-																	commission_rate: parseFloat(e.target.value),
-																}))
-															}
-														/>
-													</div>
-													<Button onClick={createAgent} className="w-full">
-														Create Agent
-													</Button>
-												</div>
-											</DialogContent>
-										</Dialog>
-									</div>
-
-									{formData.agent_commission > 0 && (
-										<div className="text-sm text-muted-foreground">
-											Commission: {formData.currency}{" "}
-											{formData.agent_commission.toLocaleString()}
-										</div>
-									)}
+						{fieldPreferences?.show_agent !== false && (
+							<div className="space-y-4">
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="has_agent"
+										checked={formData.has_agent}
+										onCheckedChange={(checked) =>
+											handleInputChange("has_agent", checked)
+										}
+									/>
+									<Label htmlFor="has_agent" className="font-medium">
+										Include Agent Services
+									</Label>
 								</div>
-							)}
-						</div>
+
+								{formData.has_agent && (
+									<div className="space-y-4 pl-6 border-l-2 border-primary/20">
+										<div className="flex gap-2">
+											<Select
+												value={formData.agent_id}
+												onValueChange={(value) =>
+													handleInputChange("agent_id", value)
+												}
+											>
+												<SelectTrigger className="flex-1">
+													<SelectValue placeholder="Select agent" />
+												</SelectTrigger>
+												<SelectContent className="z-50 bg-background border">
+													{agents.map((agent) => (
+														<SelectItem key={agent.id} value={agent.id}>
+															{agent.name} - {agent.agency_name} (
+															{agent.commission_rate}%)
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+
+											<Dialog
+												open={showAgentDialog}
+												onOpenChange={setShowAgentDialog}
+											>
+												<DialogTrigger asChild>
+													<Button type="button" variant="outline" size="icon">
+														<Plus className="size-4" />
+													</Button>
+												</DialogTrigger>
+												<DialogContent>
+													<DialogHeader>
+														<DialogTitle>Add New Agent</DialogTitle>
+														<DialogDescription>
+															Create a new agent profile
+														</DialogDescription>
+													</DialogHeader>
+													<div className="space-y-4">
+														<div>
+															<Label htmlFor="agent_name">Name</Label>
+															<Input
+																id="agent_name"
+																value={newAgent.name}
+																onChange={(e) =>
+																	setNewAgent((prev) => ({
+																		...prev,
+																		name: e.target.value,
+																	}))
+																}
+															/>
+														</div>
+														<div>
+															<Label htmlFor="agent_agency">Agency Name</Label>
+															<Input
+																id="agent_agency"
+																value={newAgent.agency_name}
+																onChange={(e) =>
+																	setNewAgent((prev) => ({
+																		...prev,
+																		agency_name: e.target.value,
+																	}))
+																}
+															/>
+														</div>
+														<div>
+															<Label htmlFor="agent_phone">Phone</Label>
+															<PhoneInput
+																id="agent_phone"
+																defaultCountry="LK"
+																international
+																value={newAgent.phone}
+																onChange={(value) =>
+																	setNewAgent((prev) => ({
+																		...prev,
+																		phone: value || "",
+																	}))
+																}
+															/>
+														</div>
+														<div>
+															<Label htmlFor="agent_email">Email</Label>
+															<Input
+																id="agent_email"
+																type="email"
+																value={newAgent.email}
+																onChange={(e) =>
+																	setNewAgent((prev) => ({
+																		...prev,
+																		email: e.target.value,
+																	}))
+																}
+															/>
+														</div>
+														<div>
+															<Label htmlFor="agent_commission">
+																Commission Rate (%)
+															</Label>
+															<Input
+																id="agent_commission"
+																type="number"
+																min="0"
+																max="100"
+																value={newAgent.commission_rate}
+																onChange={(e) =>
+																	setNewAgent((prev) => ({
+																		...prev,
+																		commission_rate: parseFloat(e.target.value),
+																	}))
+																}
+															/>
+														</div>
+														<Button onClick={createAgent} className="w-full">
+															Create Agent
+														</Button>
+													</div>
+												</DialogContent>
+											</Dialog>
+										</div>
+
+										{formData.agent_commission > 0 && (
+											<div className="text-sm text-muted-foreground">
+												Commission: {formData.currency}{" "}
+												{formData.agent_commission.toLocaleString()}
+											</div>
+										)}
+									</div>
+								)}
+							</div>
+						)}
 					</CardContent>
 				</Card>
 			</form>
