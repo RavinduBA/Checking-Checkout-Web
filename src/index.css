@@ -47,19 +47,29 @@ All colors MUST be HSL.
 
 		--radius: 0.5rem;
 
-		--sidebar-background: hsl(0 0% 98%);
+		--sidebar-background: 0 0% 98%;
 
-		--sidebar-foreground: hsl(240 5.3% 26.1%);
+		--sidebar-foreground: 240 5.3% 26.1%;
 
-		--sidebar-primary: hsl(240 5.9% 10%);
+		--sidebar-primary: 240 5.9% 10%;
 
-		--sidebar-primary-foreground: hsl(0 0% 98%);
+		--sidebar-primary-foreground: 0 0% 98%;
 
-		--sidebar-accent: hsl(240 4.8% 95.9%);
-		--sidebar-accent-foreground: hsl(240 5.9% 10%);
-		--sidebar-border: hsl(220 13% 91%);
-		--sidebar-ring: hsl(217.2 91.2% 59.8%);
+		--sidebar-accent: 240 4.8% 95.9%;
+		--sidebar-accent-foreground: 240 5.9% 10%;
+		--sidebar-border: 220 13% 91%;
+		--sidebar-ring: 217.2 91.2% 59.8%;
 	}
+  .dark {
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
 }
 
 @layer base {
@@ -74,4 +84,20 @@ All colors MUST be HSL.
 
 body {
   font-family: 'Prompt', sans-serif;
+}
+
+/* Custom utility classes for the application shell */
+@layer utilities {
+  .size-9\.5 {
+    width: 2.375rem; /* 38px */
+    height: 2.375rem; /* 38px */
+  }
+  
+  .h-250 {
+    height: 62.5rem; /* 1000px */
+  }
+  
+  .w-50 {
+    width: 12.5rem; /* 200px */
+  }
 }
