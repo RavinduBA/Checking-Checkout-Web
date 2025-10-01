@@ -350,11 +350,7 @@ export default function Dashboard() {
 							value={selectedLocation}
 							onValueChange={setSelectedLocation}
 						>
-							<SelectTrigger className="h-9">
-								<SelectValue placeholder="All Locations" />
-							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="all">All Locations</SelectItem>
 								{locations.map((location) => (
 									<SelectItem key={location.id} value={location.id}>
 										{location.name}
@@ -390,9 +386,7 @@ export default function Dashboard() {
 							{(selectedMonth ? weeklyIncome : todayIncome).toLocaleString()}
 						</div>
 						<p className="text-xs text-muted-foreground">
-							{selectedLocation === "all"
-								? "All locations"
-								: locations.find((l) => l.id === selectedLocation)?.name}
+							{locations.find((l) => l.id === selectedLocation)?.name}
 						</p>
 					</CardContent>
 				</Card>
@@ -413,9 +407,7 @@ export default function Dashboard() {
 							).toLocaleString()}
 						</div>
 						<p className="text-xs text-muted-foreground">
-							{selectedLocation === "all"
-								? "All locations"
-								: locations.find((l) => l.id === selectedLocation)?.name}
+							{locations.find((l) => l.id === selectedLocation)?.name}
 						</p>
 					</CardContent>
 				</Card>

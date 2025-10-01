@@ -484,11 +484,7 @@ export default function ComprehensiveReports() {
 								value={selectedLocation}
 								onValueChange={setSelectedLocation}
 							>
-								<SelectTrigger>
-									<SelectValue placeholder="All Locations" />
-								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="all">All Locations</SelectItem>
 									{locations.map((location) => (
 										<SelectItem key={location.id} value={location.id}>
 											{location.name}

@@ -423,21 +423,6 @@ export default function Accounts() {
 							<div>
 								<Label htmlFor="location_access">Location Access</Label>
 								<div className="space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
-									<div className="flex items-center space-x-2">
-										<input
-											type="checkbox"
-											id="all_locations"
-											checked={formData.location_access.length === 0}
-											onChange={(e) => {
-												if (e.target.checked) {
-													setFormData({ ...formData, location_access: [] });
-												}
-											}}
-										/>
-										<Label htmlFor="all_locations" className="text-sm">
-											All Locations
-										</Label>
-									</div>
 									{locations.map((location) => (
 										<div
 											key={location.id}
@@ -713,9 +698,7 @@ export default function Accounts() {
 								</div>
 								<div className="col-span-2">
 									<span className="font-medium">Location Access:</span>{" "}
-									{account.location_access.length === 0
-										? "All Locations"
-										: locations
+									{account.location_access.length  && locations
 												.filter((loc) =>
 													account.location_access.includes(loc.id),
 												)

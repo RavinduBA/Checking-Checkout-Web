@@ -386,7 +386,6 @@ export default function Calendar() {
 								<SelectValue placeholder="Select location" />
 							</SelectTrigger>
 							<SelectContent className="z-50 bg-background border">
-								<SelectItem value="all">All Locations</SelectItem>
 								{locations.map((location) => (
 									<SelectItem key={location.id} value={location.id}>
 										{location.name}

@@ -331,7 +331,7 @@ export default function PaymentForm() {
 	}
 
 	return (
-		<div className="w-full mx-auto p-4 space-y-6 pb-20 sm:pb-0">
+		<div className="w-full mx-auto p-4 space-y-6 pb-20 sm:pb-12">
 			{/* Header */}
 			<div className="flex items-center gap-4">
 				<div className="flex-1">

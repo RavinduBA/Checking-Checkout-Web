@@ -37,21 +37,15 @@ export function LocationSwitcher({
 }) {
 	const { isMobile } = useSidebar();
 
-	const activeLocation =
-		selectedLocation === "all"
-			? { id: "all", name: "All Locations", is_active: true }
-			: locations.find((loc) => loc.id === selectedLocation) || {
-					id: "all",
-					name: "All Locations",
-					is_active: true,
-				};
+	const activeLocation = locations.find((loc) => loc.id === selectedLocation);
 
 	const getLocationDisplayName = (location: typeof activeLocation) => {
-		if (location.id === "all") return "All Locations";
+		if (!location) return "Select Location";
 		return location.name || "No Location";
 	};
 
 	const getLocationSubtext = (location: typeof activeLocation) => {
+		if (!location) return "No location selected";
 		if (location.id === "all") {
 			return `${locations.length} location${locations.length !== 1 ? "s" : ""}`;
 		}
@@ -90,20 +84,6 @@ export function LocationSwitcher({
 						<DropdownMenuLabel className="text-xs text-muted-foreground">
 							Locations
 						</DropdownMenuLabel>
-
-						{/* All Locations Option */}
-						<DropdownMenuItem
-							onClick={() => onLocationChange("all")}
-							className="gap-2 p-2"
-						>
-							<div className="flex size-6 items-center justify-center rounded-sm border">
-								<Logo />
-							</div>
-							All Locations
-							<DropdownMenuShortcut>⌘A</DropdownMenuShortcut>
-						</DropdownMenuItem>
-
-						<DropdownMenuSeparator />
 
 						{/* Individual Locations */}
 						{locations.map((location, index) => (

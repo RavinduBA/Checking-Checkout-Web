@@ -686,13 +686,6 @@ export default function BookingChannelsIntegration() {
 						</CardHeader>
 						<CardContent>
 							<div className="flex flex-wrap gap-2">
-								<Button
-									variant={selectedLocation === "all" ? "default" : "outline"}
-									size="sm"
-									onClick={() => setSelectedLocation("all")}
-								>
-									All Locations ({bookings.length})
-								</Button>
 								{locations.map((location) => {
 									const locationBookings = bookings.filter((booking) => {
 										const mappedLocation = getLocationFromBooking(booking);

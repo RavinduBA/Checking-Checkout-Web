@@ -280,7 +280,6 @@ export default function EnhancedCalendar() {
 							<SelectValue placeholder="Select location" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="all">All Locations</SelectItem>
 							{locations.map((location) => (
 								<SelectItem key={location.id} value={location.id}>
 									{location.name}

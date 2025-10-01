@@ -51,7 +51,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 
 export function AppSidebar({
 	locations = [],
-	selectedLocation = "all",
+	selectedLocation,
 	onLocationChange,
 	locationsLoading = false,
 	...props
