@@ -62,7 +62,13 @@ type ReservationWithJoins = {
 	paid_amount?: number | null;
 	balance_amount?: number | null;
 	currency: "LKR" | "USD" | "EUR" | "GBP";
-	status: "pending" | "confirmed" | "checked_in" | "checked_out" | "cancelled" | "tentative";
+	status:
+		| "pending"
+		| "confirmed"
+		| "checked_in"
+		| "checked_out"
+		| "cancelled"
+		| "tentative";
 	special_requests?: string | null;
 	arrival_time?: string | null;
 	created_by?: string | null;
@@ -148,8 +154,8 @@ export const ReservationsList = () => {
 			// Fetch reservations with location and room data
 			const reservationsQuery = !selectedLocation
 				? supabase
-					.from("reservations")
-					.select(`
+						.from("reservations")
+						.select(`
           *,
           locations (
             id,
@@ -197,11 +203,11 @@ export const ReservationsList = () => {
             is_active
           )
         `)
-					.eq("tenant_id", tenant?.id || "")
-					.order("created_at", { ascending: false })
+						.eq("tenant_id", tenant?.id || "")
+						.order("created_at", { ascending: false })
 				: supabase
-					.from("reservations")
-					.select(`
+						.from("reservations")
+						.select(`
           *,
           locations (
             id,
@@ -249,29 +255,29 @@ export const ReservationsList = () => {
             is_active
           )
         `)
-					.eq("tenant_id", tenant?.id || "")
-					.eq("location_id", selectedLocation)
-					.order("created_at", { ascending: false });
+						.eq("tenant_id", tenant?.id || "")
+						.eq("location_id", selectedLocation)
+						.order("created_at", { ascending: false });
 
 			// Fetch payments with location filtering through reservations
 			const paymentsQuery = !selectedLocation
 				? supabase
-					.from("payments")
-					.select(`
+						.from("payments")
+						.select(`
 							*,
 							reservations!inner(location_id, tenant_id)
 						`)
-					.eq("reservations.tenant_id", tenant?.id || "")
-					.order("created_at", { ascending: false })
+						.eq("reservations.tenant_id", tenant?.id || "")
+						.order("created_at", { ascending: false })
 				: supabase
-					.from("payments")
-					.select(`
+						.from("payments")
+						.select(`
 							*,
 							reservations!inner(location_id, tenant_id)
 						`)
-					.eq("reservations.tenant_id", tenant?.id || "")
-					.eq("reservations.location_id", selectedLocation)
-					.order("created_at", { ascending: false });
+						.eq("reservations.tenant_id", tenant?.id || "")
+						.eq("reservations.location_id", selectedLocation)
+						.order("created_at", { ascending: false });
 
 			const [reservationsData, paymentsData] = await Promise.all([
 				reservationsQuery,

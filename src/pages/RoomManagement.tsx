@@ -325,10 +325,9 @@ export default function RoomManagement() {
 		}
 	};
 
-	const filteredRooms =
-		!selectedLocation
-			? []
-			: rooms.filter((room) => room.location_id === selectedLocation);
+	const filteredRooms = !selectedLocation
+		? []
+		: rooms.filter((room) => room.location_id === selectedLocation);
 
 	if (loading) {
 		return (

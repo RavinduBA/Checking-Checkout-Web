@@ -183,18 +183,27 @@ const PrintableReservation = React.forwardRef<
 			<div className="text-center mb-8 border-b-2 border-gray-300 pb-6">
 				{/* Temporary Debug Information */}
 				<div className="bg-yellow-100 p-4 mb-4 text-left text-xs">
-					<strong>DEBUG INFO:</strong><br/>
-					Guest Name: {reservation.guest_name || 'MISSING'}<br/>
-					Hotel Name: {reservation.hotel_name || 'MISSING'}<br/>
-					Location Name: {reservation.location_name || 'MISSING'}<br/>
-					Locations Object: {reservation.locations?.name || 'MISSING'}<br/>
-					Reservation Number: {reservation.reservation_number || 'MISSING'}<br/>
-					Room Number: {reservation.room_number || 'MISSING'}<br/>
-					Rooms Object: {reservation.rooms?.room_number || 'MISSING'}<br/>
-					Has Hotel Name: {reservation.hotel_name ? 'YES' : 'NO'}<br/>
-					Has Location Name: {reservation.location_name ? 'YES' : 'NO'}
+					<strong>DEBUG INFO:</strong>
+					<br />
+					Guest Name: {reservation.guest_name || "MISSING"}
+					<br />
+					Hotel Name: {reservation.hotel_name || "MISSING"}
+					<br />
+					Location Name: {reservation.location_name || "MISSING"}
+					<br />
+					Locations Object: {reservation.locations?.name || "MISSING"}
+					<br />
+					Reservation Number: {reservation.reservation_number || "MISSING"}
+					<br />
+					Room Number: {reservation.room_number || "MISSING"}
+					<br />
+					Rooms Object: {reservation.rooms?.room_number || "MISSING"}
+					<br />
+					Has Hotel Name: {reservation.hotel_name ? "YES" : "NO"}
+					<br />
+					Has Location Name: {reservation.location_name ? "YES" : "NO"}
 				</div>
-				
+
 				{/* Hotel Logo */}
 				{reservation.logo_url && (
 					<div className="mb-4">
@@ -209,13 +218,19 @@ const PrintableReservation = React.forwardRef<
 					RESERVATION CONFIRMATION
 				</h1>
 				<div className="text-xl font-semibold text-gray-700 mb-2">
-					{reservation.hotel_name || reservation.tenant_name || reservation.location_name || reservation.locations?.name || "Hotel"}
+					{reservation.hotel_name ||
+						reservation.tenant_name ||
+						reservation.location_name ||
+						reservation.locations?.name ||
+						"Hotel"}
 				</div>
-				{reservation.location_name && reservation.location_name !== (reservation.hotel_name || reservation.tenant_name) && (
-					<div className="text-lg text-gray-600 mb-2">
-						{reservation.location_name}
-					</div>
-				)}
+				{reservation.location_name &&
+					reservation.location_name !==
+						(reservation.hotel_name || reservation.tenant_name) && (
+						<div className="text-lg text-gray-600 mb-2">
+							{reservation.location_name}
+						</div>
+					)}
 				<div className="text-lg text-gray-600 mb-2">
 					Confirmation Number:{" "}
 					<span className="font-bold text-blue-800">
@@ -299,11 +314,15 @@ const PrintableReservation = React.forwardRef<
 						</div>
 						<div className="mb-3">
 							<span className="font-semibold text-gray-700">Room Type:</span>
-							<span className="ml-2">{reservation.room_type || reservation.rooms?.room_type}</span>
+							<span className="ml-2">
+								{reservation.room_type || reservation.rooms?.room_type}
+							</span>
 						</div>
 						<div className="mb-3">
 							<span className="font-semibold text-gray-700">Bed Type:</span>
-							<span className="ml-2">{reservation.bed_type || reservation.rooms?.bed_type}</span>
+							<span className="ml-2">
+								{reservation.bed_type || reservation.rooms?.bed_type}
+							</span>
 						</div>
 						<div className="mb-3">
 							<span className="font-semibold text-gray-700">
@@ -359,13 +378,17 @@ const PrintableReservation = React.forwardRef<
 				)}
 
 				{/* Room Amenities */}
-				{((reservation.amenities && reservation.amenities.length > 0) || (reservation.rooms?.amenities && reservation.rooms.amenities.length > 0)) && (
+				{((reservation.amenities && reservation.amenities.length > 0) ||
+					(reservation.rooms?.amenities &&
+						reservation.rooms.amenities.length > 0)) && (
 					<div className="mt-4 p-3 bg-green-50 rounded border">
-						<span className="font-semibold text-gray-700">
-							Room Amenities:
-						</span>
+						<span className="font-semibold text-gray-700">Room Amenities:</span>
 						<div className="mt-1 flex flex-wrap gap-2">
-							{(reservation.amenities || reservation.rooms?.amenities || []).map((amenity, index) => (
+							{(
+								reservation.amenities ||
+								reservation.rooms?.amenities ||
+								[]
+							).map((amenity, index) => (
 								<span
 									key={index}
 									className="px-2 py-1 bg-green-200 text-green-800 text-sm rounded"
@@ -461,7 +484,9 @@ const PrintableReservation = React.forwardRef<
 							{reservation.guide_name && (
 								<div className="mb-3">
 									<span className="font-semibold text-gray-700">Name:</span>
-									<span className="ml-2 font-medium">{reservation.guide_name}</span>
+									<span className="ml-2 font-medium">
+										{reservation.guide_name}
+									</span>
 								</div>
 							)}
 							{reservation.guide_phone && (
@@ -480,8 +505,12 @@ const PrintableReservation = React.forwardRef<
 						<div>
 							{reservation.guide_license && (
 								<div className="mb-3">
-									<span className="font-semibold text-gray-700">License Number:</span>
-									<span className="ml-2 font-medium">{reservation.guide_license}</span>
+									<span className="font-semibold text-gray-700">
+										License Number:
+									</span>
+									<span className="ml-2 font-medium">
+										{reservation.guide_license}
+									</span>
 								</div>
 							)}
 							{reservation.guide_address && (
@@ -490,15 +519,18 @@ const PrintableReservation = React.forwardRef<
 									<span className="ml-2">{reservation.guide_address}</span>
 								</div>
 							)}
-							{reservation.guide_commission && reservation.guide_commission > 0 && (
-								<div className="mb-3">
-									<span className="font-semibold text-gray-700">Commission:</span>
-									<span className="ml-2 font-medium text-blue-700">
-										{getCurrencySymbol(reservation.currency)}
-										{reservation.guide_commission.toLocaleString()}
-									</span>
-								</div>
-							)}
+							{reservation.guide_commission &&
+								reservation.guide_commission > 0 && (
+									<div className="mb-3">
+										<span className="font-semibold text-gray-700">
+											Commission:
+										</span>
+										<span className="ml-2 font-medium text-blue-700">
+											{getCurrencySymbol(reservation.currency)}
+											{reservation.guide_commission.toLocaleString()}
+										</span>
+									</div>
+								)}
 						</div>
 					</div>
 				</div>
@@ -514,14 +546,20 @@ const PrintableReservation = React.forwardRef<
 						<div>
 							{reservation.agent_name && (
 								<div className="mb-3">
-									<span className="font-semibold text-gray-700">Agent Name:</span>
-									<span className="ml-2 font-medium">{reservation.agent_name}</span>
+									<span className="font-semibold text-gray-700">
+										Agent Name:
+									</span>
+									<span className="ml-2 font-medium">
+										{reservation.agent_name}
+									</span>
 								</div>
 							)}
 							{reservation.agency_name && (
 								<div className="mb-3">
 									<span className="font-semibold text-gray-700">Agency:</span>
-									<span className="ml-2 font-medium">{reservation.agency_name}</span>
+									<span className="ml-2 font-medium">
+										{reservation.agency_name}
+									</span>
 								</div>
 							)}
 							{reservation.agent_phone && (
@@ -538,15 +576,18 @@ const PrintableReservation = React.forwardRef<
 									<span className="ml-2">{reservation.agent_email}</span>
 								</div>
 							)}
-							{reservation.agent_commission && reservation.agent_commission > 0 && (
-								<div className="mb-3">
-									<span className="font-semibold text-gray-700">Commission:</span>
-									<span className="ml-2 font-medium text-purple-700">
-										{getCurrencySymbol(reservation.currency)}
-										{reservation.agent_commission.toLocaleString()}
-									</span>
-								</div>
-							)}
+							{reservation.agent_commission &&
+								reservation.agent_commission > 0 && (
+									<div className="mb-3">
+										<span className="font-semibold text-gray-700">
+											Commission:
+										</span>
+										<span className="ml-2 font-medium text-purple-700">
+											{getCurrencySymbol(reservation.currency)}
+											{reservation.agent_commission.toLocaleString()}
+										</span>
+									</div>
+								)}
 						</div>
 					</div>
 				</div>
@@ -784,7 +825,13 @@ const PrintableReservation = React.forwardRef<
 			<div className="border-t-2 border-gray-300 pt-6 text-center text-sm text-gray-600">
 				<div className="mb-3">
 					<p className="text-lg font-semibold text-gray-800 mb-2">
-						Thank you for choosing {reservation.hotel_name || reservation.tenant_name || reservation.location_name || reservation.locations?.name || "our hotel"}!
+						Thank you for choosing{" "}
+						{reservation.hotel_name ||
+							reservation.tenant_name ||
+							reservation.location_name ||
+							reservation.locations?.name ||
+							"our hotel"}
+						!
 					</p>
 					<p className="text-gray-600">
 						We look forward to providing you with an exceptional stay

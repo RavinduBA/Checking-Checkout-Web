@@ -101,14 +101,15 @@ export const useReservationPrint = () => {
 
 	const handlePrint = useReactToPrint({
 		contentRef: printRef,
-		documentTitle: undefined, // Will be set dynamically
 		pageStyle: `
       @page {
         size: A4;
         margin: 1cm;
       }
       @media print {
-        body {
+        html, body {
+          height: initial !important;
+          overflow: initial !important;
           -webkit-print-color-adjust: exact;
           color-adjust: exact;
         }
@@ -125,7 +126,9 @@ export const useReservationPrint = () => {
 		document.title = `Reservation-${reservation.reservation_number}`;
 
 		// Call the print function
-		handlePrint();
+		if (handlePrint) {
+			handlePrint();
+		}
 
 		// Restore original title after a delay
 		setTimeout(() => {

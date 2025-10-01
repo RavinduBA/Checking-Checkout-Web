@@ -20,10 +20,21 @@ interface DatePickerProps {
 }
 
 export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
-	({ value, onChange, placeholder = "Pick a date", disabled, className, min, max }, ref) => {
+	(
+		{
+			value,
+			onChange,
+			placeholder = "Pick a date",
+			disabled,
+			className,
+			min,
+			max,
+		},
+		ref,
+	) => {
 		// Parse date string as local date to prevent timezone issues
 		const parseLocalDate = (dateString: string) => {
-			const [year, month, day] = dateString.split('-').map(Number);
+			const [year, month, day] = dateString.split("-").map(Number);
 			return new Date(year, month - 1, day);
 		};
 
@@ -35,8 +46,8 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
 			if (date && onChange) {
 				// Format date as YYYY-MM-DD using local date methods
 				const year = date.getFullYear();
-				const month = String(date.getMonth() + 1).padStart(2, '0');
-				const day = String(date.getDate()).padStart(2, '0');
+				const month = String(date.getMonth() + 1).padStart(2, "0");
+				const day = String(date.getDate()).padStart(2, "0");
 				const formattedDate = `${year}-${month}-${day}`;
 				onChange(formattedDate);
 			}
@@ -44,10 +55,10 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
 
 		const formatDisplayDate = (date: Date | undefined) => {
 			if (!date) return placeholder;
-			return date.toLocaleDateString('en-US', {
-				year: 'numeric',
-				month: 'short',
-				day: 'numeric',
+			return date.toLocaleDateString("en-US", {
+				year: "numeric",
+				month: "short",
+				day: "numeric",
 			});
 		};
 
@@ -60,7 +71,7 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
 						className={cn(
 							"w-full justify-start text-left font-normal",
 							!value && "text-muted-foreground",
-							className
+							className,
 						)}
 						disabled={disabled}
 					>
@@ -83,7 +94,7 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
 				</PopoverContent>
 			</Popover>
 		);
-	}
+	},
 );
 
 DatePicker.displayName = "DatePicker";

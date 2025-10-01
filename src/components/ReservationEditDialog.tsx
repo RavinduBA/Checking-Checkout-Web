@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	Dialog,
 	DialogContent,
@@ -19,9 +20,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { DatePicker } from "@/components/ui/date-picker";
-import { OTPVerification } from "./OTPVerification";
 import { convertCurrency } from "@/utils/currency";
+import { OTPVerification } from "./OTPVerification";
 
 interface Reservation {
 	id: string;
@@ -292,18 +292,23 @@ export function ReservationEditDialog({
 								onChange={(value) => {
 									// Parse dates as local dates to avoid timezone issues
 									const parseLocalDate = (dateStr: string) => {
-										const [year, month, day] = dateStr.split('-').map(Number);
+										const [year, month, day] = dateStr.split("-").map(Number);
 										return new Date(year, month - 1, day);
 									};
-									
+
 									const checkInDate = parseLocalDate(value);
-									const checkOutDate = formData.check_out_date ? parseLocalDate(formData.check_out_date) : null;
+									const checkOutDate = formData.check_out_date
+										? parseLocalDate(formData.check_out_date)
+										: null;
 									let nights = 1;
 									if (checkOutDate) {
-										nights = Math.max(1, Math.ceil(
-											(checkOutDate.getTime() - checkInDate.getTime()) /
-												(1000 * 60 * 60 * 24)
-										));
+										nights = Math.max(
+											1,
+											Math.ceil(
+												(checkOutDate.getTime() - checkInDate.getTime()) /
+													(1000 * 60 * 60 * 24),
+											),
+										);
 									}
 									setFormData({
 										...formData,
@@ -316,8 +321,8 @@ export function ReservationEditDialog({
 								min={(() => {
 									const today = new Date();
 									const year = today.getFullYear();
-									const month = String(today.getMonth() + 1).padStart(2, '0');
-									const day = String(today.getDate()).padStart(2, '0');
+									const month = String(today.getMonth() + 1).padStart(2, "0");
+									const day = String(today.getDate()).padStart(2, "0");
 									return `${year}-${month}-${day}`;
 								})()}
 								className="w-full"
@@ -330,16 +335,21 @@ export function ReservationEditDialog({
 								onChange={(value) => {
 									// Parse dates as local dates to avoid timezone issues
 									const parseLocalDate = (dateStr: string) => {
-										const [year, month, day] = dateStr.split('-').map(Number);
+										const [year, month, day] = dateStr.split("-").map(Number);
 										return new Date(year, month - 1, day);
 									};
-									
-									const checkInDate = formData.check_in_date ? parseLocalDate(formData.check_in_date) : new Date();
+
+									const checkInDate = formData.check_in_date
+										? parseLocalDate(formData.check_in_date)
+										: new Date();
 									const checkOutDate = parseLocalDate(value);
-									const nights = Math.max(1, Math.ceil(
-										(checkOutDate.getTime() - checkInDate.getTime()) /
-											(1000 * 60 * 60 * 24)
-									));
+									const nights = Math.max(
+										1,
+										Math.ceil(
+											(checkOutDate.getTime() - checkInDate.getTime()) /
+												(1000 * 60 * 60 * 24),
+										),
+									);
 									setFormData({
 										...formData,
 										check_out_date: value,
@@ -353,8 +363,8 @@ export function ReservationEditDialog({
 									(() => {
 										const today = new Date();
 										const year = today.getFullYear();
-										const month = String(today.getMonth() + 1).padStart(2, '0');
-										const day = String(today.getDate()).padStart(2, '0');
+										const month = String(today.getMonth() + 1).padStart(2, "0");
+										const day = String(today.getDate()).padStart(2, "0");
 										return `${year}-${month}-${day}`;
 									})()
 								}
@@ -375,24 +385,27 @@ export function ReservationEditDialog({
 										convertCurrency(
 											selectedRoom.base_price,
 											selectedRoom.currency,
-											formData.currency || "USD"
-										).then(convertedPrice => {
-											setFormData({
-												...formData,
-												room_id: value,
-												room_rate: convertedPrice,
-												total_amount: convertedPrice * (formData.nights || 1),
+											formData.currency || "USD",
+										)
+											.then((convertedPrice) => {
+												setFormData({
+													...formData,
+													room_id: value,
+													room_rate: convertedPrice,
+													total_amount: convertedPrice * (formData.nights || 1),
+												});
+											})
+											.catch((error) => {
+												console.error("Currency conversion failed:", error);
+												// Fallback to original price
+												setFormData({
+													...formData,
+													room_id: value,
+													room_rate: selectedRoom.base_price,
+													total_amount:
+														selectedRoom.base_price * (formData.nights || 1),
+												});
 											});
-										}).catch(error => {
-											console.error('Currency conversion failed:', error);
-											// Fallback to original price
-											setFormData({
-												...formData,
-												room_id: value,
-												room_rate: selectedRoom.base_price,
-												total_amount: selectedRoom.base_price * (formData.nights || 1),
-											});
-										});
 									} else {
 										setFormData({ ...formData, room_id: value });
 									}

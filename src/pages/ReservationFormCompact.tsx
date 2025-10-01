@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
-import { DatePicker } from "@/components/ui/date-picker";
 import { CurrencySelector } from "@/components/CurrencySelector";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { IDPhotoUpload } from "@/components/IDPhotoUpload";
@@ -21,6 +20,7 @@ import { SignatureCapture } from "@/components/SignatureCapture";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	Dialog,
 	DialogContent,
@@ -219,13 +219,13 @@ export default function ReservationFormCompact() {
 
 	const calculateNights = (checkIn: string, checkOut: string) => {
 		if (!checkIn || !checkOut) return 1;
-		
+
 		// Parse dates as local dates to avoid timezone issues
 		const parseLocalDate = (dateStr: string) => {
-			const [year, month, day] = dateStr.split('-').map(Number);
+			const [year, month, day] = dateStr.split("-").map(Number);
 			return new Date(year, month - 1, day);
 		};
-		
+
 		const start = parseLocalDate(checkIn);
 		const end = parseLocalDate(checkOut);
 		const diffTime = Math.abs(end.getTime() - start.getTime());
@@ -444,7 +444,6 @@ export default function ReservationFormCompact() {
 		return handleSubmit(null, forceBook);
 	};
 
-
 	const handleSubmit = async (
 		e: React.FormEvent | null,
 		forceBook: boolean = false,
@@ -480,11 +479,11 @@ export default function ReservationFormCompact() {
 				guide_id: formData.has_guide ? formData.guide_id : null,
 				agent_id: formData.has_agent ? formData.agent_id : null,
 				guide_commission: formData.has_guide ? formData.guide_commission : 0,
-			agent_commission: formData.has_agent ? formData.agent_commission : 0,
-			currency: formData.currency,
-			booking_source: formData.booking_source,
-			tenant_id: profile?.tenant_id,
-		};			// Store document information (for future implementation - could be stored in a separate table)
+				agent_commission: formData.has_agent ? formData.agent_commission : 0,
+				currency: formData.currency,
+				booking_source: formData.booking_source,
+				tenant_id: profile?.tenant_id,
+			}; // Store document information (for future implementation - could be stored in a separate table)
 			const documentData = {
 				id_photos: idPhotos.map((photo) => ({
 					filePath: photo.filePath,
@@ -524,8 +523,10 @@ export default function ReservationFormCompact() {
 				});
 			} else {
 				// Generate reservation number using database function
-				const { data: reservationNumber, error: numberError } = await supabase
-					.rpc("generate_reservation_number", { p_tenant_id: profile?.tenant_id });
+				const { data: reservationNumber, error: numberError } =
+					await supabase.rpc("generate_reservation_number", {
+						p_tenant_id: profile?.tenant_id,
+					});
 
 				if (numberError) throw numberError;
 
@@ -555,14 +556,18 @@ export default function ReservationFormCompact() {
 							roomNumber: roomData?.room_number || "N/A",
 							checkIn: format(
 								(() => {
-									const [year, month, day] = calculatedData.check_in_date.split('-').map(Number);
+									const [year, month, day] = calculatedData.check_in_date
+										.split("-")
+										.map(Number);
 									return new Date(year, month - 1, day);
 								})(),
 								"MMM dd, yyyy",
 							),
 							checkOut: format(
 								(() => {
-									const [year, month, day] = calculatedData.check_out_date.split('-').map(Number);
+									const [year, month, day] = calculatedData.check_out_date
+										.split("-")
+										.map(Number);
 									return new Date(year, month - 1, day);
 								})(),
 								"MMM dd, yyyy",
@@ -811,8 +816,11 @@ export default function ReservationFormCompact() {
 											min={(() => {
 												const today = new Date();
 												const year = today.getFullYear();
-												const month = String(today.getMonth() + 1).padStart(2, '0');
-												const day = String(today.getDate()).padStart(2, '0');
+												const month = String(today.getMonth() + 1).padStart(
+													2,
+													"0",
+												);
+												const day = String(today.getDate()).padStart(2, "0");
 												return `${year}-${month}-${day}`;
 											})()}
 											className="h-9"
@@ -831,8 +839,11 @@ export default function ReservationFormCompact() {
 												(() => {
 													const today = new Date();
 													const year = today.getFullYear();
-													const month = String(today.getMonth() + 1).padStart(2, '0');
-													const day = String(today.getDate()).padStart(2, '0');
+													const month = String(today.getMonth() + 1).padStart(
+														2,
+														"0",
+													);
+													const day = String(today.getDate()).padStart(2, "0");
 													return `${year}-${month}-${day}`;
 												})()
 											}

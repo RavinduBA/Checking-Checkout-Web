@@ -731,14 +731,15 @@ export default function ComprehensiveReports() {
 															</div>
 															<div className="text-left sm:text-right">
 																<p
-																	className={`font-semibold ${txn.type === "payment" ||
+																	className={`font-semibold ${
+																		txn.type === "payment" ||
 																		txn.type === "transfer_in"
-																		? "text-green-600"
-																		: "text-red-600"
-																		}`}
+																			? "text-green-600"
+																			: "text-red-600"
+																	}`}
 																>
 																	{txn.type === "payment" ||
-																		txn.type === "transfer_in"
+																	txn.type === "transfer_in"
 																		? "+"
 																		: "-"}
 																	{formatCurrency(

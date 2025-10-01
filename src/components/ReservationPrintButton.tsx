@@ -32,7 +32,13 @@ type EnhancedReservation = {
 	paid_amount?: number | null;
 	balance_amount?: number | null;
 	currency: "LKR" | "USD" | "EUR" | "GBP";
-	status: "pending" | "confirmed" | "checked_in" | "checked_out" | "cancelled" | "tentative";
+	status:
+		| "pending"
+		| "confirmed"
+		| "checked_in"
+		| "checked_out"
+		| "cancelled"
+		| "tentative";
 	special_requests?: string | null;
 	arrival_time?: string | null;
 	created_by?: string | null;
@@ -97,11 +103,14 @@ type EnhancedReservation = {
 /**
  * Transform enhanced reservation data to printable format
  */
-const transformToPrintableData = (reservation: EnhancedReservation, tenantData?: any): PrintableReservationData => {
+const transformToPrintableData = (
+	reservation: EnhancedReservation,
+	tenantData?: any,
+): PrintableReservationData => {
 	const transformed = {
 		// Base reservation data
 		...reservation,
-		
+
 		// Enhanced hotel/tenant information from context
 		tenant_name: tenantData?.hotel_name || tenantData?.name,
 		hotel_name: tenantData?.hotel_name || tenantData?.name,
@@ -110,56 +119,60 @@ const transformToPrintableData = (reservation: EnhancedReservation, tenantData?:
 		hotel_email: tenantData?.hotel_email || tenantData?.email,
 		hotel_website: tenantData?.hotel_website || tenantData?.website,
 		logo_url: tenantData?.logo_url,
-		
+
 		// Enhanced location information
-		location_name: reservation.locations?.name || 'Unknown Location',
+		location_name: reservation.locations?.name || "Unknown Location",
 		location_address: reservation.locations?.address || null,
 		location_phone: reservation.locations?.phone || null,
 		location_email: reservation.locations?.email || null,
-		
+
 		// Room details
-		room_number: reservation.rooms?.room_number || 'Unknown Room',
-		room_type: reservation.rooms?.room_type || 'Unknown Type',
-		bed_type: reservation.rooms?.bed_type || 'Unknown Bed',
+		room_number: reservation.rooms?.room_number || "Unknown Room",
+		room_type: reservation.rooms?.room_type || "Unknown Type",
+		bed_type: reservation.rooms?.bed_type || "Unknown Bed",
 		room_description: reservation.rooms?.description || null,
 		amenities: reservation.rooms?.amenities || [],
-		
+
 		// Guide information
 		guide_name: reservation.guides?.name,
 		guide_phone: reservation.guides?.phone,
 		guide_email: reservation.guides?.email,
 		guide_address: reservation.guides?.address,
 		guide_license: reservation.guides?.license_number,
-		
+
 		// Agent information
 		agent_name: reservation.agents?.name,
 		agent_phone: reservation.agents?.phone,
 		agent_email: reservation.agents?.email,
 		agency_name: reservation.agents?.agency_name,
-		
+
 		// Legacy structure for backward compatibility
-		locations: reservation.locations ? {
-			id: reservation.locations.id,
-			name: reservation.locations.name,
-			is_active: reservation.locations.is_active,
-			created_at: reservation.locations.created_at,
-		} : null,
-		rooms: reservation.rooms ? {
-			id: reservation.rooms.id,
-			bed_type: reservation.rooms.bed_type,
-			currency: reservation.rooms.currency,
-			amenities: reservation.rooms.amenities || [],
-			is_active: reservation.rooms.is_active,
-			room_type: reservation.rooms.room_type,
-			base_price: reservation.rooms.base_price,
-			created_at: reservation.rooms.created_at,
-			updated_at: reservation.rooms.updated_at,
-			description: reservation.rooms.description || "",
-			location_id: reservation.rooms.location_id,
-			room_number: reservation.rooms.room_number,
-			max_occupancy: reservation.rooms.max_occupancy,
-			property_type: reservation.rooms.property_type,
-		} : null,
+		locations: reservation.locations
+			? {
+					id: reservation.locations.id,
+					name: reservation.locations.name,
+					is_active: reservation.locations.is_active,
+					created_at: reservation.locations.created_at,
+				}
+			: null,
+		rooms: reservation.rooms
+			? {
+					id: reservation.rooms.id,
+					bed_type: reservation.rooms.bed_type,
+					currency: reservation.rooms.currency,
+					amenities: reservation.rooms.amenities || [],
+					is_active: reservation.rooms.is_active,
+					room_type: reservation.rooms.room_type,
+					base_price: reservation.rooms.base_price,
+					created_at: reservation.rooms.created_at,
+					updated_at: reservation.rooms.updated_at,
+					description: reservation.rooms.description || "",
+					location_id: reservation.rooms.location_id,
+					room_number: reservation.rooms.room_number,
+					max_occupancy: reservation.rooms.max_occupancy,
+					property_type: reservation.rooms.property_type,
+				}
+			: null,
 	};
 
 	return transformed;
@@ -197,17 +210,19 @@ export const ReservationPrintButton: React.FC<ReservationPrintButtonProps> = ({
 
 	const handlePrint = () => {
 		// Check if reservation has enhanced data structure and transform if needed
-		const printableData = 'guides' in reservation 
-			? transformToPrintableData(reservation as EnhancedReservation, tenant)
-			: reservation as PrintableReservationData;
-		
+		const printableData =
+			"guides" in reservation
+				? transformToPrintableData(reservation as EnhancedReservation, tenant)
+				: (reservation as PrintableReservationData);
+
 		printReservation(printableData);
 	};
 
 	// Prepare data for the hidden printable component
-	const printableReservation = 'guides' in reservation 
-		? transformToPrintableData(reservation as EnhancedReservation, tenant)
-		: reservation as PrintableReservationData;
+	const printableReservation =
+		"guides" in reservation
+			? transformToPrintableData(reservation as EnhancedReservation, tenant)
+			: (reservation as PrintableReservationData);
 
 	return (
 		<>
@@ -221,9 +236,11 @@ export const ReservationPrintButton: React.FC<ReservationPrintButtonProps> = ({
 				{buttonText}
 			</Button>
 
-			{/* Hidden printable component */}
-			<div ref={printRef} className="hidden">
-				<ReservationPrintableView reservation={printableReservation} />
+			{/* Hidden printable component - using print-only styles instead of display:none */}
+			<div style={{ display: "none" }}>
+				<div ref={printRef}>
+					<ReservationPrintableView reservation={printableReservation} />
+				</div>
 			</div>
 		</>
 	);

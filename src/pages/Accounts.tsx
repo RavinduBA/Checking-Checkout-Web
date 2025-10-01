@@ -74,54 +74,86 @@ export default function Accounts() {
 	const fetchData = useCallback(async () => {
 		try {
 			// Use optimized single query approach instead of N+1 queries
-			const [accountsResponse, locationsResponse, balancesResponse] = await Promise.all([
-				supabase
-					.from("accounts")
-					.select("*")
-					.order("created_at", { ascending: false }),
-				supabase.from("locations").select("*").eq("is_active", true),
-				// Get all balance data in parallel optimized queries using the new indexes
-				Promise.all([
-					supabase.from("income").select("account_id, amount").not("account_id", "is", null),
-					supabase.from("expenses").select("account_id, amount"),
-					supabase.from("account_transfers").select("to_account_id, amount, conversion_rate"),
-					supabase.from("account_transfers").select("from_account_id, amount")
-				])
-			]);
+			const [accountsResponse, locationsResponse, balancesResponse] =
+				await Promise.all([
+					supabase
+						.from("accounts")
+						.select("*")
+						.order("created_at", { ascending: false }),
+					supabase.from("locations").select("*").eq("is_active", true),
+					// Get all balance data in parallel optimized queries using the new indexes
+					Promise.all([
+						supabase
+							.from("income")
+							.select("account_id, amount")
+							.not("account_id", "is", null),
+						supabase.from("expenses").select("account_id, amount"),
+						supabase
+							.from("account_transfers")
+							.select("to_account_id, amount, conversion_rate"),
+						supabase
+							.from("account_transfers")
+							.select("from_account_id, amount"),
+					]),
+				]);
 
 			if (accountsResponse.error) throw accountsResponse.error;
 			if (locationsResponse.error) throw locationsResponse.error;
 
 			const accounts = accountsResponse.data || [];
-			const [incomeData, expensesData, incomingTransfersData, outgoingTransfersData] = await balancesResponse;
+			const [
+				incomeData,
+				expensesData,
+				incomingTransfersData,
+				outgoingTransfersData,
+			] = await balancesResponse;
 
 			// Process balance data efficiently
-			const incomeByAccount = incomeData.data?.reduce((acc, item) => {
-				if (item.account_id) {
-					acc[item.account_id] = (acc[item.account_id] || 0) + item.amount;
-				}
-				return acc;
-			}, {} as Record<string, number>) || {};
+			const incomeByAccount =
+				incomeData.data?.reduce(
+					(acc, item) => {
+						if (item.account_id) {
+							acc[item.account_id] = (acc[item.account_id] || 0) + item.amount;
+						}
+						return acc;
+					},
+					{} as Record<string, number>,
+				) || {};
 
-			const expensesByAccount = expensesData.data?.reduce((acc, item) => {
-				acc[item.account_id] = (acc[item.account_id] || 0) + item.amount;
-				return acc;
-			}, {} as Record<string, number>) || {};
+			const expensesByAccount =
+				expensesData.data?.reduce(
+					(acc, item) => {
+						acc[item.account_id] = (acc[item.account_id] || 0) + item.amount;
+						return acc;
+					},
+					{} as Record<string, number>,
+				) || {};
 
-			const incomingTransfersByAccount = incomingTransfersData.data?.reduce((acc, item) => {
-				acc[item.to_account_id] = (acc[item.to_account_id] || 0) + (item.amount * item.conversion_rate);
-				return acc;
-			}, {} as Record<string, number>) || {};
+			const incomingTransfersByAccount =
+				incomingTransfersData.data?.reduce(
+					(acc, item) => {
+						acc[item.to_account_id] =
+							(acc[item.to_account_id] || 0) +
+							item.amount * item.conversion_rate;
+						return acc;
+					},
+					{} as Record<string, number>,
+				) || {};
 
-			const outgoingTransfersByAccount = outgoingTransfersData.data?.reduce((acc, item) => {
-				acc[item.from_account_id] = (acc[item.from_account_id] || 0) + item.amount;
-				return acc;
-			}, {} as Record<string, number>) || {};
+			const outgoingTransfersByAccount =
+				outgoingTransfersData.data?.reduce(
+					(acc, item) => {
+						acc[item.from_account_id] =
+							(acc[item.from_account_id] || 0) + item.amount;
+						return acc;
+					},
+					{} as Record<string, number>,
+				) || {};
 
 			// Calculate final balances
 			const balances: Record<string, number> = {};
-			accounts.forEach(account => {
-				balances[account.id] = 
+			accounts.forEach((account) => {
+				balances[account.id] =
 					account.initial_balance +
 					(incomeByAccount[account.id] || 0) -
 					(expensesByAccount[account.id] || 0) +
@@ -697,12 +729,11 @@ export default function Accounts() {
 								</div>
 								<div className="col-span-2">
 									<span className="font-medium">Location Access:</span>{" "}
-									{account.location_access.length  && locations
-												.filter((loc) =>
-													account.location_access.includes(loc.id),
-												)
-												.map((loc) => loc.name)
-												.join(", ")}
+									{account.location_access.length &&
+										locations
+											.filter((loc) => account.location_access.includes(loc.id))
+											.map((loc) => loc.name)
+											.join(", ")}
 								</div>
 							</div>
 						</CardContent>

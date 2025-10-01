@@ -114,7 +114,8 @@ export default function PaymentForm() {
 				.reduce((sum: number, inc: any) => sum + Number(inc.amount), 0);
 
 			// Calculate total amount: reservation balance + pending expenses
-			const totalAmount = (reservationRes.data?.balance_amount || 0) + pendingExpenses;
+			const totalAmount =
+				(reservationRes.data?.balance_amount || 0) + pendingExpenses;
 
 			// Fetch location data for SMS
 			if (reservationRes.data?.location_id) {
@@ -388,7 +389,8 @@ export default function PaymentForm() {
 							{(reservation.balance_amount || 0).toLocaleString()}
 						</span>
 					</div>
-					{incomeRecords.filter((inc) => inc.payment_method === "pending").length > 0 && (
+					{incomeRecords.filter((inc) => inc.payment_method === "pending")
+						.length > 0 && (
 						<>
 							<div className="flex justify-between border-t pt-2">
 								<span className="text-muted-foreground">Pending Expenses:</span>
@@ -401,7 +403,9 @@ export default function PaymentForm() {
 								</span>
 							</div>
 							<div className="flex justify-between border-t pt-2">
-								<span className="text-muted-foreground font-semibold">Total to Pay (Room + Expenses):</span>
+								<span className="text-muted-foreground font-semibold">
+									Total to Pay (Room + Expenses):
+								</span>
 								<span className="font-bold text-blue-600 text-lg">
 									{reservation.currency}{" "}
 									{(
@@ -431,13 +435,18 @@ export default function PaymentForm() {
 								<span>Status</span>
 							</div>
 							{incomeRecords.map((income) => (
-								<div key={income.id} className="flex justify-between items-center py-2 border-b">
+								<div
+									key={income.id}
+									className="flex justify-between items-center py-2 border-b"
+								>
 									<div className="flex-1">
 										<p className="font-medium">
 											{income.income_types?.type_name || income.type}
 										</p>
 										{income.note && (
-											<p className="text-sm text-muted-foreground">{income.note}</p>
+											<p className="text-sm text-muted-foreground">
+												{income.note}
+											</p>
 										)}
 										<p className="text-xs text-muted-foreground">
 											{format(new Date(income.created_at), "MMM dd, yyyy")}

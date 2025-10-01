@@ -357,8 +357,8 @@ export default function Dashboard() {
 							<SelectTrigger className="h-9">
 								<SelectValue
 									placeholder={
-										locations.find((l) => l.id === selectedLocation)
-											?.name || "Select Location"
+										locations.find((l) => l.id === selectedLocation)?.name ||
+										"Select Location"
 									}
 								/>
 							</SelectTrigger>

@@ -19,6 +19,7 @@ import { SignatureCapture } from "@/components/SignatureCapture";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	Dialog,
 	DialogContent,
@@ -41,7 +42,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useLocationContext } from "@/context/LocationContext";
 import { useToast } from "@/hooks/use-toast";
-import { DatePicker } from "@/components/ui/date-picker";
 import { useProfile } from "@/hooks/useProfile";
 import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
@@ -214,13 +214,13 @@ export default function ReservationForm() {
 
 	const calculateNights = (checkIn: string, checkOut: string) => {
 		if (!checkIn || !checkOut) return 1;
-		
+
 		// Parse dates as local dates to avoid timezone issues
 		const parseLocalDate = (dateStr: string) => {
-			const [year, month, day] = dateStr.split('-').map(Number);
+			const [year, month, day] = dateStr.split("-").map(Number);
 			return new Date(year, month - 1, day);
 		};
-		
+
 		const start = parseLocalDate(checkIn);
 		const end = parseLocalDate(checkOut);
 		const diffTime = Math.abs(end.getTime() - start.getTime());
@@ -259,15 +259,17 @@ export default function ReservationForm() {
 					convertCurrency(
 						selectedRoom.base_price,
 						selectedRoom.currency,
-						updated.currency
-					).then(convertedPrice => {
-						updated.room_rate = convertedPrice;
-						setFormData(prev => ({ ...prev, room_rate: convertedPrice }));
-					}).catch(error => {
-						console.error('Currency conversion failed:', error);
-						// Fallback to original price
-						updated.room_rate = selectedRoom.base_price;
-					});
+						updated.currency,
+					)
+						.then((convertedPrice) => {
+							updated.room_rate = convertedPrice;
+							setFormData((prev) => ({ ...prev, room_rate: convertedPrice }));
+						})
+						.catch((error) => {
+							console.error("Currency conversion failed:", error);
+							// Fallback to original price
+							updated.room_rate = selectedRoom.base_price;
+						});
 				}
 			}
 
@@ -306,23 +308,26 @@ export default function ReservationForm() {
 					convertCurrency(
 						selectedRoom.base_price,
 						selectedRoom.currency,
-						value as string
-					).then(convertedPrice => {
-						setFormData(prev => ({ 
-							...prev, 
-							room_rate: convertedPrice,
-							total_amount: convertedPrice * prev.nights,
-							advance_amount: 0,
-							balance_amount: convertedPrice * prev.nights
-						}));
-					}).catch(error => {
-						console.error('Currency conversion failed:', error);
-						toast({
-							title: "Currency Conversion Error",
-							description: "Failed to convert room price. Please check the rate manually.",
-							variant: "destructive",
+						value as string,
+					)
+						.then((convertedPrice) => {
+							setFormData((prev) => ({
+								...prev,
+								room_rate: convertedPrice,
+								total_amount: convertedPrice * prev.nights,
+								advance_amount: 0,
+								balance_amount: convertedPrice * prev.nights,
+							}));
+						})
+						.catch((error) => {
+							console.error("Currency conversion failed:", error);
+							toast({
+								title: "Currency Conversion Error",
+								description:
+									"Failed to convert room price. Please check the rate manually.",
+								variant: "destructive",
+							});
 						});
-					});
 				}
 			}
 
@@ -430,7 +435,6 @@ export default function ReservationForm() {
 		return handleSubmit(null, forceBook);
 	};
 
-
 	const handleSubmit = async (
 		e: React.FormEvent | null,
 		forceBook: boolean = false,
@@ -466,11 +470,12 @@ export default function ReservationForm() {
 				balance_amount: formData.total_amount - formData.advance_amount,
 				guide_id: formData.has_guide ? formData.guide_id : null,
 				agent_id: formData.has_agent ? formData.agent_id : null,
-			guide_commission: formData.has_guide ? formData.guide_commission : 0,
-			agent_commission: formData.has_agent ? formData.agent_commission : 0,
-			currency: formData.currency,
-			tenant_id: profile?.tenant_id,
-		};			if (isEdit) {
+				guide_commission: formData.has_guide ? formData.guide_commission : 0,
+				agent_commission: formData.has_agent ? formData.agent_commission : 0,
+				currency: formData.currency,
+				tenant_id: profile?.tenant_id,
+			};
+			if (isEdit) {
 				const { error } = await supabase
 					.from("reservations")
 					.update(calculatedData)
@@ -484,8 +489,10 @@ export default function ReservationForm() {
 				});
 			} else {
 				// Generate reservation number using database function
-				const { data: reservationNumber, error: numberError } = await supabase
-					.rpc("generate_reservation_number", { p_tenant_id: profile?.tenant_id });
+				const { data: reservationNumber, error: numberError } =
+					await supabase.rpc("generate_reservation_number", {
+						p_tenant_id: profile?.tenant_id,
+					});
 
 				if (numberError) throw numberError;
 
@@ -721,8 +728,9 @@ export default function ReservationForm() {
 											<SelectContent className="z-50 bg-background border">
 												{filteredRooms.map((room) => (
 													<SelectItem key={room.id} value={room.id}>
-														{room.room_number} - {room.room_type} ({room.currency}{" "}
-														{room.base_price.toLocaleString()}/night)
+														{room.room_number} - {room.room_type} (
+														{room.currency} {room.base_price.toLocaleString()}
+														/night)
 													</SelectItem>
 												))}
 											</SelectContent>
@@ -736,13 +744,18 @@ export default function ReservationForm() {
 										<Label htmlFor="check_in_date">Check-in Date</Label>
 										<DatePicker
 											value={formData.check_in_date}
-											onChange={(value) => handleInputChange("check_in_date", value)}
+											onChange={(value) =>
+												handleInputChange("check_in_date", value)
+											}
 											placeholder="Select check-in date"
 											min={(() => {
 												const today = new Date();
 												const year = today.getFullYear();
-												const month = String(today.getMonth() + 1).padStart(2, '0');
-												const day = String(today.getDate()).padStart(2, '0');
+												const month = String(today.getMonth() + 1).padStart(
+													2,
+													"0",
+												);
+												const day = String(today.getDate()).padStart(2, "0");
 												return `${year}-${month}-${day}`;
 											})()}
 											className="w-full"
@@ -752,15 +765,20 @@ export default function ReservationForm() {
 										<Label htmlFor="check_out_date">Check-out Date</Label>
 										<DatePicker
 											value={formData.check_out_date}
-											onChange={(value) => handleInputChange("check_out_date", value)}
+											onChange={(value) =>
+												handleInputChange("check_out_date", value)
+											}
 											placeholder="Select check-out date"
 											min={
 												formData.check_in_date ||
 												(() => {
 													const today = new Date();
 													const year = today.getFullYear();
-													const month = String(today.getMonth() + 1).padStart(2, '0');
-													const day = String(today.getDate()).padStart(2, '0');
+													const month = String(today.getMonth() + 1).padStart(
+														2,
+														"0",
+													);
+													const day = String(today.getDate()).padStart(2, "0");
 													return `${year}-${month}-${day}`;
 												})()
 											}
@@ -888,12 +906,11 @@ export default function ReservationForm() {
 								) : (
 									<>
 										<Save className="size-5 mr-2" />
-										{isEdit
-											? "Update Reservation"
-											: "Save Reservation"}
+										{isEdit ? "Update Reservation" : "Save Reservation"}
 									</>
 								)}
-							</Button>							<Button
+							</Button>{" "}
+							<Button
 								type="button"
 								variant="outline"
 								onClick={() => navigate("/calendar")}
@@ -1192,7 +1209,6 @@ export default function ReservationForm() {
 					</CardContent>
 				</Card>
 			</form>
-
 		</div>
 	);
 }

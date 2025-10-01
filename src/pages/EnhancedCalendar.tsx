@@ -114,14 +114,12 @@ export default function EnhancedCalendar() {
 	};
 
 	const filteredRooms = rooms.filter(
-		(room) =>
-			!selectedLocation || room.location_id === selectedLocation,
+		(room) => !selectedLocation || room.location_id === selectedLocation,
 	);
 
 	const filteredReservations = reservations.filter(
 		(reservation) =>
-			!selectedLocation ||
-			reservation.location_id === selectedLocation,
+			!selectedLocation || reservation.location_id === selectedLocation,
 	);
 
 	// Generate calendar days for current month
