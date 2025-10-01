@@ -490,6 +490,7 @@ export default function ReservationForm() {
 		if (e) {
 			e.preventDefault();
 		}
+		if (submitting) return;
 		setSubmitting(true);
 
 		try {

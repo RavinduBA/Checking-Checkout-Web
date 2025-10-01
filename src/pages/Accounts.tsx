@@ -46,6 +46,9 @@ export default function Accounts() {
 	const [accounts, setAccounts] = useState<Account[]>([]);
 	const [locations, setLocations] = useState<Location[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [isTransferring, setIsTransferring] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 	const [accountBalances, setAccountBalances] = useState<
 		Record<string, number>
 	>({});
@@ -186,6 +189,8 @@ export default function Accounts() {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (isSubmitting) return;
+		setIsSubmitting(true);
 
 		if (!tenant?.id) {
 			toast({
@@ -193,6 +198,7 @@ export default function Accounts() {
 				description: "No tenant selected. Please refresh the page.",
 				variant: "destructive",
 			});
+			setIsSubmitting(false);
 			return;
 		}
 
@@ -227,6 +233,8 @@ export default function Accounts() {
 				description: "Failed to save account",
 				variant: "destructive",
 			});
+		} finally {
+			setIsSubmitting(false);
 		}
 	};
 
@@ -236,7 +244,8 @@ export default function Accounts() {
 	};
 
 	const confirmDelete = async () => {
-		if (!accountToDelete) return;
+		if (!accountToDelete || isDeleting) return;
+		setIsDeleting(true);
 
 		try {
 			const { error } = await supabase
@@ -259,6 +268,7 @@ export default function Accounts() {
 		} finally {
 			setDeleteConfirmOpen(false);
 			setAccountToDelete(null);
+			setIsDeleting(false);
 		}
 	};
 
@@ -286,6 +296,8 @@ export default function Accounts() {
 
 	const handleTransfer = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (isTransferring) return;
+		setIsTransferring(true);
 		try {
 			const { error } = await supabase.from("account_transfers").insert([
 				{
@@ -310,19 +322,19 @@ export default function Accounts() {
 				amount: 0,
 				conversionRate: 1,
 				note: "",
-			});
-			setShowTransferDialog(false);
-		} catch (error) {
-			console.error("Error creating transfer:", error);
-			toast({
-				title: "Error",
-				description: "Failed to complete transfer",
-				variant: "destructive",
-			});
-		}
-	};
-
-	const getExchangeRate = (fromCurrency: string, toCurrency: string) => {
+				});
+				setShowTransferDialog(false);
+			} catch (error) {
+				console.error("Error creating transfer:", error);
+				toast({
+					title: "Error",
+					description: "Failed to complete transfer",
+					variant: "destructive",
+				});
+			} finally {
+				setIsTransferring(false);
+			}
+		};	const getExchangeRate = (fromCurrency: string, toCurrency: string) => {
 		if (fromCurrency === toCurrency) return 1;
 		if (fromCurrency === "USD" && toCurrency === "LKR")
 			return currentExchangeRate.usdToLkr;
@@ -491,8 +503,11 @@ export default function Accounts() {
 								</div>
 							</div>
 							<div className="flex gap-2">
-								<Button type="submit">
-									{editingAccount ? "Update Account" : "Add Account"}
+								<Button type="submit" disabled={isSubmitting}>
+									{isSubmitting 
+										? (editingAccount ? "Updating..." : "Adding...") 
+										: (editingAccount ? "Update Account" : "Add Account")
+									}
 								</Button>
 								<Button type="button" variant="outline" onClick={resetForm}>
 									Cancel
@@ -675,7 +690,9 @@ export default function Accounts() {
 							</div>
 
 							<div className="flex gap-2">
-								<Button type="submit">Complete Transfer</Button>
+								<Button type="submit" disabled={isTransferring}>
+									{isTransferring ? "Transferring..." : "Complete Transfer"}
+								</Button>
 								<Button
 									type="button"
 									variant="outline"
@@ -767,8 +784,8 @@ export default function Accounts() {
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<AlertDialogCancel>Cancel</AlertDialogCancel>
-						<AlertDialogAction onClick={confirmDelete}>
-							Delete
+						<AlertDialogAction onClick={confirmDelete} disabled={isDeleting}>
+							{isDeleting ? "Deleting..." : "Delete"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

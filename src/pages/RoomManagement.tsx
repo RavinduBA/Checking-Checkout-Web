@@ -121,6 +121,8 @@ export default function RoomManagement() {
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [editingRoom, setEditingRoom] = useState<Room | null>(null);
 	const [deletingRoom, setDeletingRoom] = useState<Room | null>(null);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 	const [formData, setFormData] = useState({
 		location_id: "",
 		room_number: "",
@@ -180,6 +182,8 @@ export default function RoomManagement() {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (isSubmitting) return;
+		setIsSubmitting(true);
 
 		try {
 			if (editingRoom) {
@@ -234,6 +238,8 @@ export default function RoomManagement() {
 				description: "Failed to save room",
 				variant: "destructive",
 			});
+		} finally {
+			setIsSubmitting(false);
 		}
 	};
 
@@ -256,6 +262,8 @@ export default function RoomManagement() {
 	};
 
 	const handleDelete = async (room: Room) => {
+		if (isDeleting) return;
+		setIsDeleting(true);
 		try {
 			// Check if room has any active reservations
 			const { data: reservations, error: checkError } = await supabase
@@ -619,8 +627,10 @@ export default function RoomManagement() {
 												>
 													Cancel
 												</Button>
-												<Button type="submit">
-													{editingRoom ? "Update" : "Create"} Room
+												<Button type="submit" disabled={isSubmitting}>
+													{isSubmitting 
+														? (editingRoom ? "Updating..." : "Creating...") 
+														: (editingRoom ? "Update" : "Create")} Room
 												</Button>
 											</div>
 										</form>

@@ -44,6 +44,7 @@ type Expense = Tables<"expenses"> & {
 export default function Expense() {
 	const { toast } = useToast();
 	const { hasAnyPermission, hasPermission } = usePermissions();
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	// Use the custom hook for data fetching
 	const {
@@ -114,6 +115,8 @@ export default function Expense() {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (isSubmitting) return;
+		setIsSubmitting(true);
 		try {
 			const { error } = await supabase.from("expenses").insert([
 				{
@@ -247,6 +250,8 @@ export default function Expense() {
 				description: "Failed to add expense record",
 				variant: "destructive",
 			});
+		} finally {
+			setIsSubmitting(false);
 		}
 	};
 
@@ -443,9 +448,12 @@ export default function Expense() {
 						</div>
 
 						{/* Submit button */}
-						<Button type="submit" disabled={!formData.locationId}>
+						<Button 
+							type="submit" 
+							disabled={!formData.locationId || isSubmitting}
+						>
 							<Minus className="size-4 mr-2" />
-							Add Expense
+							{isSubmitting ? "Adding..." : "Add Expense"}
 						</Button>
 					</form>
 				</CardContent>
