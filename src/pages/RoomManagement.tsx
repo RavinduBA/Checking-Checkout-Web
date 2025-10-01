@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/currency";
 
@@ -133,9 +134,11 @@ export default function RoomManagement() {
 		property_type: "Room",
 	});
 	const { toast } = useToast();
+	const { profile } = useProfile();
 
 	useEffect(() => {
 		fetchData();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	const fetchData = async () => {
@@ -195,12 +198,11 @@ export default function RoomManagement() {
 					description: "Room updated successfully",
 				});
 			} else {
-				const { error } = await supabase.from("rooms").insert([
-					{
-						...formData,
-						currency: formData.currency as "LKR" | "USD" | "EUR" | "GBP",
-					},
-				]);
+				const { error } = await supabase.from("rooms").insert({
+					...formData,
+					currency: formData.currency as "LKR" | "USD" | "EUR" | "GBP",
+					tenant_id: profile?.tenant_id,
+				});
 
 				if (error) throw error;
 
@@ -353,7 +355,6 @@ export default function RoomManagement() {
 										<SelectValue placeholder="Filter by location" />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="all">All Locations</SelectItem>
 										{locations.map((location) => (
 											<SelectItem key={location.id} value={location.id}>
 												{location.name}

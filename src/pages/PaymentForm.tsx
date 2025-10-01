@@ -108,6 +108,14 @@ export default function PaymentForm() {
 			setAccounts(accountsRes.data || []);
 			setIncomeRecords(incomeRes.data || []);
 
+			// Calculate total pending expenses
+			const pendingExpenses = (incomeRes.data || [])
+				.filter((inc: any) => inc.payment_method === "pending")
+				.reduce((sum: number, inc: any) => sum + Number(inc.amount), 0);
+
+			// Calculate total amount: reservation balance + pending expenses
+			const totalAmount = (reservationRes.data?.balance_amount || 0) + pendingExpenses;
+
 			// Fetch location data for SMS
 			if (reservationRes.data?.location_id) {
 				fetchLocation(reservationRes.data.location_id);
@@ -120,14 +128,17 @@ export default function PaymentForm() {
 			) {
 				try {
 					const convertedAmount = await convertCurrency(
-						initialAmount,
+						totalAmount,
 						reservationRes.data.currency as any,
 						initialCurrency as any,
 					);
 					setFormData((prev) => ({ ...prev, amount: convertedAmount }));
 				} catch (error) {
 					console.error("Currency conversion failed:", error);
+					setFormData((prev) => ({ ...prev, amount: totalAmount }));
 				}
+			} else {
+				setFormData((prev) => ({ ...prev, amount: totalAmount }));
 			}
 		} catch (error) {
 			console.error("Error fetching data:", error);
@@ -377,6 +388,32 @@ export default function PaymentForm() {
 							{(reservation.balance_amount || 0).toLocaleString()}
 						</span>
 					</div>
+					{incomeRecords.filter((inc) => inc.payment_method === "pending").length > 0 && (
+						<>
+							<div className="flex justify-between border-t pt-2">
+								<span className="text-muted-foreground">Pending Expenses:</span>
+								<span className="font-semibold text-yellow-600">
+									{reservation.currency}{" "}
+									{incomeRecords
+										.filter((inc) => inc.payment_method === "pending")
+										.reduce((sum, inc) => sum + Number(inc.amount), 0)
+										.toLocaleString()}
+								</span>
+							</div>
+							<div className="flex justify-between border-t pt-2">
+								<span className="text-muted-foreground font-semibold">Total to Pay (Room + Expenses):</span>
+								<span className="font-bold text-blue-600 text-lg">
+									{reservation.currency}{" "}
+									{(
+										(reservation.balance_amount || 0) +
+										incomeRecords
+											.filter((inc) => inc.payment_method === "pending")
+											.reduce((sum, inc) => sum + Number(inc.amount), 0)
+									).toLocaleString()}
+								</span>
+							</div>
+						</>
+					)}
 				</CardContent>
 			</Card>
 
