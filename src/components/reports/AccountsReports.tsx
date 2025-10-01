@@ -338,7 +338,7 @@ export default function AccountsReports() {
 	}
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6 px-0 sm:px-6">
 			<div className="flex justify-between items-center">
 				<div>
 					<h2 className="text-md sm:text-2xl font-bold text-foreground flex items-center gap-2">

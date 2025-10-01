@@ -16,6 +16,7 @@ export default function BillingSuccess() {
 
 	const [loading, setLoading] = useState(true);
 	const [processed, setProcessed] = useState(false);
+	const [redirectCountdown, setRedirectCountdown] = useState(5);
 
 	// Get URL parameters from Creem.io callback
 	const checkoutId = searchParams.get("checkout_id");
@@ -25,6 +26,7 @@ export default function BillingSuccess() {
 	const productId = searchParams.get("product_id");
 	const signature = searchParams.get("signature");
 	const source = searchParams.get("source"); // 'onboarding' or 'billing'
+	const redirectTo = searchParams.get("redirect_to"); // 'billing' for dashboard billing redirect
 
 	useEffect(() => {
 		const processSuccessfulPayment = async () => {
@@ -126,6 +128,21 @@ export default function BillingSuccess() {
 		toast,
 	]);
 
+	// Auto-redirect countdown effect for billing payments
+	useEffect(() => {
+		if (!loading && redirectTo === "billing" && redirectCountdown > 0) {
+			const timer = setTimeout(() => {
+				if (redirectCountdown === 1) {
+					navigate("/billing");
+				} else {
+					setRedirectCountdown(redirectCountdown - 1);
+				}
+			}, 1000);
+
+			return () => clearTimeout(timer);
+		}
+	}, [loading, redirectTo, redirectCountdown, navigate]);
+
 	if (loading) {
 		return (
 			<div className="min-h-screen flex items-center justify-center">
@@ -189,7 +206,32 @@ export default function BillingSuccess() {
 					)}
 
 					<div className="space-y-3">
-						{source === "onboarding" ? (
+						{redirectTo === "billing" ? (
+							<div className="text-center space-y-3">
+								<div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+									<p className="text-blue-800 font-medium">
+										Redirecting to your billing dashboard...
+									</p>
+									<p className="text-blue-600 text-sm">
+										You will be redirected in {redirectCountdown} seconds
+									</p>
+								</div>
+								<Button
+									className="w-full"
+									onClick={() => navigate("/billing")}
+								>
+									Go to Billing Now
+									<ArrowRight className="size-4 ml-2" />
+								</Button>
+								<Button
+									variant="outline"
+									className="w-full"
+									onClick={() => navigate("/dashboard")}
+								>
+									Go to Dashboard
+								</Button>
+							</div>
+						) : source === "onboarding" ? (
 							<>
 								<Button
 									className="w-full"

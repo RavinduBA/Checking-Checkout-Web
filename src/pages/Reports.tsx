@@ -15,7 +15,6 @@ import { Link, useSearchParams } from "react-router";
 import AccountsReports from "@/components/reports/AccountsReports";
 import CommissionReports from "@/components/reports/CommissionReports";
 import ComprehensiveReports from "@/components/reports/ComprehensiveReports";
-import DetailedBalanceSheet from "@/components/reports/DetailedBalanceSheet";
 import EnhancedFinancialReports from "@/components/reports/EnhancedFinancialReports";
 import { Button } from "@/components/ui/button";
 import {
@@ -182,7 +181,7 @@ export default function Reports() {
 // Skeleton Loading Components for Reports
 export function ComprehensiveReportsSkeleton() {
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6 px-4">
 			{/* Summary Cards Skeleton */}
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 				{Array.from({ length: 4 }).map((_, i) => (
@@ -225,7 +224,7 @@ export function ComprehensiveReportsSkeleton() {
 
 export function EnhancedFinancialReportsSkeleton() {
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6 px-0 sm:px-4">
 			{/* Filter Controls Skeleton */}
 			<Card>
 				<CardHeader>
@@ -416,7 +415,7 @@ export function DetailedBalanceSheetSkeleton() {
 
 export function CommissionReportsSkeleton() {
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6  px-2 sm:px-4">
 			{/* Commission Summary Cards Skeleton */}
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 				{Array.from({ length: 4 }).map((_, i) => (
