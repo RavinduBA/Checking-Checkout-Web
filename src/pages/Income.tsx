@@ -4,7 +4,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionLoader } from "@/components/ui/loading-spinner";
@@ -22,11 +22,6 @@ type Reservation = Database["public"]["Tables"]["reservations"]["Row"];
 type Room = Database["public"]["Tables"]["rooms"]["Row"];
 type Account = Database["public"]["Tables"]["accounts"]["Row"];
 type Income = Database["public"]["Tables"]["income"]["Row"];
-type IncomeType = {
-	id: string;
-	type_name: string;
-	created_at: string;
-};
 
 const Income = () => {
 	const { toast } = useToast();
@@ -37,13 +32,10 @@ const Income = () => {
 	const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
 	const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
 	const [incomeHistory, setIncomeHistory] = useState<Income[]>([]);
-	const [incomeTypes, setIncomeTypes] = useState<IncomeType[]>([]);
 	const [incomeForm, setIncomeForm] = useState({
 		amount: 0,
-		description: "",
+		note: "",
 		account_id: "",
-		income_type_id: "",
-		notes: "",
 	});
 
 	const fetchIncomeHistory = useCallback(async () => {
@@ -61,25 +53,11 @@ const Income = () => {
 		}
 	}, [profile?.tenant_id]);
 
-	const fetchIncomeTypes = useCallback(async () => {
-		try {
-			const { data, error } = await supabase
-				.from("income_types")
-				.select("*")
-				.order("type_name", { ascending: true });
-			if (error) throw error;
-			setIncomeTypes(data || []);
-		} catch (error) {
-			console.error("Error fetching income types:", error);
-		}
-	}, []);
-
 	useEffect(() => {
 		if (profile?.tenant_id) {
 			fetchIncomeHistory();
-			fetchIncomeTypes();
 		}
-	}, [profile?.tenant_id, fetchIncomeHistory, fetchIncomeTypes]);
+	}, [profile?.tenant_id, fetchIncomeHistory]);
 
 	const handleIncomeSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -87,15 +65,13 @@ const Income = () => {
 
 		try {
 			const incomeData = {
-				description: incomeForm.description || `Income for reservation ${selectedReservation.reservation_number}`,
+				note: incomeForm.note || `Income for reservation ${selectedReservation.reservation_number}`,
 				amount: incomeForm.amount,
 				account_id: incomeForm.account_id,
-				income_type_id: incomeForm.income_type_id || null,
 				type: "booking" as const,
 				payment_method: "cash",
 				location_id: selectedReservation.location_id,
 				tenant_id: profile?.tenant_id,
-				created_by: profile?.id,
 			};
 
 			const { error } = await supabase.from("income").insert(incomeData);
@@ -113,7 +89,7 @@ const Income = () => {
 	};
 
 	const resetIncomeForm = () => {
-		setIncomeForm({ amount: 0, description: "", account_id: "", income_type_id: "", notes: "" });
+		setIncomeForm({ amount: 0, note: "", account_id: "" });
 		setSelectedReservation(null);
 	};
 
@@ -178,7 +154,7 @@ const Income = () => {
 												setIncomeForm({
 													...incomeForm,
 													amount: reservation.total_amount,
-													description: `Income for reservation ${reservation.reservation_number}`,
+													note: `Income for reservation ${reservation.reservation_number}`,
 												});
 												setIsIncomeDialogOpen(true);
 											}}>
@@ -202,7 +178,7 @@ const Income = () => {
 						<TableHeader>
 							<TableRow>
 								<TableHead>Date</TableHead>
-								<TableHead>Description</TableHead>
+								<TableHead>Note</TableHead>
 								<TableHead>Amount</TableHead>
 								<TableHead>Account</TableHead>
 							</TableRow>
@@ -211,7 +187,7 @@ const Income = () => {
 							{incomeHistory.map((income) => (
 								<TableRow key={income.id}>
 									<TableCell>{new Date(income.created_at).toLocaleDateString()}</TableCell>
-									<TableCell>{income.description}</TableCell>
+									<TableCell>{income.note}</TableCell>
 									<TableCell>LKR {income.amount.toLocaleString()}</TableCell>
 									<TableCell>{income.accounts?.name || '-'}</TableCell>
 								</TableRow>
@@ -221,56 +197,43 @@ const Income = () => {
 				</CardContent>
 			</Card>
 
-			<Dialog open={isIncomeDialogOpen} onOpenChange={setIsIncomeDialogOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Add Income</DialogTitle>
-					</DialogHeader>
-					<form onSubmit={handleIncomeSubmit} className="space-y-4">
-						{selectedReservation && (
-							<div className="p-4 bg-gray-50 rounded-md">
-								<p><strong>Reservation:</strong> {selectedReservation.reservation_number}</p>
-								<p><strong>Guest:</strong> {selectedReservation.guest_name}</p>
-								<p><strong>Amount:</strong> LKR {selectedReservation.total_amount.toLocaleString()}</p>
-							</div>
-						)}
-
-						<div>
-							<Label htmlFor="amount">Amount</Label>
-							<Input id="amount" type="number" step="0.01" value={incomeForm.amount}
-								onChange={(e) => setIncomeForm({ ...incomeForm, amount: Number.parseFloat(e.target.value) })} required />
+		<Dialog open={isIncomeDialogOpen} onOpenChange={setIsIncomeDialogOpen}>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Add Income</DialogTitle>
+					<DialogDescription>
+						Record income for the selected reservation.
+					</DialogDescription>
+				</DialogHeader>
+				<form onSubmit={handleIncomeSubmit} className="space-y-4">
+					{selectedReservation && (
+						<div className="p-4 bg-gray-50 rounded-md">
+							<p><strong>Reservation:</strong> {selectedReservation.reservation_number}</p>
+							<p><strong>Guest:</strong> {selectedReservation.guest_name}</p>
+							<p><strong>Amount:</strong> LKR {selectedReservation.total_amount.toLocaleString()}</p>
 						</div>
+					)}
 
-						<div>
-							<Label htmlFor="description">Description</Label>
-							<Input id="description" value={incomeForm.description}
-								onChange={(e) => setIncomeForm({ ...incomeForm, description: e.target.value })}
-								placeholder="Description of income" required />
-						</div>
+					<div>
+						<Label htmlFor="amount">Amount</Label>
+						<Input id="amount" type="number" step="0.01" value={incomeForm.amount}
+							onChange={(e) => setIncomeForm({ ...incomeForm, amount: Number.parseFloat(e.target.value) })} required />
+					</div>
 
-						<div>
-							<Label htmlFor="income_type_id">Income Type</Label>
-							<Select value={incomeForm.income_type_id} onValueChange={(value) => setIncomeForm({ ...incomeForm, income_type_id: value })}>
-								<SelectTrigger>
-									<SelectValue placeholder="Select income type" />
-								</SelectTrigger>
-								<SelectContent>
-									{incomeTypes.map((type) => (
-										<SelectItem key={type.id} value={type.id}>
-											{type.type_name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
+					<div>
+						<Label htmlFor="note">Note</Label>
+						<Input id="note" value={incomeForm.note}
+							onChange={(e) => setIncomeForm({ ...incomeForm, note: e.target.value })}
+							placeholder="Note about this income" required />
+					</div>
 
-						<div>
-							<Label htmlFor="account_id">Account</Label>
-							<Select value={incomeForm.account_id} onValueChange={(value) => setIncomeForm({ ...incomeForm, account_id: value })}>
-								<SelectTrigger>
-									<SelectValue placeholder="Select account" />
-								</SelectTrigger>
-								<SelectContent>
+					<div>
+						<Label htmlFor="account_id">Account</Label>
+						<Select value={incomeForm.account_id} onValueChange={(value) => setIncomeForm({ ...incomeForm, account_id: value })}>
+							<SelectTrigger>
+								<SelectValue placeholder="Select account" />
+							</SelectTrigger>
+							<SelectContent>
 									{accounts.map((account) => (
 										<SelectItem key={account.id} value={account.id}>
 											{account.name} ({account.currency})
@@ -278,13 +241,6 @@ const Income = () => {
 									))}
 								</SelectContent>
 							</Select>
-						</div>
-
-						<div>
-							<Label htmlFor="notes">Notes (Optional)</Label>
-							<Textarea id="notes" value={incomeForm.notes} rows={3}
-								onChange={(e) => setIncomeForm({ ...incomeForm, notes: e.target.value })}
-								placeholder="Additional notes..." />
 						</div>
 
 						<div className="flex gap-2 justify-end">
