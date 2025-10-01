@@ -13,7 +13,6 @@ import { useNavigate } from "react-router";
 import { OTPVerification } from "@/components/OTPVerification";
 import { ReservationEditDialog } from "@/components/ReservationEditDialog";
 import { ReservationPrintButton } from "@/components/ReservationPrintButton";
-import { ReservationPrintableView } from "@/components/ReservationPrintableView";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,8 +41,60 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
 type Reservation = Tables<"reservations"> & {
-	locations: Tables<"locations">;
-	rooms: Tables<"rooms">;
+	locations: {
+		id: string;
+		name: string;
+		address: string | null;
+		phone: string | null;
+		email: string | null;
+		is_active: boolean;
+		created_at: string;
+		property_type: string | null;
+		tenant_id: string;
+	};
+	rooms: {
+		id: string;
+		room_number: string;
+		room_type: string;
+		bed_type: string;
+		description: string | null;
+		amenities: string[] | null;
+		base_price: number;
+		max_occupancy: number;
+		property_type: string;
+		currency: string;
+		is_active: boolean;
+		created_at: string;
+		updated_at: string;
+		location_id: string;
+		tenant_id: string;
+	};
+	guides?: {
+		id: string;
+		name: string;
+		phone: string | null;
+		email: string | null;
+		address: string | null;
+		license_number: string | null;
+		is_active: boolean;
+	} | null;
+	agents?: {
+		id: string;
+		name: string;
+		phone: string | null;
+		email: string | null;
+		agency_name: string | null;
+		is_active: boolean;
+	} | null;
+	tenants?: {
+		id: string;
+		hotel_name: string;
+		address: string | null;
+		phone: string | null;
+		email: string | null;
+		website: string | null;
+		logo_url: string | null;
+	} | null;
 };
 
 type Payment = Tables<"payments">;
@@ -72,8 +123,60 @@ export const ReservationsList = () => {
 							.from("reservations")
 							.select(`
           *,
-          locations (*),
-          rooms (*)
+          locations (
+            id,
+            name,
+            address,
+            phone,
+            email,
+            property_type,
+            tenant_id,
+            is_active,
+            created_at
+          ),
+          rooms (
+            id,
+            room_number,
+            room_type,
+            bed_type,
+            description,
+            amenities,
+            base_price,
+            max_occupancy,
+            property_type,
+            currency,
+            location_id,
+            tenant_id,
+            is_active,
+            created_at,
+            updated_at
+          ),
+          guides (
+            id,
+            name,
+            phone,
+            email,
+            address,
+            license_number,
+            is_active
+          ),
+          agents (
+            id,
+            name,
+            phone,
+            email,
+            agency_name,
+            is_active
+          ),
+          tenants (
+            id,
+            hotel_name,
+            address,
+            phone,
+            email,
+            website,
+            logo_url
+          )
         `)
 							.eq("tenant_id", tenant?.id || "")
 							.order("created_at", { ascending: false })
@@ -81,8 +184,60 @@ export const ReservationsList = () => {
 							.from("reservations")
 							.select(`
           *,
-          locations (*),
-          rooms (*)
+          locations (
+            id,
+            name,
+            address,
+            phone,
+            email,
+            property_type,
+            tenant_id,
+            is_active,
+            created_at
+          ),
+          rooms (
+            id,
+            room_number,
+            room_type,
+            bed_type,
+            description,
+            amenities,
+            base_price,
+            max_occupancy,
+            property_type,
+            currency,
+            location_id,
+            tenant_id,
+            is_active,
+            created_at,
+            updated_at
+          ),
+          guides (
+            id,
+            name,
+            phone,
+            email,
+            address,
+            license_number,
+            is_active
+          ),
+          agents (
+            id,
+            name,
+            phone,
+            email,
+            agency_name,
+            is_active
+          ),
+          tenants (
+            id,
+            hotel_name,
+            address,
+            phone,
+            email,
+            website,
+            logo_url
+          )
         `)
 							.eq("tenant_id", tenant?.id || "")
 							.eq("location_id", selectedLocation)

@@ -40,6 +40,37 @@ interface ReservationPrintableData {
 	guide_commission?: number;
 	agent_commission?: number;
 	booking_source: string;
+	// Enhanced hotel/tenant information
+	tenant_name?: string;
+	hotel_name?: string;
+	hotel_address?: string;
+	hotel_phone?: string;
+	hotel_email?: string;
+	hotel_website?: string | null;
+	logo_url?: string | null;
+	// Enhanced location information
+	location_name?: string;
+	location_address?: string;
+	location_phone?: string;
+	location_email?: string;
+	// Room details
+	room_number?: string;
+	room_type?: string;
+	bed_type?: string;
+	room_description?: string;
+	amenities?: string[];
+	// Guide information
+	guide_name?: string;
+	guide_phone?: string;
+	guide_email?: string;
+	guide_address?: string;
+	guide_license?: string;
+	// Agent information
+	agent_name?: string;
+	agent_phone?: string;
+	agent_email?: string;
+	agency_name?: string;
+	// Legacy structure for backward compatibility
 	locations?: {
 		id: string;
 		name: string;
@@ -150,12 +181,27 @@ const PrintableReservation = React.forwardRef<
 
 			{/* Header */}
 			<div className="text-center mb-8 border-b-2 border-gray-300 pb-6">
+				{/* Hotel Logo */}
+				{reservation.logo_url && (
+					<div className="mb-4">
+						<img
+							src={reservation.logo_url}
+							alt="Hotel Logo"
+							className="mx-auto h-16 w-auto object-contain"
+						/>
+					</div>
+				)}
 				<h1 className="text-3xl font-bold mb-2 text-blue-900">
 					RESERVATION CONFIRMATION
 				</h1>
 				<div className="text-xl font-semibold text-gray-700 mb-2">
-					{reservation.locations?.name || "Hotel"}
+					{reservation.hotel_name || reservation.tenant_name || reservation.location_name || reservation.locations?.name || "Hotel"}
 				</div>
+				{reservation.location_name && reservation.location_name !== (reservation.hotel_name || reservation.tenant_name) && (
+					<div className="text-lg text-gray-600 mb-2">
+						{reservation.location_name}
+					</div>
+				)}
 				<div className="text-lg text-gray-600 mb-2">
 					Confirmation Number:{" "}
 					<span className="font-bold text-blue-800">
@@ -234,16 +280,16 @@ const PrintableReservation = React.forwardRef<
 						<div className="mb-3">
 							<span className="font-semibold text-gray-700">Room Number:</span>
 							<span className="ml-2 font-medium text-green-700">
-								{reservation.rooms?.room_number}
+								{reservation.room_number || reservation.rooms?.room_number}
 							</span>
 						</div>
 						<div className="mb-3">
 							<span className="font-semibold text-gray-700">Room Type:</span>
-							<span className="ml-2">{reservation.rooms?.room_type}</span>
+							<span className="ml-2">{reservation.room_type || reservation.rooms?.room_type}</span>
 						</div>
 						<div className="mb-3">
 							<span className="font-semibold text-gray-700">Bed Type:</span>
-							<span className="ml-2">{reservation.rooms?.bed_type}</span>
+							<span className="ml-2">{reservation.bed_type || reservation.rooms?.bed_type}</span>
 						</div>
 						<div className="mb-3">
 							<span className="font-semibold text-gray-700">
@@ -286,25 +332,36 @@ const PrintableReservation = React.forwardRef<
 					</div>
 				</div>
 
-				{/* Room Amenities */}
-				{reservation.rooms?.amenities &&
-					reservation.rooms.amenities.length > 0 && (
-						<div className="mt-4 p-3 bg-green-50 rounded border">
-							<span className="font-semibold text-gray-700">
-								Room Amenities:
-							</span>
-							<div className="mt-1 flex flex-wrap gap-2">
-								{reservation.rooms.amenities.map((amenity, index) => (
-									<span
-										key={index}
-										className="px-2 py-1 bg-green-200 text-green-800 text-sm rounded"
-									>
-										{amenity}
-									</span>
-								))}
-							</div>
+				{/* Room Description */}
+				{(reservation.room_description || reservation.rooms?.description) && (
+					<div className="mt-4 p-3 bg-green-50 rounded border">
+						<span className="font-semibold text-gray-700">
+							Room Description:
+						</span>
+						<div className="mt-1 text-gray-600">
+							{reservation.room_description || reservation.rooms?.description}
 						</div>
-					)}
+					</div>
+				)}
+
+				{/* Room Amenities */}
+				{((reservation.amenities && reservation.amenities.length > 0) || (reservation.rooms?.amenities && reservation.rooms.amenities.length > 0)) && (
+					<div className="mt-4 p-3 bg-green-50 rounded border">
+						<span className="font-semibold text-gray-700">
+							Room Amenities:
+						</span>
+						<div className="mt-1 flex flex-wrap gap-2">
+							{(reservation.amenities || reservation.rooms?.amenities || []).map((amenity, index) => (
+								<span
+									key={index}
+									className="px-2 py-1 bg-green-200 text-green-800 text-sm rounded"
+								>
+									{amenity}
+								</span>
+							))}
+						</div>
+					</div>
+				)}
 			</div>
 
 			{/* Booking Status & Source */}
@@ -375,6 +432,165 @@ const PrintableReservation = React.forwardRef<
 								</span>
 							</div>
 						)}
+					</div>
+				</div>
+			</div>
+
+			{/* Guide Information */}
+			{(reservation.guide_name || reservation.guide_id) && (
+				<div className="mb-8">
+					<h2 className="text-xl font-bold mb-4 bg-blue-100 p-3 border-l-4 border-blue-500">
+						👨‍🏫 Guide Information
+					</h2>
+					<div className="print-grid">
+						<div>
+							{reservation.guide_name && (
+								<div className="mb-3">
+									<span className="font-semibold text-gray-700">Name:</span>
+									<span className="ml-2 font-medium">{reservation.guide_name}</span>
+								</div>
+							)}
+							{reservation.guide_phone && (
+								<div className="mb-3">
+									<span className="font-semibold text-gray-700">Phone:</span>
+									<span className="ml-2">{reservation.guide_phone}</span>
+								</div>
+							)}
+							{reservation.guide_email && (
+								<div className="mb-3">
+									<span className="font-semibold text-gray-700">Email:</span>
+									<span className="ml-2">{reservation.guide_email}</span>
+								</div>
+							)}
+						</div>
+						<div>
+							{reservation.guide_license && (
+								<div className="mb-3">
+									<span className="font-semibold text-gray-700">License Number:</span>
+									<span className="ml-2 font-medium">{reservation.guide_license}</span>
+								</div>
+							)}
+							{reservation.guide_address && (
+								<div className="mb-3">
+									<span className="font-semibold text-gray-700">Address:</span>
+									<span className="ml-2">{reservation.guide_address}</span>
+								</div>
+							)}
+							{reservation.guide_commission && reservation.guide_commission > 0 && (
+								<div className="mb-3">
+									<span className="font-semibold text-gray-700">Commission:</span>
+									<span className="ml-2 font-medium text-blue-700">
+										{getCurrencySymbol(reservation.currency)}
+										{reservation.guide_commission.toLocaleString()}
+									</span>
+								</div>
+							)}
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Agent Information */}
+			{(reservation.agent_name || reservation.agent_id) && (
+				<div className="mb-8">
+					<h2 className="text-xl font-bold mb-4 bg-purple-100 p-3 border-l-4 border-purple-500">
+						🏢 Travel Agent Information
+					</h2>
+					<div className="print-grid">
+						<div>
+							{reservation.agent_name && (
+								<div className="mb-3">
+									<span className="font-semibold text-gray-700">Agent Name:</span>
+									<span className="ml-2 font-medium">{reservation.agent_name}</span>
+								</div>
+							)}
+							{reservation.agency_name && (
+								<div className="mb-3">
+									<span className="font-semibold text-gray-700">Agency:</span>
+									<span className="ml-2 font-medium">{reservation.agency_name}</span>
+								</div>
+							)}
+							{reservation.agent_phone && (
+								<div className="mb-3">
+									<span className="font-semibold text-gray-700">Phone:</span>
+									<span className="ml-2">{reservation.agent_phone}</span>
+								</div>
+							)}
+						</div>
+						<div>
+							{reservation.agent_email && (
+								<div className="mb-3">
+									<span className="font-semibold text-gray-700">Email:</span>
+									<span className="ml-2">{reservation.agent_email}</span>
+								</div>
+							)}
+							{reservation.agent_commission && reservation.agent_commission > 0 && (
+								<div className="mb-3">
+									<span className="font-semibold text-gray-700">Commission:</span>
+									<span className="ml-2 font-medium text-purple-700">
+										{getCurrencySymbol(reservation.currency)}
+										{reservation.agent_commission.toLocaleString()}
+									</span>
+								</div>
+							)}
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Hotel Contact Information */}
+			<div className="mb-8">
+				<h2 className="text-xl font-bold mb-4 bg-yellow-100 p-3 border-l-4 border-yellow-500">
+					📞 Hotel Contact Information
+				</h2>
+				<div className="print-grid">
+					<div>
+						<div className="mb-3">
+							<span className="font-semibold text-gray-700">Hotel Name:</span>
+							<span className="ml-2 font-medium">
+								{reservation.hotel_name || reservation.tenant_name || "Hotel"}
+							</span>
+						</div>
+						{(reservation.hotel_phone || reservation.location_phone) && (
+							<div className="mb-3">
+								<span className="font-semibold text-gray-700">Phone:</span>
+								<span className="ml-2">
+									{reservation.hotel_phone || reservation.location_phone}
+								</span>
+							</div>
+						)}
+						{(reservation.hotel_email || reservation.location_email) && (
+							<div className="mb-3">
+								<span className="font-semibold text-gray-700">Email:</span>
+								<span className="ml-2">
+									{reservation.hotel_email || reservation.location_email}
+								</span>
+							</div>
+						)}
+					</div>
+					<div>
+						{(reservation.hotel_address || reservation.location_address) && (
+							<div className="mb-3">
+								<span className="font-semibold text-gray-700">Address:</span>
+								<span className="ml-2">
+									{reservation.hotel_address || reservation.location_address}
+								</span>
+							</div>
+						)}
+						{reservation.hotel_website && (
+							<div className="mb-3">
+								<span className="font-semibold text-gray-700">Website:</span>
+								<span className="ml-2 text-blue-600">
+									{reservation.hotel_website}
+								</span>
+							</div>
+						)}
+						<div className="mb-3">
+							<span className="font-semibold text-gray-700">Location:</span>
+							<span className="ml-2">
+								{reservation.location_name || reservation.locations?.name}
+							</span>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -554,7 +770,7 @@ const PrintableReservation = React.forwardRef<
 			<div className="border-t-2 border-gray-300 pt-6 text-center text-sm text-gray-600">
 				<div className="mb-3">
 					<p className="text-lg font-semibold text-gray-800 mb-2">
-						Thank you for choosing {reservation.locations?.name || "our hotel"}!
+						Thank you for choosing {reservation.hotel_name || reservation.tenant_name || reservation.location_name || reservation.locations?.name || "our hotel"}!
 					</p>
 					<p className="text-gray-600">
 						We look forward to providing you with an exceptional stay

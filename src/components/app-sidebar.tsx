@@ -113,7 +113,7 @@ export function AppSidebar({
 		// Income/Payments
 		if (hasAnyPermission(["access_income"])) {
 			items.push({
-				title: "Income & Payments",
+				title: "Income",
 				url: "/income",
 				icon: DollarSign,
 				isActive: location.pathname === "/income",

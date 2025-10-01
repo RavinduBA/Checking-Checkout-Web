@@ -37,6 +37,37 @@ export interface PrintableReservationData {
 	guide_commission?: number;
 	agent_commission?: number;
 	booking_source: string;
+	// Enhanced hotel/tenant information
+	tenant_name?: string;
+	hotel_name?: string;
+	hotel_address?: string;
+	hotel_phone?: string;
+	hotel_email?: string;
+	hotel_website?: string | null;
+	logo_url?: string | null;
+	// Enhanced location information
+	location_name?: string;
+	location_address?: string;
+	location_phone?: string;
+	location_email?: string;
+	// Room details
+	room_number?: string;
+	room_type?: string;
+	bed_type?: string;
+	room_description?: string;
+	amenities?: string[];
+	// Guide information
+	guide_name?: string;
+	guide_phone?: string;
+	guide_email?: string;
+	guide_address?: string;
+	guide_license?: string;
+	// Agent information
+	agent_name?: string;
+	agent_phone?: string;
+	agent_email?: string;
+	agency_name?: string;
+	// Legacy structure for backward compatibility
 	locations?: {
 		id: string;
 		name: string;
