@@ -350,6 +350,14 @@ export default function Dashboard() {
 							value={selectedLocation}
 							onValueChange={setSelectedLocation}
 						>
+							<SelectTrigger className="h-9">
+								<SelectValue
+									placeholder={
+										locations.find((l) => l.id === selectedLocation)
+											?.name || "Select Location"
+									}
+								/>
+							</SelectTrigger>
 							<SelectContent>
 								{locations.map((location) => (
 									<SelectItem key={location.id} value={location.id}>

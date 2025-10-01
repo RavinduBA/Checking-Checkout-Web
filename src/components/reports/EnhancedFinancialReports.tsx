@@ -36,11 +36,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import {
-	convertCurrency,
-	formatCurrency,
-	getAvailableCurrencies,
-} from "@/utils/currency";
+import { convertCurrency, formatCurrency, getAvailableCurrencies } from "@/utils/currency";
 
 type FinancialSummary = {
 	totalIncome: number;
@@ -114,7 +110,7 @@ export default function EnhancedFinancialReports() {
 			await Promise.all([
 				fetchLocations(),
 				fetchAvailableCurrencies(),
-				fetchData(),
+				fetchData()
 			]);
 		};
 		loadInitialData();
@@ -176,9 +172,7 @@ export default function EnhancedFinancialReports() {
 		try {
 			// Build queries with filters
 			let incomeQuery = supabase.from("income").select("amount, currency");
-			let expenseQuery = supabase
-				.from("expenses")
-				.select("amount, currency, accounts(currency)");
+			let expenseQuery = supabase.from("expenses").select("amount, currency, accounts(currency)");
 			let paymentsQuery = supabase.from("payments").select("amount, currency");
 
 			// Apply location filters
@@ -231,8 +225,7 @@ export default function EnhancedFinancialReports() {
 
 			// Process expenses
 			for (const expense of expenseResult.data || []) {
-				const accountCurrency =
-					(expense as any).accounts?.currency || expense.currency;
+				const accountCurrency = (expense as any).accounts?.currency || expense.currency;
 				const convertedAmount = await convertCurrency(
 					parseFloat(expense.amount.toString()),
 					accountCurrency as any,
@@ -386,8 +379,7 @@ export default function EnhancedFinancialReports() {
 			let totalExpenseForPercentage = 0;
 
 			for (const expense of data || []) {
-				const accountCurrency =
-					(expense as any).accounts?.currency || expense.currency;
+				const accountCurrency = (expense as any).accounts?.currency || expense.currency;
 				const convertedAmount = await convertCurrency(
 					parseFloat(expense.amount.toString()),
 					accountCurrency as any,
@@ -415,7 +407,7 @@ export default function EnhancedFinancialReports() {
 					account: (expense as any).accounts?.name || "Unknown",
 					currency: baseCurrency,
 				});
-			} // Calculate percentages
+			}			// Calculate percentages
 			const categories = Array.from(expenseMap.values())
 				.map((cat) => ({
 					...cat,
@@ -478,6 +470,9 @@ export default function EnhancedFinancialReports() {
 								value={selectedLocation}
 								onValueChange={setSelectedLocation}
 							>
+								<SelectTrigger>
+									<SelectValue placeholder="Select Locations" />
+								</SelectTrigger>
 								<SelectContent>
 									{locations.map((location) => (
 										<SelectItem key={location.id} value={location.id}>

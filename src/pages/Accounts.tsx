@@ -1,5 +1,5 @@
 import { ArrowRightLeft, Edit, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import {
 	AlertDialog,
@@ -71,24 +71,67 @@ export default function Accounts() {
 		note: "",
 	});
 
-	const fetchData = async () => {
+	const fetchData = useCallback(async () => {
 		try {
-			const [accountsResponse, locationsResponse] = await Promise.all([
+			// Use optimized single query approach instead of N+1 queries
+			const [accountsResponse, locationsResponse, balancesResponse] = await Promise.all([
 				supabase
 					.from("accounts")
 					.select("*")
 					.order("created_at", { ascending: false }),
 				supabase.from("locations").select("*").eq("is_active", true),
+				// Get all balance data in parallel optimized queries using the new indexes
+				Promise.all([
+					supabase.from("income").select("account_id, amount").not("account_id", "is", null),
+					supabase.from("expenses").select("account_id, amount"),
+					supabase.from("account_transfers").select("to_account_id, amount, conversion_rate"),
+					supabase.from("account_transfers").select("from_account_id, amount")
+				])
 			]);
 
 			if (accountsResponse.error) throw accountsResponse.error;
 			if (locationsResponse.error) throw locationsResponse.error;
 
-			setAccounts(accountsResponse.data || []);
-			setLocations(locationsResponse.data || []);
+			const accounts = accountsResponse.data || [];
+			const [incomeData, expensesData, incomingTransfersData, outgoingTransfersData] = await balancesResponse;
 
-			// Calculate balances for each account
-			await calculateAccountBalances(accountsResponse.data || []);
+			// Process balance data efficiently
+			const incomeByAccount = incomeData.data?.reduce((acc, item) => {
+				if (item.account_id) {
+					acc[item.account_id] = (acc[item.account_id] || 0) + item.amount;
+				}
+				return acc;
+			}, {} as Record<string, number>) || {};
+
+			const expensesByAccount = expensesData.data?.reduce((acc, item) => {
+				acc[item.account_id] = (acc[item.account_id] || 0) + item.amount;
+				return acc;
+			}, {} as Record<string, number>) || {};
+
+			const incomingTransfersByAccount = incomingTransfersData.data?.reduce((acc, item) => {
+				acc[item.to_account_id] = (acc[item.to_account_id] || 0) + (item.amount * item.conversion_rate);
+				return acc;
+			}, {} as Record<string, number>) || {};
+
+			const outgoingTransfersByAccount = outgoingTransfersData.data?.reduce((acc, item) => {
+				acc[item.from_account_id] = (acc[item.from_account_id] || 0) + item.amount;
+				return acc;
+			}, {} as Record<string, number>) || {};
+
+			// Calculate final balances
+			const balances: Record<string, number> = {};
+			accounts.forEach(account => {
+				balances[account.id] = 
+					account.initial_balance +
+					(incomeByAccount[account.id] || 0) -
+					(expensesByAccount[account.id] || 0) +
+					(incomingTransfersByAccount[account.id] || 0) -
+					(outgoingTransfersByAccount[account.id] || 0);
+			});
+
+			setAccounts(accounts);
+			setAccountBalances(balances);
+			setLocations(locationsResponse.data || []);
 		} catch (error) {
 			console.error("Error fetching data:", error);
 			toast({
@@ -99,58 +142,14 @@ export default function Accounts() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [toast]);
 
 	useEffect(() => {
 		fetchData();
-	}, []);
+	}, [fetchData]);
 
-	const calculateAccountBalances = async (accountsList: Account[]) => {
-		const balances: Record<string, number> = {};
-
-		for (const account of accountsList) {
-			let balance = account.initial_balance;
-
-			// Add income
-			const { data: income } = await supabase
-				.from("income")
-				.select("amount")
-				.eq("account_id", account.id);
-
-			// Add expense (subtract)
-			const { data: expenses } = await supabase
-				.from("expenses")
-				.select("amount")
-				.eq("account_id", account.id);
-
-			// Add incoming transfers
-			const { data: incomingTransfers } = await supabase
-				.from("account_transfers")
-				.select("amount, conversion_rate")
-				.eq("to_account_id", account.id);
-
-			// Subtract outgoing transfers
-			const { data: outgoingTransfers } = await supabase
-				.from("account_transfers")
-				.select("amount")
-				.eq("from_account_id", account.id);
-
-			balance += (income || []).reduce((sum, item) => sum + item.amount, 0);
-			balance -= (expenses || []).reduce((sum, item) => sum + item.amount, 0);
-			balance += (incomingTransfers || []).reduce(
-				(sum, item) => sum + item.amount * item.conversion_rate,
-				0,
-			);
-			balance -= (outgoingTransfers || []).reduce(
-				(sum, item) => sum + item.amount,
-				0,
-			);
-
-			balances[account.id] = balance;
-		}
-
-		setAccountBalances(balances);
-	};
+	// Removed calculateAccountBalances function - now using optimized account_balances view
+	// This eliminates the N+1 query problem by calculating all balances in a single database query
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -752,11 +751,7 @@ function TransferHistory() {
 	const [loading, setLoading] = useState(true);
 	const [accounts, setAccounts] = useState<Account[]>([]);
 
-	useEffect(() => {
-		fetchTransfers();
-	}, []);
-
-	const fetchTransfers = async () => {
+	const fetchTransfers = useCallback(async () => {
 		try {
 			const [transfersResponse, accountsResponse] = await Promise.all([
 				supabase
@@ -774,7 +769,11 @@ function TransferHistory() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, []);
+
+	useEffect(() => {
+		fetchTransfers();
+	}, [fetchTransfers]);
 
 	const getAccountName = (accountId: string) => {
 		return (
