@@ -48,7 +48,11 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { convertCurrency, formatCurrency, getAvailableCurrencies } from "@/utils/currency";
+import {
+	convertCurrency,
+	formatCurrency,
+	getAvailableCurrencies,
+} from "@/utils/currency";
 
 type AccountBalance = {
 	id: string;
@@ -108,7 +112,7 @@ export default function ComprehensiveReports() {
 			await Promise.all([
 				fetchLocations(),
 				fetchAvailableCurrencies(),
-				fetchComprehensiveData()
+				fetchComprehensiveData(),
 			]);
 		};
 		loadData();

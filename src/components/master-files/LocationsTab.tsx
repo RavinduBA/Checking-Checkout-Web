@@ -59,7 +59,9 @@ type Location = {
 export default function LocationsTab() {
 	const [locations, setLocations] = useState<Location[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [deletingLocationId, setDeletingLocationId] = useState<string | null>(null);
+	const [deletingLocationId, setDeletingLocationId] = useState<string | null>(
+		null,
+	);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [editingLocation, setEditingLocation] = useState<Location | null>(null);
 	const [deleteAlert, setDeleteAlert] = useState<{
@@ -68,12 +70,12 @@ export default function LocationsTab() {
 		locationName: string;
 		dependencyDetails: string[];
 		totalDependents: number;
-	}>({ 
-		open: false, 
-		locationId: null, 
-		locationName: "", 
-		dependencyDetails: [], 
-		totalDependents: 0 
+	}>({
+		open: false,
+		locationId: null,
+		locationName: "",
+		dependencyDetails: [],
+		totalDependents: 0,
 	});
 	const [formData, setFormData] = useState({
 		name: "",
@@ -186,39 +188,75 @@ export default function LocationsTab() {
 		// First, check for dependent records
 		try {
 			setDeletingLocationId(id);
-			
+
 			const [
 				{ count: reservationsCount },
 				{ count: incomeCount },
 				{ count: expensesCount },
 				{ count: bookingsCount },
-				{ count: externalBookingsCount }
+				{ count: externalBookingsCount },
 			] = await Promise.all([
-				supabase.from("reservations").select("*", { count: "exact", head: true }).eq("location_id", id),
-				supabase.from("income").select("*", { count: "exact", head: true }).eq("location_id", id),
-				supabase.from("expenses").select("*", { count: "exact", head: true }).eq("location_id", id),
-				supabase.from("bookings").select("*", { count: "exact", head: true }).eq("location_id", id),
-				supabase.from("external_bookings").select("*", { count: "exact", head: true }).eq("location_id", id)
+				supabase
+					.from("reservations")
+					.select("*", { count: "exact", head: true })
+					.eq("location_id", id),
+				supabase
+					.from("income")
+					.select("*", { count: "exact", head: true })
+					.eq("location_id", id),
+				supabase
+					.from("expenses")
+					.select("*", { count: "exact", head: true })
+					.eq("location_id", id),
+				supabase
+					.from("bookings")
+					.select("*", { count: "exact", head: true })
+					.eq("location_id", id),
+				supabase
+					.from("external_bookings")
+					.select("*", { count: "exact", head: true })
+					.eq("location_id", id),
 			]);
 
-			const totalDependents = (reservationsCount || 0) + (incomeCount || 0) + (expensesCount || 0) + (bookingsCount || 0) + (externalBookingsCount || 0);
+			const totalDependents =
+				(reservationsCount || 0) +
+				(incomeCount || 0) +
+				(expensesCount || 0) +
+				(bookingsCount || 0) +
+				(externalBookingsCount || 0);
 
 			const dependencyDetails = [];
-			if (reservationsCount) dependencyDetails.push(`${reservationsCount} reservation${reservationsCount > 1 ? 's' : ''}`);
-			if (incomeCount) dependencyDetails.push(`${incomeCount} income record${incomeCount > 1 ? 's' : ''}`);
-			if (expensesCount) dependencyDetails.push(`${expensesCount} expense record${expensesCount > 1 ? 's' : ''}`);
-			if (bookingsCount) dependencyDetails.push(`${bookingsCount} booking${bookingsCount > 1 ? 's' : ''}`);
-			if (externalBookingsCount) dependencyDetails.push(`${externalBookingsCount} external booking${externalBookingsCount > 1 ? 's' : ''}`);
+			if (reservationsCount)
+				dependencyDetails.push(
+					`${reservationsCount} reservation${reservationsCount > 1 ? "s" : ""}`,
+				);
+			if (incomeCount)
+				dependencyDetails.push(
+					`${incomeCount} income record${incomeCount > 1 ? "s" : ""}`,
+				);
+			if (expensesCount)
+				dependencyDetails.push(
+					`${expensesCount} expense record${expensesCount > 1 ? "s" : ""}`,
+				);
+			if (bookingsCount)
+				dependencyDetails.push(
+					`${bookingsCount} booking${bookingsCount > 1 ? "s" : ""}`,
+				);
+			if (externalBookingsCount)
+				dependencyDetails.push(
+					`${externalBookingsCount} external booking${externalBookingsCount > 1 ? "s" : ""}`,
+				);
 
-			const locationName = locations.find(loc => loc.id === id)?.name || "this location";
-			
+			const locationName =
+				locations.find((loc) => loc.id === id)?.name || "this location";
+
 			// Show alert dialog for confirmation
 			setDeleteAlert({
 				open: true,
 				locationId: id,
 				locationName,
 				dependencyDetails,
-				totalDependents
+				totalDependents,
 			});
 			setDeletingLocationId(null);
 		} catch (error) {
@@ -237,7 +275,13 @@ export default function LocationsTab() {
 
 		try {
 			setDeletingLocationId(deleteAlert.locationId);
-			setDeleteAlert({ open: false, locationId: null, locationName: "", dependencyDetails: [], totalDependents: 0 });
+			setDeleteAlert({
+				open: false,
+				locationId: null,
+				locationName: "",
+				dependencyDetails: [],
+				totalDependents: 0,
+			});
 
 			// Perform cascading delete in the correct order
 			toast({
@@ -247,29 +291,50 @@ export default function LocationsTab() {
 
 			// Delete dependent records that have NO ACTION constraints
 			// Order matters: delete children before parents
-			
+
 			// 1. Delete booking payments first (references bookings)
 			await supabase
 				.from("booking_payments")
 				.delete()
-				.in("booking_id", 
-					(await supabase.from("bookings").select("id").eq("location_id", deleteAlert.locationId)).data?.map(b => b.id) || []
+				.in(
+					"booking_id",
+					(
+						await supabase
+							.from("bookings")
+							.select("id")
+							.eq("location_id", deleteAlert.locationId)
+					).data?.map((b) => b.id) || [],
 				);
 
 			// 2. Delete external bookings
-			await supabase.from("external_bookings").delete().eq("location_id", deleteAlert.locationId);
+			await supabase
+				.from("external_bookings")
+				.delete()
+				.eq("location_id", deleteAlert.locationId);
 
 			// 3. Delete income records
-			await supabase.from("income").delete().eq("location_id", deleteAlert.locationId);
+			await supabase
+				.from("income")
+				.delete()
+				.eq("location_id", deleteAlert.locationId);
 
 			// 4. Delete expense records
-			await supabase.from("expenses").delete().eq("location_id", deleteAlert.locationId);
+			await supabase
+				.from("expenses")
+				.delete()
+				.eq("location_id", deleteAlert.locationId);
 
 			// 5. Delete bookings
-			await supabase.from("bookings").delete().eq("location_id", deleteAlert.locationId);
+			await supabase
+				.from("bookings")
+				.delete()
+				.eq("location_id", deleteAlert.locationId);
 
 			// 6. Delete reservations
-			await supabase.from("reservations").delete().eq("location_id", deleteAlert.locationId);
+			await supabase
+				.from("reservations")
+				.delete()
+				.eq("location_id", deleteAlert.locationId);
 
 			// 7. Finally delete the location (rooms and user_permissions will cascade automatically)
 			const { error } = await supabase
@@ -289,7 +354,8 @@ export default function LocationsTab() {
 			console.error("Delete location error:", error);
 			toast({
 				title: "Error",
-				description: "Failed to delete location. Please try again or contact support.",
+				description:
+					"Failed to delete location. Please try again or contact support.",
 				variant: "destructive",
 			});
 		} finally {
@@ -437,19 +503,23 @@ export default function LocationsTab() {
 			</Table>
 
 			{/* Delete Confirmation Alert Dialog */}
-			<AlertDialog open={deleteAlert.open} onOpenChange={(open) => 
-				setDeleteAlert({ ...deleteAlert, open })
-			}>
+			<AlertDialog
+				open={deleteAlert.open}
+				onOpenChange={(open) => setDeleteAlert({ ...deleteAlert, open })}
+			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
-							{deleteAlert.totalDependents > 0 ? "Delete Location with Dependencies?" : "Delete Location?"}
+							{deleteAlert.totalDependents > 0
+								? "Delete Location with Dependencies?"
+								: "Delete Location?"}
 						</AlertDialogTitle>
 						<AlertDialogDescription className="space-y-2">
 							{deleteAlert.totalDependents > 0 ? (
 								<>
 									<p>
-										<strong>{deleteAlert.locationName}</strong> has {deleteAlert.dependencyDetails.join(", ")}.
+										<strong>{deleteAlert.locationName}</strong> has{" "}
+										{deleteAlert.dependencyDetails.join(", ")}.
 									</p>
 									<p>Deleting this location will permanently remove:</p>
 									<ul className="list-disc list-inside space-y-1 text-sm">
@@ -463,15 +533,16 @@ export default function LocationsTab() {
 								</>
 							) : (
 								<p>
-									Are you sure you want to delete <strong>{deleteAlert.locationName}</strong>? 
-									This action cannot be undone.
+									Are you sure you want to delete{" "}
+									<strong>{deleteAlert.locationName}</strong>? This action
+									cannot be undone.
 								</p>
 							)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<AlertDialogCancel>Cancel</AlertDialogCancel>
-						<AlertDialogAction 
+						<AlertDialogAction
 							onClick={confirmDelete}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>

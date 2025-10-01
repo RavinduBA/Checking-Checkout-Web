@@ -8,7 +8,7 @@ import {
 	Printer,
 	User,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import ReactDOM from "react-dom";
 import { useNavigate } from "react-router";
 import { OTPVerification } from "@/components/OTPVerification";
@@ -36,7 +36,8 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { useAutoLocation } from "@/hooks/useAutoLocation";
+import { useAuth } from "@/context/AuthContext";
+import { useLocationContext } from "@/context/LocationContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -50,9 +51,8 @@ type Payment = Tables<"payments">;
 export const ReservationsList = () => {
 	const navigate = useNavigate();
 	const { toast } = useToast();
-	const { autoSelectedLocation, shouldShowLocationSelect, availableLocations } =
-		useAutoLocation();
-	const [selectedLocation, setSelectedLocation] = useState<string>("all");
+	const { tenant } = useAuth();
+	const { selectedLocation, setSelectedLocation, locations } = useLocationContext();
 	const [reservations, setReservations] = useState<Reservation[]>([]);
 	const [payments, setPayments] = useState<Payment[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -63,42 +63,69 @@ export const ReservationsList = () => {
 		useState<Reservation | null>(null);
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-	useEffect(() => {
-		fetchData();
-	}, []);
 
-	useEffect(() => {
-		if (autoSelectedLocation && !shouldShowLocationSelect) {
-			setSelectedLocation(autoSelectedLocation);
-		}
-	}, [autoSelectedLocation, shouldShowLocationSelect]);
 
-	const fetchData = async () => {
+	const fetchData = useCallback(async () => {
 		try {
 			// Fetch reservations with location and room data
-			const { data: reservationsData } = await supabase
-				.from("reservations")
-				.select(`
+			const reservationsQuery = selectedLocation === "all"
+				? supabase
+						.from("reservations")
+						.select(`
           *,
           locations (*),
           rooms (*)
         `)
-				.order("created_at", { ascending: false });
+						.eq("tenant_id", tenant?.id || "")
+						.order("created_at", { ascending: false })
+				: supabase
+						.from("reservations")
+						.select(`
+          *,
+          locations (*),
+          rooms (*)
+        `)
+						.eq("tenant_id", tenant?.id || "")
+						.eq("location_id", selectedLocation)
+						.order("created_at", { ascending: false });
 
-			// Fetch payments
-			const { data: paymentsData } = await supabase
-				.from("payments")
-				.select("*")
-				.order("created_at", { ascending: false });
+			// Fetch payments with location filtering through reservations
+			const paymentsQuery = selectedLocation === "all"
+				? supabase
+						.from("payments")
+						.select(`
+							*,
+							reservations!inner(location_id, tenant_id)
+						`)
+						.eq("reservations.tenant_id", tenant?.id || "")
+						.order("created_at", { ascending: false })
+				: supabase
+						.from("payments")
+						.select(`
+							*,
+							reservations!inner(location_id, tenant_id)
+						`)
+						.eq("reservations.tenant_id", tenant?.id || "")
+						.eq("reservations.location_id", selectedLocation)
+						.order("created_at", { ascending: false });
 
-			setReservations(reservationsData || []);
-			setPayments(paymentsData || []);
+			const [reservationsData, paymentsData] = await Promise.all([
+				reservationsQuery,
+				paymentsQuery,
+			]);
+
+			setReservations(reservationsData.data || []);
+			setPayments(paymentsData.data || []);
 		} catch (error) {
 			console.error("Error fetching data:", error);
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [selectedLocation, tenant?.id]);
+
+	useEffect(() => {
+		fetchData();
+	}, [fetchData]);
 
 	const getStatusColor = (status: string) => {
 		const colors = {
@@ -228,26 +255,24 @@ export const ReservationsList = () => {
 
 				{/* Filters */}
 				<div className="flex flex-col lg:flex-row gap-4">
-					{shouldShowLocationSelect && (
-						<Select
-							value={selectedLocation}
-							onValueChange={setSelectedLocation}
-						>
-							<SelectTrigger className="w-full lg:w-48">
-								<SelectValue placeholder="Select location" />
-							</SelectTrigger>
-							<SelectContent className="z-50 bg-background border">
-								<SelectItem value="all">All Locations</SelectItem>
-								{availableLocations.map((location) => (
-									<SelectItem key={location.id} value={location.id}>
-										{location.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					)}
-
-					<Input
+				{locations.length > 1 && (
+					<Select
+						value={selectedLocation}
+						onValueChange={setSelectedLocation}
+					>
+						<SelectTrigger className="w-full lg:w-48">
+							<SelectValue placeholder="Select location" />
+						</SelectTrigger>
+						<SelectContent className="z-50 bg-background border">
+							<SelectItem value="all">All Locations</SelectItem>
+							{locations.map((location) => (
+								<SelectItem key={location.id} value={location.id}>
+									{location.name}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				)}					<Input
 						placeholder="Search reservations..."
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}

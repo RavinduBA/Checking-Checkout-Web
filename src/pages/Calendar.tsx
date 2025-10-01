@@ -14,7 +14,9 @@ import {
 	RefreshCw,
 	Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { useLocationContext } from "@/context/LocationContext";
 import { Link, useNavigate } from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,7 +37,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useCalendarData } from "@/hooks/useCalendarData";
 import { Tables } from "@/integrations/supabase/types";
 
 type Reservation = Tables<"reservations"> & {
@@ -84,106 +86,26 @@ interface PropertyMapping {
 export default function Calendar() {
 	const navigate = useNavigate();
 	const { toast } = useToast();
-	const [selectedLocation, setSelectedLocation] = useState("all");
-	const [reservations, setReservations] = useState<Reservation[]>([]);
-	const [externalBookings, setExternalBookings] = useState<ExternalBooking[]>(
-		[],
-	);
-	const [rooms, setRooms] = useState<Room[]>([]);
-	const [locations, setLocations] = useState<Location[]>([]);
-	const [loading, setLoading] = useState(true);
+	const { tenant } = useAuth();
+	
+	// Use the custom hook for calendar data
+	const {
+		reservations,
+		externalBookings,
+		rooms,
+		locations,
+		propertyMappings,
+		loading,
+		refetch,
+	} = useCalendarData();
+
 	const [currentDate, setCurrentDate] = useState(new Date());
 	const [selectedBooking, setSelectedBooking] =
 		useState<ExternalBooking | null>(null);
 	const [showBookingDialog, setShowBookingDialog] = useState(false);
 	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-	// Property mappings will be fetched from database or configured dynamically
-	const [propertyMappings, setPropertyMappings] = useState<PropertyMapping[]>(
-		[],
-	);
-
-	useEffect(() => {
-		const fetchData = async () => {
-			try {
-				// Fetch locations
-				const { data: locationsData } = await supabase
-					.from("locations")
-					.select("*")
-					.eq("is_active", true);
-
-				// Fetch rooms with location data
-				const { data: roomsData } = await supabase
-					.from("rooms")
-					.select("*")
-					.eq("is_active", true);
-
-				// Fetch reservations with location and room data
-				const { data: reservationsData } = await supabase
-					.from("reservations")
-					.select(`
-            *,
-            locations (*),
-            rooms (*)
-          `)
-					.order("check_in_date", { ascending: true });
-
-				// Fetch external bookings
-				const { data: externalBookingsData } = await supabase
-					.from("external_bookings")
-					.select(`
-            *,
-            location:locations(name)
-          `)
-					.order("check_in", { ascending: true });
-
-				// Fetch property mappings from database
-				const { data: mappingsData } = await supabase
-					.from("channel_property_mappings")
-					.select(`
-            *,
-            locations (id, name)
-          `)
-					.eq("is_active", true);
-
-				// Transform mappings data into the format expected by the component
-				const transformedMappings: PropertyMapping[] = [];
-				if (mappingsData) {
-					const groupedMappings = mappingsData.reduce(
-						(acc, mapping) => {
-							const locationId = mapping.location_id;
-							if (!acc[locationId]) {
-								acc[locationId] = {
-									locationId,
-									locationName: mapping.locations?.name || "",
-									channelProperties: [],
-								};
-							}
-							acc[locationId].channelProperties.push(
-								mapping.channel_property_name,
-							);
-							return acc;
-						},
-						{} as Record<string, PropertyMapping>,
-					);
-
-					transformedMappings.push(...Object.values(groupedMappings));
-				}
-
-				setLocations(locationsData || []);
-				setRooms(roomsData || []);
-				setReservations(reservationsData || []);
-				setExternalBookings(externalBookingsData || []);
-				setPropertyMappings(transformedMappings);
-			} catch (error) {
-				console.error("Error fetching data:", error);
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		fetchData();
-	}, []);
+	const { selectedLocation, setSelectedLocation } = useLocationContext();
 
 	// Helper function to get location from external booking based on property mappings
 	const getLocationFromExternalBooking = (
@@ -277,6 +199,7 @@ export default function Calendar() {
 			) {
 				virtualRooms.push({
 					id: `virtual-${roomKey}`,
+					tenant_id: tenant?.id || "",
 					location_id: locationId,
 					room_number: firstBooking.room_name || "External Room",
 					room_type: firstBooking.raw_data?.channel || "External",
@@ -1016,8 +939,7 @@ export default function Calendar() {
 																		>
 																			<div className="font-medium text-xs leading-tight truncate">
 																				{(
-																					externalReservation.raw_data
-																						?.firstName ||
+																					(externalReservation.raw_data as any)?.firstName ||
 																					externalReservation.guest_name?.split(
 																						" ",
 																					)[0] ||

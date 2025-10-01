@@ -38,7 +38,7 @@ export const OTPVerification = ({
 		try {
 			// Generate OTP code
 			const otpCode = Math.floor(100000 + Math.random() * 900000);
-			
+
 			// Call Supabase Edge Function to send SMS
 			const { data, error } = await supabase.functions.invoke(
 				"send-sms-notification",

@@ -9,7 +9,10 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { getCurrencyDetails, getCurrencyConversionSearchUrl } from "@/utils/currency";
+import {
+	getCurrencyDetails,
+	getCurrencyConversionSearchUrl,
+} from "@/utils/currency";
 import type { CurrencyRate } from "@/utils/currency";
 
 interface CurrencySelectorProps {
@@ -48,7 +51,7 @@ export const CurrencySelector = ({
 	const handleGoogleSearchClick = () => {
 		if (currency && currency !== "USD") {
 			const searchUrl = getCurrencyConversionSearchUrl(currency);
-			window.open(searchUrl, '_blank');
+			window.open(searchUrl, "_blank");
 		}
 	};
 
@@ -59,14 +62,24 @@ export const CurrencySelector = ({
 				{label}
 			</Label>
 			<div className="flex gap-2">
-				<Select value={currency} onValueChange={onCurrencyChange} disabled={loading}>
+				<Select
+					value={currency}
+					onValueChange={onCurrencyChange}
+					disabled={loading}
+				>
 					<SelectTrigger className="flex-1">
 						<SelectValue>
 							{selectedCurrency ? (
 								<div className="flex items-center gap-2">
-									<span className="font-medium">{selectedCurrency.currency_code}</span>
+									<span className="font-medium">
+										{selectedCurrency.currency_code}
+									</span>
 									<span className="text-muted-foreground text-sm hidden sm:flex">
-										{selectedCurrency.currency_code === "USD" ? "- US Dollar" : selectedCurrency.is_custom ? "- Custom Currency" : ""}
+										{selectedCurrency.currency_code === "USD"
+											? "- US Dollar"
+											: selectedCurrency.is_custom
+												? "- Custom Currency"
+												: ""}
 									</span>
 									{selectedCurrency.currency_code !== "USD" && (
 										<span className="text-xs text-muted-foreground">
@@ -85,9 +98,15 @@ export const CurrencySelector = ({
 						{currencies.map((curr) => (
 							<SelectItem key={curr.currency_code} value={curr.currency_code}>
 								<div className="flex items-center gap-2">
-									<span className="font-medium min-w-[48px]">{curr.currency_code}</span>
+									<span className="font-medium min-w-[48px]">
+										{curr.currency_code}
+									</span>
 									<span className="text-muted-foreground flex-1">
-										{curr.currency_code === "USD" ? "US Dollar" : curr.is_custom ? "Custom Currency" : curr.currency_code}
+										{curr.currency_code === "USD"
+											? "US Dollar"
+											: curr.is_custom
+												? "Custom Currency"
+												: curr.currency_code}
 									</span>
 									{curr.currency_code !== "USD" && (
 										<span className="text-xs text-muted-foreground">
@@ -99,7 +118,7 @@ export const CurrencySelector = ({
 						))}
 					</SelectContent>
 				</Select>
-				
+
 				{showGoogleSearchLink && currency && currency !== "USD" && (
 					<Button
 						type="button"

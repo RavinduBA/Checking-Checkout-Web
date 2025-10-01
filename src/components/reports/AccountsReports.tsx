@@ -36,6 +36,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCurrency } from "@/utils/currency";
 
 type Account = {
 	id: string;
@@ -289,13 +290,6 @@ export default function AccountsReports() {
 		} catch (error) {
 			console.error("Error fetching transactions:", error);
 		}
-	};
-
-	const formatCurrency = (amount: number, currency: string = "LKR") => {
-		if (currency === "USD") {
-			return `$${Math.abs(amount).toLocaleString()}`;
-		}
-		return `Rs.${Math.abs(amount).toLocaleString()}`;
 	};
 
 	const getTransactionIcon = (type: string) => {

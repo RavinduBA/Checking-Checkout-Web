@@ -10,6 +10,16 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InlineLoader } from "@/components/ui/loading-spinner";
@@ -52,6 +62,8 @@ export default function GuidesTab() {
 	const { tenant } = useTenant();
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [editingGuide, setEditingGuide] = useState<Guide | null>(null);
+	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+	const [guideToDelete, setGuideToDelete] = useState<string | null>(null);
 	const [formData, setFormData] = useState({
 		name: "",
 		phone: "",
@@ -65,7 +77,7 @@ export default function GuidesTab() {
 
 	const fetchGuides = useCallback(async () => {
 		if (!tenant?.id) return;
-		
+
 		try {
 			const { data, error } = await supabase
 				.from("guides")
@@ -107,10 +119,12 @@ export default function GuidesTab() {
 					description: "Guide updated successfully",
 				});
 			} else {
-				const { error } = await supabase.from("guides").insert([{
-					...formData,
-					tenant_id: tenant?.id
-				}]);
+				const { error } = await supabase.from("guides").insert([
+					{
+						...formData,
+						tenant_id: tenant?.id,
+					},
+				]);
 
 				if (error) throw error;
 
@@ -159,11 +173,19 @@ export default function GuidesTab() {
 		setIsDialogOpen(true);
 	};
 
-	const handleDelete = async (id: string) => {
-		if (!confirm("Are you sure you want to delete this guide?")) return;
+	const handleDelete = (id: string) => {
+		setGuideToDelete(id);
+		setDeleteConfirmOpen(true);
+	};
+
+	const confirmDelete = async () => {
+		if (!guideToDelete) return;
 
 		try {
-			const { error } = await supabase.from("guides").delete().eq("id", id);
+			const { error } = await supabase
+				.from("guides")
+				.delete()
+				.eq("id", guideToDelete);
 
 			if (error) throw error;
 
@@ -178,6 +200,9 @@ export default function GuidesTab() {
 				description: "Failed to delete guide",
 				variant: "destructive",
 			});
+		} finally {
+			setDeleteConfirmOpen(false);
+			setGuideToDelete(null);
 		}
 	};
 
@@ -400,6 +425,25 @@ export default function GuidesTab() {
 					))}
 				</TableBody>
 			</Table>
+
+			{/* Delete Confirmation Dialog */}
+			<AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to delete this guide? This action cannot be
+							undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction onClick={confirmDelete}>
+							Delete
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

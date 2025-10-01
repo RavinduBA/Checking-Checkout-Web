@@ -70,7 +70,7 @@ export default function PaymentForm() {
 				.select("id, name, phone, email")
 				.eq("id", locationId)
 				.single();
-				
+
 			setLocation(data);
 		} catch (error) {
 			console.error("Failed to fetch location:", error);

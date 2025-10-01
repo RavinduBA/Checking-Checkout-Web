@@ -32,15 +32,15 @@ export const getAvailableCurrencies = async (): Promise<string[]> => {
 		const { data, error } = await supabase
 			.from("currency_rates")
 			.select("currency_code")
-			.not('currency_code', 'is', null)
-			.order('currency_code');
+			.not("currency_code", "is", null)
+			.order("currency_code");
 
 		if (error) {
 			console.error("Error fetching currencies:", error);
 			return ["USD"];
 		}
 
-		return data?.map(item => item.currency_code) || ["USD"];
+		return data?.map((item) => item.currency_code) || ["USD"];
 	} catch (error) {
 		console.error("Error in getAvailableCurrencies:", error);
 		return ["USD"];
@@ -50,7 +50,10 @@ export const getAvailableCurrencies = async (): Promise<string[]> => {
 export const getCurrencyRates = async (): Promise<CurrencyRates> => {
 	// Check cache first
 	const now = Date.now();
-	if (Object.keys(currencyRatesCache).length > 0 && now - lastCacheUpdate < CACHE_DURATION) {
+	if (
+		Object.keys(currencyRatesCache).length > 0 &&
+		now - lastCacheUpdate < CACHE_DURATION
+	) {
 		return currencyRatesCache;
 	}
 
@@ -58,8 +61,8 @@ export const getCurrencyRates = async (): Promise<CurrencyRates> => {
 		const { data, error } = await supabase
 			.from("currency_rates")
 			.select("currency_code, usd_rate")
-			.not('currency_code', 'is', null)
-			.not('usd_rate', 'is', null);
+			.not("currency_code", "is", null)
+			.not("usd_rate", "is", null);
 
 		if (error) {
 			console.error("Error fetching currency rates:", error);
@@ -130,11 +133,17 @@ export const convertCurrency = async (
 };
 
 // Add a new custom currency
-export const addCustomCurrency = async (currencyCode: string, usdRate: number): Promise<{ success: boolean; error?: string }> => {
+export const addCustomCurrency = async (
+	currencyCode: string,
+	usdRate: number,
+): Promise<{ success: boolean; error?: string }> => {
 	try {
 		// Validate currency code (3-5 uppercase letters)
 		if (!/^[A-Z]{3,5}$/.test(currencyCode)) {
-			return { success: false, error: "Currency code must be 3-5 uppercase letters" };
+			return {
+				success: false,
+				error: "Currency code must be 3-5 uppercase letters",
+			};
 		}
 
 		// Validate USD rate
@@ -142,15 +151,16 @@ export const addCustomCurrency = async (currencyCode: string, usdRate: number): 
 			return { success: false, error: "USD rate must be greater than 0" };
 		}
 
-		const { error } = await supabase
-			.from("currency_rates")
-			.upsert({
+		const { error } = await supabase.from("currency_rates").upsert(
+			{
 				currency_code: currencyCode,
 				usd_rate: usdRate,
-				is_custom: true
-			}, { 
-				onConflict: 'currency_code'
-			});
+				is_custom: true,
+			},
+			{
+				onConflict: "currency_code",
+			},
+		);
 
 		if (error) {
 			console.error("Error adding custom currency:", error);
@@ -169,13 +179,17 @@ export const addCustomCurrency = async (currencyCode: string, usdRate: number): 
 };
 
 // Generate Google search URL for currency conversion
-export const getCurrencyConversionSearchUrl = (currencyCode: string): string => {
+export const getCurrencyConversionSearchUrl = (
+	currencyCode: string,
+): string => {
 	const query = `usd+to+${currencyCode.toLowerCase()}`;
 	return `https://www.google.com/search?q=${query}`;
 };
 
 // Remove a custom currency
-export async function removeCustomCurrency(currencyCode: string): Promise<{ success: boolean; error?: string }> {
+export async function removeCustomCurrency(
+	currencyCode: string,
+): Promise<{ success: boolean; error?: string }> {
 	try {
 		if (currencyCode === "USD") {
 			return { success: false, error: "Cannot remove USD base currency" };
@@ -184,8 +198,8 @@ export async function removeCustomCurrency(currencyCode: string): Promise<{ succ
 		const { error } = await supabase
 			.from("currency_rates")
 			.delete()
-			.eq('currency_code', currencyCode)
-			.eq('is_custom', true);
+			.eq("currency_code", currencyCode)
+			.eq("is_custom", true);
 
 		if (error) {
 			console.error("Error removing currency:", error);
@@ -219,8 +233,39 @@ export function formatCurrency(amount: number, currency: string): string {
 	}
 }
 
+// Get currency symbol for a given currency code
+export function getCurrencySymbol(currency: string): string {
+  const symbols: Record<string, string> = {
+    USD: "$",    // US Dollar
+    EUR: "€",    // Euro
+    GBP: "£",    // British Pound
+    INR: "₹",    // Indian Rupee
+    JPY: "¥",    // Japanese Yen
+    CNY: "¥",    // Chinese Yuan
+    AUD: "A$",   // Australian Dollar
+    CAD: "C$",   // Canadian Dollar
+    CHF: "CHF",  // Swiss Franc
+    SEK: "kr",   // Swedish Krona
+    NOK: "kr",   // Norwegian Krone
+    DKK: "kr",   // Danish Krone
+    RUB: "₽",    // Russian Ruble
+    KRW: "₩",    // South Korean Won
+    THB: "฿",    // Thai Baht
+    SGD: "S$",   // Singapore Dollar
+    HKD: "HK$",  // Hong Kong Dollar
+    NZD: "NZ$",  // New Zealand Dollar
+    ZAR: "R",    // South African Rand
+  };
+
+  return symbols[currency.toUpperCase()] ?? currency;
+}
+
+
 // Update a currency rate
-export async function updateCurrencyRate(currencyCode: string, usdRate: number): Promise<{ success: boolean; error?: string }> {
+export async function updateCurrencyRate(
+	currencyCode: string,
+	usdRate: number,
+): Promise<{ success: boolean; error?: string }> {
 	try {
 		if (currencyCode === "USD") {
 			return { success: false, error: "Cannot modify USD base currency rate" };
@@ -236,7 +281,7 @@ export async function updateCurrencyRate(currencyCode: string, usdRate: number):
 				usd_rate: usdRate,
 				updated_at: new Date().toISOString(),
 			})
-			.eq('currency_code', currencyCode);
+			.eq("currency_code", currencyCode);
 
 		if (error) {
 			console.error("Error updating currency rate:", error);
@@ -260,8 +305,8 @@ export const getCurrencyDetails = async (): Promise<CurrencyRate[]> => {
 		const { data, error } = await supabase
 			.from("currency_rates")
 			.select("*")
-			.not('currency_code', 'is', null)
-			.order('currency_code');
+			.not("currency_code", "is", null)
+			.order("currency_code");
 
 		if (error) {
 			console.error("Error fetching currency details:", error);

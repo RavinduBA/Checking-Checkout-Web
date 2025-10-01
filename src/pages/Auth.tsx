@@ -1,6 +1,6 @@
 import { Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams, Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { url } from "inspector";
 
 export default function Auth() {
 	const [isLogin, setIsLogin] = useState(true);
@@ -21,15 +22,17 @@ export default function Auth() {
 	const { toast } = useToast();
 	const { user, profile, loading, profileLoading } = useAuth();
 
-	// Check if this is an invitation flow
-	const isInvitation = searchParams.get("invitation") === "true";
-	const invitationToken = searchParams.get("token");
-
 	useEffect(() => {
 		// Handle magic link token hash verification
 		const handleTokenHash = async () => {
 			const tokenHash = searchParams.get("token_hash");
 			const type = searchParams.get("type");
+
+			if (tokenHash && type === "recovery") {
+				// Redirect to reset password page with the token
+				navigate(`/auth/reset-password?token_hash=${tokenHash}&type=recovery`, { replace: true });
+				return;
+			}
 
 			if (tokenHash && type === "email") {
 				try {
@@ -65,75 +68,12 @@ export default function Auth() {
 			}
 		};
 
-		// Handle invitation acceptance when user is authenticated
-		const handleInvitationAcceptance = async () => {
-			if (isInvitation && invitationToken && user) {
-				try {
-					console.log("Processing invitation token:", invitationToken);
-
-					// Use the RPC function to accept the invitation
-					const { data: result, error: rpcError } = await supabase.rpc(
-						"accept_invitation",
-						{
-							p_token: invitationToken,
-						},
-					);
-
-					if (rpcError) {
-						console.error("RPC error accepting invitation:", rpcError);
-						toast({
-							title: "Error",
-							description: `Failed to process invitation: ${rpcError.message}`,
-							variant: "destructive",
-						});
-						return;
-					}
-
-					// Parse the result as our expected response format
-					const response = result as {
-						success: boolean;
-						error?: string;
-						data?: any;
-					};
-
-					if (!response?.success) {
-						console.error("Invitation acceptance failed:", response?.error);
-						toast({
-							title: "Invitation Error",
-							description: response?.error || "Failed to process invitation",
-							variant: "destructive",
-						});
-						return;
-					}
-
-					console.log("Invitation accepted successfully:", response.data);
-					toast({
-						title: "Invitation Accepted",
-						description:
-							"Welcome to the team! Your permissions have been set up.",
-					});
-
-					// Clear the URL parameters and navigate to dashboard
-					navigate("/dashboard", { replace: true });
-				} catch (error) {
-					console.error("Exception handling invitation:", error);
-					toast({
-						title: "Error",
-						description: "Failed to process invitation",
-						variant: "destructive",
-					});
-				}
-			}
-		};
-
 		// Handle magic link verification first
 		handleTokenHash();
 
 		// Only check for navigation if not loading
 		if (!loading && !profileLoading && user) {
-			if (isInvitation) {
-				handleInvitationAcceptance();
-			} else if (profile?.tenant_id) {
+			if (profile?.tenant_id) {
 				// Check if this is the user's first login
 				if (!profile.first_login_completed) {
 					navigate("/onboarding");
@@ -144,17 +84,7 @@ export default function Auth() {
 				navigate("/onboarding");
 			}
 		}
-	}, [
-		user,
-		profile,
-		loading,
-		profileLoading,
-		navigate,
-		isInvitation,
-		invitationToken,
-		toast,
-		searchParams,
-	]);
+	}, [user, profile, loading, profileLoading, navigate, toast, searchParams]);
 
 	const handleAuth = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -227,25 +157,23 @@ export default function Auth() {
 	};
 
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-background p-4">
-			<Card className="w-full max-w-md bg-card border">
-				<CardHeader className="text-center">
-					<CardTitle className="text-lg sm:text-2xl font-bold text-foreground">
-						<div className="flex flex-col leading-tight">
-							<span className="font-bold">CHECK-IN</span>
-							<span className="font-normal">CHECK-OUT</span>
+		<div className="min-h-screen flex items-center justify-center bg-background overflow-hidden">
+			<div className="relative  bg-[url('/images/white-hotel-front-view.jpg')] bg-cover flex-1 hidden items-center justify-center h-screen bg-gray-900 lg:flex">
+			</div>
+			<div className="flex-1 flex items-center justify-center h-screen">
+				<div className="w-full max-w-md space-y-8 px-4 bg-white text-gray-600 sm:px-0">
+					<div className="">
+						<div className="mt-5 space-y-2">
+							<p className="text-muted-foreground">
+								{isLogin ? "Sign in to your account" : "Create your account"}
+							</p>
+							{!isLogin && (
+								<p className="text-sm text-muted-foreground mt-2">
+									Start your 7-day free trial today
+								</p>
+							)}
 						</div>
-					</CardTitle>
-					<p className="text-muted-foreground">
-						{isLogin ? "Sign in to your account" : "Create your account"}
-					</p>
-					{!isLogin && (
-						<p className="text-sm text-muted-foreground mt-2">
-							Start your 14-day free trial today
-						</p>
-					)}
-				</CardHeader>
-				<CardContent>
+					</div>
 					<form onSubmit={handleAuth} className="space-y-4">
 						{!isLogin && (
 							<div>
@@ -323,6 +251,18 @@ export default function Auth() {
 						</Button>
 					</form>
 
+					{/* Forgot Password Link - Only show on login */}
+					{isLogin && (
+						<div className="text-center">
+							<Link
+								to="/auth/forgot-password"
+								className="text-sm text-primary hover:underline"
+							>
+								Forgot your password?
+							</Link>
+						</div>
+					)}
+
 					<div className="mt-4 text-center">
 						<button
 							type="button"
@@ -335,8 +275,8 @@ export default function Auth() {
 								: "Already have an account? Sign in"}
 						</button>
 					</div>
-				</CardContent>
-			</Card>
+				</div>
+			</div>
 		</div>
 	);
 }

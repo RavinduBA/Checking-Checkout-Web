@@ -1,5 +1,5 @@
 import { ArrowLeft, Calendar, Save } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -25,6 +26,7 @@ export default function BookingForm() {
 	const { id } = useParams();
 	const [searchParams] = useSearchParams();
 	const { toast } = useToast();
+	const { tenant } = useAuth();
 	const isEdit = Boolean(id);
 
 	const [locations, setLocations] = useState<Location[]>([]);
@@ -37,7 +39,7 @@ export default function BookingForm() {
 		location_id: searchParams.get("location") || "",
 		check_in: searchParams.get("date") || "",
 		check_out: "",
-		source: "direct" as "direct" | "airbnb" | "booking_com",
+		source: "direct" as "direct" | "airbnb" | "booking_com" | "expedia" | "agoda" | "beds24" | "manual" | "online" | "phone" | "email" | "walk_in" | "ical",
 		total_amount: "",
 		advance_amount: "",
 		account_id: "",
@@ -45,18 +47,11 @@ export default function BookingForm() {
 		note: "",
 	});
 
-	useEffect(() => {
-		fetchData();
-		if (isEdit && id) {
-			fetchBooking(id);
-		}
-	}, [id, isEdit]);
-
-	const fetchData = async () => {
+	const fetchData = useCallback(async () => {
 		try {
 			const [locationsData, accountsData] = await Promise.all([
-				supabase.from("locations").select("*").eq("is_active", true),
-				supabase.from("accounts").select("*"),
+				supabase.from("locations").select("*").eq("tenant_id", tenant?.id || "").eq("is_active", true),
+				supabase.from("accounts").select("*").eq("tenant_id", tenant?.id || ""),
 			]);
 
 			setLocations(locationsData.data || []);
@@ -64,9 +59,9 @@ export default function BookingForm() {
 		} catch (error) {
 			console.error("Error fetching data:", error);
 		}
-	};
+	}, [tenant?.id]);
 
-	const fetchBooking = async (bookingId: string) => {
+	const fetchBooking = useCallback(async (bookingId: string) => {
 		try {
 			const { data, error } = await supabase
 				.from("bookings")
@@ -98,7 +93,14 @@ export default function BookingForm() {
 				variant: "destructive",
 			});
 		}
-	};
+	}, [toast]);
+
+	useEffect(() => {
+		fetchData();
+		if (isEdit && id) {
+			fetchBooking(id);
+		}
+	}, [id, isEdit, fetchData, fetchBooking]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();

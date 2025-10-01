@@ -12,9 +12,20 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { PhoneVerification } from "@/components/PhoneVerification";
 import {
 	Select,
 	SelectContent,
@@ -27,7 +38,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useProfile } from "@/hooks/useProfile";
 import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
-import { getCurrencyDetails, addCustomCurrency, removeCustomCurrency, updateCurrencyRate, getCurrencyConversionSearchUrl, type CurrencyRate } from "@/utils/currency";
+import {
+	getCurrencyDetails,
+	addCustomCurrency,
+	removeCustomCurrency,
+	updateCurrencyRate,
+	getCurrencyConversionSearchUrl,
+	type CurrencyRate,
+} from "@/utils/currency";
 
 type ExpenseType = {
 	id: string;
@@ -69,7 +87,7 @@ export default function Settings() {
 	const [newSubType, setNewSubType] = useState("");
 	const [newIncomeType, setNewIncomeType] = useState("");
 	const [currencyRates, setCurrencyRates] = useState<CurrencyRate[]>([]);
-	
+
 	// Custom currency form state
 	const [newCurrencyCode, setNewCurrencyCode] = useState("");
 	const [newCurrencyRate, setNewCurrencyRate] = useState<number>(1);
@@ -94,6 +112,22 @@ export default function Settings() {
 		phone: "",
 		email: "",
 	});
+
+	// Delete confirmation states
+	const [deleteExpenseConfirmOpen, setDeleteExpenseConfirmOpen] =
+		useState(false);
+	const [expenseTypeToDelete, setExpenseTypeToDelete] = useState<string | null>(
+		null,
+	);
+	const [deleteIncomeConfirmOpen, setDeleteIncomeConfirmOpen] = useState(false);
+	const [incomeTypeToDelete, setIncomeTypeToDelete] = useState<string | null>(
+		null,
+	);
+	const [clearBookingsConfirmOpen, setClearBookingsConfirmOpen] =
+		useState(false);
+	const [deleteCurrencyConfirmOpen, setDeleteCurrencyConfirmOpen] =
+		useState(false);
+	const [currencyToDelete, setCurrencyToDelete] = useState<string | null>(null);
 
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	useEffect(() => {
@@ -124,7 +158,10 @@ export default function Settings() {
 
 		setIsAddingCurrency(true);
 		try {
-			const result = await addCustomCurrency(newCurrencyCode.toUpperCase(), newCurrencyRate);
+			const result = await addCustomCurrency(
+				newCurrencyCode.toUpperCase(),
+				newCurrencyRate,
+			);
 			if (result.success) {
 				toast({
 					title: "Success",
@@ -178,13 +215,20 @@ export default function Settings() {
 		}
 	};
 
-	const deleteCurrency = async (currencyCode: string) => {
+	const deleteCurrency = (currencyCode: string) => {
+		setCurrencyToDelete(currencyCode);
+		setDeleteCurrencyConfirmOpen(true);
+	};
+
+	const confirmDeleteCurrency = async () => {
+		if (!currencyToDelete) return;
+
 		try {
-			const result = await removeCustomCurrency(currencyCode);
+			const result = await removeCustomCurrency(currencyToDelete);
 			if (result.success) {
 				toast({
 					title: "Success",
-					description: `${currencyCode} currency removed successfully`,
+					description: `${currencyToDelete} currency removed successfully`,
 				});
 				await fetchCurrencyRates();
 			} else {
@@ -201,6 +245,9 @@ export default function Settings() {
 				description: "Failed to remove currency",
 				variant: "destructive",
 			});
+		} finally {
+			setDeleteCurrencyConfirmOpen(false);
+			setCurrencyToDelete(null);
 		}
 	};
 
@@ -322,55 +369,71 @@ export default function Settings() {
 		}
 	};
 
-	const deleteExpenseType = async (id: string) => {
-		if (window.confirm("Are you sure you want to delete this expense type?")) {
-			try {
-				const { error } = await supabase
-					.from("expense_types")
-					.delete()
-					.eq("id", id);
-				if (error) throw error;
-				toast({
-					title: "Success",
-					description: "Expense type deleted successfully",
-				});
-				fetchExpenseTypes();
-			} catch (error) {
-				console.error("Error deleting expense type:", error);
-				toast({
-					title: "Error",
-					description: "Failed to delete expense type",
-					variant: "destructive",
-				});
-			}
+	const deleteExpenseType = (id: string) => {
+		setExpenseTypeToDelete(id);
+		setDeleteExpenseConfirmOpen(true);
+	};
+
+	const confirmDeleteExpenseType = async () => {
+		if (!expenseTypeToDelete) return;
+
+		try {
+			const { error } = await supabase
+				.from("expense_types")
+				.delete()
+				.eq("id", expenseTypeToDelete);
+			if (error) throw error;
+			toast({
+				title: "Success",
+				description: "Expense type deleted successfully",
+			});
+			fetchExpenseTypes();
+		} catch (error) {
+			console.error("Error deleting expense type:", error);
+			toast({
+				title: "Error",
+				description: "Failed to delete expense type",
+				variant: "destructive",
+			});
+		} finally {
+			setDeleteExpenseConfirmOpen(false);
+			setExpenseTypeToDelete(null);
 		}
 	};
 
-	const deleteIncomeType = async (id: string) => {
-		if (window.confirm("Are you sure you want to delete this income type?")) {
-			try {
-				const { error } = await supabase
-					.from("income_types")
-					.delete()
-					.eq("id", id);
-				if (error) throw error;
-				toast({
-					title: "Success",
-					description: "Income type deleted successfully",
-				});
-				fetchIncomeTypes();
-			} catch (error) {
-				console.error("Error deleting income type:", error);
-				toast({
-					title: "Error",
-					description: "Failed to delete income type",
-					variant: "destructive",
-				});
-			}
+	const deleteIncomeType = (id: string) => {
+		setIncomeTypeToDelete(id);
+		setDeleteIncomeConfirmOpen(true);
+	};
+
+	const confirmDeleteIncomeType = async () => {
+		if (!incomeTypeToDelete) return;
+
+		try {
+			const { error } = await supabase
+				.from("income_types")
+				.delete()
+				.eq("id", incomeTypeToDelete);
+			if (error) throw error;
+			toast({
+				title: "Success",
+				description: "Income type deleted successfully",
+			});
+			fetchIncomeTypes();
+		} catch (error) {
+			console.error("Error deleting income type:", error);
+			toast({
+				title: "Error",
+				description: "Failed to delete income type",
+				variant: "destructive",
+			});
+		} finally {
+			setDeleteIncomeConfirmOpen(false);
+			setIncomeTypeToDelete(null);
 		}
 	};
 
-	const clearLocationBookings = async () => {
+	const clearLocationBookings = () => {
 		if (!selectedLocationId) {
 			toast({
 				title: "Error",
@@ -380,36 +443,38 @@ export default function Settings() {
 			return;
 		}
 
+		setClearBookingsConfirmOpen(true);
+	};
+
+	const confirmClearBookings = async () => {
+		if (!selectedLocationId) return;
+
 		const selectedLocation = locations.find((l) => l.id === selectedLocationId);
 		if (!selectedLocation) return;
 
-		if (
-			window.confirm(
-				`Are you sure you want to clear ALL bookings for ${selectedLocation.name}? This action cannot be undone.`,
-			)
-		) {
-			try {
-				const { data, error } = await supabase.functions.invoke(
-					"clear-bookings",
-					{
-						body: { locationId: selectedLocationId },
-					},
-				);
+		try {
+			const { data, error } = await supabase.functions.invoke(
+				"clear-bookings",
+				{
+					body: { locationId: selectedLocationId },
+				},
+			);
 
-				if (error) throw error;
+			if (error) throw error;
 
-				toast({
-					title: "Success",
-					description: `Cleared ${data.deletedCount} bookings from ${selectedLocation.name}`,
-				});
-			} catch (error) {
-				console.error("Error clearing bookings:", error);
-				toast({
-					title: "Error",
-					description: "Failed to clear bookings",
-					variant: "destructive",
-				});
-			}
+			toast({
+				title: "Success",
+				description: `Cleared ${data.deletedCount} bookings from ${selectedLocation.name}`,
+			});
+		} catch (error) {
+			console.error("Error clearing bookings:", error);
+			toast({
+				title: "Error",
+				description: "Failed to clear bookings",
+				variant: "destructive",
+			});
+		} finally {
+			setClearBookingsConfirmOpen(false);
 		}
 	};
 
@@ -563,13 +628,37 @@ export default function Settings() {
 	return (
 		<div className="w-full pb-8 mx-auto p-6">
 			<Tabs defaultValue="profile" className="w-full">
-				<TabsList className="grid w-full grid-cols-6">
-					<TabsTrigger value="profile">Profile</TabsTrigger>
-					<TabsTrigger value="locations">Locations</TabsTrigger>
-					<TabsTrigger value="expenses">Expense Categories</TabsTrigger>
-					<TabsTrigger value="income">Income Types</TabsTrigger>
-					<TabsTrigger value="currency">Currency Settings</TabsTrigger>
-					<TabsTrigger value="bookings">Booking Management</TabsTrigger>
+				<TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1 h-auto p-1">
+					<TabsTrigger value="profile" className="text-xs sm:text-sm px-2 py-2">
+						Profile
+					</TabsTrigger>
+					<TabsTrigger
+						value="locations"
+						className="text-xs sm:text-sm px-2 py-2"
+					>
+						Locations
+					</TabsTrigger>
+					<TabsTrigger
+						value="expenses"
+						className="text-xs sm:text-sm px-2 py-2"
+					>
+						Expense Categories
+					</TabsTrigger>
+					<TabsTrigger value="income" className="text-xs sm:text-sm px-2 py-2">
+						Income Types
+					</TabsTrigger>
+					<TabsTrigger
+						value="currency"
+						className="text-xs sm:text-sm px-2 py-2"
+					>
+						Currency Settings
+					</TabsTrigger>
+					<TabsTrigger
+						value="bookings"
+						className="text-xs sm:text-sm px-2 py-2"
+					>
+						Booking Management
+					</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="profile">
@@ -649,6 +738,21 @@ export default function Settings() {
 							</div>
 						</CardContent>
 					</Card>
+
+					{/* Phone Verification Section */}
+					<div className="mt-4">
+						<PhoneVerification 
+							phone={profile?.phone}
+							isVerified={profile?.is_phone_verified || false}
+							onVerificationSuccess={() => {
+								refetchProfile();
+								toast({
+									title: "Phone verified",
+									description: "Your phone number has been successfully verified",
+								});
+							}}
+						/>
+					</div>
 				</TabsContent>
 
 				<TabsContent value="locations">
@@ -977,14 +1081,18 @@ export default function Settings() {
 										USD-Based Currency System
 									</h3>
 									<p className="text-sm text-blue-700 mb-4">
-										All currency conversions are based on USD exchange rates. Add custom currencies with their USD rates for automatic cross-currency conversions.
+										All currency conversions are based on USD exchange rates.
+										Add custom currencies with their USD rates for automatic
+										cross-currency conversions.
 									</p>
 								</div>
 
 								{/* Add New Currency */}
 								<Card>
 									<CardHeader>
-										<CardTitle className="text-lg">Add Custom Currency</CardTitle>
+										<CardTitle className="text-lg">
+											Add Custom Currency
+										</CardTitle>
 									</CardHeader>
 									<CardContent>
 										<div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -993,7 +1101,9 @@ export default function Settings() {
 												<Input
 													id="newCurrencyCode"
 													value={newCurrencyCode}
-													onChange={(e) => setNewCurrencyCode(e.target.value.toUpperCase())}
+													onChange={(e) =>
+														setNewCurrencyCode(e.target.value.toUpperCase())
+													}
 													placeholder="e.g. LKR, EUR, GBP"
 													maxLength={5}
 													className="uppercase"
@@ -1010,7 +1120,9 @@ export default function Settings() {
 													step="0.001"
 													min="0.001"
 													value={newCurrencyRate}
-													onChange={(e) => setNewCurrencyRate(Number(e.target.value))}
+													onChange={(e) =>
+														setNewCurrencyRate(Number(e.target.value))
+													}
 													placeholder="e.g. 300.50"
 												/>
 												<p className="text-xs text-muted-foreground">
@@ -1018,9 +1130,13 @@ export default function Settings() {
 												</p>
 											</div>
 											<div className="flex gap-2">
-												<Button 
-													onClick={addCurrency} 
-													disabled={isAddingCurrency || !newCurrencyCode.trim() || newCurrencyRate <= 0}
+												<Button
+													onClick={addCurrency}
+													disabled={
+														isAddingCurrency ||
+														!newCurrencyCode.trim() ||
+														newCurrencyRate <= 0
+													}
 													className="flex-1"
 												>
 													{isAddingCurrency ? "Adding..." : "Add Currency"}
@@ -1030,7 +1146,12 @@ export default function Settings() {
 														type="button"
 														variant="outline"
 														size="sm"
-														onClick={() => window.open(getCurrencyConversionSearchUrl(newCurrencyCode), '_blank')}
+														onClick={() =>
+															window.open(
+																getCurrencyConversionSearchUrl(newCurrencyCode),
+																"_blank",
+															)
+														}
 														title={`Search USD to ${newCurrencyCode} conversion rate`}
 													>
 														Search Rate
@@ -1044,18 +1165,21 @@ export default function Settings() {
 								{/* Current Currencies */}
 								<Card>
 									<CardHeader>
-										<CardTitle className="text-lg">Current Currencies</CardTitle>
+										<CardTitle className="text-lg">
+											Current Currencies
+										</CardTitle>
 									</CardHeader>
 									<CardContent>
 										<div className="space-y-4">
 											{currencyRates.length === 0 ? (
 												<p className="text-muted-foreground text-center py-8">
-													No currencies found. Add a custom currency to get started.
+													No currencies found. Add a custom currency to get
+													started.
 												</p>
 											) : (
 												currencyRates.map((currency) => (
-													<div 
-														key={currency.currency_code} 
+													<div
+														key={currency.currency_code}
 														className="flex items-center justify-between p-4 border rounded-lg"
 													>
 														<div className="flex items-center gap-4">
@@ -1063,12 +1187,11 @@ export default function Settings() {
 																{currency.currency_code}
 															</div>
 															<div className="text-sm text-muted-foreground">
-																{currency.currency_code === "USD" 
-																	? "US Dollar (Base Currency)" 
-																	: currency.is_custom 
-																		? "Custom Currency" 
-																		: currency.currency_code
-																}
+																{currency.currency_code === "USD"
+																	? "US Dollar (Base Currency)"
+																	: currency.is_custom
+																		? "Custom Currency"
+																		: currency.currency_code}
 															</div>
 														</div>
 														<div className="flex items-center gap-4">
@@ -1077,7 +1200,10 @@ export default function Settings() {
 																	1 USD = {currency.usd_rate}
 																</div>
 																<div className="text-xs text-muted-foreground">
-																	Last updated: {new Date(currency.updated_at).toLocaleDateString()}
+																	Last updated:{" "}
+																	{new Date(
+																		currency.updated_at,
+																	).toLocaleDateString()}
 																</div>
 															</div>
 															<div className="flex gap-2">
@@ -1089,10 +1215,13 @@ export default function Settings() {
 																			onClick={() => {
 																				const newRate = prompt(
 																					`Enter new USD rate for ${currency.currency_code}:`,
-																					currency.usd_rate.toString()
+																					currency.usd_rate.toString(),
 																				);
 																				if (newRate && Number(newRate) > 0) {
-																					updateCurrency(currency.currency_code, Number(newRate));
+																					updateCurrency(
+																						currency.currency_code,
+																						Number(newRate),
+																					);
 																				}
 																			}}
 																		>
@@ -1101,7 +1230,14 @@ export default function Settings() {
 																		<Button
 																			variant="outline"
 																			size="sm"
-																			onClick={() => window.open(getCurrencyConversionSearchUrl(currency.currency_code), '_blank')}
+																			onClick={() =>
+																				window.open(
+																					getCurrencyConversionSearchUrl(
+																						currency.currency_code,
+																					),
+																					"_blank",
+																				)
+																			}
 																			title={`Search USD to ${currency.currency_code} conversion rate`}
 																		>
 																			Search
@@ -1111,9 +1247,10 @@ export default function Settings() {
 																				variant="outline"
 																				size="sm"
 																				onClick={() => {
-																					if (confirm(`Are you sure you want to delete ${currency.currency_code}?`)) {
-																						deleteCurrency(currency.currency_code);
-																					}
+																					setCurrencyToDelete(
+																						currency.currency_code,
+																					);
+																					setDeleteCurrencyConfirmOpen(true);
 																				}}
 																			>
 																				<Trash2 className="size-4" />
@@ -1135,11 +1272,24 @@ export default function Settings() {
 										Important Notes
 									</h4>
 									<ul className="text-sm text-amber-700 space-y-1">
-										<li>• USD is the base currency and cannot be modified or deleted</li>
-										<li>• All currency conversions are calculated via USD rates</li>
-										<li>• Use the "Search Rate" button to find current exchange rates on Google</li>
-										<li>• Custom currencies can be edited or deleted anytime</li>
-										<li>• Changes apply to all reports and calculations immediately</li>
+										<li>
+											• USD is the base currency and cannot be modified or
+											deleted
+										</li>
+										<li>
+											• All currency conversions are calculated via USD rates
+										</li>
+										<li>
+											• Use the "Search Rate" button to find current exchange
+											rates on Google
+										</li>
+										<li>
+											• Custom currencies can be edited or deleted anytime
+										</li>
+										<li>
+											• Changes apply to all reports and calculations
+											immediately
+										</li>
 									</ul>
 								</div>
 							</div>
@@ -1201,6 +1351,119 @@ export default function Settings() {
 					</Card>
 				</TabsContent>
 			</Tabs>
+
+			{/* Delete Expense Type Confirmation */}
+			<AlertDialog
+				open={deleteExpenseConfirmOpen}
+				onOpenChange={setDeleteExpenseConfirmOpen}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete Expense Type</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to delete this expense type? This action
+							cannot be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={confirmDeleteExpenseType}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							Delete
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			{/* Delete Income Type Confirmation */}
+			<AlertDialog
+				open={deleteIncomeConfirmOpen}
+				onOpenChange={setDeleteIncomeConfirmOpen}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete Income Type</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to delete this income type? This action
+							cannot be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={confirmDeleteIncomeType}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							Delete
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			{/* Clear Bookings Confirmation */}
+			<AlertDialog
+				open={clearBookingsConfirmOpen}
+				onOpenChange={setClearBookingsConfirmOpen}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Clear All Bookings</AlertDialogTitle>
+						<AlertDialogDescription>
+							{selectedLocationId &&
+								locations.find((l) => l.id === selectedLocationId) && (
+									<>
+										Are you sure you want to clear ALL bookings for{" "}
+										<strong>
+											{locations.find((l) => l.id === selectedLocationId)?.name}
+										</strong>
+										? This action cannot be undone.
+									</>
+								)}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={confirmClearBookings}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							Clear All Bookings
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			{/* Delete Currency Confirmation */}
+			<AlertDialog
+				open={deleteCurrencyConfirmOpen}
+				onOpenChange={setDeleteCurrencyConfirmOpen}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete Currency</AlertDialogTitle>
+						<AlertDialogDescription>
+							{currencyToDelete && (
+								<>
+									Are you sure you want to delete{" "}
+									<strong>{currencyToDelete}</strong>? This action cannot be
+									undone.
+								</>
+							)}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={confirmDeleteCurrency}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							Delete
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

@@ -18,7 +18,7 @@ import {
 	Users,
 	Zap,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -169,11 +169,6 @@ export default function Onboarding() {
 		// Check if user already has a tenant (returning user with no locations)
 		if (profile?.tenant_id && tenant) {
 			setHasExistingTenant(true);
-			// Pre-fill company name from existing tenant
-			setFormData((prev) => ({
-				...prev,
-				companyName: tenant.name || prev.companyName,
-			}));
 		}
 
 		// Pre-fill user email if available
@@ -209,6 +204,24 @@ export default function Onboarding() {
 		fetchPlans();
 	}, [user, navigate, formData.email, toast, profile?.tenant_id, tenant]);
 
+	useEffect(() => {
+		if (hasExistingTenant) {
+			navigate("/dashboard");
+		}
+	}, [hasExistingTenant, navigate]);
+
+	// Early return for users with existing tenant - don't render onboarding UI
+	if (hasExistingTenant) {
+		return (
+			<div className="min-h-screen bg-background flex items-center justify-center">
+				<div className="text-center">
+					<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+					<p className="text-muted-foreground">Redirecting to dashboard...</p>
+				</div>
+			</div>
+		);
+	}
+
 	const handleNext = () => {
 		if (currentStep < STEPS.length) {
 			setCurrentStep(currentStep + 1);
@@ -230,85 +243,6 @@ export default function Onboarding() {
 				? prev.selectedFeatures.filter((id) => id !== featureId)
 				: [...prev.selectedFeatures, featureId],
 		}));
-	};
-
-	// Simplified location creation for users who already have a tenant
-	const createLocationForExistingTenant = async () => {
-		if (!tenant || !user) return;
-
-		try {
-			setLoading(true);
-
-			// Validate required fields
-			if (!formData.companyName.trim()) {
-				toast({
-					title: "Validation Error",
-					description: "Location name is required",
-					variant: "destructive",
-				});
-				return;
-			}
-
-			// Create location for existing tenant
-			const { data: location, error: locationError } = await supabase
-				.from("locations")
-				.insert({
-					name: formData.companyName.trim(),
-					tenant_id: tenant.id,
-					is_active: true,
-					property_type: formData.propertyType || "hotel",
-				})
-				.select()
-				.single();
-
-			if (locationError) throw locationError;
-
-			// Create user permissions for the new location
-			const { error: permissionsError } = await supabase
-				.from("user_permissions")
-				.insert([
-					{
-						user_id: user.id,
-						tenant_id: tenant.id,
-						location_id: location.id,
-						tenant_role: "tenant_admin",
-						is_tenant_admin: true,
-						// Grant all permissions
-						access_dashboard: true,
-						access_calendar: true,
-						access_bookings: true,
-						access_income: true,
-						access_expenses: true,
-						access_reports: true,
-						access_accounts: true,
-						access_master_files: true,
-						access_booking_channels: true,
-						access_rooms: true,
-						access_users: true,
-						access_settings: true,
-					},
-				]);
-
-			if (permissionsError) throw permissionsError;
-
-			toast({
-				title: "Location Created! 🎉",
-				description: `${formData.companyName} has been added successfully.`,
-			});
-
-			// Redirect to dashboard
-			navigate("/dashboard");
-		} catch (error: any) {
-			console.error("Location creation error:", error);
-			toast({
-				title: "Creation Error",
-				description:
-					error.message || "Failed to create location. Please try again.",
-				variant: "destructive",
-			});
-		} finally {
-			setLoading(false);
-		}
 	};
 
 	const handlePlanSelect = (planId: string) => {
@@ -939,7 +873,7 @@ export default function Onboarding() {
 										key={plan.id}
 										className={`cursor-pointer transition-all hover:shadow-md ${
 											selectedPlanId === plan.id
-												? "ring-2 ring-primary bg-primary/5"
+												? "ring-0 ring-primary bg-primary/5"
 												: "hover:border-primary/50"
 										}`}
 										onClick={() => handlePlanSelect(plan.id)}
@@ -1081,162 +1015,79 @@ export default function Onboarding() {
 	return (
 		<div className="min-h-screen bg-background p-4">
 			<div className="max-w-4xl mx-auto">
-				{/* Simplified form for users who already have a tenant */}
-				{hasExistingTenant ? (
-					<div className="pt-8">
-						<Card className="max-w-2xl mx-auto">
-							<CardHeader className="text-center">
-								<CardTitle className="text-2xl mb-2">
-									Add New Location
-								</CardTitle>
-								<p className="text-muted-foreground">
-									You need to create at least one location to continue using the
-									system.
-								</p>
-							</CardHeader>
-							<CardContent className="space-y-6">
-								<div className="space-y-4">
-									<div>
-										<Label htmlFor="locationName">Location Name</Label>
-										<Input
-											id="locationName"
-											placeholder="e.g., Main Hotel, Downtown Branch"
-											value={formData.companyName}
-											onChange={(e) =>
-												setFormData((prev) => ({
-													...prev,
-													companyName: e.target.value,
-												}))
-											}
-										/>
-									</div>
-
-									<div>
-										<Label htmlFor="propertyType">Property Type</Label>
-										<Select
-											value={formData.propertyType}
-											onValueChange={(value) =>
-												setFormData((prev) => ({
-													...prev,
-													propertyType: value,
-												}))
-											}
-										>
-											<SelectTrigger>
-												<SelectValue placeholder="Select property type" />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="hotel">Hotel</SelectItem>
-												<SelectItem value="villa">Villa</SelectItem>
-												<SelectItem value="apartment">Apartment</SelectItem>
-												<SelectItem value="guesthouse">Guest House</SelectItem>
-												<SelectItem value="hostel">Hostel</SelectItem>
-												<SelectItem value="resort">Resort</SelectItem>
-												<SelectItem value="other">Other</SelectItem>
-											</SelectContent>
-										</Select>
-									</div>
+				{/* Progress Header */}
+				<div className="text-center mb-8 pt-8">
+					<div className="flex items-center justify-center gap-4 mb-4">
+						{STEPS.map((step) => (
+							<div key={step.id} className="flex items-center">
+								<div
+									className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+										currentStep >= step.id
+											? "bg-primary text-primary-foreground border-primary"
+											: "border-muted-foreground text-muted-foreground"
+									}`}
+								>
+									{currentStep > step.id ? (
+										<CheckCircle className="size-4" />
+									) : (
+										step.id
+									)}
 								</div>
-
-								<div className="flex gap-3 pt-4">
-									<Button
-										variant="outline"
-										onClick={() => navigate("/dashboard")}
-										className="flex-1"
-									>
-										Cancel
-									</Button>
-									<Button
-										onClick={createLocationForExistingTenant}
-										disabled={loading || !formData.companyName.trim()}
-										className="flex-1"
-									>
-										{loading ? "Creating..." : "Create Location"}
-									</Button>
-								</div>
-							</CardContent>
-						</Card>
+								{step.id < STEPS.length && (
+									<div
+										className={`w-12 h-0.5 mx-2 ${
+											currentStep > step.id
+												? "bg-primary"
+												: "bg-muted-foreground/30"
+										}`}
+									/>
+								)}
+							</div>
+						))}
 					</div>
-				) : (
-					<>
-						{/* Original onboarding flow for new users */}
-						{/* Progress Header */}
-						<div className="text-center mb-8 pt-8">
-							<div className="flex items-center justify-center gap-4 mb-4">
-								{STEPS.map((step) => (
-									<div key={step.id} className="flex items-center">
-										<div
-											className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-												currentStep >= step.id
-													? "bg-primary text-primary-foreground border-primary"
-													: "border-muted-foreground text-muted-foreground"
-											}`}
-										>
-											{currentStep > step.id ? (
-												<CheckCircle className="size-4" />
-											) : (
-												step.id
-											)}
-										</div>
-										{step.id < STEPS.length && (
-											<div
-												className={`w-12 h-0.5 mx-2 ${
-													currentStep > step.id
-														? "bg-primary"
-														: "bg-muted-foreground/30"
-												}`}
-											/>
-										)}
-									</div>
-								))}
-							</div>
 
-							<Progress
-								value={(currentStep / STEPS.length) * 100}
-								className="w-full max-w-md mx-auto mb-2"
-							/>
-							<p className="text-sm text-muted-foreground">
-								Step {currentStep} of {STEPS.length}:{" "}
-								{STEPS[currentStep - 1]?.description}
-							</p>
-						</div>
+					<Progress
+						value={(currentStep / STEPS.length) * 100}
+						className="w-full max-w-md mx-auto mb-2"
+					/>
+					<p className="text-sm text-muted-foreground">
+						Step {currentStep} of {STEPS.length}:{" "}
+						{STEPS[currentStep - 1]?.description}
+					</p>
+				</div>
 
-						{/* Main Content */}
-						<Card className="bg-card border">
-							<CardHeader className="pb-6">
-								<CardTitle className="text-center text-2xl">
-									{STEPS[currentStep - 1]?.title}
-								</CardTitle>
-							</CardHeader>
-							<CardContent className="px-8 pb-8">
-								{renderStepContent()}
-							</CardContent>
-						</Card>
+				{/* Main Content */}
+				<Card className="bg-card border">
+					<CardHeader className="pb-6">
+						<CardTitle className="text-center text-2xl">
+							{STEPS[currentStep - 1]?.title}
+						</CardTitle>
+					</CardHeader>
+					<CardContent className="px-8 pb-8">{renderStepContent()}</CardContent>
+				</Card>
 
-						{/* Navigation */}
-						{currentStep < 5 && (
-							<div className="flex justify-between items-center mt-6">
-								<Button
-									variant="outline"
-									onClick={handlePrevious}
-									disabled={currentStep === 1}
-									className="flex items-center gap-2"
-								>
-									<ArrowLeft className="size-4" />
-									Previous
-								</Button>
+				{/* Navigation */}
+				{currentStep < 5 && (
+					<div className="flex justify-between items-center mt-6">
+						<Button
+							variant="outline"
+							onClick={handlePrevious}
+							disabled={currentStep === 1}
+							className="flex items-center gap-2"
+						>
+							<ArrowLeft className="size-4" />
+							Previous
+						</Button>
 
-								<Button
-									onClick={handleNext}
-									disabled={!validateStep()}
-									className="flex items-center gap-2"
-								>
-									Next Step
-									<ArrowRight className="size-4" />
-								</Button>
-							</div>
-						)}
-					</>
+						<Button
+							onClick={handleNext}
+							disabled={!validateStep()}
+							className="flex items-center gap-2"
+						>
+							Next Step
+							<ArrowRight className="size-4" />
+						</Button>
+					</div>
 				)}
 			</div>
 		</div>

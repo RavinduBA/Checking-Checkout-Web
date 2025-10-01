@@ -1,4 +1,4 @@
-import { Edit, Settings, Shield, Trash2, User, UserCheck } from "lucide-react";
+import { Edit, Shield, Trash2, User, UserCheck } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,16 +31,10 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
-import {
-	getInvitations,
-	resendInvitation,
-	revokeInvitation,
-} from "@/lib/invitations";
 import {
 	inviteUserToLocation,
 	type LocationPermissions,
-} from "@/lib/multi-location-invitations";
+} from "@/lib/invite";
 import { useLocationContext } from "@/context/LocationContext";
 
 interface UserPermissions {
@@ -56,7 +50,6 @@ interface UserPermissions {
 	users: boolean;
 	settings: boolean;
 	booking_channels: boolean;
-	is_admin?: boolean;
 }
 
 interface RpcResponse {
@@ -75,11 +68,6 @@ interface User {
 	name: string;
 	email: string;
 	permissions: Record<string, UserPermissions>;
-	tenant_role:
-		| "tenant_admin"
-		| "tenant_billing"
-		| "tenant_manager"
-		| "tenant_staff";
 	is_tenant_admin: boolean;
 	created_at: string;
 }
@@ -88,8 +76,6 @@ interface Location {
 	id: string;
 	name: string;
 }
-
-type UserInvitation = Database["public"]["Tables"]["user_invitations"]["Row"];
 
 const permissionTypes = [
 	{ key: "dashboard", label: "Dashboard Access" },
@@ -108,13 +94,10 @@ const permissionTypes = [
 
 export default function Users() {
 	const [users, setUsers] = useState<User[]>([]);
-	const [invitations, setInvitations] = useState<UserInvitation[]>([]);
 	const [showInviteUser, setShowInviteUser] = useState(false);
 	const [loading, setLoading] = useState(true);
-	const [invitationsLoading, setInvitationsLoading] = useState(false);
 
 	const [inviteEmail, setInviteEmail] = useState("");
-	const [inviteRole, setInviteRole] = useState("staff");
 	const [inviteLocationId, setInviteLocationId] = useState("");
 	const [invitePermissions, setInvitePermissions] = useState({
 		access_dashboard: true,
@@ -139,115 +122,86 @@ export default function Users() {
 	const { selectedLocation, getSelectedLocationData, locations } =
 		useLocationContext();
 
-	const fetchInvitations = useCallback(async () => {
-		if (!tenant?.id) return;
-
-		try {
-			setInvitationsLoading(true);
-			const result = await getInvitations(tenant.id);
-			if (result.success) {
-				setInvitations(result.data || []);
-			} else {
-				console.error("Error fetching invitations:", result.error);
-			}
-		} catch (error) {
-			console.error("Exception fetching invitations:", error);
-		} finally {
-			setInvitationsLoading(false);
-		}
-	}, [tenant?.id]);
-
 	const fetchData = useCallback(async () => {
+		if (!tenant?.id) {
+			setLoading(false);
+			return;
+		}
+
 		try {
 			setLoading(true);
 
-			// Fetch users with permissions
-			const { data: profilesData, error: profilesError } = await supabase
-				.from("profiles")
-				.select("*")
-				.order("created_at", { ascending: false });
+			// Fetch users with permissions for the current tenant
+			// First get all user_permissions for this tenant to find which users have access
+			const { data: tenantPermissions, error: permissionsError } = await supabase
+				.from("user_permissions")
+				.select(`
+					user_id,
+					location_id,
+					access_dashboard,
+					access_income,
+					access_expenses,
+					access_reports,
+					access_calendar,
+					access_bookings,
+					access_rooms,
+					access_master_files,
+					access_accounts,
+					access_users,
+					access_settings,
+					access_booking_channels,
+					profiles!inner(id, name, email, tenant_id, is_tenant_admin, created_at),
+					locations!inner(id, name, is_active)
+				`)
+				.eq("tenant_id", tenant.id)
+				.eq("locations.is_active", true);
 
-			if (profilesError) throw profilesError;
+			if (permissionsError) throw permissionsError;
 
-			console.log("Fetched profiles data:", profilesData);
+			console.log("Fetched tenant permissions data:", tenantPermissions);
 
-			// Get permissions for each user - but only for active locations
-			const usersWithPermissions = await Promise.all(
-				(profilesData || []).map(async (profile) => {
-					try {
-						// Get permissions directly from user_permissions table, filtered by active locations
-						const { data: userPermsData, error: userPermsError } =
-							await supabase
-								.from("user_permissions")
-								.select(`
-                *,
-                locations!inner(id, name, is_active)
-              `)
-								.eq("user_id", profile.id)
-								.eq("locations.is_active", true);
+			// Group permissions by user and filter by selected location if needed
+			const userPermissionsMap = new Map<string, any>();
+			
+			(tenantPermissions || []).forEach((perm: any) => {
+				const userId = perm.user_id;
+				const profile = perm.profiles;
+				const location = perm.locations;
+				
+				// If a specific location is selected, only show users with access to that location
+				if (selectedLocation !== "all" && location.id !== selectedLocation) {
+					return;
+				}
+				
+				if (!userPermissionsMap.has(userId)) {
+					userPermissionsMap.set(userId, {
+						...profile,
+						permissions: {},
+						is_tenant_admin: profile.is_tenant_admin || false,
+					});
+				}
+				
+				const userRecord = userPermissionsMap.get(userId);
+				userRecord.permissions[location.name] = {
+					dashboard: perm.access_dashboard || false,
+					income: perm.access_income || false,
+					expenses: perm.access_expenses || false,
+					reports: perm.access_reports || false,
+					calendar: perm.access_calendar || false,
+					bookings: perm.access_bookings || false,
+					rooms: perm.access_rooms || false,
+					master_files: perm.access_master_files || false,
+					accounts: perm.access_accounts || false,
+					users: perm.access_users || false,
+					settings: perm.access_settings || false,
+					booking_channels: perm.access_booking_channels || false,
+				};
+			});
 
-						if (userPermsError) {
-							console.error("Error fetching user permissions:", userPermsError);
-						}
-
-						// Transform permissions data
-						const permissions: Record<string, UserPermissions> = {};
-						let isUserAdmin = false;
-						if (userPermsData) {
-							userPermsData.forEach((perm: any) => {
-								if (perm.locations) {
-									permissions[perm.locations.name] = {
-										dashboard: perm.access_dashboard || false,
-										income: perm.access_income || false,
-										expenses: perm.access_expenses || false,
-										reports: perm.access_reports || false,
-										calendar: perm.access_calendar || false,
-										bookings: perm.access_bookings || false,
-										rooms: perm.access_rooms || false,
-										master_files: perm.access_master_files || false,
-										accounts: perm.access_accounts || false,
-										users: perm.access_users || false,
-										settings: perm.access_settings || false,
-										booking_channels: perm.access_booking_channels || false,
-										is_admin: perm.is_admin || false,
-									};
-									// Check if user is admin in any location
-									if (perm.is_admin) {
-										isUserAdmin = true;
-									}
-								}
-							});
-						}
-
-						return {
-							...profile,
-							permissions,
-							tenant_role: (profile as any).tenant_role || "tenant_staff",
-							is_tenant_admin: (profile as any).is_tenant_admin || false,
-						};
-					} catch (error) {
-						console.error(
-							"Error processing user permissions for",
-							profile.email,
-							error,
-						);
-						return {
-							...profile,
-							permissions: {},
-							tenant_role: (profile as any).tenant_role || "tenant_staff",
-							is_tenant_admin: (profile as any).is_tenant_admin || false,
-						};
-					}
-				}),
-			);
+			const usersWithPermissions = Array.from(userPermissionsMap.values());
 
 			setUsers(usersWithPermissions);
 			console.log("Updated users state:", usersWithPermissions);
-
-			// Fetch invitations if tenant exists
-			if (tenant?.id) {
-				await fetchInvitations();
-			}
 		} catch (error: any) {
 			console.error("Error fetching data:", error);
 			toast({
@@ -258,7 +212,7 @@ export default function Users() {
 		} finally {
 			setLoading(false);
 		}
-	}, [toast, tenant, fetchInvitations]);
+	}, [toast, tenant?.id, selectedLocation]);
 
 	// Invitation handlers
 	const handleInviteMember = async (e: React.FormEvent) => {
@@ -318,9 +272,8 @@ export default function Users() {
 				email: inviteEmail,
 				tenantId: tenant.id,
 				locationId: inviteLocationId,
-				invitedBy: currentUser.id,
+				addedBy: currentUser.id,
 				permissions: locationPermissions,
-				role: inviteRole,
 			});
 
 			if (result.success) {
@@ -334,7 +287,6 @@ export default function Users() {
 					duration: 5000,
 				});
 				setInviteEmail("");
-				setInviteRole("staff");
 				setInviteLocationId("");
 				setInvitePermissions({
 					access_dashboard: true,
@@ -350,7 +302,6 @@ export default function Users() {
 					access_settings: false,
 					access_booking_channels: false,
 				});
-				await fetchInvitations();
 				await fetchData(); // Refresh user list to show new permissions
 			} else {
 				toast({
@@ -363,64 +314,6 @@ export default function Users() {
 			toast({
 				title: "Error",
 				description: error.message || "Failed to send invitation",
-				variant: "destructive",
-			});
-		} finally {
-			setInviteLoading(false);
-		}
-	};
-
-	const handleResendInvitation = async (invitationEmail: string) => {
-		try {
-			setInviteLoading(true);
-			const result = await resendInvitation(invitationEmail);
-
-			if (result.success) {
-				toast({
-					title: "Invitation Resent",
-					description: `A new invitation has been sent to ${invitationEmail}.`,
-					duration: 5000,
-				});
-			} else {
-				toast({
-					title: "Error",
-					description: result.error || "Failed to resend invitation",
-					variant: "destructive",
-				});
-			}
-		} catch (error: any) {
-			toast({
-				title: "Error",
-				description: error.message || "Failed to resend invitation",
-				variant: "destructive",
-			});
-		} finally {
-			setInviteLoading(false);
-		}
-	};
-
-	const handleRevokeInvitation = async (invitationId: string) => {
-		try {
-			setInviteLoading(true);
-			const result = await revokeInvitation(invitationId);
-
-			if (result.success) {
-				toast({
-					title: "Invitation Revoked",
-					description: "Invitation has been revoked successfully",
-				});
-				await fetchInvitations();
-			} else {
-				toast({
-					title: "Error",
-					description: result.error || "Failed to revoke invitation",
-					variant: "destructive",
-				});
-			}
-		} catch (error: any) {
-			toast({
-				title: "Error",
-				description: error.message || "Failed to revoke invitation",
 				variant: "destructive",
 			});
 		} finally {
@@ -557,7 +450,7 @@ export default function Users() {
 					p_user_id: editingUser.id,
 					p_tenant_id: tenant.id,
 					p_name: editingUser.name,
-					p_tenant_role: editingUser.tenant_role,
+					p_tenant_role: "tenant_staff" as any, // TODO: Remove role system from database
 					p_is_tenant_admin: editingUser.is_tenant_admin || false,
 				},
 			);
@@ -672,56 +565,6 @@ export default function Users() {
 										</div>
 									</div>
 
-									<div className="space-y-2">
-										<Label className="text-sm font-medium">User Role</Label>
-										<Select
-											value={editingUser.tenant_role}
-											onValueChange={(
-												value:
-													| "tenant_admin"
-													| "tenant_billing"
-													| "tenant_manager"
-													| "tenant_staff",
-											) =>
-												setEditingUser({
-													...editingUser,
-													tenant_role: value,
-													is_tenant_admin: value === "tenant_admin",
-												})
-											}
-										>
-											<SelectTrigger>
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="tenant_admin">
-													<div className="flex items-center gap-2">
-														<Shield className="h-4 w-4" />
-														Tenant Administrator
-													</div>
-												</SelectItem>
-												<SelectItem value="tenant_billing">
-													<div className="flex items-center gap-2">
-														<Settings className="h-4 w-4" />
-														Billing Manager
-													</div>
-												</SelectItem>
-												<SelectItem value="tenant_manager">
-													<div className="flex items-center gap-2">
-														<UserCheck className="h-4 w-4" />
-														Manager
-													</div>
-												</SelectItem>
-												<SelectItem value="tenant_staff">
-													<div className="flex items-center gap-2">
-														<User className="h-4 w-4" />
-														Staff
-													</div>
-												</SelectItem>
-											</SelectContent>
-										</Select>
-									</div>
-
 									<div className="space-y-4">
 										<Label className="text-base font-semibold">
 											Location Permissions
@@ -822,19 +665,6 @@ export default function Users() {
 													{location.name}
 												</SelectItem>
 											))}
-										</SelectContent>
-									</Select>
-								</div>
-								<div>
-									<Label htmlFor="inviteRole">Role</Label>
-									<Select value={inviteRole} onValueChange={setInviteRole}>
-										<SelectTrigger>
-											<SelectValue placeholder="Select role" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="staff">Staff</SelectItem>
-											<SelectItem value="manager">Manager</SelectItem>
-											<SelectItem value="admin">Admin</SelectItem>
 										</SelectContent>
 									</Select>
 								</div>
@@ -1052,62 +882,6 @@ export default function Users() {
 						</CardHeader>
 					</Card>
 				)}
-
-				{/* Pending Invitations */}
-				<Card>
-					<CardHeader>
-						<CardTitle>Pending Invitations</CardTitle>
-						<CardDescription>
-							Invitations that have not been accepted yet
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{invitationsLoading ? (
-							<div className="flex justify-center items-center h-20">
-								<div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
-							</div>
-						) : invitations.length === 0 ? (
-							<p className="text-sm text-muted-foreground">
-								No pending invitations
-							</p>
-						) : (
-							<div className="space-y-3">
-								{invitations.map((invitation) => (
-									<div
-										key={invitation.id}
-										className="flex items-center justify-between p-3 border rounded-lg"
-									>
-										<div>
-											<p className="font-medium">{invitation.email}</p>
-											<p className="text-sm text-muted-foreground">
-												Role: {invitation.role} • Sent{" "}
-												{new Date(invitation.created_at).toLocaleDateString()}
-											</p>
-										</div>
-										<div className="flex space-x-2">
-											<Button
-												variant="outline"
-												size="sm"
-												onClick={() => handleResendInvitation(invitation.email)}
-												disabled={inviteLoading}
-											>
-												Resend
-											</Button>
-											<Button
-												variant="destructive"
-												size="sm"
-												onClick={() => handleRevokeInvitation(invitation.id)}
-												disabled={inviteLoading}
-											>
-												Revoke
-											</Button>
-										</div>
-									</div>
-								))}
-							</div>
-						)}
-					</CardContent>
-				</Card>
 			</div>
 
 			{/* Users List */}
@@ -1133,17 +907,16 @@ export default function Users() {
 										className="flex items-center gap-1"
 									>
 										{user.is_tenant_admin ? (
-											<Shield className="h-3 w-3" />
+											<>
+												<Shield className="h-3 w-3" />
+												Administrator
+											</>
 										) : (
-											<UserCheck className="h-3 w-3" />
+											<>
+												<UserCheck className="h-3 w-3" />
+												User
+											</>
 										)}
-										{user.tenant_role === "tenant_admin"
-											? "Administrator"
-											: user.tenant_role === "tenant_billing"
-												? "Billing Manager"
-												: user.tenant_role === "tenant_manager"
-													? "Manager"
-													: "Staff"}
 									</Badge>
 									<Button
 										variant="ghost"

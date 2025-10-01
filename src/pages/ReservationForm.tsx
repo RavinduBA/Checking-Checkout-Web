@@ -41,9 +41,9 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useAutoLocation } from "@/hooks/useAutoLocation";
 import { useAvailability } from "@/hooks/useAvailability";
 import { useTenant } from "@/hooks/useTenant";
+import { useLocationContext } from "@/context/LocationContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -58,12 +58,7 @@ export default function ReservationForm() {
 	const { toast } = useToast();
 	const { tenant } = useTenant();
 	const [searchParams] = useSearchParams();
-	const {
-		autoSelectedLocation,
-		shouldShowLocationSelect,
-		availableLocations,
-		loading: locationLoading,
-	} = useAutoLocation();
+	const { locations: availableLocations, loading: locationLoading } = useLocationContext();
 	const isEdit = Boolean(id);
 
 	const [rooms, setRooms] = useState<Room[]>([]);
@@ -89,7 +84,7 @@ export default function ReservationForm() {
 	const [availabilityLoading, setAvailabilityLoading] = useState(false);
 
 	const [formData, setFormData] = useState({
-		location_id: searchParams.get("location") || autoSelectedLocation || "",
+		location_id: searchParams.get("location") || "",
 		room_id: searchParams.get("room") || "",
 		guest_name: "",
 		guest_email: "",
@@ -131,26 +126,6 @@ export default function ReservationForm() {
 		agency_name: "",
 		commission_rate: 15,
 	});
-
-	useEffect(() => {
-		if (!locationLoading) {
-			fetchInitialData();
-			if (isEdit && id) {
-				fetchReservation();
-			}
-		}
-	}, [isEdit, id, locationLoading]);
-
-	useEffect(() => {
-		// Auto-select location if user has access to only one
-		if (
-			autoSelectedLocation &&
-			!shouldShowLocationSelect &&
-			!formData.location_id
-		) {
-			setFormData((prev) => ({ ...prev, location_id: autoSelectedLocation }));
-		}
-	}, [autoSelectedLocation, shouldShowLocationSelect, formData.location_id]);
 
 	useEffect(() => {
 		const total = formData.room_rate * formData.nights;
@@ -234,6 +209,15 @@ export default function ReservationForm() {
 			setLoading(false);
 		}
 	}, [id, toast]);
+
+	useEffect(() => {
+		if (!locationLoading) {
+			fetchInitialData();
+			if (isEdit && id) {
+				fetchReservation();
+			}
+		}
+	}, [isEdit, id, locationLoading, fetchInitialData, fetchReservation]);
 
 	const calculateNights = (checkIn: string, checkOut: string) => {
 		if (!checkIn || !checkOut) return 1;
@@ -717,8 +701,7 @@ export default function ReservationForm() {
 							<CardContent className="space-y-6">
 								{/* Location & Room Selection */}
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-									{shouldShowLocationSelect ? (
-										<div>
+									<div>
 											<Label htmlFor="location_id">Location *</Label>
 											<Select
 												value={formData.location_id}
@@ -738,16 +721,6 @@ export default function ReservationForm() {
 												</SelectContent>
 											</Select>
 										</div>
-									) : (
-										<div>
-											<Label>Location</Label>
-											<div className="px-3 py-2 bg-muted rounded-md h-11 flex items-center">
-												{availableLocations.find(
-													(l) => l.id === autoSelectedLocation,
-												)?.name || "Auto-selected"}
-											</div>
-										</div>
-									)}
 
 									<div>
 										<Label htmlFor="room_id">Room *</Label>

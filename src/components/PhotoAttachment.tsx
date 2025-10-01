@@ -11,9 +11,10 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { SignedImage } from "@/components/SignedImage";
 
 interface PhotoAttachmentProps {
-	photos: string[];
+	photos: string[]; // Array of file paths in storage
 	onPhotosChange: (photos: string[]) => void;
 	title?: string;
 	maxPhotos?: number;
@@ -58,14 +59,8 @@ export const PhotoAttachment = ({
 
 					if (error) throw error;
 
-					// Get public URL
-					const {
-						data: { publicUrl },
-					} = supabase.storage
-						.from("reservation-documents")
-						.getPublicUrl(filePath);
-
-					return publicUrl;
+					// Return the file path instead of public URL
+					return filePath;
 				} catch (error) {
 					console.error("Upload error:", error);
 					toast({
@@ -132,14 +127,8 @@ export const PhotoAttachment = ({
 
 					if (error) throw error;
 
-					// Get public URL
-					const {
-						data: { publicUrl },
-					} = supabase.storage
-						.from("reservation-documents")
-						.getPublicUrl(filePath);
-
-					onPhotosChange([...photos, publicUrl]);
+					// Store the file path instead of public URL
+					onPhotosChange([...photos, filePath]);
 				} catch (error) {
 					console.error("Upload error:", error);
 					toast({
@@ -161,19 +150,13 @@ export const PhotoAttachment = ({
 	};
 
 	const removePhoto = async (index: number) => {
-		const photoUrl = photos[index];
+		const filePath = photos[index];
 
-		// Extract file path from URL for Supabase storage deletion
-		if (photoUrl.includes("reservation-documents")) {
-			try {
-				const urlParts = photoUrl.split("/");
-				const fileName = urlParts[urlParts.length - 1];
-				const filePath = `reservation-photos/${fileName}`;
-
-				await supabase.storage.from("reservation-documents").remove([filePath]);
-			} catch (error) {
-				console.error("Error deleting file:", error);
-			}
+		// Delete file from storage using the file path
+		try {
+			await supabase.storage.from("reservation-documents").remove([filePath]);
+		} catch (error) {
+			console.error("Error deleting file:", error);
 		}
 
 		const newPhotos = photos.filter((_, i) => i !== index);
@@ -246,12 +229,13 @@ export const PhotoAttachment = ({
 				{/* Photo Grid */}
 				{photos.length > 0 && (
 					<div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-						{photos.map((photo, index) => (
+						{photos.map((photoPath, index) => (
 							<div key={index} className="relative group">
-								<img
-									src={photo}
+								<SignedImage
+									filePath={photoPath}
 									alt={`Attachment ${index + 1}`}
 									className="w-full h-24 object-cover rounded-lg border"
+									fallback={<div className="w-full h-24 flex items-center justify-center bg-muted text-muted-foreground text-xs rounded-lg border">Failed to load</div>}
 								/>
 								<Button
 									type="button"

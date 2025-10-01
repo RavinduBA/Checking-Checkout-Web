@@ -11,6 +11,7 @@ import {
 	MapPin,
 	MinusCircle,
 	Percent,
+	Phone,
 	PlusCircle,
 	Settings,
 	TrendingUp,
@@ -20,7 +21,6 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { useLocation } from "react-router";
-import checkinLogo from "@/assets/checkin-checkout-logo.png";
 import { NavMain } from "@/components/nav-main";
 import { NavProjects } from "@/components/nav-projects";
 import { NavUser } from "@/components/nav-user";
@@ -52,7 +52,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 export function AppSidebar({
 	locations = [],
 	selectedLocation = "all",
-	onLocationChange = () => {},
+	onLocationChange,
 	locationsLoading = false,
 	...props
 }: AppSidebarProps) {
@@ -60,6 +60,17 @@ export function AppSidebar({
 	const { profile } = useProfile();
 	const { hasAnyPermission, permissions, loading } = usePermissions();
 	const location = useLocation();
+
+	// Handle location change with permission check
+	const handleLocationChange = React.useCallback((locationId: string) => {
+		// Call the parent's onLocationChange if provided
+		if (onLocationChange) {
+			onLocationChange(locationId);
+		}
+		
+		// Note: Permissions are automatically refreshed when location context changes
+		// The sidebar will re-render with updated navigation items based on new permissions
+	}, [onLocationChange]);
 
 	// Main navigation items based on user permissions
 	const getNavMainItems = () => {
@@ -97,14 +108,14 @@ export function AppSidebar({
 		}
 
 		// Income/Payments
-		// if (hasAnyPermission(["access_income"])) {
-		//   items.push({
-		//     title: "Income & Payments",
-		//     url: "/income",
-		//     icon: DollarSign,
-		//     isActive: location.pathname === "/income"
-		//   })
-		// }
+		if (hasAnyPermission(["access_income"])) {
+			items.push({
+				title: "Income & Payments",
+				url: "/income",
+				icon: DollarSign,
+				isActive: location.pathname === "/income",
+			});
+		}
 
 		// Expenses
 		if (hasAnyPermission(["access_expenses"])) {
@@ -222,6 +233,15 @@ export function AppSidebar({
 			});
 		}
 
+		// Phone verification quick action - show for all users
+		if (profile && !profile.is_phone_verified) {
+			projects.push({
+				name: "Verify Phone",
+				url: "/settings?tab=profile",
+				icon: Phone,
+			});
+		}
+
 		return projects;
 	};
 
@@ -237,7 +257,7 @@ export function AppSidebar({
 				<LocationSwitcher
 					locations={locations}
 					selectedLocation={selectedLocation}
-					onLocationChange={onLocationChange}
+					onLocationChange={handleLocationChange}
 					loading={locationsLoading}
 				/>
 			</SidebarHeader>

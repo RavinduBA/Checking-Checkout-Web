@@ -2,7 +2,6 @@ import { Session, User } from "@supabase/supabase-js";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import { processPendingInvitations } from "@/lib/invitation-processor";
 
 type Profile = Tables<"profiles">;
 type Tenant = Tables<"tenants">;
@@ -144,76 +143,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 				}
 
 				if (event === "SIGNED_IN" && session?.user) {
-					// Small delay to ensure the auth state is fully set
-					setTimeout(async () => {
-						try {
-							console.log(
-								"Creating/updating profile for user:",
-								session.user.email,
-							);
-
-							// Check and process any pending invitations
-							const invitationResult = await processPendingInvitations(
-								session.user.id,
-								session.user.email!,
-							);
-
-							// Create or update profile
-							const profileData = {
-								id: session.user.id,
-								email: session.user.email!,
-								name:
-									session.user.user_metadata?.name ||
-									session.user.user_metadata?.full_name ||
-									session.user.email!,
-							};
-
-							// Create profile - use upsert to handle existing profiles gracefully
-							const { error: profileError } = await supabase
-								.from("profiles")
-								.upsert(profileData, {
-									onConflict: "id",
-								});
-
-							if (profileError) {
-								console.error("Error creating/updating profile:", profileError);
-							} else {
+					// Only create/update profile if we don't already have one for this user
+					if (!profile || profile.id !== session.user.id) {
+						// Small delay to ensure the auth state is fully set
+						setTimeout(async () => {
+							try {
 								console.log(
-									"Profile created/updated successfully for:",
+									"Creating/updating profile for user:",
 									session.user.email,
 								);
 
-								// Fetch the profile data after creation/update
-								const profileData = await fetchProfile(session.user.id);
+								// Create or update profile
+								const profileData = {
+									id: session.user.id,
+									email: session.user.email!,
+									name:
+										session.user.user_metadata?.name ||
+										session.user.user_metadata?.full_name ||
+										session.user.email!,
+								};
 
-								// If the profile has a tenant_id, fetch tenant and subscription data
-								if (profileData?.tenant_id) {
-									await fetchTenant(profileData.tenant_id);
-									await fetchSubscription(profileData.tenant_id);
-								}
-							}
+								// Create profile - use upsert to handle existing profiles gracefully
+								const { error: profileError } = await supabase
+									.from("profiles")
+									.upsert(profileData, {
+										onConflict: "id",
+									});
 
-							if (
-								invitationResult.success &&
-								"processedInvitations" in invitationResult &&
-								invitationResult.processedInvitations > 0
-							) {
-								console.log(
-									"Processed invitation successfully, refreshing profile...",
-								);
-								// Refresh profile data after invitation processing
-								const updatedProfile = await fetchProfile(session.user.id);
-								if (updatedProfile?.tenant_id) {
-									await fetchTenant(updatedProfile.tenant_id);
-									await fetchSubscription(updatedProfile.tenant_id);
+								if (profileError) {
+									console.error(
+										"Error creating/updating profile:",
+										profileError,
+									);
+								} else {
+									console.log(
+										"Profile created/updated successfully for:",
+										session.user.email,
+									);
+
+									// Fetch the profile data after creation/update
+									const profileData = await fetchProfile(session.user.id);
+
+									// If the profile has a tenant_id, fetch tenant and subscription data
+									if (profileData?.tenant_id) {
+										await fetchTenant(profileData.tenant_id);
+										await fetchSubscription(profileData.tenant_id);
+									}
 								}
+							} catch (err) {
+								console.error("Exception during profile creation:", err);
+								// Don't sign out on profile creation errors in SaaS mode
+								console.warn("Continuing despite profile creation error");
 							}
-						} catch (err) {
-							console.error("Exception during profile creation:", err);
-							// Don't sign out on profile creation errors in SaaS mode
-							console.warn("Continuing despite profile creation error");
+						}, 0);
+					} else {
+						// Profile already exists for this user, just ensure tenant data is loaded
+						if (profile.tenant_id) {
+							await fetchTenant(profile.tenant_id);
+							await fetchSubscription(profile.tenant_id);
 						}
-					}, 0);
+					}
 				}
 			},
 		);

@@ -35,7 +35,11 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { convertCurrency, formatCurrency, type Currency } from "@/utils/currency";
+import {
+	convertCurrency,
+	formatCurrency,
+	type Currency,
+} from "@/utils/currency";
 import { CurrencySelector } from "@/components/CurrencySelector";
 
 type AccountDetail = {
@@ -379,7 +383,9 @@ export default function DetailedBalanceSheet() {
 				<div className="flex gap-2">
 					<CurrencySelector
 						currency={baseCurrency}
-						onCurrencyChange={(currency) => setBaseCurrency(currency as Currency)}
+						onCurrencyChange={(currency) =>
+							setBaseCurrency(currency as Currency)
+						}
 						label=""
 					/>
 					<Button onClick={exportBalanceSheet} variant="outline">

@@ -10,6 +10,16 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InlineLoader } from "@/components/ui/loading-spinner";
@@ -50,6 +60,8 @@ export default function AgentsTab() {
 	const [loading, setLoading] = useState(true);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+	const [agentToDelete, setAgentToDelete] = useState<string | null>(null);
 	const [formData, setFormData] = useState({
 		name: "",
 		phone: "",
@@ -63,7 +75,7 @@ export default function AgentsTab() {
 
 	const fetchAgents = useCallback(async () => {
 		if (!tenant?.id) return;
-		
+
 		try {
 			const { data, error } = await supabase
 				.from("agents")
@@ -108,11 +120,13 @@ export default function AgentsTab() {
 				if (!tenant?.id) {
 					throw new Error("No tenant selected");
 				}
-				
-				const { error } = await supabase.from("agents").insert([{
-					...formData,
-					tenant_id: tenant.id
-				}]);
+
+				const { error } = await supabase.from("agents").insert([
+					{
+						...formData,
+						tenant_id: tenant.id,
+					},
+				]);
 
 				if (error) throw error;
 
@@ -159,11 +173,19 @@ export default function AgentsTab() {
 		setIsDialogOpen(true);
 	};
 
-	const handleDelete = async (id: string) => {
-		if (!confirm("Are you sure you want to delete this agent?")) return;
+	const handleDelete = (id: string) => {
+		setAgentToDelete(id);
+		setDeleteConfirmOpen(true);
+	};
+
+	const confirmDelete = async () => {
+		if (!agentToDelete) return;
 
 		try {
-			const { error } = await supabase.from("agents").delete().eq("id", id);
+			const { error } = await supabase
+				.from("agents")
+				.delete()
+				.eq("id", agentToDelete);
 
 			if (error) throw error;
 
@@ -178,6 +200,9 @@ export default function AgentsTab() {
 				description: "Failed to delete agent",
 				variant: "destructive",
 			});
+		} finally {
+			setDeleteConfirmOpen(false);
+			setAgentToDelete(null);
 		}
 	};
 
@@ -384,6 +409,25 @@ export default function AgentsTab() {
 					))}
 				</TableBody>
 			</Table>
+
+			{/* Delete Confirmation Dialog */}
+			<AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to delete this agent? This action cannot be
+							undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction onClick={confirmDelete}>
+							Delete
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

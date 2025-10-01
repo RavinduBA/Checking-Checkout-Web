@@ -7,7 +7,7 @@ import {
 	Plus,
 	Printer,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import SignatureCanvas from "react-signature-canvas";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionLoader } from "@/components/ui/loading-spinner";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { PhoneVerification } from "@/components/PhoneVerification";
 import {
 	Select,
 	SelectContent,
@@ -44,6 +45,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useProfile } from "@/hooks/useProfile";
+import { useIncomeData } from "@/hooks/useIncomeData";
 import { supabase } from "@/integrations/supabase/client";
 
 type Database = any;
@@ -59,14 +62,19 @@ const Income = () => {
 	const navigate = useNavigate();
 	const sigCanvas = useRef<SignatureCanvas | null>(null);
 	const { hasAnyPermission, hasPermission } = usePermissions();
+	const { profile, refetch: refetchProfile } = useProfile();
 
-	const [reservations, setReservations] = useState<Reservation[]>([]);
-	const [payments, setPayments] = useState<Payment[]>([]);
-	const [recentPayments, setRecentPayments] = useState<Payment[]>([]);
-	const [locations, setLocations] = useState<Location[]>([]);
-	const [rooms, setRooms] = useState<Room[]>([]);
-	const [accounts, setAccounts] = useState<Account[]>([]);
-	const [loading, setLoading] = useState(true);
+	// Use the custom hook for data fetching
+	const { 
+		reservations, 
+		payments,
+		recentPayments, 
+		locations, 
+		rooms, 
+		accounts, 
+		loading,
+		refetch 
+	} = useIncomeData();
 
 	const [isReservationDialogOpen, setIsReservationDialogOpen] = useState(false);
 	const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -97,57 +105,7 @@ const Income = () => {
 		notes: "",
 	});
 
-	const fetchData = useCallback(async () => {
-		try {
-			setLoading(true);
-			const [
-				reservationsRes,
-				locationsRes,
-				roomsRes,
-				accountsRes,
-				paymentsRes,
-			] = await Promise.all([
-				supabase
-					.from("reservations")
-					.select(`
-            *,
-            locations(*),
-            rooms(*),
-            payments(*)
-          `)
-					.order("created_at", { ascending: false })
-					.limit(20),
-				supabase.from("locations").select("*").eq("is_active", true),
-				supabase.from("rooms").select("*").eq("is_active", true),
-				supabase.from("accounts").select("*"),
-				supabase
-					.from("payments")
-					.select("*")
-					.order("created_at", { ascending: false })
-					.limit(10),
-			]);
 
-			setReservations(reservationsRes.data || []);
-			setLocations(locationsRes.data || []);
-			setRooms(roomsRes.data || []);
-			setAccounts(accountsRes.data || []);
-			setRecentPayments(paymentsRes.data || []);
-			setPayments(paymentsRes.data || []);
-		} catch (error) {
-			console.error("Error fetching data:", error);
-			toast({
-				title: "Error",
-				description: "Failed to fetch data",
-				variant: "destructive",
-			});
-		} finally {
-			setLoading(false);
-		}
-	}, [toast]);
-
-	useEffect(() => {
-		fetchData();
-	}, [fetchData]);
 
 	const calculateNights = (checkIn: string, checkOut: string) => {
 		if (!checkIn || !checkOut) return 0;
@@ -216,7 +174,7 @@ const Income = () => {
 
 			setIsReservationDialogOpen(false);
 			resetReservationForm();
-			fetchData();
+			refetch();
 		} catch (error) {
 			console.error("Reservation creation error:", error);
 			toast({
@@ -346,7 +304,7 @@ const Income = () => {
 			setIsPaymentDialogOpen(false);
 			setSelectedReservation(null);
 			resetPaymentForm();
-			fetchData();
+			refetch();
 		} catch (error) {
 			console.error("Payment error:", error);
 			toast({
@@ -721,6 +679,21 @@ const Income = () => {
 						</form>
 					</DialogContent>
 				</Dialog>
+			</div>
+
+			{/* Phone Verification Section */}
+			<div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+				<PhoneVerification 
+					phone={profile?.phone}
+					isVerified={profile?.is_phone_verified || false}
+					onVerificationSuccess={() => {
+						refetchProfile();
+						toast({
+							title: "Phone verified",
+							description: "Your phone number is now verified for SMS notifications",
+						});
+					}}
+				/>
 			</div>
 
 			<Tabs defaultValue="reservations" className="space-y-4">

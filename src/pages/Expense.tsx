@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { AlertCircle, ArrowLeft, Calendar, Minus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { ExpenseShortcuts } from "@/components/ExpenseShortcuts";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -19,8 +19,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useExpenseData } from "@/hooks/useExpenseData";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
+import { getCurrencySymbol } from "@/utils/currency";
 
 type Location = Tables<"locations">;
 type Account = Tables<"accounts">;
@@ -31,6 +33,19 @@ type Expense = Tables<"expenses"> & {
 };
 
 export default function Expense() {
+	const { toast } = useToast();
+	const { hasAnyPermission, hasPermission } = usePermissions();
+	
+	// Use the custom hook for data fetching
+	const { 
+		locations, 
+		accounts, 
+		expenseTypes, 
+		recentExpenses, 
+		loading,
+		refetch 
+	} = useExpenseData();
+
 	const [formData, setFormData] = useState({
 		mainCategory: "",
 		subCategory: "",
@@ -41,49 +56,8 @@ export default function Expense() {
 		note: "",
 	});
 
-	const [locations, setLocations] = useState<Location[]>([]);
-	const [accounts, setAccounts] = useState<Account[]>([]);
-	const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);
-	const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
-	const [loading, setLoading] = useState(true);
-	const { toast } = useToast();
-	const { hasAnyPermission, hasPermission } = usePermissions();
-
-	useEffect(() => {
-		fetchData();
-	}, []);
-
-	const fetchData = async () => {
-		try {
-			const [
-				locationsData,
-				accountsData,
-				expenseTypesData,
-				recentExpensesData,
-			] = await Promise.all([
-				supabase.from("locations").select("*").eq("is_active", true),
-				supabase.from("accounts").select("*"),
-				supabase.from("expense_types").select("*").order("main_type"),
-				supabase
-					.from("expenses")
-					.select("*, accounts(*), locations(*)")
-					.order("created_at", { ascending: false })
-					.limit(10),
-			]);
-
-			setLocations(locationsData.data || []);
-			setAccounts(accountsData.data || []);
-			setExpenseTypes(expenseTypesData.data || []);
-			setRecentExpenses(recentExpensesData.data || []);
-		} catch (error) {
-			console.error("Error fetching data:", error);
-		} finally {
-			setLoading(false);
-		}
-	};
-
 	const selectedAccount = accounts.find((a) => a.id === formData.accountId);
-	const currencySymbol = selectedAccount?.currency === "USD" ? "$" : "Rs.";
+	const currencySymbol = selectedAccount?.currency ? getCurrencySymbol(selectedAccount.currency) : "Rs.";
 
 	const mainCategories = [...new Set(expenseTypes.map((et) => et.main_type))];
 	const subCategories = expenseTypes
@@ -205,7 +179,7 @@ export default function Expense() {
 				);
 				currentBalance += totalIncomingTransfers;
 
-				const currencySymbol = selectedAccount.currency === "USD" ? "$" : "Rs.";
+				const currencySymbol = getCurrencySymbol(selectedAccount.currency);
 
 				// Send SMS notification for expense
 				try {
@@ -254,7 +228,7 @@ export default function Expense() {
 				note: "",
 			});
 
-			fetchData(); // Refresh recent expenses
+			refetch(); // Refresh recent expenses
 		} catch (error) {
 			console.error("Error adding expense:", error);
 			toast({
@@ -506,14 +480,14 @@ export default function Expense() {
 											<div className="flex-1">
 												<div className="font-medium text-red-900 text-sm sm:text-base">
 													{expense.main_type} - {expense.sub_type} •{" "}
-													{expense.accounts?.currency === "LKR" ? "Rs." : "$"}
+													{expense.currency === "LKR" ? "Rs." : "$"}
 													{expense.amount.toLocaleString()}
 												</div>
 												<div className="text-xs sm:text-sm text-red-700 mt-1">
-													<div>{expense.locations?.name}</div>
+													<div>{locations.find(l => l.id === expense.location_id)?.name}</div>
 													<div>
-														Account: {expense.accounts?.name} (
-														{expense.accounts?.currency})
+														Account: {accounts.find(a => a.id === expense.account_id)?.name} (
+														{accounts.find(a => a.id === expense.account_id)?.currency})
 													</div>
 													<div>
 														{format(new Date(expense.date), "MMM dd, yyyy")}

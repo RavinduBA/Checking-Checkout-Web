@@ -19,12 +19,12 @@ export const usePermissions = () => {
 			}
 
 			try {
-				// Fetch user permissions for the tenant
+				// Fetch user permissions with explicit tenant_id filter for RLS performance
 				const { data, error } = await supabase
 					.from("user_permissions")
 					.select("*")
 					.eq("user_id", user.id)
-					.eq("tenant_id", profile.tenant_id)
+					.eq("tenant_id", profile.tenant_id) // Explicit filter helps optimizer
 					.single();
 
 				if (error && error.code !== "PGRST116") {
@@ -45,9 +45,8 @@ export const usePermissions = () => {
 		fetchPermissions();
 	}, [user, profile?.tenant_id]);
 
-	// Check if user is admin (owner of the tenant)
-	const isAdmin =
-		profile?.role === "admin" || profile?.id === tenant?.owner_profile_id;
+	// Check if user is tenant owner (highest level access)
+	const isTenantOwner = profile?.id === tenant?.owner_profile_id;
 
 	const hasPermission = (
 		permission: keyof Omit<
@@ -55,8 +54,8 @@ export const usePermissions = () => {
 			"id" | "user_id" | "tenant_id" | "created_at"
 		>,
 	): boolean => {
-		// Admin always has all permissions
-		if (isAdmin) return true;
+		// Tenant owner always has all permissions
+		if (isTenantOwner) return true;
 
 		// If no permissions record, no access
 		if (!permissions) return false;
@@ -117,9 +116,9 @@ export const usePermissions = () => {
 	return {
 		permissions,
 		loading,
-		isAdmin,
 		hasPermission,
 		hasAnyPermission,
+		isTenantOwner,
 		refetch,
 	};
 };

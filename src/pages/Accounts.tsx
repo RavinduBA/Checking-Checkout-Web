@@ -10,6 +10,16 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InlineLoader, SectionLoader } from "@/components/ui/loading-spinner";
@@ -51,6 +61,8 @@ export default function Accounts() {
 		location_access: [] as string[],
 	});
 	const [showTransferDialog, setShowTransferDialog] = useState(false);
+	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+	const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
 	const [transferData, setTransferData] = useState({
 		fromAccountId: "",
 		toAccountId: "",
@@ -186,24 +198,35 @@ export default function Accounts() {
 		}
 	};
 
-	const handleDelete = async (id: string) => {
-		if (window.confirm("Are you sure you want to delete this account?")) {
-			try {
-				const { error } = await supabase.from("accounts").delete().eq("id", id);
-				if (error) throw error;
-				toast({
-					title: "Success",
-					description: "Account deleted successfully",
-				});
-				fetchData();
-			} catch (error) {
-				console.error("Error deleting account:", error);
-				toast({
-					title: "Error",
-					description: "Failed to delete account",
-					variant: "destructive",
-				});
-			}
+	const handleDelete = (id: string) => {
+		setAccountToDelete(id);
+		setDeleteConfirmOpen(true);
+	};
+
+	const confirmDelete = async () => {
+		if (!accountToDelete) return;
+
+		try {
+			const { error } = await supabase
+				.from("accounts")
+				.delete()
+				.eq("id", accountToDelete);
+			if (error) throw error;
+			toast({
+				title: "Success",
+				description: "Account deleted successfully",
+			});
+			fetchData();
+		} catch (error) {
+			console.error("Error deleting account:", error);
+			toast({
+				title: "Error",
+				description: "Failed to delete account",
+				variant: "destructive",
+			});
+		} finally {
+			setDeleteConfirmOpen(false);
+			setAccountToDelete(null);
 		}
 	};
 
@@ -717,6 +740,25 @@ export default function Accounts() {
 					<TransferHistory />
 				</CardContent>
 			</Card>
+
+			{/* Delete Confirmation Dialog */}
+			<AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to delete this account? This action cannot
+							be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction onClick={confirmDelete}>
+							Delete
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

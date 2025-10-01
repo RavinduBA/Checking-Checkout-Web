@@ -10,12 +10,13 @@ import {
 	UserCheck,
 	Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { AvailabilityDialog } from "@/components/AvailabilityDialog";
 import { AvailabilityInput } from "@/components/AvailabilityInput";
 import { CurrencySelector } from "@/components/CurrencySelector";
-import { PhotoAttachment } from "@/components/PhotoAttachment";
+import { DocumentUpload } from "@/components/DocumentUpload";
+import { IDPhotoUpload } from "@/components/IDPhotoUpload";
 import { PricingDisplay } from "@/components/PricingDisplay";
 import { SignatureCapture } from "@/components/SignatureCapture";
 import { Button } from "@/components/ui/button";
@@ -42,9 +43,9 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useAutoLocation } from "@/hooks/useAutoLocation";
 import { useAvailability } from "@/hooks/useAvailability";
 import { useTenant } from "@/hooks/useTenant";
+import { useLocationContext } from "@/context/LocationContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { convertCurrency } from "@/utils/currency";
@@ -60,12 +61,7 @@ export default function ReservationFormCompact() {
 	const { toast } = useToast();
 	const { tenant } = useTenant();
 	const [searchParams] = useSearchParams();
-	const {
-		autoSelectedLocation,
-		shouldShowLocationSelect,
-		availableLocations,
-		loading: locationLoading,
-	} = useAutoLocation();
+	const { locations: availableLocations, loading: locationLoading } = useLocationContext();
 	const isEdit = Boolean(id);
 
 	const [rooms, setRooms] = useState<Room[]>([]);
@@ -76,7 +72,19 @@ export default function ReservationFormCompact() {
 	const [submitting, setSubmitting] = useState(false);
 	const [showGuideDialog, setShowGuideDialog] = useState(false);
 	const [showAgentDialog, setShowAgentDialog] = useState(false);
-	const [idPhotos, setIdPhotos] = useState<string[]>([]);
+	const [idPhotos, setIdPhotos] = useState<Array<{
+		filePath: string;
+		name: string;
+		uploadedAt: Date;
+		type: "passport" | "national_id" | "drivers_license" | "other";
+	}>>([]);
+	const [documents, setDocuments] = useState<Array<{
+		filePath: string;
+		name: string;
+		type: string;
+		size: number;
+		uploadedAt: Date;
+	}>>([]);
 	const [guestSignature, setGuestSignature] = useState("");
 
 	// Availability checking state
@@ -92,7 +100,7 @@ export default function ReservationFormCompact() {
 	const [availabilityLoading, setAvailabilityLoading] = useState(false);
 
 	const [formData, setFormData] = useState({
-		location_id: searchParams.get("location") || autoSelectedLocation || "",
+		location_id: searchParams.get("location") || "",
 		room_id: searchParams.get("room") || "",
 		guest_name: "",
 		guest_email: "",
@@ -136,31 +144,7 @@ export default function ReservationFormCompact() {
 		commission_rate: 15,
 	});
 
-	useEffect(() => {
-		if (!locationLoading) {
-			fetchInitialData();
-			if (isEdit && id) {
-				fetchReservation();
-			}
-		}
-	}, [isEdit, id, locationLoading]);
-
-	useEffect(() => {
-		// Auto-select location if user has access to only one
-		if (
-			autoSelectedLocation &&
-			!shouldShowLocationSelect &&
-			!formData.location_id
-		) {
-			setFormData((prev) => ({ ...prev, location_id: autoSelectedLocation }));
-		}
-	}, [autoSelectedLocation, shouldShowLocationSelect]);
-
-	useEffect(() => {
-		calculateTotal();
-	}, [formData.room_rate, formData.nights, formData.currency]);
-
-	const fetchInitialData = async () => {
+	const fetchInitialData = useCallback(async () => {
 		try {
 			const [roomsRes, guidesRes, agentsRes, locationsRes] = await Promise.all([
 				supabase
@@ -184,9 +168,9 @@ export default function ReservationFormCompact() {
 		} catch (error) {
 			console.error("Error fetching data:", error);
 		}
-	};
+	}, []);
 
-	const fetchReservation = async () => {
+	const fetchReservation = useCallback(async () => {
 		setLoading(true);
 		try {
 			const { data, error } = await supabase
@@ -235,7 +219,7 @@ export default function ReservationFormCompact() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [id, toast]);
 
 	const calculateNights = (checkIn: string, checkOut: string) => {
 		if (!checkIn || !checkOut) return 1;
@@ -246,7 +230,7 @@ export default function ReservationFormCompact() {
 		return diffDays || 1;
 	};
 
-	const calculateTotal = async () => {
+	const calculateTotal = useCallback(async () => {
 		let roomRate = formData.room_rate;
 
 		// Convert room rate if currencies don't match
@@ -276,7 +260,20 @@ export default function ReservationFormCompact() {
 			balance_amount: balanceAmount,
 			paid_amount: 0,
 		}));
-	};
+	}, [formData.room_rate, formData.nights, formData.currency, formData.room_id, rooms]);
+
+	useEffect(() => {
+		if (!locationLoading) {
+			fetchInitialData();
+			if (isEdit && id) {
+				fetchReservation();
+			}
+		}
+	}, [isEdit, id, locationLoading, fetchInitialData, fetchReservation]);
+
+	useEffect(() => {
+		calculateTotal();
+	}, [calculateTotal]);
 
 	const handleInputChange = async (field: string, value: any) => {
 		setFormData((prev) => {
@@ -521,6 +518,29 @@ export default function ReservationFormCompact() {
 				booking_source: formData.booking_source,
 			};
 
+			// Store document information (for future implementation - could be stored in a separate table)
+			const documentData = {
+				id_photos: idPhotos.map(photo => ({
+					filePath: photo.filePath,
+					name: photo.name,
+					type: photo.type,
+					uploadedAt: photo.uploadedAt.toISOString(),
+				})),
+				documents: documents.map(doc => ({
+					filePath: doc.filePath,
+					name: doc.name,
+					type: doc.type,
+					size: doc.size,
+					uploadedAt: doc.uploadedAt.toISOString(),
+				})),
+				signature: guestSignature,
+			};
+
+			// For now, log the documents (in future, store in separate reservation_documents table)
+			if (documentData.id_photos.length > 0 || documentData.documents.length > 0) {
+				console.log("Documents to be stored:", documentData);
+			}
+
 			if (isEdit) {
 				const { error } = await supabase
 					.from("reservations")
@@ -751,7 +771,7 @@ export default function ReservationFormCompact() {
 								</CardTitle>
 							</CardHeader>
 							<CardContent className="space-y-3">
-								{shouldShowLocationSelect && (
+								{availableLocations.length > 1 && (
 									<div>
 										<Label className="text-sm">Location *</Label>
 										<Select
@@ -1180,11 +1200,19 @@ export default function ReservationFormCompact() {
 
 					{/* Right Column - Documents & Signature */}
 					<div className="space-y-4">
-						<PhotoAttachment
+						<IDPhotoUpload
 							photos={idPhotos}
 							onPhotosChange={setIdPhotos}
 							title="ID Documents"
 							maxPhotos={3}
+						/>
+
+						<DocumentUpload
+							files={documents}
+							onFilesChange={setDocuments}
+							title="Additional Documents"
+							maxFiles={5}
+							description="Upload contracts, agreements, or other relevant documents"
 						/>
 
 						<SignatureCapture

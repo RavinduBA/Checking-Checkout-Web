@@ -36,7 +36,11 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { convertCurrency, formatCurrency, getAvailableCurrencies } from "@/utils/currency";
+import {
+	convertCurrency,
+	formatCurrency,
+	getAvailableCurrencies,
+} from "@/utils/currency";
 
 type FinancialSummary = {
 	totalIncome: number;
@@ -110,7 +114,7 @@ export default function EnhancedFinancialReports() {
 			await Promise.all([
 				fetchLocations(),
 				fetchAvailableCurrencies(),
-				fetchData()
+				fetchData(),
 			]);
 		};
 		loadInitialData();
@@ -172,7 +176,9 @@ export default function EnhancedFinancialReports() {
 		try {
 			// Build queries with filters
 			let incomeQuery = supabase.from("income").select("amount, currency");
-			let expenseQuery = supabase.from("expenses").select("amount, currency, accounts(currency)");
+			let expenseQuery = supabase
+				.from("expenses")
+				.select("amount, currency, accounts(currency)");
 			let paymentsQuery = supabase.from("payments").select("amount, currency");
 
 			// Apply location filters
@@ -225,7 +231,8 @@ export default function EnhancedFinancialReports() {
 
 			// Process expenses
 			for (const expense of expenseResult.data || []) {
-				const accountCurrency = (expense as any).accounts?.currency || expense.currency;
+				const accountCurrency =
+					(expense as any).accounts?.currency || expense.currency;
 				const convertedAmount = await convertCurrency(
 					parseFloat(expense.amount.toString()),
 					accountCurrency as any,
@@ -378,36 +385,37 @@ export default function EnhancedFinancialReports() {
 			const expenseMap = new Map<string, ExpenseCategory>();
 			let totalExpenseForPercentage = 0;
 
-		for (const expense of data || []) {
-			const accountCurrency = (expense as any).accounts?.currency || expense.currency;
-			const convertedAmount = await convertCurrency(
-				parseFloat(expense.amount.toString()),
-				accountCurrency as any,
-				baseCurrency,
-			);
-			totalExpenseForPercentage += convertedAmount;
+			for (const expense of data || []) {
+				const accountCurrency =
+					(expense as any).accounts?.currency || expense.currency;
+				const convertedAmount = await convertCurrency(
+					parseFloat(expense.amount.toString()),
+					accountCurrency as any,
+					baseCurrency,
+				);
+				totalExpenseForPercentage += convertedAmount;
 
-			const type = expense.main_type || "Other";
-			if (!expenseMap.has(type)) {
-				expenseMap.set(type, {
-					type,
-					amount: 0,
-					percentage: 0,
-					transactions: [],
+				const type = expense.main_type || "Other";
+				if (!expenseMap.has(type)) {
+					expenseMap.set(type, {
+						type,
+						amount: 0,
+						percentage: 0,
+						transactions: [],
+					});
+				}
+
+				const category = expenseMap.get(type)!;
+				category.amount += convertedAmount;
+				category.transactions.push({
+					id: expense.id,
+					date: expense.date,
+					amount: convertedAmount,
+					description: `${expense.main_type} - ${expense.sub_type}${expense.note ? ` (${expense.note})` : ""}`,
+					account: (expense as any).accounts?.name || "Unknown",
+					currency: baseCurrency,
 				});
-			}
-
-			const category = expenseMap.get(type)!;
-			category.amount += convertedAmount;
-			category.transactions.push({
-				id: expense.id,
-				date: expense.date,
-				amount: convertedAmount,
-				description: `${expense.main_type} - ${expense.sub_type}${expense.note ? ` (${expense.note})` : ""}`,
-				account: (expense as any).accounts?.name || "Unknown",
-				currency: baseCurrency,
-			});
-		}			// Calculate percentages
+			} // Calculate percentages
 			const categories = Array.from(expenseMap.values())
 				.map((cat) => ({
 					...cat,

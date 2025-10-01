@@ -36,6 +36,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
+import { getCurrencySymbol } from "@/utils/currency";
 
 type Reservation = Tables<"reservations"> & {
 	locations: Tables<"locations">;
@@ -501,9 +502,7 @@ export default function EnhancedCalendar() {
 																	{bookingStartingToday.span.spanDays > 4 &&
 																		!isMobile && (
 																			<div className="text-xs opacity-75 pb-1">
-																				{bookingStartingToday.currency === "USD"
-																					? "$"
-																					: "Rs. "}
+																				{getCurrencySymbol(bookingStartingToday.currency)}
 																				{bookingStartingToday.total_amount.toLocaleString()}
 																			</div>
 																		)}
@@ -658,7 +657,7 @@ export default function EnhancedCalendar() {
 												</div>
 												<div className="flex justify-between items-center pt-2 border-t border-gray-100">
 													<span className="text-lg font-bold text-primary">
-														{reservation.currency === "USD" ? "$" : "Rs. "}
+														{getCurrencySymbol(reservation.currency)}
 														{reservation.total_amount.toLocaleString()}
 													</span>
 													<div className="flex gap-2">

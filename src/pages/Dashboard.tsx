@@ -27,6 +27,7 @@ import { useAuth } from "@/context/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
+import { getCurrencySymbol } from "@/utils/currency";
 
 type Income = Tables<"income"> & {
 	accounts: Tables<"accounts">;
@@ -461,7 +462,7 @@ export default function Dashboard() {
 							</div>
 							<div className="text-right ml-4">
 								<p className="font-bold text-lg">
-									{account.currency === "USD" ? "$" : "Rs. "}
+									{getCurrencySymbol(account.currency)}
 									{(accountBalances[account.id] || 0).toLocaleString()}
 								</p>
 								<Badge variant="outline" className="mt-1">

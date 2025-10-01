@@ -483,7 +483,7 @@ export default function BillingSubscription() {
 						return (
 							<Card
 								key={plan.id}
-								className={`relative ${isCurrentPlan ? "ring-2 ring-blue-500" : ""}`}
+								className={`relative ${isCurrentPlan ? "ring-0 ring-blue-500" : ""}`}
 							>
 								{isCurrentPlan && (
 									<Badge className="absolute -top-2 -right-2 bg-blue-600">

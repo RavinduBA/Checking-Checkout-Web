@@ -32,6 +32,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrencySymbol } from "@/utils/currency";
 
 type Location = {
 	id: string;
@@ -572,7 +573,7 @@ export default function FinancialReports() {
 											</TableCell>
 											<TableCell>{account.currency}</TableCell>
 											<TableCell className="text-right">
-												{account.currency === "USD" ? "$" : "Rs."}0.00
+												{getCurrencySymbol(account.currency)}0.00
 											</TableCell>
 										</TableRow>
 									))}

@@ -397,6 +397,47 @@ export type Database = {
           },
         ]
       }
+      channel_property_mappings: {
+        Row: {
+          channel_property_name: string
+          channel_type: string
+          created_at: string
+          id: string
+          is_active: boolean
+          location_id: string
+          mapping_type: string
+          updated_at: string
+        }
+        Insert: {
+          channel_property_name: string
+          channel_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location_id: string
+          mapping_type?: string
+          updated_at?: string
+        }
+        Update: {
+          channel_property_name?: string
+          channel_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location_id?: string
+          mapping_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_property_mappings_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       currency_rates: {
         Row: {
           created_at: string
@@ -989,36 +1030,45 @@ export type Database = {
           email: string
           first_login_completed: boolean
           id: string
+          is_phone_verified: boolean
           is_tenant_admin: boolean | null
           name: string
           phone: string | null
           role: Database["public"]["Enums"]["user_role"]
           tenant_id: string | null
           tenant_role: Database["public"]["Enums"]["tenant_role"] | null
+          verification_code: string | null
+          verification_code_expires: string | null
         }
         Insert: {
           created_at?: string
           email: string
           first_login_completed?: boolean
           id: string
+          is_phone_verified?: boolean
           is_tenant_admin?: boolean | null
           name: string
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           tenant_id?: string | null
           tenant_role?: Database["public"]["Enums"]["tenant_role"] | null
+          verification_code?: string | null
+          verification_code_expires?: string | null
         }
         Update: {
           created_at?: string
           email?: string
           first_login_completed?: boolean
           id?: string
+          is_phone_verified?: boolean
           is_tenant_admin?: boolean | null
           name?: string
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           tenant_id?: string | null
           tenant_role?: Database["public"]["Enums"]["tenant_role"] | null
+          verification_code?: string | null
+          verification_code_expires?: string | null
         }
         Relationships: [
           {
@@ -1689,6 +1739,18 @@ export type Database = {
           tenant_role: string
         }[]
       }
+      get_user_tenant_id: {
+        Args: { user_id: string }
+        Returns: string
+      }
+      has_location_access: {
+        Args: { location_id: string; user_id: string }
+        Returns: boolean
+      }
+      has_tenant_access: {
+        Args: { tenant_id: string; user_id: string }
+        Returns: boolean
+      }
       invite_user_to_location: {
         Args: {
           p_email: string
@@ -1699,6 +1761,10 @@ export type Database = {
           p_tenant_id: string
         }
         Returns: Json
+      }
+      is_tenant_admin: {
+        Args: { user_id: string }
+        Returns: boolean
       }
       update_user_permissions: {
         Args: { p_permissions: Json; p_tenant_id: string; p_user_id: string }

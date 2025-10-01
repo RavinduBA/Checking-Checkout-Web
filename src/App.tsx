@@ -15,6 +15,8 @@ import { SmartRedirect } from "./components/SmartRedirect";
 import AccessDenied from "./pages/AccessDenied";
 import Accounts from "./pages/Accounts";
 import Auth from "./pages/Auth";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import BillingError from "./pages/BillingError";
 import BillingSubscription from "./pages/BillingSubscription";
 import BillingSuccess from "./pages/BillingSuccess";
@@ -24,7 +26,6 @@ import EnhancedCalendar from "./pages/EnhancedCalendar";
 import Expense from "./pages/Expense";
 import FinancialReports from "./pages/FinancialReports";
 import Income from "./pages/Income";
-import { InvitationAuth } from "./pages/InvitationAuth";
 import MasterFiles from "./pages/MasterFiles";
 import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
@@ -50,7 +51,8 @@ const App = () => (
 						<Routes>
 							<Route path="/" element={<AuthRedirect />} />
 							<Route path="/auth" element={<Auth />} />
-							<Route path="/invitation" element={<InvitationAuth />} />
+							<Route path="/auth/forgot-password" element={<ForgotPassword />} />
+							<Route path="/auth/reset-password" element={<ResetPassword />} />
 							<Route
 								path="/onboarding"
 								element={
@@ -136,17 +138,17 @@ const App = () => (
 									}
 								/>
 							</Route>
-							{/* <Route path="/income" element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }>
-              <Route index element={
-                <PermissionRoute permission="income">
-                  <Income />
-                </PermissionRoute>
-              } />
-            </Route> */}
+							<Route path="/income" element={
+								<ProtectedRoute>
+									<Layout />
+								</ProtectedRoute>
+							}>
+								<Route index element={
+									<PermissionRoute permission={["access_income"]}>
+										<Income />
+									</PermissionRoute>
+								} />
+							</Route>
 							<Route
 								path="/payments/new"
 								element={

@@ -108,13 +108,13 @@ export function ReservationEditDialog({
 
 		const fetchLocation = async () => {
 			if (!reservation?.location_id) return;
-			
+
 			const { data } = await supabase
 				.from("locations")
 				.select("id, name, phone, email")
 				.eq("id", reservation.location_id)
 				.single();
-				
+
 			setLocation(data);
 		};
 

@@ -15,7 +15,7 @@ verify_jwt = false
 [functions.scheduled-calendar-sync]
 verify_jwt = false
 
-[functions.send-invitation-email]
+[functions.send-user-credentials]
 verify_jwt = false
 
 [functions.send-sms-notification]

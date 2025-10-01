@@ -80,7 +80,7 @@ src/
 supabase/
 ├── migrations/          # Database schema migrations
 ├── functions/           # Edge functions
-│   ├── send-invitation-email/
+│   ├── send-user-credentials/
 │   ├── fetch-beds24-bookings/
 │   └── sync-ical/
 └── config.toml         # Supabase configuration

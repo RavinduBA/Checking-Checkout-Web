@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Database, Tables } from "@/integrations/supabase/types";
+import { getCurrencySymbol } from "@/utils/currency";
 
 type Booking = Tables<"bookings"> & {
 	locations: Tables<"locations">;
@@ -217,7 +218,7 @@ export function BookingShortcuts({
 						.filter((booking) => !usedShortcuts.has(booking.id))
 						.map((booking) => {
 							const account = getAccountForBooking(booking);
-							const currencySymbol = account?.currency === "USD" ? "$" : "Rs.";
+							const currencySymbol = account?.currency ? getCurrencySymbol(account.currency) : "Rs.";
 							const totalAmount = booking.total_amount || 25000;
 							const advancePaid = getAdvancePaid(booking);
 							const remainingAmount = getRemainingAmount(booking);

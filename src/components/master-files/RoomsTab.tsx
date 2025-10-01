@@ -33,6 +33,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrencySymbol } from "@/utils/currency";
 
 type Room = {
 	id: string;
@@ -573,7 +574,7 @@ export default function RoomsTab() {
 							<TableCell>{(room as any).locations?.name}</TableCell>
 							<TableCell>{room.max_occupancy}</TableCell>
 							<TableCell>
-								{room.currency === "USD" ? "$" : "Rs. "}
+								{getCurrencySymbol(room.currency)}
 								{room.base_price}
 							</TableCell>
 							<TableCell>
