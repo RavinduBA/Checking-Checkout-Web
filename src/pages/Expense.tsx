@@ -17,6 +17,14 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useExpenseData } from "@/hooks/useExpenseData";
@@ -261,273 +269,253 @@ export default function Expense() {
 	}
 
 	return (
-		<div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
-			<div className="flex items-center justify-between gap-4">
+		<div className="p-6 space-y-6">
+			{/* Header with back button */}
+			<div className="flex items-center gap-4">
+				<Button asChild variant="outline" size="icon">
+					<Link to="/dashboard">
+						<ArrowLeft className="h-4 w-4" />
+					</Link>
+				</Button>
+				<h1 className="text-2xl font-bold">Expense Management</h1>
 				{hasAnyPermission("access_reports") && (
-					<Button
-						asChild
-						variant="outline"
-						className="text-xs sm:text-sm px-2 sm:px-4"
-					>
+					<Button asChild variant="outline" className="ml-auto">
 						<Link to="/reports?tab=comprehensive&type=expense">
-							<span className="hidden sm:inline">View All Expenses</span>
-							<span className="sm:hidden">View All</span>
+							View All Expenses
 						</Link>
 					</Button>
 				)}
 			</div>
 
-			{/* Location Filter at Top */}
-			<Card className="border-red-200 bg-red-50">
-				<CardContent className="p-4">
-					<div>
-						<Label
-							htmlFor="locationFilter"
-							className="text-red-800 font-medium"
-						>
-							Select Location
-						</Label>
-						<Select
-							value={formData.locationId}
-							onValueChange={(value) =>
-								setFormData({ ...formData, locationId: value })
-							}
-						>
-							<SelectTrigger className="bg-white border-red-200">
-								<SelectValue placeholder="Select Location" />
-							</SelectTrigger>
-							<SelectContent>
-								{locations.map((location) => (
-									<SelectItem key={location.id} value={location.id}>
-										{location.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
+			{/* Expense Form Card */}
+			<Card>
+				<CardHeader>
+					<CardTitle>Add New Expense</CardTitle>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					<form onSubmit={handleSubmit} className="space-y-4">
+						{/* Form Grid */}
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+							<div className="space-y-2">
+								<Label htmlFor="locationId">Location</Label>
+								<Select
+									value={formData.locationId}
+									onValueChange={(value) =>
+										setFormData({ ...formData, locationId: value })
+									}
+								>
+									<SelectTrigger>
+										<SelectValue placeholder="Select Location" />
+									</SelectTrigger>
+									<SelectContent>
+										{locations.map((location) => (
+											<SelectItem key={location.id} value={location.id}>
+												{location.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="mainCategory">Main Category</Label>
+								<Select
+									key={`main-${formData.mainCategory}`}
+									value={formData.mainCategory}
+									onValueChange={handleMainCategoryChange}
+								>
+									<SelectTrigger>
+										<SelectValue placeholder="Select main category" />
+									</SelectTrigger>
+									<SelectContent>
+										{mainCategories.map((category) => (
+											<SelectItem key={category} value={category}>
+												{category}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="subCategory">Sub Category</Label>
+								<Select
+									key={`sub-${formData.subCategory}`}
+									value={formData.subCategory}
+									onValueChange={(value) =>
+										setFormData({ ...formData, subCategory: value })
+									}
+									disabled={!formData.mainCategory}
+								>
+									<SelectTrigger>
+										<SelectValue placeholder="Select sub category" />
+									</SelectTrigger>
+									<SelectContent>
+										{subCategories.map((subCategory) => (
+											<SelectItem key={subCategory} value={subCategory}>
+												{subCategory}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="amount">Amount</Label>
+								<div className="relative">
+									<span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
+										{currencySymbol}
+									</span>
+									<Input
+										id="amount"
+										type="number"
+										placeholder="0.00"
+										value={formData.amount}
+										onChange={(e) =>
+											setFormData({ ...formData, amount: e.target.value })
+										}
+										className="pl-10"
+										required
+									/>
+								</div>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="accountId">Account</Label>
+								<Select
+									key={`account-${formData.accountId}`}
+									value={formData.accountId}
+									onValueChange={(value) =>
+										setFormData({ ...formData, accountId: value })
+									}
+								>
+									<SelectTrigger>
+										<SelectValue placeholder="Select account" />
+									</SelectTrigger>
+									<SelectContent>
+										{accounts
+											.filter(
+												(account) =>
+													account.location_access.length === 0 ||
+													account.location_access.includes(
+														formData.locationId,
+													),
+											)
+											.map((account) => (
+												<SelectItem key={account.id} value={account.id}>
+													{account.name} ({account.currency})
+												</SelectItem>
+											))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="date">Date</Label>
+								<div className="relative">
+									<Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-muted-foreground" />
+									<Input
+										id="date"
+										type="date"
+										value={formData.date}
+										onChange={(e) =>
+											setFormData({ ...formData, date: e.target.value })
+										}
+										className="pl-10"
+										required
+									/>
+								</div>
+							</div>
+						</div>
+
+						{/* Note field */}
+						<div className="space-y-2">
+							<Label htmlFor="note">Note</Label>
+							<Textarea
+								id="note"
+								placeholder="Add details about this expense..."
+								value={formData.note}
+								onChange={(e) =>
+									setFormData({ ...formData, note: e.target.value })
+								}
+								rows={3}
+							/>
+						</div>
+
+						{/* Submit button */}
+						<Button type="submit" disabled={!formData.locationId}>
+							<Minus className="size-4 mr-2" />
+							Add Expense
+						</Button>
+					</form>
 				</CardContent>
 			</Card>
 
-			{/* Only show content after location is selected */}
+			{/* Expense Shortcuts */}
 			{formData.locationId && (
-				<div className="space-y-4 sm:space-y-6">
-					{/* Expense Shortcuts - Show First */}
-					<ExpenseShortcuts
-						locationId={formData.locationId}
-						accounts={accounts}
-						onQuickFill={handleQuickFill}
-					/>
-
-					{/* Expense Form - Show Second */}
-					<Card className="bg-card border">
-						<CardHeader className="pb-3">
-							<CardTitle className="text-red-800 flex items-center gap-2 text-lg">
-								<Minus className="size-5" />
-								New Expense Record
-							</CardTitle>
-						</CardHeader>
-						<CardContent className="p-4 sm:p-6">
-							<form onSubmit={handleSubmit} className="space-y-4">
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-									<div>
-										<Label htmlFor="mainCategory">Main Category</Label>
-										<Select
-											key={`main-${formData.mainCategory}`}
-											value={formData.mainCategory}
-											onValueChange={handleMainCategoryChange}
-										>
-											<SelectTrigger>
-												<SelectValue placeholder="Select main category" />
-											</SelectTrigger>
-											<SelectContent>
-												{mainCategories.map((category) => (
-													<SelectItem key={category} value={category}>
-														{category}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
-
-									<div>
-										<Label htmlFor="subCategory">Sub Category</Label>
-										<Select
-											key={`sub-${formData.subCategory}`}
-											value={formData.subCategory}
-											onValueChange={(value) =>
-												setFormData({ ...formData, subCategory: value })
-											}
-											disabled={!formData.mainCategory}
-										>
-											<SelectTrigger>
-												<SelectValue placeholder="Select sub category" />
-											</SelectTrigger>
-											<SelectContent>
-												{subCategories.map((subCategory) => (
-													<SelectItem key={subCategory} value={subCategory}>
-														{subCategory}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
-								</div>
-
-								<div>
-									<Label htmlFor="amount">Amount</Label>
-									<div className="relative">
-										<span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
-											{currencySymbol}
-										</span>
-										<Input
-											id="amount"
-											type="number"
-											placeholder="0.00"
-											value={formData.amount}
-											onChange={(e) =>
-												setFormData({ ...formData, amount: e.target.value })
-											}
-											className="pl-10"
-											required
-										/>
-									</div>
-								</div>
-
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-									<div>
-										<Label htmlFor="accountId">Pay From Account</Label>
-										<Select
-											key={`account-${formData.accountId}`}
-											value={formData.accountId}
-											onValueChange={(value) =>
-												setFormData({ ...formData, accountId: value })
-											}
-										>
-											<SelectTrigger>
-												<SelectValue placeholder="Select account" />
-											</SelectTrigger>
-											<SelectContent>
-												{accounts
-													.filter(
-														(account) =>
-															account.location_access.length === 0 ||
-															account.location_access.includes(
-																formData.locationId,
-															),
-													)
-													.map((account) => (
-														<SelectItem key={account.id} value={account.id}>
-															{account.name} ({account.currency})
-														</SelectItem>
-													))}
-											</SelectContent>
-										</Select>
-									</div>
-
-									<div>
-										<Label htmlFor="date">Date</Label>
-										<div className="relative">
-											<Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-muted-foreground" />
-											<Input
-												id="date"
-												type="date"
-												value={formData.date}
-												onChange={(e) =>
-													setFormData({ ...formData, date: e.target.value })
-												}
-												className="pl-10"
-												required
-											/>
-										</div>
-									</div>
-								</div>
-
-								<div>
-									<Label htmlFor="note">Note (Optional)</Label>
-									<Textarea
-										id="note"
-										placeholder="Add details about this expense..."
-										value={formData.note}
-										onChange={(e) =>
-											setFormData({ ...formData, note: e.target.value })
-										}
-										rows={3}
-									/>
-								</div>
-
-								<div className="flex gap-2 pt-4">
-									<Button type="submit" className="flex-1  text-white">
-										<Minus className="size-4 mr-2" />
-										Add Expense
-									</Button>
-								</div>
-							</form>
-						</CardContent>
-					</Card>
-
-					{/* Recent Expenses - Show Second */}
-					<Card className="bg-card border">
-						<CardHeader className="pb-3">
-							<CardTitle className="text-red-800 text-lg">
-								Recent Expenses
-							</CardTitle>
-						</CardHeader>
-						<CardContent className="p-4 sm:p-6">
-							<div className="space-y-2 max-h-80 sm:max-h-96 overflow-y-auto">
-								{recentExpenses.map((expense) => (
-									<div
-										key={expense.id}
-										className="p-3 bg-white/60 rounded-lg border border-red-100"
-									>
-										<div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-											<div className="flex-1">
-												<div className="font-medium text-red-900 text-sm sm:text-base">
-													{expense.main_type} - {expense.sub_type} •{" "}
-													{expense.currency === "LKR" ? "Rs." : "$"}
-													{expense.amount.toLocaleString()}
-												</div>
-												<div className="text-xs sm:text-sm text-red-700 mt-1">
-													<div>
-														{
-															locations.find(
-																(l) => l.id === expense.location_id,
-															)?.name
-														}
-													</div>
-													<div>
-														Account:{" "}
-														{
-															accounts.find((a) => a.id === expense.account_id)
-																?.name
-														}{" "}
-														(
-														{
-															accounts.find((a) => a.id === expense.account_id)
-																?.currency
-														}
-														)
-													</div>
-													<div>
-														{format(new Date(expense.date), "MMM dd, yyyy")}
-													</div>
-													{expense.note && (
-														<div className="mt-1 italic">"{expense.note}"</div>
-													)}
-												</div>
-											</div>
-										</div>
-									</div>
-								))}
-								{recentExpenses.length === 0 && (
-									<div className="text-center py-8 text-red-600">
-										No expense records yet. Add your first expense above!
-									</div>
-								)}
-							</div>
-						</CardContent>
-					</Card>
-				</div>
+				<Card>
+					<CardHeader>
+						<CardTitle>Quick Expense Shortcuts</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<ExpenseShortcuts
+							locationId={formData.locationId}
+							accounts={accounts}
+							onQuickFill={handleQuickFill}
+						/>
+					</CardContent>
+				</Card>
 			)}
+
+			{/* Recent Expenses */}
+			<Card>
+				<CardHeader>
+					<CardTitle>Recent Expenses</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>Date</TableHead>
+								<TableHead>Category</TableHead>
+								<TableHead>Amount</TableHead>
+								<TableHead>Account</TableHead>
+								<TableHead>Note</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{recentExpenses.map((expense) => (
+								<TableRow key={expense.id}>
+									<TableCell>
+										{format(new Date(expense.date), "MMM dd, yyyy")}
+									</TableCell>
+									<TableCell>
+										{expense.main_type} - {expense.sub_type}
+									</TableCell>
+									<TableCell>
+										{expense.currency === "LKR" ? "Rs." : "$"}
+										{expense.amount.toLocaleString()}
+									</TableCell>
+									<TableCell>
+										{accounts.find((a) => a.id === expense.account_id)?.name} 
+										({accounts.find((a) => a.id === expense.account_id)?.currency})
+									</TableCell>
+									<TableCell>
+										{expense.note || "-"}
+									</TableCell>
+								</TableRow>
+							))}
+							{recentExpenses.length === 0 && (
+								<TableRow>
+									<TableCell colSpan={5} className="text-center py-8">
+										No expense records yet. Add your first expense above!
+									</TableCell>
+								</TableRow>
+							)}
+						</TableBody>
+					</Table>
+				</CardContent>
+			</Card>
 		</div>
 	);
 }

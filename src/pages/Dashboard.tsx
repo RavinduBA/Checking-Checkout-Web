@@ -7,6 +7,7 @@ import {
 import { usePermissions } from "@/hooks/usePermissions";
 import { useLocationContext } from "@/context/LocationContext";
 import { Tables } from "@/integrations/supabase/types";
+import { useState } from "react";
 
 type Location = Tables<"locations">;
 
