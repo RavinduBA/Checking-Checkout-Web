@@ -31,6 +31,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
@@ -392,7 +393,9 @@ export default function Accounts() {
 
 	return (
 		<div className="p-6 space-y-6">
-			<div className="flex items-center gap-4">
+			{/* Header */}
+			<div className="flex justify-between items-center">
+				<h1 className="text-2xl font-bold">Accounts</h1>
 				<div className="flex gap-2">
 					<Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
 						<DialogTrigger asChild>
@@ -409,13 +412,138 @@ export default function Accounts() {
 						<DialogTrigger asChild>
 							<Button variant="outline">
 								<ArrowRightLeft className="size-4 mr-2" />
-								Transfer Money
+								Transfer
 							</Button>
 						</DialogTrigger>
 					</Dialog>
 				</div>
-				<Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-					<DialogContent>
+			</div>
+
+			{/* Summary Cards */}
+			<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+				<Card>
+					<CardHeader className="pb-2">
+						<CardTitle className="text-sm font-medium text-muted-foreground">
+							Total Accounts
+						</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">{accounts.length}</div>
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader className="pb-2">
+						<CardTitle className="text-sm font-medium text-muted-foreground">
+							Total Balance (LKR)
+						</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">
+							Rs. {Object.entries(accountBalances)
+								.filter(([accountId]) => {
+									const account = accounts.find(a => a.id === accountId);
+									return account?.currency === 'LKR';
+								})
+								.reduce((sum, [, balance]) => sum + balance, 0)
+								.toLocaleString()}
+						</div>
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader className="pb-2">
+						<CardTitle className="text-sm font-medium text-muted-foreground">
+							Total Balance (USD)
+						</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">
+							$ {Object.entries(accountBalances)
+								.filter(([accountId]) => {
+									const account = accounts.find(a => a.id === accountId);
+									return account?.currency === 'USD';
+								})
+								.reduce((sum, [, balance]) => sum + balance, 0)
+								.toLocaleString()}
+						</div>
+					</CardContent>
+				</Card>
+			</div>
+
+			{/* Accounts Tabs */}
+			<Tabs defaultValue="accounts" className="w-full">
+				<TabsList className="grid w-full grid-cols-2">
+					<TabsTrigger value="accounts">Accounts</TabsTrigger>
+					<TabsTrigger value="transactions">Recent Transactions</TabsTrigger>
+				</TabsList>
+
+				<TabsContent value="accounts" className="space-y-4">
+					{/* Accounts Grid */}
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+						{accounts.map((account) => (
+							<Card key={account.id}>
+								<CardHeader className="pb-2">
+									<div className="flex items-center justify-between">
+										<CardTitle className="text-lg">{account.name}</CardTitle>
+										<div className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+											{account.currency}
+										</div>
+									</div>
+								</CardHeader>
+								<CardContent className="space-y-2">
+									<div className="flex justify-between items-center">
+										<span className="text-sm text-muted-foreground">Balance</span>
+										<div className="text-lg font-bold">
+											{account.currency === "LKR" ? "Rs." : "$"}
+											{(accountBalances[account.id] || 0).toLocaleString()}
+										</div>
+									</div>
+									<div className="flex gap-2 mt-3">
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() => startEdit(account)}
+											className="h-8 w-8 p-0"
+										>
+											<Edit className="h-4 w-4" />
+										</Button>
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() => handleDelete(account.id)}
+											className="h-8 w-8 p-0"
+										>
+											<Trash2 className="h-4 w-4" />
+										</Button>
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() => setShowTransferDialog(true)}
+											className="h-8 w-8 p-0"
+										>
+											<ArrowRightLeft className="h-4 w-4" />
+										</Button>
+									</div>
+								</CardContent>
+							</Card>
+						))}
+					</div>
+				</TabsContent>
+
+				<TabsContent value="transactions" className="space-y-4">
+					<div className="space-y-4">
+						<h3 className="text-lg font-semibold">Recent Transactions</h3>
+						<div className="space-y-2">
+							<div className="text-sm text-muted-foreground text-center py-8">
+								No recent transactions available
+							</div>
+						</div>
+					</div>
+				</TabsContent>
+			</Tabs>
+
+			{/* Add Account Dialog */}
+			<Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+				<DialogContent>
 						<DialogHeader>
 							<DialogTitle>
 								{editingAccount ? "Edit Account" : "Add New Account"}
@@ -708,73 +836,8 @@ export default function Accounts() {
 						</form>
 					</DialogContent>
 				</Dialog>
-			</div>
 
-			{/* Account Cards */}
-			<div className="grid gap-4">
-				{accounts.map((account) => (
-					<Card key={account.id} className="border-2">
-						<CardHeader className="flex flex-row items-center justify-between">
-							<CardTitle className="text-lg">{account.name}</CardTitle>
-							<div className="flex gap-2">
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() => startEdit(account)}
-								>
-									<Edit className="size-4" />
-								</Button>
-								<Button
-									variant="destructive"
-									size="sm"
-									onClick={() => handleDelete(account.id)}
-								>
-									<Trash2 className="size-4" />
-								</Button>
-							</div>
-						</CardHeader>
-						<CardContent>
-							<div className="grid grid-cols-2 gap-4 text-sm">
-								<div>
-									<span className="font-medium">Currency:</span>{" "}
-									{account.currency}
-								</div>
-								<div>
-									<span className="font-medium">Current Balance:</span>{" "}
-									{account.currency === "LKR" ? "Rs." : "$"}
-									{(accountBalances[account.id] || 0).toLocaleString()}
-								</div>
-								<div>
-									<span className="font-medium">Initial Balance:</span>{" "}
-									{account.currency === "LKR" ? "Rs." : "$"}
-									{account.initial_balance.toLocaleString()}
-								</div>
-								<div className="col-span-2">
-									<span className="font-medium">Location Access:</span>{" "}
-									{account.location_access.length &&
-										locations
-											.filter((loc) => account.location_access.includes(loc.id))
-											.map((loc) => loc.name)
-											.join(", ")}
-								</div>
-							</div>
-						</CardContent>
-					</Card>
-				))}
-			</div>
-
-			{/* Transfer History */}
-			<Card className="border-2">
-				<CardHeader>
-					<CardTitle className="flex items-center gap-2">
-						<ArrowRightLeft className="size-5" />
-						Recent Transfers
-					</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<TransferHistory />
-				</CardContent>
-			</Card>
+			{/* Transfer Dialog */}
 
 			{/* Delete Confirmation Dialog */}
 			<AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
