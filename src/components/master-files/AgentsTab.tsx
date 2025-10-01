@@ -62,6 +62,8 @@ export default function AgentsTab() {
 	const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
 	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 	const [agentToDelete, setAgentToDelete] = useState<string | null>(null);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 	const [formData, setFormData] = useState({
 		name: "",
 		phone: "",
@@ -148,6 +150,8 @@ export default function AgentsTab() {
 				description: "Failed to save agent",
 				variant: "destructive",
 			});
+		} finally {
+			setIsSubmitting(false);
 		}
 	};
 
@@ -181,7 +185,8 @@ export default function AgentsTab() {
 	};
 
 	const confirmDelete = async () => {
-		if (!agentToDelete) return;
+		if (!agentToDelete || isDeleting) return;
+		setIsDeleting(true);
 
 		try {
 			const { error } = await supabase
@@ -205,6 +210,7 @@ export default function AgentsTab() {
 		} finally {
 			setDeleteConfirmOpen(false);
 			setAgentToDelete(null);
+			setIsDeleting(false);
 		}
 	};
 
@@ -355,8 +361,10 @@ export default function AgentsTab() {
 								>
 									Cancel
 								</Button>
-								<Button type="submit">
-									{editingAgent ? "Update" : "Create"} Agent
+								<Button type="submit" disabled={isSubmitting}>
+									{isSubmitting 
+										? (editingAgent ? "Updating..." : "Creating...") 
+										: (editingAgent ? "Update" : "Create")} Agent
 								</Button>
 							</div>
 						</form>
@@ -424,8 +432,8 @@ export default function AgentsTab() {
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<AlertDialogCancel>Cancel</AlertDialogCancel>
-						<AlertDialogAction onClick={confirmDelete}>
-							Delete
+						<AlertDialogAction onClick={confirmDelete} disabled={isDeleting}>
+							{isDeleting ? "Deleting..." : "Delete"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
