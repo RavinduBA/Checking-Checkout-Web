@@ -44,6 +44,7 @@ const Income = () => {
 		note: "",
 		account_id: "",
 		income_type_id: "",
+		payment_type: "direct" as "direct" | "deferred", // direct = paid now, deferred = add to bill
 	});
 
 	const fetchIncomeHistory = useCallback(async () => {
@@ -93,15 +94,34 @@ const Income = () => {
 				account_id: incomeForm.account_id,
 				income_type_id: incomeForm.income_type_id || null,
 				type: "booking" as const,
-				payment_method: "cash",
+				payment_method: incomeForm.payment_type === "direct" ? "cash" : "pending",
 				location_id: selectedReservation.location_id,
 				tenant_id: profile?.tenant_id,
+				booking_id: selectedReservation.id,
 			};
 
-			const { error } = await supabase.from("income").insert(incomeData);
-			if (error) throw error;
+			// Start transaction-like operations
+			const { error: incomeError } = await supabase.from("income").insert(incomeData);
+			if (incomeError) throw incomeError;
 
-			toast({ title: "Success", description: "Income recorded successfully" });
+			// If deferred payment, update reservation total amount
+			if (incomeForm.payment_type === "deferred") {
+				const newTotal = selectedReservation.total_amount + incomeForm.amount;
+				const { error: reservationError } = await supabase
+					.from("reservations")
+					.update({ 
+						total_amount: newTotal,
+						updated_at: new Date().toISOString()
+					})
+					.eq("id", selectedReservation.id);
+				if (reservationError) throw reservationError;
+			}
+
+			const successMessage = incomeForm.payment_type === "direct" 
+				? "Direct payment recorded to account" 
+				: "Amount added to reservation bill";
+			
+			toast({ title: "Success", description: successMessage });
 			setIsIncomeDialogOpen(false);
 			resetIncomeForm();
 			fetchIncomeHistory();
@@ -113,7 +133,7 @@ const Income = () => {
 	};
 
 	const resetIncomeForm = () => {
-		setIncomeForm({ amount: 0, note: "", account_id: "", income_type_id: "" });
+		setIncomeForm({ amount: 0, note: "", account_id: "", income_type_id: "", payment_type: "direct" });
 		setSelectedReservation(null);
 	};
 
@@ -270,12 +290,31 @@ const Income = () => {
 					</div>
 
 					<div>
-						<Label htmlFor="account_id">Account</Label>
-						<Select value={incomeForm.account_id} onValueChange={(value) => setIncomeForm({ ...incomeForm, account_id: value })}>
+						<Label htmlFor="payment_type">Payment Type</Label>
+						<Select value={incomeForm.payment_type} onValueChange={(value: "direct" | "deferred") => setIncomeForm({ ...incomeForm, payment_type: value })}>
 							<SelectTrigger>
-								<SelectValue placeholder="Select account" />
+								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
+								<SelectItem value="direct">💵 Direct Payment (Paid Now)</SelectItem>
+								<SelectItem value="deferred">📋 Add to Bill (Pay Later)</SelectItem>
+							</SelectContent>
+						</Select>
+						<p className="text-sm text-gray-600 mt-1">
+							{incomeForm.payment_type === "direct" 
+								? "Guest paid directly. Will update account balance." 
+								: "Add to reservation bill. Guest will pay during checkout."}
+						</p>
+					</div>
+
+					{incomeForm.payment_type === "direct" && (
+						<div>
+							<Label htmlFor="account_id">Account *</Label>
+							<Select value={incomeForm.account_id} onValueChange={(value) => setIncomeForm({ ...incomeForm, account_id: value })} required>
+								<SelectTrigger>
+									<SelectValue placeholder="Select account" />
+								</SelectTrigger>
+								<SelectContent>
 									{accounts.map((account) => (
 										<SelectItem key={account.id} value={account.id}>
 											{account.name} ({account.currency})
@@ -283,14 +322,23 @@ const Income = () => {
 									))}
 								</SelectContent>
 							</Select>
+							<p className="text-sm text-gray-600 mt-1">Account to record the payment</p>
 						</div>
+					)}
 
-						<div className="flex gap-2 justify-end">
+					{incomeForm.payment_type === "deferred" && (
+						<div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+							<p className="text-sm text-blue-800">
+								<strong>💡 Deferred Payment:</strong> This amount will be added to the reservation total.
+								Guest will pay during checkout. No account will be updated now.
+							</p>
+						</div>
+					)}						<div className="flex gap-2 justify-end">
 							<Button type="button" variant="outline" onClick={() => {
 								setIsIncomeDialogOpen(false);
 								resetIncomeForm();
 							}}>Cancel</Button>
-							<Button type="submit">Record Income</Button>
+							<Button type="submit" disabled={!incomeForm.amount || !selectedReservation || (incomeForm.payment_type === "direct" && !incomeForm.account_id)}>Record Income</Button>
 						</div>
 					</form>
 				</DialogContent>
