@@ -67,8 +67,7 @@ export const ReservationsList = () => {
 	const fetchData = useCallback(async () => {
 		try {
 			// Fetch reservations with location and room data
-			const reservationsQuery =
-				selectedLocation === "all"
+			const reservationsQuery = !selectedLocation
 					? supabase
 							.from("reservations")
 							.select(`
@@ -90,8 +89,7 @@ export const ReservationsList = () => {
 							.order("created_at", { ascending: false });
 
 			// Fetch payments with location filtering through reservations
-			const paymentsQuery =
-				selectedLocation === "all"
+			const paymentsQuery = !selectedLocation
 					? supabase
 							.from("payments")
 							.select(`
@@ -219,8 +217,7 @@ export const ReservationsList = () => {
 
 	const filteredReservations = reservations.filter((reservation) => {
 		const matchesLocation =
-			selectedLocation === "all" ||
-			reservation.location_id === selectedLocation;
+			!selectedLocation || reservation.location_id === selectedLocation;
 		const matchesSearch =
 			searchQuery === "" ||
 			reservation.guest_name

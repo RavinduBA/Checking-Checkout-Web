@@ -18,7 +18,7 @@ const LocationContext = createContext<LocationContextType | undefined>(
 );
 
 export function LocationProvider({ children }: { children: React.ReactNode }) {
-	const [selectedLocation, setSelectedLocation] = useState("all");
+	const [selectedLocation, setSelectedLocation] = useState("");
 	const [locations, setLocations] = useState<Location[]>([]);
 	const [loading, setLoading] = useState(true);
 	const { tenant } = useAuth();
@@ -51,8 +51,15 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 		fetchLocations();
 	}, [tenant?.id]);
 
+	// Auto-select first location when locations are loaded
+	useEffect(() => {
+		if (locations.length > 0 && !selectedLocation) {
+			setSelectedLocation(locations[0].id);
+		}
+	}, [locations, selectedLocation]);
+
 	const getSelectedLocationData = () => {
-		if (selectedLocation === "all") return null;
+		if (!selectedLocation) return null;
 		return locations.find((loc) => loc.id === selectedLocation) || null;
 	};
 

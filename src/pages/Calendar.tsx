@@ -152,14 +152,12 @@ export default function Calendar() {
 	};
 
 	const filteredRooms = rooms.filter(
-		(room) =>
-			selectedLocation === "all" || room.location_id === selectedLocation,
+		(room) => !selectedLocation || room.location_id === selectedLocation,
 	);
 
 	const filteredReservations = reservations.filter(
 		(reservation) =>
-			selectedLocation === "all" ||
-			reservation.location_id === selectedLocation,
+			!selectedLocation || reservation.location_id === selectedLocation,
 	);
 
 	const filteredExternalBookings = externalBookings
@@ -169,8 +167,7 @@ export default function Calendar() {
 		}))
 		.filter(
 			(booking) =>
-				selectedLocation === "all" ||
-				booking.mappedLocation?.id === selectedLocation,
+				!selectedLocation || booking.mappedLocation?.id === selectedLocation,
 		);
 
 	// Create virtual rooms for external bookings when no internal rooms exist for a location

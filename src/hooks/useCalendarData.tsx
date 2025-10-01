@@ -54,48 +54,45 @@ export const useCalendarData = (): UseCalendarDataReturn => {
 				.eq("is_active", true);
 
 			// Fetch rooms with location filtering
-			const roomsQuery =
-				selectedLocation === "all"
-					? supabase
-							.from("rooms")
-							.select("*")
-							.eq("tenant_id", tenant.id)
-							.eq("is_active", true)
-					: supabase
-							.from("rooms")
-							.select("*")
-							.eq("tenant_id", tenant.id)
-							.eq("location_id", selectedLocation)
-							.eq("is_active", true);
+			const roomsQuery = !selectedLocation
+				? supabase
+						.from("rooms")
+						.select("*")
+						.eq("tenant_id", tenant.id)
+						.eq("is_active", true)
+				: supabase
+						.from("rooms")
+						.select("*")
+						.eq("tenant_id", tenant.id)
+						.eq("location_id", selectedLocation)
+						.eq("is_active", true);
 
 			// Fetch reservations with location filtering
-			const reservationsQuery =
-				selectedLocation === "all"
-					? supabase
-							.from("reservations")
-							.select("*")
-							.eq("tenant_id", tenant.id)
-							.order("check_in_date", { ascending: true })
-					: supabase
-							.from("reservations")
-							.select("*")
-							.eq("tenant_id", tenant.id)
-							.eq("location_id", selectedLocation)
-							.order("check_in_date", { ascending: true });
+			const reservationsQuery = !selectedLocation
+				? supabase
+						.from("reservations")
+						.select("*")
+						.eq("tenant_id", tenant.id)
+						.order("check_in_date", { ascending: true })
+				: supabase
+						.from("reservations")
+						.select("*")
+						.eq("tenant_id", tenant.id)
+						.eq("location_id", selectedLocation)
+						.order("check_in_date", { ascending: true });
 
 			// Fetch external bookings with location filtering
 			// Note: external_bookings table doesn't have tenant_id column
-			const externalBookingsQuery =
-				selectedLocation === "all"
-					? supabase
-							.from("external_bookings")
-							.select("*")
-							.order("check_in", { ascending: true })
-					: supabase
-							.from("external_bookings")
-							.select("*")
-							.eq("location_id", selectedLocation)
-							.order("check_in", { ascending: true });
+			const externalBookingsQuery = !selectedLocation
+				? supabase
+						.from("external_bookings")
+						.select("*")
+						.order("check_in", { ascending: true })
+				: supabase
+						.from("external_bookings")
+						.select("*")
+						.eq("location_id", selectedLocation)
+						.order("check_in", { ascending: true });
 
 			const [roomsData, reservationsData, externalBookingsData, locationsData] =
 				await Promise.all([

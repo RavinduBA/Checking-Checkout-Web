@@ -46,9 +46,6 @@ export function LocationSwitcher({
 
 	const getLocationSubtext = (location: typeof activeLocation) => {
 		if (!location) return "No location selected";
-		if (location.id === "all") {
-			return `${locations.length} location${locations.length !== 1 ? "s" : ""}`;
-		}
 		return "Active Location";
 	};
 

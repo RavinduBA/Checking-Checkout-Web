@@ -93,8 +93,9 @@ export default function Dashboard() {
 				}
 
 				// Build query filters - always include tenant filter
-				const locationFilter =
-					selectedLocation === "all" ? {} : { location_id: selectedLocation };
+				const locationFilter = !selectedLocation
+					? {}
+					: { location_id: selectedLocation };
 				const todayFilter = selectedMonth
 					? { ...locationFilter, date: { gte: monthStart, lt: monthEnd } }
 					: { ...locationFilter, date: today };
@@ -195,11 +196,7 @@ export default function Dashboard() {
 						.select("*, locations(*)")
 						.gte("check_in", today)
 						.in("location_id", tenantLocationIds)
-						.match(
-							selectedLocation === "all"
-								? {}
-								: { location_id: selectedLocation },
-						)
+						.match(!selectedLocation ? {} : { location_id: selectedLocation })
 						.order("check_in")
 						.limit(5),
 					supabase
