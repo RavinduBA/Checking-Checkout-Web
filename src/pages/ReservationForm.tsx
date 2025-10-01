@@ -2,6 +2,7 @@ import {
 	ArrowLeft,
 	Calendar,
 	CreditCard,
+	Edit3,
 	MapPin,
 	Plus,
 	Save,
@@ -39,6 +40,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useLocationContext } from "@/context/LocationContext";
 import { useToast } from "@/hooks/use-toast";
@@ -120,16 +122,33 @@ export default function ReservationForm() {
 		commission_rate: 15,
 	});
 
+	// State for manual total amount editing
+	const [isManualTotal, setIsManualTotal] = useState(false);
+	const [manualTotalAmount, setManualTotalAmount] = useState(0);
+
 	useEffect(() => {
-		const total = formData.room_rate * formData.nights;
-		const balanceAmount = total - formData.advance_amount;
-		setFormData((prev) => ({
-			...prev,
-			total_amount: total,
-			balance_amount: balanceAmount,
-			paid_amount: formData.advance_amount,
-		}));
-	}, [formData.room_rate, formData.nights, formData.advance_amount]);
+		// Only auto-calculate if not in manual mode
+		if (!isManualTotal) {
+			const total = formData.room_rate * formData.nights;
+			const balanceAmount = total - formData.advance_amount;
+			setFormData((prev) => ({
+				...prev,
+				total_amount: total,
+				balance_amount: balanceAmount,
+				paid_amount: formData.advance_amount,
+			}));
+			setManualTotalAmount(total);
+		} else {
+			// In manual mode, only update balance amount
+			const balanceAmount = manualTotalAmount - formData.advance_amount;
+			setFormData((prev) => ({
+				...prev,
+				total_amount: manualTotalAmount,
+				balance_amount: balanceAmount,
+				paid_amount: formData.advance_amount,
+			}));
+		}
+	}, [formData.room_rate, formData.nights, formData.advance_amount, isManualTotal, manualTotalAmount]);
 
 	const fetchInitialData = useCallback(async () => {
 		try {
@@ -191,6 +210,9 @@ export default function ReservationForm() {
 				agent_commission: data.agent_commission || 0,
 				currency: data.currency || "LKR",
 			});
+			
+			// Initialize manual total amount with the loaded total
+			setManualTotalAmount(data.total_amount);
 		} catch (error) {
 			console.error("Error fetching reservation:", error);
 			toast({
@@ -229,13 +251,35 @@ export default function ReservationForm() {
 	};
 
 	const calculateTotal = () => {
-		const total = formData.room_rate * formData.nights;
-		const balanceAmount = total - formData.advance_amount;
+		if (!isManualTotal) {
+			const total = formData.room_rate * formData.nights;
+			const balanceAmount = total - formData.advance_amount;
+			setFormData((prev) => ({
+				...prev,
+				total_amount: total,
+				balance_amount: balanceAmount,
+				paid_amount: formData.advance_amount,
+			}));
+			setManualTotalAmount(total);
+		}
+	};
+
+	const handleManualTotalToggle = () => {
+		if (!isManualTotal) {
+			// Switching to manual mode - initialize with current calculated total
+			const calculatedTotal = formData.room_rate * formData.nights;
+			setManualTotalAmount(calculatedTotal);
+		}
+		setIsManualTotal(!isManualTotal);
+	};
+
+	const handleManualTotalChange = (value: number) => {
+		setManualTotalAmount(value);
+		const balanceAmount = value - formData.advance_amount;
 		setFormData((prev) => ({
 			...prev,
-			total_amount: total,
+			total_amount: value,
 			balance_amount: balanceAmount,
-			paid_amount: formData.advance_amount,
 		}));
 	};
 
@@ -864,14 +908,90 @@ export default function ReservationForm() {
 
 					{/* Right Column - Pricing & Actions */}
 					<div className="space-y-6">
-						{/* Pricing Display */}
-						<PricingDisplay
-							roomRate={formData.room_rate}
-							nights={formData.nights}
-							currency={formData.currency}
-							totalAmount={formData.total_amount}
-							advanceAmount={formData.advance_amount}
-						/>
+						{/* Enhanced Pricing Display with Manual Edit */}
+						<Card className="bg-primary/5 border-primary/20">
+							<CardHeader className="pb-3">
+								<CardTitle className="flex items-center justify-between text-base">
+									<div className="flex items-center gap-2">
+										<CreditCard className="size-5" />
+										Pricing Breakdown
+									</div>
+									<Button
+										type="button"
+										variant={isManualTotal ? "default" : "outline"}
+										size="sm"
+										onClick={handleManualTotalToggle}
+										className="flex items-center gap-1"
+									>
+										<Edit3 className="size-3" />
+										{isManualTotal ? "Auto" : "Edit"}
+									</Button>
+								</CardTitle>
+							</CardHeader>
+							<CardContent className="space-y-3">
+								{/* Room Rate Calculation */}
+								{formData.room_rate > 0 && formData.nights > 0 && (
+									<div className="flex justify-between items-center text-sm">
+										<span>
+											{formData.currency} {formData.room_rate.toLocaleString()} × {formData.nights}{" "}
+											{formData.nights === 1 ? "night" : "nights"}
+										</span>
+										<span className="font-medium">
+											{formData.currency} {(formData.room_rate * formData.nights).toLocaleString()}
+										</span>
+									</div>
+								)}
+
+								{/* Manual Total Input or Display */}
+								<div className="space-y-2">
+									<Label htmlFor="total_amount" className="text-sm font-medium">
+										Total Amount
+									</Label>
+									{isManualTotal ? (
+										<Input
+											id="total_amount"
+											type="number"
+											value={manualTotalAmount}
+											onChange={(e) => handleManualTotalChange(Number(e.target.value))}
+											className="text-lg font-semibold"
+											min="0"
+											step="0.01"
+										/>
+									) : (
+										<div className="text-lg font-semibold text-primary">
+											{formData.currency} {formData.total_amount.toLocaleString()}
+										</div>
+									)}
+								</div>
+
+								{/* Advance Payment */}
+								{formData.advance_amount > 0 && (
+									<>
+										<Separator />
+										<div className="flex justify-between items-center text-sm">
+											<span className="text-muted-foreground">Advance Payment</span>
+											<span className="text-emerald-600 font-medium">
+												-{formData.currency} {formData.advance_amount.toLocaleString()}
+											</span>
+										</div>
+									</>
+								)}
+
+								{/* Balance Due */}
+								{formData.advance_amount > 0 && (
+									<div className="flex justify-between items-center text-sm">
+										<span className="text-muted-foreground">Balance Due</span>
+										<span className="font-medium text-orange-600">
+											{formData.currency} {formData.balance_amount.toLocaleString()}
+										</span>
+									</div>
+								)}
+
+								<div className="text-xs text-muted-foreground text-center pt-2 border-t">
+									{isManualTotal ? "Manual total amount" : "Auto-calculated from room rate × nights"}
+								</div>
+							</CardContent>
+						</Card>
 
 						{/* Photo Attachments */}
 						<PhotoAttachment
