@@ -106,9 +106,10 @@ export const addUserToLocation = async (
 		} else {
 			// User doesn't exist in profiles - check if auth user exists
 			console.log("No profile found, checking if auth user exists");
-			
-			const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
-			
+
+			const { data: authUsers, error: authError } =
+				await supabaseAdmin.auth.admin.listUsers();
+
 			if (authError) {
 				console.error("Error checking auth users:", authError);
 				return {
@@ -116,24 +117,31 @@ export const addUserToLocation = async (
 					error: `Failed to check existing auth users: ${authError.message}`,
 				};
 			}
-			
-			const existingAuthUser = authUsers.users.find((user: any) => user.email === params.email);
-			
+
+			const existingAuthUser = authUsers.users.find(
+				(user: any) => user.email === params.email,
+			);
+
 			if (existingAuthUser) {
 				// Auth user exists but no profile - create profile
 				console.log("Auth user exists, creating profile");
 				userId = existingAuthUser.id;
 				userCreated = false;
-				
-				const { error: profileCreateError } = await supabaseAdmin.from("profiles").insert({
-					id: userId,
-					email: params.email,
-					name: params.email.split("@")[0],
-					tenant_id: params.tenantId,
-				});
+
+				const { error: profileCreateError } = await supabaseAdmin
+					.from("profiles")
+					.insert({
+						id: userId,
+						email: params.email,
+						name: params.email.split("@")[0],
+						tenant_id: params.tenantId,
+					});
 
 				if (profileCreateError) {
-					console.error("Error creating profile for existing auth user:", profileCreateError);
+					console.error(
+						"Error creating profile for existing auth user:",
+						profileCreateError,
+					);
 					return {
 						success: false,
 						error: `Failed to create user profile: ${profileCreateError.message}`,
@@ -169,12 +177,14 @@ export const addUserToLocation = async (
 				userCreated = true;
 
 				// Create profile for new user
-				const { error: profileCreateError } = await supabaseAdmin.from("profiles").insert({
-					id: userId,
-					email: params.email,
-					name: params.email.split("@")[0],
-					tenant_id: params.tenantId,
-				});
+				const { error: profileCreateError } = await supabaseAdmin
+					.from("profiles")
+					.insert({
+						id: userId,
+						email: params.email,
+						name: params.email.split("@")[0],
+						tenant_id: params.tenantId,
+					});
 
 				if (profileCreateError) {
 					console.error("Error creating profile:", profileCreateError);

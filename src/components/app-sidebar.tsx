@@ -62,15 +62,18 @@ export function AppSidebar({
 	const location = useLocation();
 
 	// Handle location change with permission check
-	const handleLocationChange = React.useCallback((locationId: string) => {
-		// Call the parent's onLocationChange if provided
-		if (onLocationChange) {
-			onLocationChange(locationId);
-		}
-		
-		// Note: Permissions are automatically refreshed when location context changes
-		// The sidebar will re-render with updated navigation items based on new permissions
-	}, [onLocationChange]);
+	const handleLocationChange = React.useCallback(
+		(locationId: string) => {
+			// Call the parent's onLocationChange if provided
+			if (onLocationChange) {
+				onLocationChange(locationId);
+			}
+
+			// Note: Permissions are automatically refreshed when location context changes
+			// The sidebar will re-render with updated navigation items based on new permissions
+		},
+		[onLocationChange],
+	);
 
 	// Main navigation items based on user permissions
 	const getNavMainItems = () => {

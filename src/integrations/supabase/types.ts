@@ -109,6 +109,7 @@ export type Database = {
           service_date: string
           service_name: string
           service_type: string
+          tenant_id: string | null
           total_amount: number
           unit_price: number
         }
@@ -123,6 +124,7 @@ export type Database = {
           service_date?: string
           service_name: string
           service_type: string
+          tenant_id?: string | null
           total_amount: number
           unit_price: number
         }
@@ -137,6 +139,7 @@ export type Database = {
           service_date?: string
           service_name?: string
           service_type?: string
+          tenant_id?: string | null
           total_amount?: number
           unit_price?: number
         }
@@ -146,6 +149,13 @@ export type Database = {
             columns: ["reservation_id"]
             isOneToOne: false
             referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "additional_services_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -676,6 +686,7 @@ export type Database = {
       income: {
         Row: {
           account_id: string
+          additional_service_id: string | null
           amount: number
           booking_id: string | null
           booking_source: string | null
@@ -689,10 +700,12 @@ export type Database = {
           location_id: string
           note: string | null
           payment_method: string
+          tenant_id: string | null
           type: Database["public"]["Enums"]["income_type"]
         }
         Insert: {
           account_id: string
+          additional_service_id?: string | null
           amount: number
           booking_id?: string | null
           booking_source?: string | null
@@ -706,10 +719,12 @@ export type Database = {
           location_id: string
           note?: string | null
           payment_method: string
+          tenant_id?: string | null
           type: Database["public"]["Enums"]["income_type"]
         }
         Update: {
           account_id?: string
+          additional_service_id?: string | null
           amount?: number
           booking_id?: string | null
           booking_source?: string | null
@@ -723,6 +738,7 @@ export type Database = {
           location_id?: string
           note?: string | null
           payment_method?: string
+          tenant_id?: string | null
           type?: Database["public"]["Enums"]["income_type"]
         }
         Relationships: [
@@ -731,6 +747,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "income_additional_service_id_fkey"
+            columns: ["additional_service_id"]
+            isOneToOne: false
+            referencedRelation: "additional_services"
             referencedColumns: ["id"]
           },
           {
@@ -747,25 +770,43 @@ export type Database = {
             referencedRelation: "locations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "income_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
         ]
       }
       income_types: {
         Row: {
           created_at: string | null
           id: string
+          tenant_id: string | null
           type_name: string
         }
         Insert: {
           created_at?: string | null
           id?: string
+          tenant_id?: string | null
           type_name: string
         }
         Update: {
           created_at?: string | null
           id?: string
+          tenant_id?: string | null
           type_name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "income_types_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoices: {
         Row: {
@@ -1705,7 +1746,7 @@ export type Database = {
         Returns: string
       }
       generate_reservation_number: {
-        Args: Record<PropertyKey, never>
+        Args: Record<PropertyKey, never> | { p_tenant_id: string }
         Returns: string
       }
       generate_tenant_slug: {

@@ -7,7 +7,7 @@ import {
 	Plus,
 	Printer,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import SignatureCanvas from "react-signature-canvas";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -78,6 +78,7 @@ const Income = () => {
 
 	const [isReservationDialogOpen, setIsReservationDialogOpen] = useState(false);
 	const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+	const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
 	const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
 	const [selectedReservation, setSelectedReservation] =
 		useState<Reservation | null>(null);
@@ -105,6 +106,19 @@ const Income = () => {
 		notes: "",
 	});
 
+	const [serviceForm, setServiceForm] = useState({
+		reservation_id: "",
+		service_type: "",
+		service_name: "",
+		quantity: 1,
+		unit_price: 0,
+		notes: "",
+		service_date: new Date().toISOString().split('T')[0],
+	});
+
+	const [incomeTypes, setIncomeTypes] = useState<any[]>([]);
+	const [travelerServices, setTravelerServices] = useState<any[]>([]);
+
 
 
 	const calculateNights = (checkIn: string, checkOut: string) => {
@@ -128,15 +142,11 @@ const Income = () => {
 			);
 			const totalAmount = nights * selectedRoom.base_price;
 
-			// Get count for reservation number
-			const { data: existingReservations, error: countError } = await supabase
-				.from("reservations")
-				.select("id");
+			// Generate reservation number using database function
+			const { data: reservationNumber, error: numberError } = await supabase
+				.rpc("generate_reservation_number", { p_tenant_id: profile?.tenant_id });
 
-			if (countError) throw countError;
-
-			const currentYear = new Date().getFullYear();
-			const reservationNumber = `RES${currentYear}${String((existingReservations?.length || 0) + 1).padStart(4, "0")}`;
+			if (numberError) throw numberError;
 
 			const reservationData = {
 				location_id: reservationForm.location_id,
@@ -324,6 +334,145 @@ const Income = () => {
 			notes: "",
 		});
 	};
+
+	// Service handling functions
+	const handleServiceSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+
+		if (!serviceForm.reservation_id) {
+			toast({
+				title: "Error",
+				description: "Please select a reservation",
+				variant: "destructive",
+			});
+			return;
+		}
+
+		try {
+			const totalAmount = serviceForm.quantity * serviceForm.unit_price;
+			
+			// Add to additional_services table
+			const { data: serviceData, error: serviceError } = await supabase
+				.from("additional_services")
+				.insert({
+					reservation_id: serviceForm.reservation_id,
+					service_type: serviceForm.service_type,
+					service_name: serviceForm.service_name,
+					quantity: serviceForm.quantity,
+					unit_price: serviceForm.unit_price,
+					total_amount: totalAmount,
+					service_date: serviceForm.service_date,
+					notes: serviceForm.notes || null,
+					created_by: profile?.id,
+					tenant_id: profile?.tenant_id,
+				})
+				.select()
+				.single();
+
+			if (serviceError) throw serviceError;
+
+			// Add corresponding income record
+			const reservation = reservations.find(r => r.id === serviceForm.reservation_id);
+			const selectedAccount = accounts.find(acc => acc.currency === reservation?.currency);
+
+			if (selectedAccount) {
+				const incomeData: any = {
+					type: 'service',
+					booking_id: serviceForm.reservation_id,
+					amount: totalAmount,
+					currency: reservation?.currency || 'LKR',
+					is_advance: false,
+					payment_method: 'service',
+					account_id: selectedAccount.id,
+					note: `${serviceForm.service_name} - ${serviceForm.notes || ''}`,
+					date: serviceForm.service_date,
+					booking_source: 'direct',
+					check_in_date: reservation?.check_in_date,
+					check_out_date: reservation?.check_out_date,
+					additional_service_id: serviceData.id,
+				};
+
+				// Add tenant_id if it exists
+				if (profile?.tenant_id) {
+					incomeData.tenant_id = profile.tenant_id;
+				}
+
+				const { error: incomeError } = await supabase
+					.from("income")
+					.insert(incomeData);
+
+				if (incomeError) throw incomeError;
+			}
+
+			toast({
+				title: "Success",
+				description: "Traveler service added successfully",
+			});
+
+			setIsServiceDialogOpen(false);
+			resetServiceForm();
+			refetch();
+			fetchTravelerServices();
+		} catch (error) {
+			console.error("Service creation error:", error);
+			toast({
+				title: "Error",
+				description: "Failed to add traveler service",
+				variant: "destructive",
+			});
+		}
+	};
+
+	const resetServiceForm = () => {
+		setServiceForm({
+			reservation_id: "",
+			service_type: "",
+			service_name: "",
+			quantity: 1,
+			unit_price: 0,
+			notes: "",
+			service_date: new Date().toISOString().split('T')[0],
+		});
+	};
+
+	// Fetch income types and traveler services
+	const fetchIncomeTypes = useCallback(async () => {
+		try {
+			const response = await supabase
+				.from("income_types")
+				.select("*")
+				.eq("tenant_id", profile?.tenant_id)
+				.order("type_name");
+
+			if (response.error) throw response.error;
+			setIncomeTypes(response.data || []);
+		} catch (error) {
+			console.error("Error fetching income types:", error);
+		}
+	}, [profile?.tenant_id]);
+
+	const fetchTravelerServices = useCallback(async () => {
+		try {
+			const response = await supabase
+				.from("additional_services")
+				.select("*")
+				.eq("tenant_id", profile?.tenant_id)
+				.order("created_at", { ascending: false });
+
+			if (response.error) throw response.error;
+			setTravelerServices(response.data || []);
+		} catch (error) {
+			console.error("Error fetching traveler services:", error);
+		}
+	}, [profile?.tenant_id]);
+
+	// Load data on component mount
+	useEffect(() => {
+		if (profile?.tenant_id) {
+			fetchIncomeTypes();
+			fetchTravelerServices();
+		}
+	}, [profile?.tenant_id, fetchIncomeTypes, fetchTravelerServices]);
 
 	const handlePrint = () => {
 		const signature = sigCanvas.current?.toDataURL();
@@ -700,6 +849,7 @@ const Income = () => {
 				<TabsList>
 					<TabsTrigger value="reservations">Reservations</TabsTrigger>
 					<TabsTrigger value="payments">Payments</TabsTrigger>
+					<TabsTrigger value="services">Traveler Services</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="reservations">
@@ -823,6 +973,79 @@ const Income = () => {
 												<TableCell>{payment.payment_method}</TableCell>
 												<TableCell>
 													{new Date(payment.created_at).toLocaleDateString()}
+												</TableCell>
+											</TableRow>
+										);
+									})}
+								</TableBody>
+							</Table>
+						</CardContent>
+					</Card>
+				</TabsContent>
+
+				<TabsContent value="services">
+					<Card>
+						<CardHeader>
+							<div className="flex justify-between items-center">
+								<CardTitle>Traveler Services</CardTitle>
+								<Button onClick={() => setIsServiceDialogOpen(true)}>
+									<Plus className="h-4 w-4 mr-2" />
+									Add Service
+								</Button>
+							</div>
+						</CardHeader>
+						<CardContent>
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Reservation #</TableHead>
+										<TableHead>Guest</TableHead>
+										<TableHead>Service</TableHead>
+										<TableHead>Date</TableHead>
+										<TableHead>Quantity</TableHead>
+										<TableHead>Unit Price</TableHead>
+										<TableHead>Total</TableHead>
+										<TableHead>Actions</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{travelerServices.map((service) => {
+										const reservation = reservations.find(r => r.id === service.reservation_id);
+										return (
+											<TableRow key={service.id}>
+												<TableCell>{reservation?.reservation_number || 'N/A'}</TableCell>
+												<TableCell>{reservation?.guest_name || 'N/A'}</TableCell>
+												<TableCell>
+													<div>
+														<div className="font-medium">{service.service_name}</div>
+														<div className="text-sm text-muted-foreground">{service.service_type}</div>
+													</div>
+												</TableCell>
+												<TableCell>{new Date(service.service_date).toLocaleDateString()}</TableCell>
+												<TableCell>{service.quantity}</TableCell>
+												<TableCell>{service.unit_price.toLocaleString()} {service.currency}</TableCell>
+												<TableCell>{service.total_amount.toLocaleString()} {service.currency}</TableCell>
+												<TableCell>
+													<div className="flex space-x-2">
+														<Button
+															variant="outline"
+															size="sm"
+															onClick={() => {
+																// View service details
+															}}
+														>
+															<Eye className="h-4 w-4" />
+														</Button>
+														<Button
+															variant="outline"
+															size="sm"
+															onClick={() => {
+																// Edit service
+															}}
+														>
+															<Edit className="h-4 w-4" />
+														</Button>
+													</div>
 												</TableCell>
 											</TableRow>
 										);
@@ -980,6 +1203,152 @@ const Income = () => {
 							</Button>
 						</div>
 					</div>
+				</DialogContent>
+			</Dialog>
+
+			{/* Service Dialog */}
+			<Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
+				<DialogContent className="max-w-2xl">
+					<DialogHeader>
+						<DialogTitle>Add Traveler Service</DialogTitle>
+					</DialogHeader>
+					<form onSubmit={handleServiceSubmit} className="space-y-4">
+						<div className="grid grid-cols-2 gap-4">
+							<div>
+								<Label htmlFor="reservation_id">Reservation *</Label>
+								<Select
+									value={serviceForm.reservation_id}
+									onValueChange={(value) =>
+										setServiceForm({ ...serviceForm, reservation_id: value })
+									}
+								>
+									<SelectTrigger>
+										<SelectValue placeholder="Select reservation" />
+									</SelectTrigger>
+									<SelectContent>
+										{reservations
+											.filter(r => r.status !== 'checked_out' && r.status !== 'cancelled')
+											.map((reservation) => (
+												<SelectItem key={reservation.id} value={reservation.id}>
+													{reservation.reservation_number} - {reservation.guest_name}
+												</SelectItem>
+											))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div>
+								<Label htmlFor="service_type">Service Type *</Label>
+								<Select
+									value={serviceForm.service_type}
+									onValueChange={(value) => {
+										setServiceForm({ ...serviceForm, service_type: value });
+									}}
+								>
+									<SelectTrigger>
+										<SelectValue placeholder="Select service type" />
+									</SelectTrigger>
+									<SelectContent>
+										{incomeTypes.map((type) => (
+											<SelectItem key={type.id} value={type.type_name}>
+												{type.type_name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+						</div>
+
+						<div className="grid grid-cols-2 gap-4">
+							<div>
+								<Label htmlFor="service_name">Service Name *</Label>
+								<Input
+									id="service_name"
+									value={serviceForm.service_name}
+									onChange={(e) =>
+										setServiceForm({ ...serviceForm, service_name: e.target.value })
+									}
+									placeholder="e.g., Laundry - 2 shirts"
+									required
+								/>
+							</div>
+
+							<div>
+								<Label htmlFor="service_date">Service Date *</Label>
+								<Input
+									id="service_date"
+									type="date"
+									value={serviceForm.service_date}
+									onChange={(e) =>
+										setServiceForm({ ...serviceForm, service_date: e.target.value })
+									}
+									required
+								/>
+							</div>
+						</div>
+
+						<div className="grid grid-cols-3 gap-4">
+							<div>
+								<Label htmlFor="quantity">Quantity *</Label>
+								<Input
+									id="quantity"
+									type="number"
+									min="1"
+									value={serviceForm.quantity}
+									onChange={(e) =>
+										setServiceForm({ ...serviceForm, quantity: parseInt(e.target.value) || 1 })
+									}
+									required
+								/>
+							</div>
+
+							<div>
+								<Label htmlFor="unit_price">Unit Price *</Label>
+								<Input
+									id="unit_price"
+									type="number"
+									step="0.01"
+									min="0"
+									value={serviceForm.unit_price}
+									onChange={(e) =>
+										setServiceForm({ ...serviceForm, unit_price: parseFloat(e.target.value) || 0 })
+									}
+									required
+								/>
+							</div>
+
+							<div>
+								<Label>Total Amount</Label>
+								<div className="p-2 bg-muted rounded-md">
+									{(serviceForm.quantity * serviceForm.unit_price).toLocaleString()}
+								</div>
+							</div>
+						</div>
+
+						<div>
+							<Label htmlFor="notes">Notes</Label>
+							<Textarea
+								id="notes"
+								value={serviceForm.notes}
+								onChange={(e) =>
+									setServiceForm({ ...serviceForm, notes: e.target.value })
+								}
+								placeholder="Additional notes about the service"
+								rows={3}
+							/>
+						</div>
+
+						<div className="flex justify-end space-x-2">
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => setIsServiceDialogOpen(false)}
+							>
+								Cancel
+							</Button>
+							<Button type="submit">Add Service</Button>
+						</div>
+					</form>
 				</DialogContent>
 			</Dialog>
 		</div>

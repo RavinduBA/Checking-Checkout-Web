@@ -8,6 +8,7 @@ import {
 	Download,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { CurrencySelector } from "@/components/CurrencySelector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,11 +37,10 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
+	type Currency,
 	convertCurrency,
 	formatCurrency,
-	type Currency,
 } from "@/utils/currency";
-import { CurrencySelector } from "@/components/CurrencySelector";
 
 type AccountDetail = {
 	id: string;

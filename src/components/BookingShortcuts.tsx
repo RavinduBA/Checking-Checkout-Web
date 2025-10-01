@@ -218,7 +218,9 @@ export function BookingShortcuts({
 						.filter((booking) => !usedShortcuts.has(booking.id))
 						.map((booking) => {
 							const account = getAccountForBooking(booking);
-							const currencySymbol = account?.currency ? getCurrencySymbol(account.currency) : "Rs.";
+							const currencySymbol = account?.currency
+								? getCurrencySymbol(account.currency)
+								: "Rs.";
 							const totalAmount = booking.total_amount || 25000;
 							const advancePaid = getAdvancePaid(booking);
 							const remainingAmount = getRemainingAmount(booking);

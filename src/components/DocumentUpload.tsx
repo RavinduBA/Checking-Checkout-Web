@@ -9,6 +9,7 @@ import {
 	ZoomIn,
 } from "lucide-react";
 import { useRef, useState } from "react";
+import { SignedImage } from "@/components/SignedImage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -22,7 +23,6 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { SignedImage } from "@/components/SignedImage";
 
 interface UploadedFile {
 	filePath: string; // Store the storage file path instead of URL
@@ -333,7 +333,9 @@ export const DocumentUpload = ({
 									>
 										{getFileIcon(file.type)}
 										<div className="flex-1 min-w-0">
-											<p className="text-sm font-medium truncate">{file.name}</p>
+											<p className="text-sm font-medium truncate">
+												{file.name}
+											</p>
 											<p className="text-xs text-muted-foreground">
 												{formatFileSize(file.size)} •{" "}
 												{file.uploadedAt.toLocaleDateString()}
@@ -388,11 +390,15 @@ export const DocumentUpload = ({
 							<DialogTitle>{previewFile.name}</DialogTitle>
 						</DialogHeader>
 						<div className="flex justify-center">
-							<SignedImage 
+							<SignedImage
 								filePath={previewFile.filePath}
 								alt={previewFile.name}
 								className="max-w-full max-h-[70vh] object-contain rounded-lg"
-								fallback={<div className="p-8 text-center text-muted-foreground">Failed to load image</div>}
+								fallback={
+									<div className="p-8 text-center text-muted-foreground">
+										Failed to load image
+									</div>
+								}
 							/>
 						</div>
 					</DialogContent>

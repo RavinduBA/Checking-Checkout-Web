@@ -15,8 +15,6 @@ import {
 	Users,
 } from "lucide-react";
 import { useCallback, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { useLocationContext } from "@/context/LocationContext";
 import { Link, useNavigate } from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,6 +34,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from "@/context/AuthContext";
+import { useLocationContext } from "@/context/LocationContext";
 import { useToast } from "@/hooks/use-toast";
 import { useCalendarData } from "@/hooks/useCalendarData";
 import { Tables } from "@/integrations/supabase/types";
@@ -87,7 +87,7 @@ export default function Calendar() {
 	const navigate = useNavigate();
 	const { toast } = useToast();
 	const { tenant } = useAuth();
-	
+
 	// Use the custom hook for calendar data
 	const {
 		reservations,
@@ -939,7 +939,8 @@ export default function Calendar() {
 																		>
 																			<div className="font-medium text-xs leading-tight truncate">
 																				{(
-																					(externalReservation.raw_data as any)?.firstName ||
+																					(externalReservation.raw_data as any)
+																						?.firstName ||
 																					externalReservation.guest_name?.split(
 																						" ",
 																					)[0] ||

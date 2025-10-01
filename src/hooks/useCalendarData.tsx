@@ -29,19 +29,23 @@ export const useCalendarData = (): UseCalendarDataReturn => {
 	const [locations, setLocations] = useState<Location[]>([]);
 	const [rooms, setRooms] = useState<Room[]>([]);
 	const [reservations, setReservations] = useState<Reservation[]>([]);
-	const [externalBookings, setExternalBookings] = useState<ExternalBooking[]>([]);
-	const [propertyMappings, setPropertyMappings] = useState<PropertyMapping[]>([]);
+	const [externalBookings, setExternalBookings] = useState<ExternalBooking[]>(
+		[],
+	);
+	const [propertyMappings, setPropertyMappings] = useState<PropertyMapping[]>(
+		[],
+	);
 	const [loading, setLoading] = useState(true);
-	
+
 	const { tenant } = useAuth();
 	const { selectedLocation } = useLocationContext();
 
 	const fetchData = useCallback(async () => {
 		if (!tenant?.id) return;
-		
+
 		try {
 			setLoading(true);
-			
+
 			// Fetch locations
 			const locationsQuery = supabase
 				.from("locations")
@@ -50,52 +54,56 @@ export const useCalendarData = (): UseCalendarDataReturn => {
 				.eq("is_active", true);
 
 			// Fetch rooms with location filtering
-			const roomsQuery = selectedLocation === "all"
-				? supabase
-					.from("rooms")
-					.select("*")
-					.eq("tenant_id", tenant.id)
-					.eq("is_active", true)
-				: supabase
-					.from("rooms")
-					.select("*")
-					.eq("tenant_id", tenant.id)
-					.eq("location_id", selectedLocation)
-					.eq("is_active", true);
+			const roomsQuery =
+				selectedLocation === "all"
+					? supabase
+							.from("rooms")
+							.select("*")
+							.eq("tenant_id", tenant.id)
+							.eq("is_active", true)
+					: supabase
+							.from("rooms")
+							.select("*")
+							.eq("tenant_id", tenant.id)
+							.eq("location_id", selectedLocation)
+							.eq("is_active", true);
 
 			// Fetch reservations with location filtering
-			const reservationsQuery = selectedLocation === "all"
-				? supabase
-					.from("reservations")
-					.select("*")
-					.eq("tenant_id", tenant.id)
-					.order("check_in_date", { ascending: true })
-				: supabase
-					.from("reservations")
-					.select("*")
-					.eq("tenant_id", tenant.id)
-					.eq("location_id", selectedLocation)
-					.order("check_in_date", { ascending: true });
+			const reservationsQuery =
+				selectedLocation === "all"
+					? supabase
+							.from("reservations")
+							.select("*")
+							.eq("tenant_id", tenant.id)
+							.order("check_in_date", { ascending: true })
+					: supabase
+							.from("reservations")
+							.select("*")
+							.eq("tenant_id", tenant.id)
+							.eq("location_id", selectedLocation)
+							.order("check_in_date", { ascending: true });
 
 			// Fetch external bookings with location filtering
 			// Note: external_bookings table doesn't have tenant_id column
-			const externalBookingsQuery = selectedLocation === "all"
-				? supabase
-					.from("external_bookings")
-					.select("*")
-					.order("check_in", { ascending: true })
-				: supabase
-					.from("external_bookings")
-					.select("*")
-					.eq("location_id", selectedLocation)
-					.order("check_in", { ascending: true });
+			const externalBookingsQuery =
+				selectedLocation === "all"
+					? supabase
+							.from("external_bookings")
+							.select("*")
+							.order("check_in", { ascending: true })
+					: supabase
+							.from("external_bookings")
+							.select("*")
+							.eq("location_id", selectedLocation)
+							.order("check_in", { ascending: true });
 
-			const [roomsData, reservationsData, externalBookingsData, locationsData] = await Promise.all([
-				roomsQuery,
-				reservationsQuery,
-				externalBookingsQuery,
-				locationsQuery,
-			]);
+			const [roomsData, reservationsData, externalBookingsData, locationsData] =
+				await Promise.all([
+					roomsQuery,
+					reservationsQuery,
+					externalBookingsQuery,
+					locationsQuery,
+				]);
 
 			// Check for errors in the responses
 			if (roomsData.error) throw roomsData.error;
@@ -114,10 +122,13 @@ export const useCalendarData = (): UseCalendarDataReturn => {
 			// Transform mappings data into the format expected by the component
 			const transformedMappings: PropertyMapping[] = [];
 			if (mappingsData && locationsData.data) {
-				const locationMap = locationsData.data.reduce((acc, loc) => {
-					acc[loc.id] = loc.name;
-					return acc;
-				}, {} as Record<string, string>);
+				const locationMap = locationsData.data.reduce(
+					(acc, loc) => {
+						acc[loc.id] = loc.name;
+						return acc;
+					},
+					{} as Record<string, string>,
+				);
 
 				const groupedMappings = mappingsData.reduce(
 					(acc, mapping: any) => {
@@ -138,8 +149,10 @@ export const useCalendarData = (): UseCalendarDataReturn => {
 				);
 
 				// Fill location names
-				Object.values(groupedMappings).forEach(mapping => {
-					const location = locationsData.data?.find(loc => loc.id === mapping.locationId);
+				Object.values(groupedMappings).forEach((mapping) => {
+					const location = locationsData.data?.find(
+						(loc) => loc.id === mapping.locationId,
+					);
 					if (location) {
 						mapping.locationName = location.name;
 					}

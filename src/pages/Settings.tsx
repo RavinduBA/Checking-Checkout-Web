@@ -10,8 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PhoneVerification } from "@/components/PhoneVerification";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -22,10 +21,11 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
-import { PhoneVerification } from "@/components/PhoneVerification";
 import {
 	Select,
 	SelectContent,
@@ -39,12 +39,12 @@ import { useProfile } from "@/hooks/useProfile";
 import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
 import {
-	getCurrencyDetails,
 	addCustomCurrency,
+	type CurrencyRate,
+	getCurrencyConversionSearchUrl,
+	getCurrencyDetails,
 	removeCustomCurrency,
 	updateCurrencyRate,
-	getCurrencyConversionSearchUrl,
-	type CurrencyRate,
 } from "@/utils/currency";
 
 type ExpenseType = {
@@ -741,14 +741,15 @@ export default function Settings() {
 
 					{/* Phone Verification Section */}
 					<div className="mt-4">
-						<PhoneVerification 
+						<PhoneVerification
 							phone={profile?.phone}
 							isVerified={profile?.is_phone_verified || false}
 							onVerificationSuccess={() => {
 								refetchProfile();
 								toast({
 									title: "Phone verified",
-									description: "Your phone number has been successfully verified",
+									description:
+										"Your phone number has been successfully verified",
 								});
 							}}
 						/>

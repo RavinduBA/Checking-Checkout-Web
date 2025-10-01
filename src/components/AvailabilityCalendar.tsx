@@ -1,9 +1,9 @@
 "use client";
 
+import { addDays, format, isAfter, isBefore, parseISO } from "date-fns";
+import { CalendarIcon, ChevronDownIcon, LogIn, LogOut } from "lucide-react";
 import * as React from "react";
-import { addDays, format, isBefore, parseISO, isAfter } from "date-fns";
-import { ChevronDownIcon, CalendarIcon, LogIn, LogOut } from "lucide-react";
-
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
@@ -12,10 +12,9 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
 import { useAvailability } from "@/hooks/useAvailability";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 
 interface AvailabilityCalendarProps {
 	selectedRoomId?: string;

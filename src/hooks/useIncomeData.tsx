@@ -29,31 +29,32 @@ export const useIncomeData = (): UseIncomeDataReturn => {
 	const [rooms, setRooms] = useState<Room[]>([]);
 	const [accounts, setAccounts] = useState<Account[]>([]);
 	const [loading, setLoading] = useState(true);
-	
+
 	const { tenant } = useAuth();
 	const { selectedLocation } = useLocationContext();
 
 	const fetchData = useCallback(async () => {
 		if (!tenant?.id) return;
-		
+
 		try {
 			setLoading(true);
-			
+
 			// Fetch reservations based on location
-			const reservationsQuery = selectedLocation === "all"
-				? supabase
-					.from("reservations")
-					.select("*")
-					.eq("tenant_id", tenant.id)
-					.order("created_at", { ascending: false })
-					.limit(20)
-				: supabase
-					.from("reservations")
-					.select("*")
-					.eq("tenant_id", tenant.id)
-					.eq("location_id", selectedLocation)
-					.order("created_at", { ascending: false })
-					.limit(20);
+			const reservationsQuery =
+				selectedLocation === "all"
+					? supabase
+							.from("reservations")
+							.select("*")
+							.eq("tenant_id", tenant.id)
+							.order("created_at", { ascending: false })
+							.limit(20)
+					: supabase
+							.from("reservations")
+							.select("*")
+							.eq("tenant_id", tenant.id)
+							.eq("location_id", selectedLocation)
+							.order("created_at", { ascending: false })
+							.limit(20);
 
 			// Fetch locations
 			const locationsQuery = supabase
@@ -63,18 +64,19 @@ export const useIncomeData = (): UseIncomeDataReturn => {
 				.eq("is_active", true);
 
 			// Fetch rooms based on location
-			const roomsQuery = selectedLocation === "all"
-				? supabase
-					.from("rooms")
-					.select("*")
-					.eq("tenant_id", tenant.id)
-					.eq("is_active", true)
-				: supabase
-					.from("rooms")
-					.select("*")
-					.eq("tenant_id", tenant.id)
-					.eq("location_id", selectedLocation)
-					.eq("is_active", true);
+			const roomsQuery =
+				selectedLocation === "all"
+					? supabase
+							.from("rooms")
+							.select("*")
+							.eq("tenant_id", tenant.id)
+							.eq("is_active", true)
+					: supabase
+							.from("rooms")
+							.select("*")
+							.eq("tenant_id", tenant.id)
+							.eq("location_id", selectedLocation)
+							.eq("is_active", true);
 
 			// Fetch accounts
 			const accountsQuery = supabase
@@ -89,7 +91,13 @@ export const useIncomeData = (): UseIncomeDataReturn => {
 				.order("created_at", { ascending: false })
 				.limit(10);
 
-			const [reservationsRes, locationsRes, roomsRes, accountsRes, paymentsRes] = await Promise.all([
+			const [
+				reservationsRes,
+				locationsRes,
+				roomsRes,
+				accountsRes,
+				paymentsRes,
+			] = await Promise.all([
 				reservationsQuery,
 				locationsQuery,
 				roomsQuery,

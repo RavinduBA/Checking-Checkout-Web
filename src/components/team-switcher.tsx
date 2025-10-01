@@ -87,25 +87,25 @@ export function LocationSwitcher({
 						side={isMobile ? "bottom" : "right"}
 						sideOffset={4}
 					>
-					<DropdownMenuLabel className="text-xs text-muted-foreground">
-						Locations
-					</DropdownMenuLabel>
+						<DropdownMenuLabel className="text-xs text-muted-foreground">
+							Locations
+						</DropdownMenuLabel>
 
-					{/* All Locations Option */}
-					<DropdownMenuItem
-						onClick={() => onLocationChange("all")}
-						className="gap-2 p-2"
-					>
-						<div className="flex size-6 items-center justify-center rounded-sm border">
-							<Logo />
-						</div>
-						All Locations
-						<DropdownMenuShortcut>⌘A</DropdownMenuShortcut>
-					</DropdownMenuItem>
+						{/* All Locations Option */}
+						<DropdownMenuItem
+							onClick={() => onLocationChange("all")}
+							className="gap-2 p-2"
+						>
+							<div className="flex size-6 items-center justify-center rounded-sm border">
+								<Logo />
+							</div>
+							All Locations
+							<DropdownMenuShortcut>⌘A</DropdownMenuShortcut>
+						</DropdownMenuItem>
 
-					<DropdownMenuSeparator />
-					
-					{/* Individual Locations */}
+						<DropdownMenuSeparator />
+
+						{/* Individual Locations */}
 						{locations.map((location, index) => (
 							<DropdownMenuItem
 								key={location.id}

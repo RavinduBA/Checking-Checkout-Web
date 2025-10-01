@@ -40,10 +40,11 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useLocationContext } from "@/context/LocationContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAvailability } from "@/hooks/useAvailability";
+import { useProfile } from "@/hooks/useProfile";
 import { useTenant } from "@/hooks/useTenant";
-import { useLocationContext } from "@/context/LocationContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -56,9 +57,11 @@ export default function ReservationForm() {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
 	const { toast } = useToast();
+	const { profile } = useProfile();
 	const { tenant } = useTenant();
 	const [searchParams] = useSearchParams();
-	const { locations: availableLocations, loading: locationLoading } = useLocationContext();
+	const { locations: availableLocations, loading: locationLoading } =
+		useLocationContext();
 	const isEdit = Boolean(id);
 
 	const [rooms, setRooms] = useState<Room[]>([]);
@@ -495,14 +498,11 @@ export default function ReservationForm() {
 					description: "Reservation updated successfully",
 				});
 			} else {
-				// Generate reservation number for new reservations
-				const { data: existingReservations } = await supabase
-					.from("reservations")
-					.select("id")
-					.gte("created_at", `${currentYear}-01-01`)
-					.lt("created_at", `${currentYear + 1}-01-01`);
+				// Generate reservation number using database function
+				const { data: reservationNumber, error: numberError } = await supabase
+					.rpc("generate_reservation_number", { p_tenant_id: profile?.tenant_id });
 
-				const reservationNumber = `RES${currentYear}${String((existingReservations?.length || 0) + 1).padStart(4, "0")}`;
+				if (numberError) throw numberError;
 
 				const insertData: any = {
 					...calculatedData,
@@ -702,25 +702,25 @@ export default function ReservationForm() {
 								{/* Location & Room Selection */}
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 									<div>
-											<Label htmlFor="location_id">Location *</Label>
-											<Select
-												value={formData.location_id}
-												onValueChange={(value) =>
-													handleInputChange("location_id", value)
-												}
-											>
-												<SelectTrigger className="h-11">
-													<SelectValue placeholder="Select location" />
-												</SelectTrigger>
-												<SelectContent className="z-50 bg-background border">
-													{availableLocations.map((location) => (
-														<SelectItem key={location.id} value={location.id}>
-															{location.name}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</div>
+										<Label htmlFor="location_id">Location *</Label>
+										<Select
+											value={formData.location_id}
+											onValueChange={(value) =>
+												handleInputChange("location_id", value)
+											}
+										>
+											<SelectTrigger className="h-11">
+												<SelectValue placeholder="Select location" />
+											</SelectTrigger>
+											<SelectContent className="z-50 bg-background border">
+												{availableLocations.map((location) => (
+													<SelectItem key={location.id} value={location.id}>
+														{location.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
 
 									<div>
 										<Label htmlFor="room_id">Room *</Label>

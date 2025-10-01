@@ -1,4 +1,6 @@
 import { DollarSign, ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -7,13 +9,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
-import {
-	getCurrencyDetails,
-	getCurrencyConversionSearchUrl,
-} from "@/utils/currency";
 import type { CurrencyRate } from "@/utils/currency";
+import {
+	getCurrencyConversionSearchUrl,
+	getCurrencyDetails,
+} from "@/utils/currency";
 
 interface CurrencySelectorProps {
 	currency: string;

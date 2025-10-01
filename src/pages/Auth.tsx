@@ -1,6 +1,7 @@
+import { url } from "inspector";
 import { Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { url } from "inspector";
 
 export default function Auth() {
 	const [isLogin, setIsLogin] = useState(true);
@@ -30,7 +30,9 @@ export default function Auth() {
 
 			if (tokenHash && type === "recovery") {
 				// Redirect to reset password page with the token
-				navigate(`/auth/reset-password?token_hash=${tokenHash}&type=recovery`, { replace: true });
+				navigate(`/auth/reset-password?token_hash=${tokenHash}&type=recovery`, {
+					replace: true,
+				});
 				return;
 			}
 
@@ -158,8 +160,7 @@ export default function Auth() {
 
 	return (
 		<div className="min-h-screen flex items-center justify-center bg-background overflow-hidden">
-			<div className="relative  bg-[url('/images/white-hotel-front-view.jpg')] bg-cover flex-1 hidden items-center justify-center h-screen bg-gray-900 lg:flex">
-			</div>
+			<div className="relative  bg-[url('/images/white-hotel-front-view.jpg')] bg-cover flex-1 hidden items-center justify-center h-screen bg-gray-900 lg:flex"></div>
 			<div className="flex-1 flex items-center justify-center h-screen">
 				<div className="w-full max-w-md space-y-8 px-4 bg-white text-gray-600 sm:px-0">
 					<div className="">

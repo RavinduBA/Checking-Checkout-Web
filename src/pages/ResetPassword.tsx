@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { CheckCircle, Eye, EyeOff, Lock } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { Eye, EyeOff, Lock, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ export default function ResetPassword() {
 	const [isResetComplete, setIsResetComplete] = useState(false);
 	const [isValidToken, setIsValidToken] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
-	
+
 	const [searchParams] = useSearchParams();
 	const navigate = useNavigate();
 	const { toast } = useToast();
@@ -200,7 +200,8 @@ export default function ResetPassword() {
 								Password Successfully Reset
 							</h3>
 							<p className="text-gray-300">
-								Your password has been updated successfully. You can now sign in with your new credentials.
+								Your password has been updated successfully. You can now sign in
+								with your new credentials.
 							</p>
 						</div>
 					</div>
@@ -224,7 +225,8 @@ export default function ResetPassword() {
 									Password Reset Complete
 								</h1>
 								<p className="text-sm text-muted-foreground">
-									Your password has been successfully updated. You can now sign in with your new password.
+									Your password has been successfully updated. You can now sign
+									in with your new password.
 								</p>
 							</div>
 						</div>
@@ -239,8 +241,7 @@ export default function ResetPassword() {
 
 	return (
 		<div className="min-h-screen flex items-center justify-center bg-background overflow-hidden">
-			<div className="relative flex-1 hidden items-center justify-center h-screen bg-[url('/images/white-hotel-front-view.jpg')] bg-cover lg:flex">
-			</div>
+			<div className="relative flex-1 hidden items-center justify-center h-screen bg-[url('/images/white-hotel-front-view.jpg')] bg-cover lg:flex"></div>
 			<div className="flex-1 flex items-center justify-center h-screen">
 				<div className="w-full max-w-md space-y-8 px-4 bg-white text-gray-600 sm:px-0">
 					<div className="">
@@ -286,7 +287,8 @@ export default function ResetPassword() {
 								</Button>
 							</div>
 							<p className="text-xs text-muted-foreground mt-1">
-								Must be at least 6 characters with uppercase, lowercase, and number
+								Must be at least 6 characters with uppercase, lowercase, and
+								number
 							</p>
 						</div>
 
@@ -319,11 +321,7 @@ export default function ResetPassword() {
 							</div>
 						</div>
 
-						<Button 
-							type="submit" 
-							className="w-full" 
-							disabled={isSubmitting}
-						>
+						<Button type="submit" className="w-full" disabled={isSubmitting}>
 							{isSubmitting ? (
 								<div className="flex items-center justify-center">
 									<div className="animate-spin rounded-full size-4 border-2 border-transparent border-t-current mr-2"></div>

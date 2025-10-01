@@ -1,12 +1,6 @@
-import {
-	Camera,
-	FileImage,
-	Loader2,
-	Upload,
-	X,
-	ZoomIn,
-} from "lucide-react";
+import { Camera, FileImage, Loader2, Upload, X, ZoomIn } from "lucide-react";
 import { useRef, useState } from "react";
+import { SignedImage } from "@/components/SignedImage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -20,7 +14,6 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { SignedImage } from "@/components/SignedImage";
 
 interface IDPhoto {
 	filePath: string; // Store the storage file path instead of URL
@@ -59,7 +52,8 @@ export const IDPhotoUpload = ({
 	}>({});
 	const [isUploading, setIsUploading] = useState(false);
 	const [previewPhoto, setPreviewPhoto] = useState<IDPhoto | null>(null);
-	const [selectedIDType, setSelectedIDType] = useState<IDPhoto["type"]>("passport");
+	const [selectedIDType, setSelectedIDType] =
+		useState<IDPhoto["type"]>("passport");
 
 	const handleFileUpload = async (
 		event: React.ChangeEvent<HTMLInputElement>,
@@ -366,7 +360,11 @@ export const IDPhotoUpload = ({
 												filePath={photo.filePath}
 												alt={`${getIDTypeLabel(photo.type)} ${index + 1}`}
 												className="w-full h-full object-cover"
-												fallback={<div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground text-sm">Failed to load image</div>}
+												fallback={
+													<div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground text-sm">
+														Failed to load image
+													</div>
+												}
 											/>
 											<div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors">
 												<div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -418,7 +416,8 @@ export const IDPhotoUpload = ({
 							<FileImage className="h-12 w-12 mx-auto mb-2 opacity-50" />
 							<p className="text-sm mb-2">No ID photos uploaded</p>
 							<p className="text-xs">
-								Upload up to {maxPhotos} clear photos of your government-issued ID
+								Upload up to {maxPhotos} clear photos of your government-issued
+								ID
 							</p>
 						</div>
 					)}
@@ -427,7 +426,10 @@ export const IDPhotoUpload = ({
 
 			{/* Preview Dialog */}
 			{previewPhoto && (
-				<Dialog open={!!previewPhoto} onOpenChange={() => setPreviewPhoto(null)}>
+				<Dialog
+					open={!!previewPhoto}
+					onOpenChange={() => setPreviewPhoto(null)}
+				>
 					<DialogContent className="max-w-4xl max-h-[90vh]">
 						<DialogHeader>
 							<DialogTitle className="flex items-center gap-2">
@@ -447,7 +449,11 @@ export const IDPhotoUpload = ({
 								filePath={previewPhoto.filePath}
 								alt={getIDTypeLabel(previewPhoto.type)}
 								className="max-w-full max-h-[70vh] object-contain rounded-lg border"
-								fallback={<div className="p-8 text-center text-muted-foreground">Failed to load image</div>}
+								fallback={
+									<div className="p-8 text-center text-muted-foreground">
+										Failed to load image
+									</div>
+								}
 							/>
 						</div>
 					</DialogContent>

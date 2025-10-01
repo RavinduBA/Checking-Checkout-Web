@@ -24,16 +24,16 @@ export const useExpenseData = (): UseExpenseDataReturn => {
 	const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);
 	const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
 	const [loading, setLoading] = useState(true);
-	
+
 	const { tenant } = useAuth();
 	const { selectedLocation } = useLocationContext();
 
 	const fetchData = useCallback(async () => {
 		if (!tenant?.id) return;
-		
+
 		try {
 			setLoading(true);
-			
+
 			// Fetch locations - simplified query
 			const locationsQuery = supabase
 				.from("locations")
@@ -54,25 +54,27 @@ export const useExpenseData = (): UseExpenseDataReturn => {
 				.order("main_type");
 
 			// Fetch recent expenses based on location - simplified query
-			const expenseQuery = selectedLocation === "all"
-				? supabase
-					.from("expenses")
-					.select("*")
-					.order("created_at", { ascending: false })
-					.limit(10)
-				: supabase
-					.from("expenses")
-					.select("*")
-					.eq("location_id", selectedLocation)
-					.order("created_at", { ascending: false })
-					.limit(10);
+			const expenseQuery =
+				selectedLocation === "all"
+					? supabase
+							.from("expenses")
+							.select("*")
+							.order("created_at", { ascending: false })
+							.limit(10)
+					: supabase
+							.from("expenses")
+							.select("*")
+							.eq("location_id", selectedLocation)
+							.order("created_at", { ascending: false })
+							.limit(10);
 
-			const [locationsRes, accountsRes, expenseTypesRes, expensesRes] = await Promise.all([
-				locationsQuery,
-				accountsQuery,
-				expenseTypesQuery,
-				expenseQuery,
-			]);
+			const [locationsRes, accountsRes, expenseTypesRes, expensesRes] =
+				await Promise.all([
+					locationsQuery,
+					accountsQuery,
+					expenseTypesQuery,
+					expenseQuery,
+				]);
 
 			setLocations(locationsRes.data || []);
 			setAccounts(accountsRes.data || []);

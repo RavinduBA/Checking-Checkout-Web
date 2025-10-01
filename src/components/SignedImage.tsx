@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
-import { getSignedImageUrl } from "@/utils/storageUtils";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { getSignedImageUrl } from "@/utils/storageUtils";
 
 interface SignedImageProps {
 	filePath: string;
@@ -10,11 +10,11 @@ interface SignedImageProps {
 	fallback?: React.ReactNode;
 }
 
-export const SignedImage = ({ 
-	filePath, 
-	alt, 
+export const SignedImage = ({
+	filePath,
+	alt,
 	className,
-	fallback 
+	fallback,
 }: SignedImageProps) => {
 	const [signedUrl, setSignedUrl] = useState<string>("");
 	const [loading, setLoading] = useState(true);
@@ -49,7 +49,9 @@ export const SignedImage = ({
 
 	if (loading) {
 		return (
-			<div className={cn("flex items-center justify-center bg-muted", className)}>
+			<div
+				className={cn("flex items-center justify-center bg-muted", className)}
+			>
 				<Loader2 className="size-4 animate-spin" />
 			</div>
 		);
@@ -57,16 +59,21 @@ export const SignedImage = ({
 
 	if (error || !signedUrl) {
 		return (
-			<div className={cn("flex items-center justify-center bg-muted text-muted-foreground text-sm", className)}>
+			<div
+				className={cn(
+					"flex items-center justify-center bg-muted text-muted-foreground text-sm",
+					className,
+				)}
+			>
 				{fallback || "Failed to load image"}
 			</div>
 		);
 	}
 
 	return (
-		<img 
-			src={signedUrl} 
-			alt={alt} 
+		<img
+			src={signedUrl}
+			alt={alt}
 			className={className}
 			onError={() => setError(true)}
 		/>

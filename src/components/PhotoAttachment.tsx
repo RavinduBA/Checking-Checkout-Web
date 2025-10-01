@@ -1,5 +1,6 @@
 import { Camera, Image as ImageIcon, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
+import { SignedImage } from "@/components/SignedImage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -11,7 +12,6 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { SignedImage } from "@/components/SignedImage";
 
 interface PhotoAttachmentProps {
 	photos: string[]; // Array of file paths in storage
@@ -235,7 +235,11 @@ export const PhotoAttachment = ({
 									filePath={photoPath}
 									alt={`Attachment ${index + 1}`}
 									className="w-full h-24 object-cover rounded-lg border"
-									fallback={<div className="w-full h-24 flex items-center justify-center bg-muted text-muted-foreground text-xs rounded-lg border">Failed to load</div>}
+									fallback={
+										<div className="w-full h-24 flex items-center justify-center bg-muted text-muted-foreground text-xs rounded-lg border">
+											Failed to load
+										</div>
+									}
 								/>
 								<Button
 									type="button"

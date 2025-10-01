@@ -38,16 +38,18 @@ export const extractFilePathFromUrl = (url: string): string => {
 		// Handle both public URLs and signed URLs
 		const urlObj = new URL(url);
 		const pathParts = urlObj.pathname.split("/");
-		
+
 		// For public URLs: /storage/v1/object/public/reservation-documents/path/file.ext
 		// For signed URLs: /storage/v1/object/sign/reservation-documents/path/file.ext
-		const bucketIndex = pathParts.findIndex(part => part === "reservation-documents");
-		
+		const bucketIndex = pathParts.findIndex(
+			(part) => part === "reservation-documents",
+		);
+
 		if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
 			// Return everything after the bucket name
 			return pathParts.slice(bucketIndex + 1).join("/");
 		}
-		
+
 		// Fallback: assume the URL already contains just the file path
 		return url;
 	} catch (error) {
@@ -73,7 +75,7 @@ export const useSignedUrl = (filePath: string | null) => {
 		const generateUrl = async () => {
 			setLoading(true);
 			setError(null);
-			
+
 			try {
 				const url = await getSignedImageUrl(filePath);
 				if (url) {

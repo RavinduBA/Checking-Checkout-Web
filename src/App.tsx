@@ -15,8 +15,6 @@ import { SmartRedirect } from "./components/SmartRedirect";
 import AccessDenied from "./pages/AccessDenied";
 import Accounts from "./pages/Accounts";
 import Auth from "./pages/Auth";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
 import BillingError from "./pages/BillingError";
 import BillingSubscription from "./pages/BillingSubscription";
 import BillingSuccess from "./pages/BillingSuccess";
@@ -25,6 +23,7 @@ import Dashboard from "./pages/Dashboard";
 import EnhancedCalendar from "./pages/EnhancedCalendar";
 import Expense from "./pages/Expense";
 import FinancialReports from "./pages/FinancialReports";
+import ForgotPassword from "./pages/ForgotPassword";
 import Income from "./pages/Income";
 import MasterFiles from "./pages/MasterFiles";
 import NotFound from "./pages/NotFound";
@@ -34,6 +33,7 @@ import ReservationDetails from "./pages/ReservationDetails";
 import ReservationForm from "./pages/ReservationForm";
 import ReservationFormCompact from "./pages/ReservationFormCompact";
 import Reservations from "./pages/Reservations";
+import ResetPassword from "./pages/ResetPassword";
 import RoomManagement from "./pages/RoomManagement";
 import Settings from "./pages/Settings";
 import Users from "./pages/Users";
@@ -51,7 +51,10 @@ const App = () => (
 						<Routes>
 							<Route path="/" element={<AuthRedirect />} />
 							<Route path="/auth" element={<Auth />} />
-							<Route path="/auth/forgot-password" element={<ForgotPassword />} />
+							<Route
+								path="/auth/forgot-password"
+								element={<ForgotPassword />}
+							/>
 							<Route path="/auth/reset-password" element={<ResetPassword />} />
 							<Route
 								path="/onboarding"
@@ -138,16 +141,22 @@ const App = () => (
 									}
 								/>
 							</Route>
-							<Route path="/income" element={
-								<ProtectedRoute>
-									<Layout />
-								</ProtectedRoute>
-							}>
-								<Route index element={
-									<PermissionRoute permission={["access_income"]}>
-										<Income />
-									</PermissionRoute>
-								} />
+							<Route
+								path="/income"
+								element={
+									<ProtectedRoute>
+										<Layout />
+									</ProtectedRoute>
+								}
+							>
+								<Route
+									index
+									element={
+										<PermissionRoute permission={["access_income"]}>
+											<Income />
+										</PermissionRoute>
+									}
+								/>
 							</Route>
 							<Route
 								path="/payments/new"

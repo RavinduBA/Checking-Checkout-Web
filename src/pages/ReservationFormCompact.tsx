@@ -42,10 +42,11 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useLocationContext } from "@/context/LocationContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAvailability } from "@/hooks/useAvailability";
+import { useProfile } from "@/hooks/useProfile";
 import { useTenant } from "@/hooks/useTenant";
-import { useLocationContext } from "@/context/LocationContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { convertCurrency } from "@/utils/currency";
@@ -59,9 +60,11 @@ export default function ReservationFormCompact() {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
 	const { toast } = useToast();
+	const { profile } = useProfile();
 	const { tenant } = useTenant();
 	const [searchParams] = useSearchParams();
-	const { locations: availableLocations, loading: locationLoading } = useLocationContext();
+	const { locations: availableLocations, loading: locationLoading } =
+		useLocationContext();
 	const isEdit = Boolean(id);
 
 	const [rooms, setRooms] = useState<Room[]>([]);
@@ -72,19 +75,23 @@ export default function ReservationFormCompact() {
 	const [submitting, setSubmitting] = useState(false);
 	const [showGuideDialog, setShowGuideDialog] = useState(false);
 	const [showAgentDialog, setShowAgentDialog] = useState(false);
-	const [idPhotos, setIdPhotos] = useState<Array<{
-		filePath: string;
-		name: string;
-		uploadedAt: Date;
-		type: "passport" | "national_id" | "drivers_license" | "other";
-	}>>([]);
-	const [documents, setDocuments] = useState<Array<{
-		filePath: string;
-		name: string;
-		type: string;
-		size: number;
-		uploadedAt: Date;
-	}>>([]);
+	const [idPhotos, setIdPhotos] = useState<
+		Array<{
+			filePath: string;
+			name: string;
+			uploadedAt: Date;
+			type: "passport" | "national_id" | "drivers_license" | "other";
+		}>
+	>([]);
+	const [documents, setDocuments] = useState<
+		Array<{
+			filePath: string;
+			name: string;
+			type: string;
+			size: number;
+			uploadedAt: Date;
+		}>
+	>([]);
 	const [guestSignature, setGuestSignature] = useState("");
 
 	// Availability checking state
@@ -260,7 +267,13 @@ export default function ReservationFormCompact() {
 			balance_amount: balanceAmount,
 			paid_amount: 0,
 		}));
-	}, [formData.room_rate, formData.nights, formData.currency, formData.room_id, rooms]);
+	}, [
+		formData.room_rate,
+		formData.nights,
+		formData.currency,
+		formData.room_id,
+		rooms,
+	]);
 
 	useEffect(() => {
 		if (!locationLoading) {
@@ -520,13 +533,13 @@ export default function ReservationFormCompact() {
 
 			// Store document information (for future implementation - could be stored in a separate table)
 			const documentData = {
-				id_photos: idPhotos.map(photo => ({
+				id_photos: idPhotos.map((photo) => ({
 					filePath: photo.filePath,
 					name: photo.name,
 					type: photo.type,
 					uploadedAt: photo.uploadedAt.toISOString(),
 				})),
-				documents: documents.map(doc => ({
+				documents: documents.map((doc) => ({
 					filePath: doc.filePath,
 					name: doc.name,
 					type: doc.type,
@@ -537,7 +550,10 @@ export default function ReservationFormCompact() {
 			};
 
 			// For now, log the documents (in future, store in separate reservation_documents table)
-			if (documentData.id_photos.length > 0 || documentData.documents.length > 0) {
+			if (
+				documentData.id_photos.length > 0 ||
+				documentData.documents.length > 0
+			) {
 				console.log("Documents to be stored:", documentData);
 			}
 
@@ -554,14 +570,11 @@ export default function ReservationFormCompact() {
 					description: "Reservation updated successfully",
 				});
 			} else {
-				// Generate reservation number for new reservations
-				const { data: existingReservations } = await supabase
-					.from("reservations")
-					.select("id")
-					.gte("created_at", `${currentYear}-01-01`)
-					.lt("created_at", `${currentYear + 1}-01-01`);
+				// Generate reservation number using database function
+				const { data: reservationNumber, error: numberError } = await supabase
+					.rpc("generate_reservation_number", { p_tenant_id: profile?.tenant_id });
 
-				const reservationNumber = `RES${currentYear}${String((existingReservations?.length || 0) + 1).padStart(4, "0")}`;
+				if (numberError) throw numberError;
 
 				const insertData: any = {
 					...calculatedData,

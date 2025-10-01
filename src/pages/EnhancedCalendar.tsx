@@ -502,7 +502,9 @@ export default function EnhancedCalendar() {
 																	{bookingStartingToday.span.spanDays > 4 &&
 																		!isMobile && (
 																			<div className="text-xs opacity-75 pb-1">
-																				{getCurrencySymbol(bookingStartingToday.currency)}
+																				{getCurrencySymbol(
+																					bookingStartingToday.currency,
+																				)}
 																				{bookingStartingToday.total_amount.toLocaleString()}
 																			</div>
 																		)}

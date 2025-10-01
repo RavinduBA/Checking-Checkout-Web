@@ -235,31 +235,30 @@ export function formatCurrency(amount: number, currency: string): string {
 
 // Get currency symbol for a given currency code
 export function getCurrencySymbol(currency: string): string {
-  const symbols: Record<string, string> = {
-    USD: "$",    // US Dollar
-    EUR: "€",    // Euro
-    GBP: "£",    // British Pound
-    INR: "₹",    // Indian Rupee
-    JPY: "¥",    // Japanese Yen
-    CNY: "¥",    // Chinese Yuan
-    AUD: "A$",   // Australian Dollar
-    CAD: "C$",   // Canadian Dollar
-    CHF: "CHF",  // Swiss Franc
-    SEK: "kr",   // Swedish Krona
-    NOK: "kr",   // Norwegian Krone
-    DKK: "kr",   // Danish Krone
-    RUB: "₽",    // Russian Ruble
-    KRW: "₩",    // South Korean Won
-    THB: "฿",    // Thai Baht
-    SGD: "S$",   // Singapore Dollar
-    HKD: "HK$",  // Hong Kong Dollar
-    NZD: "NZ$",  // New Zealand Dollar
-    ZAR: "R",    // South African Rand
-  };
+	const symbols: Record<string, string> = {
+		USD: "$", // US Dollar
+		EUR: "€", // Euro
+		GBP: "£", // British Pound
+		INR: "₹", // Indian Rupee
+		JPY: "¥", // Japanese Yen
+		CNY: "¥", // Chinese Yuan
+		AUD: "A$", // Australian Dollar
+		CAD: "C$", // Canadian Dollar
+		CHF: "CHF", // Swiss Franc
+		SEK: "kr", // Swedish Krona
+		NOK: "kr", // Norwegian Krone
+		DKK: "kr", // Danish Krone
+		RUB: "₽", // Russian Ruble
+		KRW: "₩", // South Korean Won
+		THB: "฿", // Thai Baht
+		SGD: "S$", // Singapore Dollar
+		HKD: "HK$", // Hong Kong Dollar
+		NZD: "NZ$", // New Zealand Dollar
+		ZAR: "R", // South African Rand
+	};
 
-  return symbols[currency.toUpperCase()] ?? currency;
+	return symbols[currency.toUpperCase()] ?? currency;
 }
-
 
 // Update a currency rate
 export async function updateCurrencyRate(

@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { usePermissions } from "@/hooks/usePermissions";
 import { useExpenseData } from "@/hooks/useExpenseData";
+import { usePermissions } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { getCurrencySymbol } from "@/utils/currency";
@@ -35,15 +35,15 @@ type Expense = Tables<"expenses"> & {
 export default function Expense() {
 	const { toast } = useToast();
 	const { hasAnyPermission, hasPermission } = usePermissions();
-	
+
 	// Use the custom hook for data fetching
-	const { 
-		locations, 
-		accounts, 
-		expenseTypes, 
-		recentExpenses, 
+	const {
+		locations,
+		accounts,
+		expenseTypes,
+		recentExpenses,
 		loading,
-		refetch 
+		refetch,
 	} = useExpenseData();
 
 	const [formData, setFormData] = useState({
@@ -57,7 +57,9 @@ export default function Expense() {
 	});
 
 	const selectedAccount = accounts.find((a) => a.id === formData.accountId);
-	const currencySymbol = selectedAccount?.currency ? getCurrencySymbol(selectedAccount.currency) : "Rs.";
+	const currencySymbol = selectedAccount?.currency
+		? getCurrencySymbol(selectedAccount.currency)
+		: "Rs.";
 
 	const mainCategories = [...new Set(expenseTypes.map((et) => et.main_type))];
 	const subCategories = expenseTypes
@@ -484,10 +486,25 @@ export default function Expense() {
 													{expense.amount.toLocaleString()}
 												</div>
 												<div className="text-xs sm:text-sm text-red-700 mt-1">
-													<div>{locations.find(l => l.id === expense.location_id)?.name}</div>
 													<div>
-														Account: {accounts.find(a => a.id === expense.account_id)?.name} (
-														{accounts.find(a => a.id === expense.account_id)?.currency})
+														{
+															locations.find(
+																(l) => l.id === expense.location_id,
+															)?.name
+														}
+													</div>
+													<div>
+														Account:{" "}
+														{
+															accounts.find((a) => a.id === expense.account_id)
+																?.name
+														}{" "}
+														(
+														{
+															accounts.find((a) => a.id === expense.account_id)
+																?.currency
+														}
+														)
 													</div>
 													<div>
 														{format(new Date(expense.date), "MMM dd, yyyy")}

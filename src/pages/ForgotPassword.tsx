@@ -1,6 +1,6 @@
+import { ArrowLeft, Mail, Send } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
-import { ArrowLeft, Mail, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ export default function ForgotPassword() {
 
 	const handleResetPassword = async (e: React.FormEvent) => {
 		e.preventDefault();
-		
+
 		if (!email.trim()) {
 			toast({
 				title: "Email Required",
@@ -59,7 +59,7 @@ export default function ForgotPassword() {
 
 	const handleResendEmail = async () => {
 		setIsSubmitting(true);
-		
+
 		try {
 			const { error } = await supabase.auth.resetPasswordForEmail(email, {
 				redirectTo: `${window.location.origin}/auth/reset-password`,
@@ -91,8 +91,7 @@ export default function ForgotPassword() {
 	if (isEmailSent) {
 		return (
 			<div className="min-h-screen flex items-center justify-center bg-background overflow-hidden">
-				<div className="relative flex-1 hidden items-center justify-center h-screen bg-[url('/images/leavs-art.jpg')] bg-cover lg:flex">
-				</div>
+				<div className="relative flex-1 hidden items-center justify-center h-screen bg-[url('/images/leavs-art.jpg')] bg-cover lg:flex"></div>
 				<div className="flex-1 flex items-center justify-center h-screen">
 					<div className="w-full max-w-md space-y-8 px-4 bg-white text-gray-600 sm:px-0">
 						<div className="">
@@ -106,21 +105,20 @@ export default function ForgotPassword() {
 								<p className="text-sm text-muted-foreground">
 									We've sent password reset instructions to:
 								</p>
-								<p className="text-sm font-medium text-foreground">
-									{email}
-								</p>
+								<p className="text-sm font-medium text-foreground">{email}</p>
 							</div>
 						</div>
 						<div className="space-y-4">
 							<div className="text-center text-sm text-muted-foreground">
 								<p>
-									Didn't receive the email? Check your spam folder or click below to resend.
+									Didn't receive the email? Check your spam folder or click
+									below to resend.
 								</p>
 							</div>
-							
-							<Button 
-								variant="outline" 
-								className="w-full" 
+
+							<Button
+								variant="outline"
+								className="w-full"
 								onClick={handleResendEmail}
 								disabled={isSubmitting}
 							>
@@ -155,8 +153,7 @@ export default function ForgotPassword() {
 
 	return (
 		<div className="min-h-screen flex items-center justify-center bg-background overflow-hidden">
-			<div className="relative flex-1 hidden items-center justify-center h-screen bg-[url('/images/leavs-art.jpg')] bg-cover lg:flex">
-			</div>
+			<div className="relative flex-1 hidden items-center justify-center h-screen bg-[url('/images/leavs-art.jpg')] bg-cover lg:flex"></div>
 			<div className="flex-1 flex items-center justify-center h-screen">
 				<div className="w-full max-w-md space-y-8 px-4 bg-white text-gray-600 sm:px-0">
 					<div className="">
@@ -165,7 +162,8 @@ export default function ForgotPassword() {
 								Reset Your Password
 							</h1>
 							<p className="text-sm text-muted-foreground">
-								Enter your email address and we'll send you a link to reset your password.
+								Enter your email address and we'll send you a link to reset your
+								password.
 							</p>
 						</div>
 					</div>
@@ -184,11 +182,7 @@ export default function ForgotPassword() {
 							/>
 						</div>
 
-						<Button 
-							type="submit" 
-							className="w-full" 
-							disabled={isSubmitting}
-						>
+						<Button type="submit" className="w-full" disabled={isSubmitting}>
 							{isSubmitting ? (
 								<div className="flex items-center justify-center">
 									<div className="animate-spin rounded-full size-4 border-2 border-transparent border-t-current mr-2"></div>

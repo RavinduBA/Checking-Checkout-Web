@@ -13,8 +13,8 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -39,7 +39,19 @@ export default function BookingForm() {
 		location_id: searchParams.get("location") || "",
 		check_in: searchParams.get("date") || "",
 		check_out: "",
-		source: "direct" as "direct" | "airbnb" | "booking_com" | "expedia" | "agoda" | "beds24" | "manual" | "online" | "phone" | "email" | "walk_in" | "ical",
+		source: "direct" as
+			| "direct"
+			| "airbnb"
+			| "booking_com"
+			| "expedia"
+			| "agoda"
+			| "beds24"
+			| "manual"
+			| "online"
+			| "phone"
+			| "email"
+			| "walk_in"
+			| "ical",
 		total_amount: "",
 		advance_amount: "",
 		account_id: "",
@@ -50,8 +62,15 @@ export default function BookingForm() {
 	const fetchData = useCallback(async () => {
 		try {
 			const [locationsData, accountsData] = await Promise.all([
-				supabase.from("locations").select("*").eq("tenant_id", tenant?.id || "").eq("is_active", true),
-				supabase.from("accounts").select("*").eq("tenant_id", tenant?.id || ""),
+				supabase
+					.from("locations")
+					.select("*")
+					.eq("tenant_id", tenant?.id || "")
+					.eq("is_active", true),
+				supabase
+					.from("accounts")
+					.select("*")
+					.eq("tenant_id", tenant?.id || ""),
 			]);
 
 			setLocations(locationsData.data || []);
@@ -61,39 +80,42 @@ export default function BookingForm() {
 		}
 	}, [tenant?.id]);
 
-	const fetchBooking = useCallback(async (bookingId: string) => {
-		try {
-			const { data, error } = await supabase
-				.from("bookings")
-				.select("*")
-				.eq("id", bookingId)
-				.single();
+	const fetchBooking = useCallback(
+		async (bookingId: string) => {
+			try {
+				const { data, error } = await supabase
+					.from("bookings")
+					.select("*")
+					.eq("id", bookingId)
+					.single();
 
-			if (error) throw error;
+				if (error) throw error;
 
-			if (data) {
-				setFormData({
-					guest_name: data.guest_name,
-					location_id: data.location_id,
-					check_in: data.check_in.split("T")[0],
-					check_out: data.check_out.split("T")[0],
-					total_amount: data.total_amount.toString(),
-					advance_amount: data.advance_amount.toString(),
-					source: data.source,
-					account_id: "",
-					payment_method: "cash",
-					note: "",
+				if (data) {
+					setFormData({
+						guest_name: data.guest_name,
+						location_id: data.location_id,
+						check_in: data.check_in.split("T")[0],
+						check_out: data.check_out.split("T")[0],
+						total_amount: data.total_amount.toString(),
+						advance_amount: data.advance_amount.toString(),
+						source: data.source,
+						account_id: "",
+						payment_method: "cash",
+						note: "",
+					});
+				}
+			} catch (error) {
+				console.error("Error fetching booking:", error);
+				toast({
+					title: "Error",
+					description: "Failed to load booking details",
+					variant: "destructive",
 				});
 			}
-		} catch (error) {
-			console.error("Error fetching booking:", error);
-			toast({
-				title: "Error",
-				description: "Failed to load booking details",
-				variant: "destructive",
-			});
-		}
-	}, [toast]);
+		},
+		[toast],
+	);
 
 	useEffect(() => {
 		fetchData();

@@ -28,14 +28,11 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
+import { useLocationContext } from "@/context/LocationContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
-import {
-	inviteUserToLocation,
-	type LocationPermissions,
-} from "@/lib/invite";
-import { useLocationContext } from "@/context/LocationContext";
+import { inviteUserToLocation, type LocationPermissions } from "@/lib/invite";
 
 interface UserPermissions {
 	dashboard: boolean;
@@ -133,9 +130,10 @@ export default function Users() {
 
 			// Fetch users with permissions for the current tenant
 			// First get all user_permissions for this tenant to find which users have access
-			const { data: tenantPermissions, error: permissionsError } = await supabase
-				.from("user_permissions")
-				.select(`
+			const { data: tenantPermissions, error: permissionsError } =
+				await supabase
+					.from("user_permissions")
+					.select(`
 					user_id,
 					location_id,
 					access_dashboard,
@@ -153,8 +151,8 @@ export default function Users() {
 					profiles!inner(id, name, email, tenant_id, is_tenant_admin, created_at),
 					locations!inner(id, name, is_active)
 				`)
-				.eq("tenant_id", tenant.id)
-				.eq("locations.is_active", true);
+					.eq("tenant_id", tenant.id)
+					.eq("locations.is_active", true);
 
 			if (permissionsError) throw permissionsError;
 
@@ -162,17 +160,17 @@ export default function Users() {
 
 			// Group permissions by user and filter by selected location if needed
 			const userPermissionsMap = new Map<string, any>();
-			
+
 			(tenantPermissions || []).forEach((perm: any) => {
 				const userId = perm.user_id;
 				const profile = perm.profiles;
 				const location = perm.locations;
-				
+
 				// If a specific location is selected, only show users with access to that location
 				if (selectedLocation !== "all" && location.id !== selectedLocation) {
 					return;
 				}
-				
+
 				if (!userPermissionsMap.has(userId)) {
 					userPermissionsMap.set(userId, {
 						...profile,
@@ -180,7 +178,7 @@ export default function Users() {
 						is_tenant_admin: profile.is_tenant_admin || false,
 					});
 				}
-				
+
 				const userRecord = userPermissionsMap.get(userId);
 				userRecord.permissions[location.name] = {
 					dashboard: perm.access_dashboard || false,
