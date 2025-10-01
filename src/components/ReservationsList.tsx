@@ -40,18 +40,54 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
-type Reservation = Tables<"reservations"> & {
+type ReservationWithJoins = {
+	id: string;
+	reservation_number: string;
+	location_id: string;
+	room_id: string;
+	guest_name: string;
+	guest_email?: string | null;
+	guest_phone?: string | null;
+	guest_address?: string | null;
+	guest_id_number?: string | null;
+	guest_nationality?: string | null;
+	adults: number;
+	children: number;
+	check_in_date: string;
+	check_out_date: string;
+	nights: number;
+	room_rate: number;
+	total_amount: number;
+	advance_amount?: number | null;
+	paid_amount?: number | null;
+	balance_amount?: number | null;
+	currency: "LKR" | "USD" | "EUR" | "GBP";
+	status: "pending" | "confirmed" | "checked_in" | "checked_out" | "cancelled" | "tentative";
+	special_requests?: string | null;
+	arrival_time?: string | null;
+	created_by?: string | null;
+	grc_approved: boolean;
+	grc_approved_by?: string | null;
+	grc_approved_at?: string | null;
+	created_at: string;
+	updated_at: string;
+	tenant_id?: string | null;
+	guide_id?: string | null;
+	agent_id?: string | null;
+	guide_commission?: number | null;
+	agent_commission?: number | null;
+	booking_source: string;
 	locations: {
 		id: string;
 		name: string;
 		address: string | null;
 		phone: string | null;
 		email: string | null;
-		is_active: boolean;
-		created_at: string;
 		property_type: string | null;
 		tenant_id: string;
-	};
+		is_active: boolean;
+		created_at: string;
+	} | null;
 	rooms: {
 		id: string;
 		room_number: string;
@@ -63,12 +99,12 @@ type Reservation = Tables<"reservations"> & {
 		max_occupancy: number;
 		property_type: string;
 		currency: string;
+		location_id: string;
+		tenant_id: string;
 		is_active: boolean;
 		created_at: string;
 		updated_at: string;
-		location_id: string;
-		tenant_id: string;
-	};
+	} | null;
 	guides?: {
 		id: string;
 		name: string;
@@ -86,16 +122,9 @@ type Reservation = Tables<"reservations"> & {
 		agency_name: string | null;
 		is_active: boolean;
 	} | null;
-	tenants?: {
-		id: string;
-		hotel_name: string | null;
-		hotel_address: string | null;
-		hotel_phone: string | null;
-		hotel_email: string | null;
-		hotel_website: string | null;
-		logo_url: string | null;
-	} | null;
 };
+
+type Reservation = ReservationWithJoins;
 
 type Payment = Tables<"payments">;
 
@@ -105,12 +134,11 @@ export const ReservationsList = () => {
 	const { tenant } = useAuth();
 	const { selectedLocation, setSelectedLocation, locations } =
 		useLocationContext();
-	const [reservations, setReservations] = useState<Reservation[]>([]);
+	const [reservations, setReservations] = useState<ReservationWithJoins[]>([]);
 	const [payments, setPayments] = useState<Payment[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState("all");
-	const [otpVerifiedIds, setOtpVerifiedIds] = useState<Set<string>>(new Set());
 	const [editingReservation, setEditingReservation] =
 		useState<Reservation | null>(null);
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -119,9 +147,9 @@ export const ReservationsList = () => {
 		try {
 			// Fetch reservations with location and room data
 			const reservationsQuery = !selectedLocation
-					? supabase
-							.from("reservations")
-							.select(`
+				? supabase
+					.from("reservations")
+					.select(`
           *,
           locations (
             id,
@@ -167,22 +195,13 @@ export const ReservationsList = () => {
             email,
             agency_name,
             is_active
-          ),
-          tenants (
-            id,
-            hotel_name,
-            address,
-            phone,
-            email,
-            website,
-            logo_url
           )
         `)
-							.eq("tenant_id", tenant?.id || "")
-							.order("created_at", { ascending: false })
-					: supabase
-							.from("reservations")
-							.select(`
+					.eq("tenant_id", tenant?.id || "")
+					.order("created_at", { ascending: false })
+				: supabase
+					.from("reservations")
+					.select(`
           *,
           locations (
             id,
@@ -228,47 +247,38 @@ export const ReservationsList = () => {
             email,
             agency_name,
             is_active
-          ),
-          tenants (
-            id,
-            hotel_name,
-            hotel_address,
-            hotel_phone,
-            hotel_email,
-            hotel_website,
-            logo_url
           )
         `)
-							.eq("tenant_id", tenant?.id || "")
-							.eq("location_id", selectedLocation)
-							.order("created_at", { ascending: false });
+					.eq("tenant_id", tenant?.id || "")
+					.eq("location_id", selectedLocation)
+					.order("created_at", { ascending: false });
 
 			// Fetch payments with location filtering through reservations
 			const paymentsQuery = !selectedLocation
-					? supabase
-							.from("payments")
-							.select(`
+				? supabase
+					.from("payments")
+					.select(`
 							*,
 							reservations!inner(location_id, tenant_id)
 						`)
-							.eq("reservations.tenant_id", tenant?.id || "")
-							.order("created_at", { ascending: false })
-					: supabase
-							.from("payments")
-							.select(`
+					.eq("reservations.tenant_id", tenant?.id || "")
+					.order("created_at", { ascending: false })
+				: supabase
+					.from("payments")
+					.select(`
 							*,
 							reservations!inner(location_id, tenant_id)
 						`)
-							.eq("reservations.tenant_id", tenant?.id || "")
-							.eq("reservations.location_id", selectedLocation)
-							.order("created_at", { ascending: false });
+					.eq("reservations.tenant_id", tenant?.id || "")
+					.eq("reservations.location_id", selectedLocation)
+					.order("created_at", { ascending: false });
 
 			const [reservationsData, paymentsData] = await Promise.all([
 				reservationsQuery,
 				paymentsQuery,
 			]);
 
-			setReservations(reservationsData.data || []);
+			setReservations((reservationsData.data as ReservationWithJoins[]) || []);
 			setPayments(paymentsData.data || []);
 		} catch (error) {
 			console.error("Error fetching data:", error);

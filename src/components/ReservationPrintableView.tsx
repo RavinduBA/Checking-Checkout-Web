@@ -181,6 +181,20 @@ const PrintableReservation = React.forwardRef<
 
 			{/* Header */}
 			<div className="text-center mb-8 border-b-2 border-gray-300 pb-6">
+				{/* Temporary Debug Information */}
+				<div className="bg-yellow-100 p-4 mb-4 text-left text-xs">
+					<strong>DEBUG INFO:</strong><br/>
+					Guest Name: {reservation.guest_name || 'MISSING'}<br/>
+					Hotel Name: {reservation.hotel_name || 'MISSING'}<br/>
+					Location Name: {reservation.location_name || 'MISSING'}<br/>
+					Locations Object: {reservation.locations?.name || 'MISSING'}<br/>
+					Reservation Number: {reservation.reservation_number || 'MISSING'}<br/>
+					Room Number: {reservation.room_number || 'MISSING'}<br/>
+					Rooms Object: {reservation.rooms?.room_number || 'MISSING'}<br/>
+					Has Hotel Name: {reservation.hotel_name ? 'YES' : 'NO'}<br/>
+					Has Location Name: {reservation.location_name ? 'YES' : 'NO'}
+				</div>
+				
 				{/* Hotel Logo */}
 				{reservation.logo_url && (
 					<div className="mb-4">

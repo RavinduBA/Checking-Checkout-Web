@@ -2,25 +2,62 @@ import { Printer } from "lucide-react";
 import React from "react";
 import { ReservationPrintableView } from "@/components/ReservationPrintableView";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
 import {
 	PrintableReservationData,
 	useReservationPrint,
 } from "@/hooks/useReservationPrint";
 import { Tables } from "@/integrations/supabase/types";
 
-// Enhanced reservation type from ReservationsList
-type EnhancedReservation = Tables<"reservations"> & {
+// Enhanced reservation type from ReservationsList - matches what Supabase returns
+type EnhancedReservation = {
+	id: string;
+	reservation_number: string;
+	location_id: string;
+	room_id: string;
+	guest_name: string;
+	guest_email?: string | null;
+	guest_phone?: string | null;
+	guest_address?: string | null;
+	guest_id_number?: string | null;
+	guest_nationality?: string | null;
+	adults: number;
+	children: number;
+	check_in_date: string;
+	check_out_date: string;
+	nights: number;
+	room_rate: number;
+	total_amount: number;
+	advance_amount?: number | null;
+	paid_amount?: number | null;
+	balance_amount?: number | null;
+	currency: "LKR" | "USD" | "EUR" | "GBP";
+	status: "pending" | "confirmed" | "checked_in" | "checked_out" | "cancelled" | "tentative";
+	special_requests?: string | null;
+	arrival_time?: string | null;
+	created_by?: string | null;
+	grc_approved: boolean;
+	grc_approved_by?: string | null;
+	grc_approved_at?: string | null;
+	created_at: string;
+	updated_at: string;
+	tenant_id?: string | null;
+	guide_id?: string | null;
+	agent_id?: string | null;
+	guide_commission?: number | null;
+	agent_commission?: number | null;
+	booking_source: string;
 	locations: {
 		id: string;
 		name: string;
 		address: string | null;
 		phone: string | null;
 		email: string | null;
-		is_active: boolean;
-		created_at: string;
 		property_type: string | null;
 		tenant_id: string;
-	};
+		is_active: boolean;
+		created_at: string;
+	} | null;
 	rooms: {
 		id: string;
 		room_number: string;
@@ -32,12 +69,12 @@ type EnhancedReservation = Tables<"reservations"> & {
 		max_occupancy: number;
 		property_type: string;
 		currency: string;
+		location_id: string;
+		tenant_id: string;
 		is_active: boolean;
 		created_at: string;
 		updated_at: string;
-		location_id: string;
-		tenant_id: string;
-	};
+	} | null;
 	guides?: {
 		id: string;
 		name: string;
@@ -55,46 +92,37 @@ type EnhancedReservation = Tables<"reservations"> & {
 		agency_name: string | null;
 		is_active: boolean;
 	} | null;
-	tenants?: {
-		id: string;
-		hotel_name: string | null;
-		hotel_address: string | null;
-		hotel_phone: string | null;
-		hotel_email: string | null;
-		hotel_website: string | null;
-		logo_url: string | null;
-	} | null;
 };
 
 /**
  * Transform enhanced reservation data to printable format
  */
-const transformToPrintableData = (reservation: EnhancedReservation): PrintableReservationData => {
-	return {
+const transformToPrintableData = (reservation: EnhancedReservation, tenantData?: any): PrintableReservationData => {
+	const transformed = {
 		// Base reservation data
 		...reservation,
 		
-		// Enhanced hotel/tenant information
-		tenant_name: reservation.tenants?.hotel_name,
-		hotel_name: reservation.tenants?.hotel_name,
-		hotel_address: reservation.tenants?.hotel_address,
-		hotel_phone: reservation.tenants?.hotel_phone,
-		hotel_email: reservation.tenants?.hotel_email,
-		hotel_website: reservation.tenants?.hotel_website,
-		logo_url: reservation.tenants?.logo_url,
+		// Enhanced hotel/tenant information from context
+		tenant_name: tenantData?.hotel_name || tenantData?.name,
+		hotel_name: tenantData?.hotel_name || tenantData?.name,
+		hotel_address: tenantData?.hotel_address || tenantData?.address,
+		hotel_phone: tenantData?.hotel_phone || tenantData?.phone,
+		hotel_email: tenantData?.hotel_email || tenantData?.email,
+		hotel_website: tenantData?.hotel_website || tenantData?.website,
+		logo_url: tenantData?.logo_url,
 		
 		// Enhanced location information
-		location_name: reservation.locations.name,
-		location_address: reservation.locations.address,
-		location_phone: reservation.locations.phone,
-		location_email: reservation.locations.email,
+		location_name: reservation.locations?.name || 'Unknown Location',
+		location_address: reservation.locations?.address || null,
+		location_phone: reservation.locations?.phone || null,
+		location_email: reservation.locations?.email || null,
 		
 		// Room details
-		room_number: reservation.rooms.room_number,
-		room_type: reservation.rooms.room_type,
-		bed_type: reservation.rooms.bed_type,
-		room_description: reservation.rooms.description,
-		amenities: reservation.rooms.amenities || [],
+		room_number: reservation.rooms?.room_number || 'Unknown Room',
+		room_type: reservation.rooms?.room_type || 'Unknown Type',
+		bed_type: reservation.rooms?.bed_type || 'Unknown Bed',
+		room_description: reservation.rooms?.description || null,
+		amenities: reservation.rooms?.amenities || [],
 		
 		// Guide information
 		guide_name: reservation.guides?.name,
@@ -110,13 +138,13 @@ const transformToPrintableData = (reservation: EnhancedReservation): PrintableRe
 		agency_name: reservation.agents?.agency_name,
 		
 		// Legacy structure for backward compatibility
-		locations: {
+		locations: reservation.locations ? {
 			id: reservation.locations.id,
 			name: reservation.locations.name,
 			is_active: reservation.locations.is_active,
 			created_at: reservation.locations.created_at,
-		},
-		rooms: {
+		} : null,
+		rooms: reservation.rooms ? {
 			id: reservation.rooms.id,
 			bed_type: reservation.rooms.bed_type,
 			currency: reservation.rooms.currency,
@@ -131,8 +159,10 @@ const transformToPrintableData = (reservation: EnhancedReservation): PrintableRe
 			room_number: reservation.rooms.room_number,
 			max_occupancy: reservation.rooms.max_occupancy,
 			property_type: reservation.rooms.property_type,
-		},
+		} : null,
 	};
+
+	return transformed;
 };
 
 interface ReservationPrintButtonProps {
@@ -163,19 +193,20 @@ export const ReservationPrintButton: React.FC<ReservationPrintButtonProps> = ({
 	className = "",
 }) => {
 	const { printRef, printReservation } = useReservationPrint();
+	const { tenant } = useAuth();
 
 	const handlePrint = () => {
 		// Check if reservation has enhanced data structure and transform if needed
-		const printableData = 'tenants' in reservation 
-			? transformToPrintableData(reservation as EnhancedReservation)
+		const printableData = 'guides' in reservation 
+			? transformToPrintableData(reservation as EnhancedReservation, tenant)
 			: reservation as PrintableReservationData;
 		
 		printReservation(printableData);
 	};
 
 	// Prepare data for the hidden printable component
-	const printableReservation = 'tenants' in reservation 
-		? transformToPrintableData(reservation as EnhancedReservation)
+	const printableReservation = 'guides' in reservation 
+		? transformToPrintableData(reservation as EnhancedReservation, tenant)
 		: reservation as PrintableReservationData;
 
 	return (
