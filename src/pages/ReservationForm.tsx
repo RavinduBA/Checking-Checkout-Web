@@ -64,7 +64,7 @@ export default function ReservationForm() {
 	const { tenant } = useTenant();
 	const { preferences: fieldPreferences } = useFormFieldPreferences();
 	const [searchParams] = useSearchParams();
-	const { locations: availableLocations, loading: locationLoading } =
+	const { locations: availableLocations, loading: locationLoading, selectedLocation } =
 		useLocationContext();
 	const isEdit = Boolean(id);
 
@@ -81,7 +81,7 @@ export default function ReservationForm() {
 	// Removed availability checking components - using simple date picker instead
 
 	const [formData, setFormData] = useState({
-		location_id: searchParams.get("location") || "",
+		location_id: selectedLocation || searchParams.get("location") || "",
 		room_id: searchParams.get("room") || "",
 		guest_name: "",
 		guest_email: "",
@@ -152,6 +152,19 @@ export default function ReservationForm() {
 			}));
 		}
 	}, [formData.room_rate, formData.nights, formData.advance_amount, isManualTotal, manualTotalAmount]);
+
+	// Update location when selectedLocation changes from sidebar
+	useEffect(() => {
+		if (selectedLocation && !isEdit) {
+			setFormData(prev => ({
+				...prev,
+				location_id: selectedLocation,
+				// Reset room selection when location changes
+				room_id: "",
+				room_rate: 0
+			}));
+		}
+	}, [selectedLocation, isEdit]);
 
 	const fetchInitialData = useCallback(async () => {
 		try {
@@ -766,29 +779,8 @@ export default function ReservationForm() {
 								</CardTitle>
 							</CardHeader>
 							<CardContent className="space-y-6">
-								{/* Location & Room Selection */}
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-									<div>
-										<Label htmlFor="location_id">Location *</Label>
-										<Select
-											value={formData.location_id}
-											onValueChange={(value) =>
-												handleInputChange("location_id", value)
-											}
-										>
-											<SelectTrigger className="h-11">
-												<SelectValue placeholder="Select location" />
-											</SelectTrigger>
-											<SelectContent className="z-50 bg-background border">
-												{availableLocations.map((location) => (
-													<SelectItem key={location.id} value={location.id}>
-														{location.name}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
-
+								{/* Room Selection */}
+								<div className="grid grid-cols-1 gap-4">
 									<div>
 										<Label htmlFor="room_id">Room *</Label>
 										<Select
