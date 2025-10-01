@@ -480,12 +480,11 @@ export default function ReservationForm() {
 				balance_amount: formData.total_amount - formData.advance_amount,
 				guide_id: formData.has_guide ? formData.guide_id : null,
 				agent_id: formData.has_agent ? formData.agent_id : null,
-				guide_commission: formData.has_guide ? formData.guide_commission : 0,
-				agent_commission: formData.has_agent ? formData.agent_commission : 0,
-				currency: formData.currency,
-			};
-
-			if (isEdit) {
+			guide_commission: formData.has_guide ? formData.guide_commission : 0,
+			agent_commission: formData.has_agent ? formData.agent_commission : 0,
+			currency: formData.currency,
+			tenant_id: profile?.tenant_id,
+		};			if (isEdit) {
 				const { error } = await supabase
 					.from("reservations")
 					.update(calculatedData)

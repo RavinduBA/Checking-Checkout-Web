@@ -56,6 +56,8 @@ type Payment = Database["public"]["Tables"]["payments"]["Row"];
 type Location = Database["public"]["Tables"]["locations"]["Row"];
 type Room = Database["public"]["Tables"]["rooms"]["Row"];
 type Account = Database["public"]["Tables"]["accounts"]["Row"];
+type IncomeType = Database["public"]["Tables"]["income_types"]["Row"];
+type AdditionalService = Database["public"]["Tables"]["additional_services"]["Row"];
 
 const Income = () => {
 	const { toast } = useToast();
@@ -76,140 +78,38 @@ const Income = () => {
 		refetch 
 	} = useIncomeData();
 
-	const [isReservationDialogOpen, setIsReservationDialogOpen] = useState(false);
 	const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 	const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
 	const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
-	const [selectedReservation, setSelectedReservation] =
-		useState<Reservation | null>(null);
+	const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
 
-	const [reservationForm, setReservationForm] = useState({
-		location_id: "",
-		room_id: "",
-		guest_name: "",
-		guest_email: "",
-		guest_phone: "",
-		guest_address: "",
-		guest_nationality: "",
-		adults: 1,
-		children: 0,
-		check_in_date: "",
-		check_out_date: "",
-		special_requests: "",
-	});
+	// States for income types and traveler services
+	const [incomeTypes, setIncomeTypes] = useState<IncomeType[]>([]);
+	const [travelerServices, setTravelerServices] = useState<AdditionalService[]>([]);
 
 	const [paymentForm, setPaymentForm] = useState({
-		payment_type: "room_payment",
-		payment_method: "",
 		amount: 0,
+		payment_method: "",
 		account_id: "",
+		payment_number: "",
 		notes: "",
 	});
 
 	const [serviceForm, setServiceForm] = useState({
-		reservation_id: "",
 		service_type: "",
-		service_name: "",
+		reservation_id: "",
 		quantity: 1,
 		unit_price: 0,
-		notes: "",
+		total_amount: 0,
 		service_date: new Date().toISOString().split('T')[0],
+		notes: "",
 	});
 
-	const [incomeTypes, setIncomeTypes] = useState<any[]>([]);
-	const [travelerServices, setTravelerServices] = useState<any[]>([]);
-
-
-
 	const calculateNights = (checkIn: string, checkOut: string) => {
-		if (!checkIn || !checkOut) return 0;
 		const start = new Date(checkIn);
 		const end = new Date(checkOut);
 		const diffTime = Math.abs(end.getTime() - start.getTime());
 		return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-	};
-
-	const handleReservationSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-
-		try {
-			const selectedRoom = rooms.find((r) => r.id === reservationForm.room_id);
-			if (!selectedRoom) throw new Error("Room not found");
-
-			const nights = calculateNights(
-				reservationForm.check_in_date,
-				reservationForm.check_out_date,
-			);
-			const totalAmount = nights * selectedRoom.base_price;
-
-			// Generate reservation number using database function
-			const { data: reservationNumber, error: numberError } = await supabase
-				.rpc("generate_reservation_number", { p_tenant_id: profile?.tenant_id });
-
-			if (numberError) throw numberError;
-
-			const reservationData = {
-				location_id: reservationForm.location_id,
-				room_id: reservationForm.room_id,
-				guest_name: reservationForm.guest_name,
-				guest_email: reservationForm.guest_email || null,
-				guest_phone: reservationForm.guest_phone || null,
-				guest_address: reservationForm.guest_address || null,
-				guest_nationality: reservationForm.guest_nationality || null,
-				adults: reservationForm.adults,
-				children: reservationForm.children,
-				check_in_date: reservationForm.check_in_date,
-				check_out_date: reservationForm.check_out_date,
-				special_requests: reservationForm.special_requests || null,
-				advance_amount: 0,
-				nights,
-				room_rate: selectedRoom.base_price,
-				total_amount: totalAmount,
-				paid_amount: 0,
-				balance_amount: totalAmount,
-				status: "tentative" as const,
-				reservation_number: reservationNumber,
-			};
-
-			const { error } = await supabase
-				.from("reservations")
-				.insert(reservationData);
-
-			if (error) throw error;
-
-			toast({
-				title: "Success",
-				description: "Reservation created successfully",
-			});
-
-			setIsReservationDialogOpen(false);
-			resetReservationForm();
-			refetch();
-		} catch (error) {
-			console.error("Reservation creation error:", error);
-			toast({
-				title: "Error",
-				description: "Failed to create reservation",
-				variant: "destructive",
-			});
-		}
-	};
-
-	const resetReservationForm = () => {
-		setReservationForm({
-			location_id: "",
-			room_id: "",
-			guest_name: "",
-			guest_email: "",
-			guest_phone: "",
-			guest_address: "",
-			guest_nationality: "",
-			adults: 1,
-			children: 0,
-			check_in_date: "",
-			check_out_date: "",
-			special_requests: "",
-		});
 	};
 
 	const handlePaymentSubmit = async (e: React.FormEvent) => {
@@ -230,96 +130,46 @@ const Income = () => {
 
 			const paymentData = {
 				reservation_id: selectedReservation.id,
-				payment_type: paymentForm.payment_type,
-				payment_method: paymentForm.payment_method,
 				amount: paymentForm.amount,
+				payment_method: paymentForm.payment_method,
+				payment_type: 'reservation_payment',
 				account_id: paymentForm.account_id,
-				notes: paymentForm.notes || null,
 				payment_number: paymentNumber,
+				notes: paymentForm.notes || null,
+				created_by: profile?.id,
 			};
 
-			const { error: paymentError } = await supabase
-				.from("payments")
-				.insert(paymentData);
+			const { error } = await supabase.from("payments").insert(paymentData);
 
-			if (paymentError) throw paymentError;
+			if (error) throw error;
 
-			// Create income record
-			const incomeData = {
-				location_id: selectedReservation.location_id,
-				account_id: paymentForm.account_id,
-				type: "booking" as const,
-				amount: paymentForm.amount,
-				payment_method: paymentForm.payment_method,
-				// Remove booking_id since we're dealing with reservations, not bookings
-				booking_source: "direct",
-				check_in_date: selectedReservation.check_in_date,
-				check_out_date: selectedReservation.check_out_date,
-				note: paymentForm.notes || null,
-				currency: "LKR" as const,
-			};
+			// Update reservation paid amount and balance
+			const newPaidAmount = selectedReservation.paid_amount + paymentForm.amount;
+			const newBalance = selectedReservation.total_amount - newPaidAmount;
 
-			const { error: incomeError } = await supabase
-				.from("income")
-				.insert(incomeData);
-
-			if (incomeError) throw incomeError;
-
-			// Send SMS notification
-			try {
-				const selectedAccount = accounts.find(
-					(acc) => acc.id === paymentForm.account_id,
-				);
-				const location = locations.find(
-					(l) => l.id === selectedReservation.location_id,
-				);
-
-				await supabase.functions.invoke("send-sms-notification", {
-					body: {
-						type: "income",
-						amount: paymentForm.amount,
-						currency: selectedAccount?.currency || "LKR",
-						category: "booking",
-						account: selectedAccount?.name || "",
-						location: location?.name || "",
-						locationId: selectedReservation.location_id, // Added for location admin SMS
-						locationPhone: location?.phone, // Primary SMS recipient
-						date: new Date().toISOString().split("T")[0],
-						note: paymentForm.notes || undefined,
-					},
-				});
-			} catch (smsError) {
-				console.warn("SMS notification failed:", smsError);
-			}
-
-			// Update reservation paid amount
-			const newPaidAmount =
-				selectedReservation.paid_amount + paymentForm.amount;
-			const newBalanceAmount = selectedReservation.total_amount - newPaidAmount;
-
-			await supabase
+			const { error: updateError } = await supabase
 				.from("reservations")
 				.update({
 					paid_amount: newPaidAmount,
-					balance_amount: newBalanceAmount,
-					status: newBalanceAmount <= 0 ? "confirmed" : "tentative",
+					balance_amount: newBalance,
 				})
 				.eq("id", selectedReservation.id);
 
+			if (updateError) throw updateError;
+
 			toast({
 				title: "Success",
-				description: "Payment processed successfully",
+				description: "Payment recorded successfully",
 			});
 
 			setIsPaymentDialogOpen(false);
-			setSelectedReservation(null);
 			resetPaymentForm();
 			refetch();
 		} catch (error) {
 			console.error("Payment error:", error);
 			toast({
 				title: "Error",
-				description: "Failed to process payment",
+				description: "Failed to record payment",
 				variant: "destructive",
 			});
 		}
@@ -327,146 +177,52 @@ const Income = () => {
 
 	const resetPaymentForm = () => {
 		setPaymentForm({
-			payment_type: "room_payment",
-			payment_method: "",
 			amount: 0,
+			payment_method: "",
 			account_id: "",
+			payment_number: "",
 			notes: "",
 		});
 	};
 
-	// Service handling functions
-	const handleServiceSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-
-		if (!serviceForm.reservation_id) {
-			toast({
-				title: "Error",
-				description: "Please select a reservation",
-				variant: "destructive",
-			});
-			return;
-		}
-
-		try {
-			const totalAmount = serviceForm.quantity * serviceForm.unit_price;
-			
-			// Add to additional_services table
-			const { data: serviceData, error: serviceError } = await supabase
-				.from("additional_services")
-				.insert({
-					reservation_id: serviceForm.reservation_id,
-					service_type: serviceForm.service_type,
-					service_name: serviceForm.service_name,
-					quantity: serviceForm.quantity,
-					unit_price: serviceForm.unit_price,
-					total_amount: totalAmount,
-					service_date: serviceForm.service_date,
-					notes: serviceForm.notes || null,
-					created_by: profile?.id,
-					tenant_id: profile?.tenant_id,
-				})
-				.select()
-				.single();
-
-			if (serviceError) throw serviceError;
-
-			// Add corresponding income record
-			const reservation = reservations.find(r => r.id === serviceForm.reservation_id);
-			const selectedAccount = accounts.find(acc => acc.currency === reservation?.currency);
-
-			if (selectedAccount) {
-				const incomeData: any = {
-					type: 'service',
-					booking_id: serviceForm.reservation_id,
-					amount: totalAmount,
-					currency: reservation?.currency || 'LKR',
-					is_advance: false,
-					payment_method: 'service',
-					account_id: selectedAccount.id,
-					note: `${serviceForm.service_name} - ${serviceForm.notes || ''}`,
-					date: serviceForm.service_date,
-					booking_source: 'direct',
-					check_in_date: reservation?.check_in_date,
-					check_out_date: reservation?.check_out_date,
-					additional_service_id: serviceData.id,
-				};
-
-				// Add tenant_id if it exists
-				if (profile?.tenant_id) {
-					incomeData.tenant_id = profile.tenant_id;
-				}
-
-				const { error: incomeError } = await supabase
-					.from("income")
-					.insert(incomeData);
-
-				if (incomeError) throw incomeError;
-			}
-
-			toast({
-				title: "Success",
-				description: "Traveler service added successfully",
-			});
-
-			setIsServiceDialogOpen(false);
-			resetServiceForm();
-			refetch();
-			fetchTravelerServices();
-		} catch (error) {
-			console.error("Service creation error:", error);
-			toast({
-				title: "Error",
-				description: "Failed to add traveler service",
-				variant: "destructive",
-			});
-		}
-	};
-
-	const resetServiceForm = () => {
-		setServiceForm({
-			reservation_id: "",
-			service_type: "",
-			service_name: "",
-			quantity: 1,
-			unit_price: 0,
-			notes: "",
-			service_date: new Date().toISOString().split('T')[0],
-		});
-	};
-
-	// Fetch income types and traveler services
+	// Fetch income types
 	const fetchIncomeTypes = useCallback(async () => {
 		try {
-			const response = await supabase
+			const { data, error } = await supabase
 				.from("income_types")
 				.select("*")
 				.eq("tenant_id", profile?.tenant_id)
 				.order("type_name");
 
-			if (response.error) throw response.error;
-			setIncomeTypes(response.data || []);
+			if (error) throw error;
+			setIncomeTypes(data || []);
 		} catch (error) {
 			console.error("Error fetching income types:", error);
 		}
 	}, [profile?.tenant_id]);
 
+	// Fetch traveler services
 	const fetchTravelerServices = useCallback(async () => {
 		try {
-			const response = await supabase
+			const { data, error } = await supabase
 				.from("additional_services")
-				.select("*")
+				.select(`
+					*,
+					reservations (
+						reservation_number,
+						guest_name
+					)
+				`)
 				.eq("tenant_id", profile?.tenant_id)
 				.order("created_at", { ascending: false });
 
-			if (response.error) throw response.error;
-			setTravelerServices(response.data || []);
+			if (error) throw error;
+			setTravelerServices(data || []);
 		} catch (error) {
 			console.error("Error fetching traveler services:", error);
 		}
 	}, [profile?.tenant_id]);
 
-	// Load data on component mount
 	useEffect(() => {
 		if (profile?.tenant_id) {
 			fetchIncomeTypes();
@@ -474,123 +230,132 @@ const Income = () => {
 		}
 	}, [profile?.tenant_id, fetchIncomeTypes, fetchTravelerServices]);
 
-	const handlePrint = () => {
-		const signature = sigCanvas.current?.toDataURL();
-		const printWindow = window.open("", "_blank");
-		if (printWindow && selectedReservation) {
-			const room = rooms.find((r) => r.id === selectedReservation.room_id);
-			const location = locations.find(
-				(l) => l.id === selectedReservation.location_id,
-			);
+	// Handle service form submission
+	const handleServiceSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
 
-			printWindow.document.write(`
-        <html>
-          <head>
-            <title>Reservation Details - ${selectedReservation.reservation_number}</title>
-            <style>
-              body { font-family: Arial, sans-serif; margin: 20px; }
-              .header { text-align: center; margin-bottom: 30px; }
-              .details { margin: 20px 0; }
-              .signature { margin-top: 50px; }
-              .row { display: flex; justify-content: space-between; margin: 10px 0; }
-              .label { font-weight: bold; }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h2>Reservation Details</h2>
-            </div>
-            
-            <div class="details">
-              <div class="row">
-                <span class="label">Reservation Number:</span>
-                <span>${selectedReservation.reservation_number}</span>
-              </div>
-              <div class="row">
-                <span class="label">Guest Name:</span>
-                <span>${selectedReservation.guest_name}</span>
-              </div>
-              <div class="row">
-                <span class="label">Location:</span>
-                <span>${location?.name || "N/A"}</span>
-              </div>
-              <div class="row">
-                <span class="label">Room:</span>
-                <span>${room?.room_number} - ${room?.room_type}</span>
-              </div>
-              <div class="row">
-                <span class="label">Check-in:</span>
-                <span>${new Date(selectedReservation.check_in_date).toLocaleDateString()}</span>
-              </div>
-              <div class="row">
-                <span class="label">Check-out:</span>
-                <span>${new Date(selectedReservation.check_out_date).toLocaleDateString()}</span>
-              </div>
-              <div class="row">
-                <span class="label">Nights:</span>
-                <span>${selectedReservation.nights}</span>
-              </div>
-              <div class="row">
-                <span class="label">Total Amount:</span>
-                <span>LKR ${selectedReservation.total_amount.toLocaleString()}</span>
-              </div>
-              <div class="row">
-                <span class="label">Paid Amount:</span>
-                <span>LKR ${selectedReservation.paid_amount.toLocaleString()}</span>
-              </div>
-              <div class="row">
-                <span class="label">Balance Amount:</span>
-                <span>LKR ${selectedReservation.balance_amount.toLocaleString()}</span>
-              </div>
-              <div class="row">
-                <span class="label">Status:</span>
-                <span>${selectedReservation.status.toUpperCase()}</span>
-              </div>
-            </div>
-            
-            <div class="signature">
-              <p><strong>Guest Signature:</strong></p>
-              ${signature ? `<img src="${signature}" style="border: 1px solid #ccc; max-width: 300px; height: 100px;" />` : '<div style="border: 1px solid #ccc; width: 300px; height: 100px;"></div>'}
-              <p>Date: ${new Date().toLocaleDateString()}</p>
-            </div>
-          </body>
-        </html>
-      `);
-			printWindow.document.close();
-			printWindow.print();
+		try {
+			const serviceData = {
+				service_type: serviceForm.service_type,
+				service_name: incomeTypes.find(t => t.id === serviceForm.service_type)?.type_name || "",
+				reservation_id: serviceForm.reservation_id,
+				quantity: serviceForm.quantity,
+				unit_price: serviceForm.unit_price,
+				total_amount: serviceForm.total_amount,
+				service_date: serviceForm.service_date,
+				notes: serviceForm.notes || null,
+				tenant_id: profile?.tenant_id,
+				created_by: profile?.id,
+			};
+
+			const { error } = await supabase
+				.from("additional_services")
+				.insert(serviceData);
+
+			if (error) throw error;
+
+			toast({
+				title: "Success",
+				description: "Service added successfully",
+			});
+
+			setIsServiceDialogOpen(false);
+			resetServiceForm();
+			fetchTravelerServices();
+			refetch();
+		} catch (error) {
+			console.error("Service error:", error);
+			toast({
+				title: "Error",
+				description: "Failed to add service",
+				variant: "destructive",
+			});
 		}
 	};
 
-	const getStatusBadge = (status: string) => {
-		const variants: Record<
-			string,
-			"default" | "destructive" | "secondary" | "outline"
-		> = {
-			tentative: "secondary",
-			confirmed: "default",
-			checked_in: "secondary",
-			checked_out: "outline",
-			cancelled: "destructive",
-		};
-		return <Badge variant={variants[status] || "secondary"}>{status}</Badge>;
+	const resetServiceForm = () => {
+		setServiceForm({
+			service_type: "",
+			reservation_id: "",
+			quantity: 1,
+			unit_price: 0,
+			total_amount: 0,
+			service_date: new Date().toISOString().split('T')[0],
+			notes: "",
+		});
 	};
 
-	if (loading) {
-		return <SectionLoader className="min-h-64" />;
-	}
+	// Update total amount when quantity or unit price changes
+	useEffect(() => {
+		setServiceForm(prev => ({
+			...prev,
+			total_amount: prev.quantity * prev.unit_price
+		}));
+	}, []);
 
-	if (!hasAnyPermission("access_income")) {
+	const getStatusBadge = (status: string) => {
+		const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+			tentative: "outline",
+			confirmed: "default",
+			checked_in: "secondary",
+			checked_out: "destructive",
+			cancelled: "destructive",
+		};
+
+		return (
+			<Badge variant={variants[status] || "default"}>
+				{status.charAt(0).toUpperCase() + status.slice(1)}
+			</Badge>
+		);
+	};
+
+	const renderSignature = () => {
+		if (!selectedReservation) return null;
+
+		return (
+			<div className="space-y-4">
+				<div>
+					<Label>Customer Signature</Label>
+					<div className="border rounded-md">
+						<SignatureCanvas
+							ref={sigCanvas}
+							canvasProps={{
+								width: 400,
+								height: 200,
+								className: "signature-canvas",
+							}}
+						/>
+					</div>
+					<div className="flex gap-2 mt-2">
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => sigCanvas.current?.clear()}
+						>
+							Clear
+						</Button>
+					</div>
+				</div>
+			</div>
+		);
+	};
+
+	if (!hasAnyPermission(["access_income"])) {
 		return (
 			<div className="p-6">
 				<Alert>
 					<AlertCircle className="size-4" />
 					<AlertDescription>
-						You don't have permission to access this page. Please contact your
-						administrator.
+						You don't have permission to access income management.
 					</AlertDescription>
 				</Alert>
 			</div>
 		);
+	}
+
+	if (loading) {
+		return <SectionLoader />;
 	}
 
 	return (
@@ -600,234 +365,6 @@ const Income = () => {
 					<Plus className="mr-2 size-4" />
 					New Reservation
 				</Button>
-
-				<Dialog
-					open={isReservationDialogOpen}
-					onOpenChange={setIsReservationDialogOpen}
-				>
-					<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-						<DialogHeader>
-							<DialogTitle>Create New Reservation</DialogTitle>
-						</DialogHeader>
-						<form onSubmit={handleReservationSubmit} className="space-y-4">
-							<div className="grid grid-cols-2 gap-4">
-								<div>
-									<Label htmlFor="location">Location</Label>
-									<Select
-										value={reservationForm.location_id}
-										onValueChange={(value) =>
-											setReservationForm({
-												...reservationForm,
-												location_id: value,
-											})
-										}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder="Select location" />
-										</SelectTrigger>
-										<SelectContent>
-											{locations.map((location) => (
-												<SelectItem key={location.id} value={location.id}>
-													{location.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-								<div>
-									<Label htmlFor="room">Room</Label>
-									<Select
-										value={reservationForm.room_id}
-										onValueChange={(value) =>
-											setReservationForm({ ...reservationForm, room_id: value })
-										}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder="Select room" />
-										</SelectTrigger>
-										<SelectContent>
-											{rooms
-												.filter(
-													(room) =>
-														room.location_id === reservationForm.location_id,
-												)
-												.map((room) => (
-													<SelectItem key={room.id} value={room.id}>
-														{room.room_number} - {room.room_type} (LKR{" "}
-														{room.base_price}/night)
-													</SelectItem>
-												))}
-										</SelectContent>
-									</Select>
-								</div>
-							</div>
-
-							<div className="grid grid-cols-2 gap-4">
-								<div>
-									<Label htmlFor="guest_name">Guest Name*</Label>
-									<Input
-										id="guest_name"
-										value={reservationForm.guest_name}
-										onChange={(e) =>
-											setReservationForm({
-												...reservationForm,
-												guest_name: e.target.value,
-											})
-										}
-										required
-									/>
-								</div>
-								<div>
-									<Label htmlFor="guest_email">Guest Email</Label>
-									<Input
-										id="guest_email"
-										type="email"
-										value={reservationForm.guest_email}
-										onChange={(e) =>
-											setReservationForm({
-												...reservationForm,
-												guest_email: e.target.value,
-											})
-										}
-									/>
-								</div>
-							</div>
-
-							<div className="grid grid-cols-2 gap-4">
-								<div>
-									<Label htmlFor="guest_phone">Phone Number</Label>
-									<PhoneInput
-										id="guest_phone"
-										defaultCountry="LK"
-										international
-										value={reservationForm.guest_phone}
-										onChange={(value) =>
-											setReservationForm({
-												...reservationForm,
-												guest_phone: value || "",
-											})
-										}
-									/>
-								</div>
-								<div>
-									<Label htmlFor="guest_nationality">Nationality</Label>
-									<Input
-										id="guest_nationality"
-										value={reservationForm.guest_nationality}
-										onChange={(e) =>
-											setReservationForm({
-												...reservationForm,
-												guest_nationality: e.target.value,
-											})
-										}
-									/>
-								</div>
-							</div>
-
-							<div>
-								<Label htmlFor="guest_address">Address</Label>
-								<Textarea
-									id="guest_address"
-									value={reservationForm.guest_address}
-									onChange={(e) =>
-										setReservationForm({
-											...reservationForm,
-											guest_address: e.target.value,
-										})
-									}
-								/>
-							</div>
-
-							<div className="grid grid-cols-4 gap-4">
-								<div>
-									<Label htmlFor="adults">Adults</Label>
-									<Input
-										id="adults"
-										type="number"
-										min="1"
-										value={reservationForm.adults}
-										onChange={(e) =>
-											setReservationForm({
-												...reservationForm,
-												adults: parseInt(e.target.value),
-											})
-										}
-									/>
-								</div>
-								<div>
-									<Label htmlFor="children">Children</Label>
-									<Input
-										id="children"
-										type="number"
-										min="0"
-										value={reservationForm.children}
-										onChange={(e) =>
-											setReservationForm({
-												...reservationForm,
-												children: parseInt(e.target.value),
-											})
-										}
-									/>
-								</div>
-								<div>
-									<Label htmlFor="check_in_date">Check-in Date</Label>
-									<Input
-										id="check_in_date"
-										type="date"
-										value={reservationForm.check_in_date}
-										onChange={(e) =>
-											setReservationForm({
-												...reservationForm,
-												check_in_date: e.target.value,
-											})
-										}
-										required
-									/>
-								</div>
-								<div>
-									<Label htmlFor="check_out_date">Check-out Date</Label>
-									<Input
-										id="check_out_date"
-										type="date"
-										value={reservationForm.check_out_date}
-										onChange={(e) =>
-											setReservationForm({
-												...reservationForm,
-												check_out_date: e.target.value,
-											})
-										}
-										required
-									/>
-								</div>
-							</div>
-
-							<div>
-								<Label htmlFor="special_requests">Special Requests</Label>
-								<Textarea
-									id="special_requests"
-									value={reservationForm.special_requests}
-									onChange={(e) =>
-										setReservationForm({
-											...reservationForm,
-											special_requests: e.target.value,
-										})
-									}
-								/>
-							</div>
-
-							<div className="flex justify-end space-x-2">
-								<Button
-									type="button"
-									variant="outline"
-									onClick={() => setIsReservationDialogOpen(false)}
-								>
-									Cancel
-								</Button>
-								<Button type="submit">Create Reservation</Button>
-							</div>
-						</form>
-					</DialogContent>
-				</Dialog>
 			</div>
 
 			{/* Phone Verification Section */}
@@ -838,8 +375,8 @@ const Income = () => {
 					onVerificationSuccess={() => {
 						refetchProfile();
 						toast({
-							title: "Phone verified",
-							description: "Your phone number is now verified for SMS notifications",
+							title: "Success",
+							description: "Phone number verified successfully",
 						});
 					}}
 				/>
@@ -953,30 +490,23 @@ const Income = () => {
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{recentPayments.map((payment) => {
-										const reservation = reservations.find(
-											(r) => r.id === payment.reservation_id,
-										);
-										return (
-											<TableRow key={payment.id}>
-												<TableCell className="font-medium">
-													{payment.payment_number}
-												</TableCell>
-												<TableCell>
-													{reservation
-														? `${reservation.guest_name} (${reservation.reservation_number})`
-														: "N/A"}
-												</TableCell>
-												<TableCell>
-													LKR {payment.amount.toLocaleString()}
-												</TableCell>
-												<TableCell>{payment.payment_method}</TableCell>
-												<TableCell>
-													{new Date(payment.created_at).toLocaleDateString()}
-												</TableCell>
-											</TableRow>
-										);
-									})}
+									{recentPayments.map((payment) => (
+										<TableRow key={payment.id}>
+											<TableCell className="font-medium">
+												{payment.payment_number}
+											</TableCell>
+											<TableCell>
+												{reservations.find(r => r.id === payment.reservation_id)?.reservation_number}
+											</TableCell>
+											<TableCell>
+												LKR {payment.amount.toLocaleString()}
+											</TableCell>
+											<TableCell>{payment.payment_method}</TableCell>
+											<TableCell>
+												{new Date(payment.created_at).toLocaleDateString()}
+											</TableCell>
+										</TableRow>
+									))}
 								</TableBody>
 							</Table>
 						</CardContent>
@@ -986,70 +516,51 @@ const Income = () => {
 				<TabsContent value="services">
 					<Card>
 						<CardHeader>
-							<div className="flex justify-between items-center">
-								<CardTitle>Traveler Services</CardTitle>
+							<CardTitle className="flex justify-between items-center">
+								Traveler Services
 								<Button onClick={() => setIsServiceDialogOpen(true)}>
-									<Plus className="h-4 w-4 mr-2" />
+									<Plus className="mr-2 size-4" />
 									Add Service
 								</Button>
-							</div>
+							</CardTitle>
 						</CardHeader>
 						<CardContent>
 							<Table>
 								<TableHeader>
 									<TableRow>
-										<TableHead>Reservation #</TableHead>
-										<TableHead>Guest</TableHead>
 										<TableHead>Service</TableHead>
-										<TableHead>Date</TableHead>
+										<TableHead>Reservation</TableHead>
+										<TableHead>Guest</TableHead>
 										<TableHead>Quantity</TableHead>
 										<TableHead>Unit Price</TableHead>
 										<TableHead>Total</TableHead>
-										<TableHead>Actions</TableHead>
+										<TableHead>Date</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{travelerServices.map((service) => {
-										const reservation = reservations.find(r => r.id === service.reservation_id);
-										return (
-											<TableRow key={service.id}>
-												<TableCell>{reservation?.reservation_number || 'N/A'}</TableCell>
-												<TableCell>{reservation?.guest_name || 'N/A'}</TableCell>
-												<TableCell>
-													<div>
-														<div className="font-medium">{service.service_name}</div>
-														<div className="text-sm text-muted-foreground">{service.service_type}</div>
-													</div>
-												</TableCell>
-												<TableCell>{new Date(service.service_date).toLocaleDateString()}</TableCell>
-												<TableCell>{service.quantity}</TableCell>
-												<TableCell>{service.unit_price.toLocaleString()} {service.currency}</TableCell>
-												<TableCell>{service.total_amount.toLocaleString()} {service.currency}</TableCell>
-												<TableCell>
-													<div className="flex space-x-2">
-														<Button
-															variant="outline"
-															size="sm"
-															onClick={() => {
-																// View service details
-															}}
-														>
-															<Eye className="h-4 w-4" />
-														</Button>
-														<Button
-															variant="outline"
-															size="sm"
-															onClick={() => {
-																// Edit service
-															}}
-														>
-															<Edit className="h-4 w-4" />
-														</Button>
-													</div>
-												</TableCell>
-											</TableRow>
-										);
-									})}
+									{travelerServices.map((service) => (
+										<TableRow key={service.id}>
+											<TableCell className="font-medium">
+												{service.service_name}
+											</TableCell>
+											<TableCell>
+												{service.reservations?.reservation_number}
+											</TableCell>
+											<TableCell>
+												{service.reservations?.guest_name}
+											</TableCell>
+											<TableCell>{service.quantity}</TableCell>
+											<TableCell>
+												LKR {service.unit_price.toLocaleString()}
+											</TableCell>
+											<TableCell>
+												LKR {service.total_amount.toLocaleString()}
+											</TableCell>
+											<TableCell>
+												{new Date(service.service_date).toLocaleDateString()}
+											</TableCell>
+										</TableRow>
+									))}
 								</TableBody>
 							</Table>
 						</CardContent>
@@ -1061,18 +572,24 @@ const Income = () => {
 			<Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Process Payment</DialogTitle>
+						<DialogTitle>Record Payment</DialogTitle>
 					</DialogHeader>
 					<form onSubmit={handlePaymentSubmit} className="space-y-4">
 						<div>
-							<Label>
-								Reservation: {selectedReservation?.guest_name} (
-								{selectedReservation?.reservation_number})
-							</Label>
-							<p className="text-sm text-muted-foreground">
-								Balance Amount: LKR{" "}
-								{selectedReservation?.balance_amount.toLocaleString()}
-							</p>
+							<Label htmlFor="amount">Amount</Label>
+							<Input
+								id="amount"
+								type="number"
+								step="0.01"
+								value={paymentForm.amount}
+								onChange={(e) =>
+									setPaymentForm({
+										...paymentForm,
+										amount: Number.parseFloat(e.target.value),
+									})
+								}
+								required
+							/>
 						</div>
 
 						<div>
@@ -1117,34 +634,20 @@ const Income = () => {
 						</div>
 
 						<div>
-							<Label htmlFor="amount">Amount (LKR)</Label>
-							<Input
-								id="amount"
-								type="number"
-								min="0"
-								value={paymentForm.amount}
-								onChange={(e) =>
-									setPaymentForm({
-										...paymentForm,
-										amount: parseFloat(e.target.value),
-									})
-								}
-								required
-							/>
-						</div>
-
-						<div>
-							<Label htmlFor="notes">Notes</Label>
+							<Label htmlFor="notes">Notes (Optional)</Label>
 							<Textarea
 								id="notes"
 								value={paymentForm.notes}
 								onChange={(e) =>
 									setPaymentForm({ ...paymentForm, notes: e.target.value })
 								}
+								rows={3}
 							/>
 						</div>
 
-						<div className="flex justify-end space-x-2">
+						{renderSignature()}
+
+						<div className="flex gap-2 justify-end">
 							<Button
 								type="button"
 								variant="outline"
@@ -1152,193 +655,135 @@ const Income = () => {
 							>
 								Cancel
 							</Button>
-							<Button type="submit">Process Payment</Button>
+							<Button type="submit">Record Payment</Button>
 						</div>
 					</form>
 				</DialogContent>
 			</Dialog>
 
-			{/* Print Dialog */}
-			<Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Print Reservation Details</DialogTitle>
-					</DialogHeader>
-					<div className="space-y-4">
-						<div>
-							<Label>Guest Signature</Label>
-							<div className="border border-gray-300 rounded mt-2">
-								<SignatureCanvas
-									ref={sigCanvas}
-									canvasProps={{
-										width: 400,
-										height: 200,
-										className: "signature-canvas w-full",
-									}}
-								/>
-							</div>
-							<div className="flex space-x-2 mt-2">
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									onClick={() => sigCanvas.current?.clear()}
-								>
-									Clear
-								</Button>
-							</div>
-						</div>
-
-						<div className="flex justify-end space-x-2">
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => setIsPrintDialogOpen(false)}
-							>
-								Cancel
-							</Button>
-							<Button onClick={handlePrint}>
-								<Printer className="mr-2 size-4" />
-								Print
-							</Button>
-						</div>
-					</div>
-				</DialogContent>
-			</Dialog>
-
 			{/* Service Dialog */}
 			<Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
-				<DialogContent className="max-w-2xl">
+				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>Add Traveler Service</DialogTitle>
 					</DialogHeader>
 					<form onSubmit={handleServiceSubmit} className="space-y-4">
-						<div className="grid grid-cols-2 gap-4">
-							<div>
-								<Label htmlFor="reservation_id">Reservation *</Label>
-								<Select
-									value={serviceForm.reservation_id}
-									onValueChange={(value) =>
-										setServiceForm({ ...serviceForm, reservation_id: value })
-									}
-								>
-									<SelectTrigger>
-										<SelectValue placeholder="Select reservation" />
-									</SelectTrigger>
-									<SelectContent>
-										{reservations
-											.filter(r => r.status !== 'checked_out' && r.status !== 'cancelled')
-											.map((reservation) => (
-												<SelectItem key={reservation.id} value={reservation.id}>
-													{reservation.reservation_number} - {reservation.guest_name}
-												</SelectItem>
-											))}
-									</SelectContent>
-								</Select>
-							</div>
+						<div>
+							<Label htmlFor="service_type">Service Type</Label>
+							<Select
+								value={serviceForm.service_type}
+								onValueChange={(value) =>
+									setServiceForm({ ...serviceForm, service_type: value })
+								}
+							>
+								<SelectTrigger>
+									<SelectValue placeholder="Select service type" />
+								</SelectTrigger>
+								<SelectContent>
+									{incomeTypes.map((type) => (
+										<SelectItem key={type.id} value={type.id}>
+											{type.type_name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
 
-							<div>
-								<Label htmlFor="service_type">Service Type *</Label>
-								<Select
-									value={serviceForm.service_type}
-									onValueChange={(value) => {
-										setServiceForm({ ...serviceForm, service_type: value });
-									}}
-								>
-									<SelectTrigger>
-										<SelectValue placeholder="Select service type" />
-									</SelectTrigger>
-									<SelectContent>
-										{incomeTypes.map((type) => (
-											<SelectItem key={type.id} value={type.type_name}>
-												{type.type_name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
+						<div>
+							<Label htmlFor="reservation_id">Reservation</Label>
+							<Select
+								value={serviceForm.reservation_id}
+								onValueChange={(value) =>
+									setServiceForm({ ...serviceForm, reservation_id: value })
+								}
+							>
+								<SelectTrigger>
+									<SelectValue placeholder="Select reservation" />
+								</SelectTrigger>
+								<SelectContent>
+									{reservations.map((reservation) => (
+										<SelectItem key={reservation.id} value={reservation.id}>
+											{reservation.reservation_number} - {reservation.guest_name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 						</div>
 
 						<div className="grid grid-cols-2 gap-4">
 							<div>
-								<Label htmlFor="service_name">Service Name *</Label>
-								<Input
-									id="service_name"
-									value={serviceForm.service_name}
-									onChange={(e) =>
-										setServiceForm({ ...serviceForm, service_name: e.target.value })
-									}
-									placeholder="e.g., Laundry - 2 shirts"
-									required
-								/>
-							</div>
-
-							<div>
-								<Label htmlFor="service_date">Service Date *</Label>
-								<Input
-									id="service_date"
-									type="date"
-									value={serviceForm.service_date}
-									onChange={(e) =>
-										setServiceForm({ ...serviceForm, service_date: e.target.value })
-									}
-									required
-								/>
-							</div>
-						</div>
-
-						<div className="grid grid-cols-3 gap-4">
-							<div>
-								<Label htmlFor="quantity">Quantity *</Label>
+								<Label htmlFor="quantity">Quantity</Label>
 								<Input
 									id="quantity"
 									type="number"
 									min="1"
 									value={serviceForm.quantity}
 									onChange={(e) =>
-										setServiceForm({ ...serviceForm, quantity: parseInt(e.target.value) || 1 })
+										setServiceForm({
+											...serviceForm,
+											quantity: Number.parseInt(e.target.value),
+										})
 									}
 									required
 								/>
 							</div>
 
 							<div>
-								<Label htmlFor="unit_price">Unit Price *</Label>
+								<Label htmlFor="unit_price">Unit Price</Label>
 								<Input
 									id="unit_price"
 									type="number"
 									step="0.01"
-									min="0"
 									value={serviceForm.unit_price}
 									onChange={(e) =>
-										setServiceForm({ ...serviceForm, unit_price: parseFloat(e.target.value) || 0 })
+										setServiceForm({
+											...serviceForm,
+											unit_price: Number.parseFloat(e.target.value),
+										})
 									}
 									required
 								/>
 							</div>
-
-							<div>
-								<Label>Total Amount</Label>
-								<div className="p-2 bg-muted rounded-md">
-									{(serviceForm.quantity * serviceForm.unit_price).toLocaleString()}
-								</div>
-							</div>
 						</div>
 
 						<div>
-							<Label htmlFor="notes">Notes</Label>
+							<Label htmlFor="total_amount">Total Amount</Label>
+							<Input
+								id="total_amount"
+								type="number"
+								step="0.01"
+								value={serviceForm.total_amount}
+								readOnly
+								className="bg-gray-50"
+							/>
+						</div>
+
+						<div>
+							<Label htmlFor="service_date">Service Date</Label>
+							<Input
+								id="service_date"
+								type="date"
+								value={serviceForm.service_date}
+								onChange={(e) =>
+									setServiceForm({ ...serviceForm, service_date: e.target.value })
+								}
+								required
+							/>
+						</div>
+
+						<div>
+							<Label htmlFor="notes">Notes (Optional)</Label>
 							<Textarea
 								id="notes"
 								value={serviceForm.notes}
 								onChange={(e) =>
 									setServiceForm({ ...serviceForm, notes: e.target.value })
 								}
-								placeholder="Additional notes about the service"
 								rows={3}
 							/>
 						</div>
 
-						<div className="flex justify-end space-x-2">
+						<div className="flex gap-2 justify-end">
 							<Button
 								type="button"
 								variant="outline"
@@ -1349,6 +794,56 @@ const Income = () => {
 							<Button type="submit">Add Service</Button>
 						</div>
 					</form>
+				</DialogContent>
+			</Dialog>
+
+			{/* Print Dialog */}
+			<Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
+				<DialogContent className="max-w-2xl">
+					<DialogHeader>
+						<DialogTitle>Print Reservation Details</DialogTitle>
+					</DialogHeader>
+					{selectedReservation && (
+						<div className="space-y-4">
+							<div className="grid grid-cols-2 gap-4">
+								<div>
+									<strong>Reservation #:</strong> {selectedReservation.reservation_number}
+								</div>
+								<div>
+									<strong>Guest:</strong> {selectedReservation.guest_name}
+								</div>
+								<div>
+									<strong>Check-in:</strong>{" "}
+									{new Date(selectedReservation.check_in_date).toLocaleDateString()}
+								</div>
+								<div>
+									<strong>Check-out:</strong>{" "}
+									{new Date(selectedReservation.check_out_date).toLocaleDateString()}
+								</div>
+								<div>
+									<strong>Total Amount:</strong> LKR {selectedReservation.total_amount.toLocaleString()}
+								</div>
+								<div>
+									<strong>Paid Amount:</strong> LKR {selectedReservation.paid_amount.toLocaleString()}
+								</div>
+								<div>
+									<strong>Balance:</strong> LKR {selectedReservation.balance_amount.toLocaleString()}
+								</div>
+							</div>
+							<div className="flex gap-2 justify-end">
+								<Button
+									variant="outline"
+									onClick={() => setIsPrintDialogOpen(false)}
+								>
+									Close
+								</Button>
+								<Button onClick={() => window.print()}>
+									<Printer className="mr-2 size-4" />
+									Print
+								</Button>
+							</div>
+						</div>
+					)}
 				</DialogContent>
 			</Dialog>
 		</div>

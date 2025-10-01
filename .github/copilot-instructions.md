@@ -188,3 +188,4 @@ Required for: Supabase, React, TypeScript, TailwindCSS, TanStack Query, React Ro
 - Toast notifications via sonner for user feedback
 - **MANDATORY**: Use Rube MCP for all Supabase changes
 - **MANDATORY**: Verify third-party library usage with Context7 docs
+- **MANDATORY**: for end of each respond, git add changed files and create a commit with a descriptive message

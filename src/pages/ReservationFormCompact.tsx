@@ -526,12 +526,11 @@ export default function ReservationFormCompact() {
 				guide_id: formData.has_guide ? formData.guide_id : null,
 				agent_id: formData.has_agent ? formData.agent_id : null,
 				guide_commission: formData.has_guide ? formData.guide_commission : 0,
-				agent_commission: formData.has_agent ? formData.agent_commission : 0,
-				currency: formData.currency,
-				booking_source: formData.booking_source,
-			};
-
-			// Store document information (for future implementation - could be stored in a separate table)
+			agent_commission: formData.has_agent ? formData.agent_commission : 0,
+			currency: formData.currency,
+			booking_source: formData.booking_source,
+			tenant_id: profile?.tenant_id,
+		};			// Store document information (for future implementation - could be stored in a separate table)
 			const documentData = {
 				id_photos: idPhotos.map((photo) => ({
 					filePath: photo.filePath,
