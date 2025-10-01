@@ -4,7 +4,6 @@ import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SectionLoader } from "@/components/ui/loading-spinner";
 import {
 	Select,
 	SelectContent,
@@ -15,6 +14,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
+import { DashboardHeaderSkeleton } from "./DashboardHeaderSkeleton";
 
 type Location = Tables<"locations">;
 
@@ -80,7 +80,12 @@ export function DashboardHeader({
 	}, [tenant?.id, onLocationsLoad]);
 
 	if (loading) {
-		return <SectionLoader className="h-32" />;
+		return (
+			<DashboardHeaderSkeleton
+				hasIncomePermission={hasIncomePermission}
+				hasExpensePermission={hasExpensePermission}
+			/>
+		);
 	}
 	return (
 		<div className="flex flex-col space-y-4">

@@ -1,10 +1,10 @@
 import { ArrowDownCircle, ArrowUpCircle, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SectionLoader } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
+import { SummaryCardsSkeleton } from "./SummaryCardsSkeleton";
 
 type Location = Tables<"locations">;
 
@@ -165,7 +165,7 @@ export function SummaryCards({
 	}, [selectedLocation, selectedMonth, tenant?.id]);
 
 	if (loading) {
-		return <SectionLoader className="h-32" />;
+		return <SummaryCardsSkeleton />;
 	}
 
 	const profit = weeklyIncome - weeklyExpenses;

@@ -2,11 +2,11 @@ import { DollarSign } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SectionLoader } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { getCurrencySymbol } from "@/utils/currency";
+import { AccountBalancesSkeleton } from "./AccountBalancesSkeleton";
 
 type Account = Tables<"accounts">;
 
@@ -118,7 +118,7 @@ export function AccountBalances({ selectedLocation }: AccountBalancesProps) {
 	}, [tenant?.id, calculateAccountBalances]);
 
 	if (loading) {
-		return <SectionLoader className="h-32" />;
+		return <AccountBalancesSkeleton />;
 	}
 	return (
 		<Card className="bg-card border">
