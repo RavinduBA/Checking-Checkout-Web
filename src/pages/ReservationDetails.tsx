@@ -9,7 +9,7 @@ import {
 	Printer,
 	User,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { OTPVerification } from "@/components/OTPVerification";
 import { SignatureCapture } from "@/components/SignatureCapture";
@@ -27,35 +27,53 @@ type Reservation = Tables<"reservations"> & {
 	rooms: Tables<"rooms">;
 };
 
+type IncomeRecord = {
+	id: string;
+	booking_id: string;
+	amount: number;
+	payment_method: string;
+	currency: string;
+};
+
 export default function ReservationDetails() {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
 	const { toast } = useToast();
 	const [reservation, setReservation] = useState<Reservation | null>(null);
+	const [incomeRecords, setIncomeRecords] = useState<IncomeRecord[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [isOTPVerified, setIsOTPVerified] = useState(false);
 	const [guestSignature, setGuestSignature] = useState("");
 
-	useEffect(() => {
-		if (id) {
-			fetchReservation();
-		}
-	}, [id]);
-
-	const fetchReservation = async () => {
+	const fetchReservation = useCallback(async () => {
 		try {
-			const { data, error } = await supabase
-				.from("reservations")
-				.select(`
-          *,
-          locations (*),
-          rooms (*)
-        `)
-				.eq("id", id)
-				.single();
+			const [reservationRes, incomeRes] = await Promise.all([
+				supabase
+					.from("reservations")
+					.select(`
+						*,
+						locations (*),
+						rooms (*)
+					`)
+					.eq("id", id)
+					.single(),
+				supabase
+					.from("income")
+					.select(`
+						id,
+						booking_id,
+						amount,
+						payment_method,
+						currency
+					`)
+					.eq("booking_id", id)
+			]);
 
-			if (error) throw error;
-			setReservation(data);
+			if (reservationRes.error) throw reservationRes.error;
+			if (incomeRes.error) throw incomeRes.error;
+
+			setReservation(reservationRes.data);
+			setIncomeRecords(incomeRes.data || []);
 		} catch (error) {
 			console.error("Error fetching reservation:", error);
 			toast({
@@ -66,6 +84,25 @@ export default function ReservationDetails() {
 		} finally {
 			setLoading(false);
 		}
+	}, [id, toast]);
+
+	useEffect(() => {
+		if (id) {
+			fetchReservation();
+		}
+	}, [id, fetchReservation]);	const getPendingExpenses = () => {
+		return incomeRecords
+			.filter(inc => inc.payment_method === "pending")
+			.reduce((sum, inc) => sum + Number(inc.amount), 0);
+	};
+
+	const getTotalExpenses = () => {
+		return incomeRecords
+			.reduce((sum, inc) => sum + Number(inc.amount), 0);
+	};
+
+	const getTotalBalance = () => {
+		return (reservation?.balance_amount || 0) + getPendingExpenses();
 	};
 
 	const getStatusColor = (status: string) => {
@@ -148,12 +185,17 @@ export default function ReservationDetails() {
 						Print
 					</Button>
 					<Button
-						onClick={() =>
-							navigate(`/reservations?reservation=${reservation.id}`)
-						}
+						onClick={() => {
+							const totalBalance = getTotalBalance();
+							if (totalBalance > 0) {
+								navigate(`/payments/new?reservation=${reservation.id}&amount=${totalBalance}&currency=${reservation.currency}`);
+							} else {
+								navigate(`/reservations?reservation=${reservation.id}`);
+							}
+						}}
 					>
 						<CreditCard className="size-4 mr-2" />
-						Payment
+						{getTotalBalance() > 0 ? "Make Payment" : "Payment History"}
 					</Button>
 					{isOTPVerified ? (
 						<Button variant="outline" asChild>
@@ -366,13 +408,39 @@ export default function ReservationDetails() {
 								LKR {reservation.paid_amount?.toLocaleString() || "0"}
 							</span>
 						</div>
+						{getTotalExpenses() > 0 && (
+							<>
+								<div className="flex justify-between">
+									<span className="text-muted-foreground">Total Expenses</span>
+									<span className="font-semibold text-blue-600">
+										LKR {getTotalExpenses().toLocaleString()}
+									</span>
+								</div>
+								{getPendingExpenses() > 0 && (
+									<div className="flex justify-between">
+										<span className="text-muted-foreground">Pending Expenses</span>
+										<span className="font-semibold text-yellow-600">
+											LKR {getPendingExpenses().toLocaleString()}
+										</span>
+									</div>
+								)}
+							</>
+						)}
 						<Separator />
 						<div className="flex justify-between text-lg">
-							<span className="font-medium">Balance</span>
+							<span className="font-medium">Room Balance</span>
 							<span className="font-bold text-red-600">
 								LKR {reservation.balance_amount?.toLocaleString() || "0"}
 							</span>
 						</div>
+						{getPendingExpenses() > 0 && (
+							<div className="flex justify-between text-lg">
+								<span className="font-medium">Total Balance (Room + Expenses)</span>
+								<span className="font-bold text-red-600">
+									LKR {getTotalBalance().toLocaleString()}
+								</span>
+							</div>
+						)}
 					</CardContent>
 				</Card>
 

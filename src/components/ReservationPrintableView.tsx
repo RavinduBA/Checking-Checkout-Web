@@ -111,15 +111,15 @@ const PrintableReservation = React.forwardRef<
 	const getStatusColor = (status: string) => {
 		switch (status.toLowerCase()) {
 			case "confirmed":
-				return "bg-green-100 text-green-800 border-green-300";
+				return "bg-gray-100 text-gray-800 border-gray-300";
 			case "tentative":
-				return "bg-yellow-100 text-yellow-800 border-yellow-300";
+				return "bg-gray-100 text-gray-800 border-gray-300";
 			case "pending":
-				return "bg-blue-100 text-blue-800 border-blue-300";
+				return "bg-blue-100 text-black border-gray-300";
 			case "cancelled":
-				return "bg-red-100 text-red-800 border-red-300";
+				return "bg-gray-100 text-gray-800 border-gray-300";
 			case "checked_in":
-				return "bg-purple-100 text-purple-800 border-purple-300";
+				return "bg-gray-100 text-gray-800 border-gray-300";
 			case "checked_out":
 				return "bg-gray-100 text-gray-800 border-gray-300";
 			default:
@@ -181,29 +181,6 @@ const PrintableReservation = React.forwardRef<
 
 			{/* Header */}
 			<div className="text-center mb-8 border-b-2 border-gray-300 pb-6">
-				{/* Temporary Debug Information */}
-				<div className="bg-yellow-100 p-4 mb-4 text-left text-xs">
-					<strong>DEBUG INFO:</strong>
-					<br />
-					Guest Name: {reservation.guest_name || "MISSING"}
-					<br />
-					Hotel Name: {reservation.hotel_name || "MISSING"}
-					<br />
-					Location Name: {reservation.location_name || "MISSING"}
-					<br />
-					Locations Object: {reservation.locations?.name || "MISSING"}
-					<br />
-					Reservation Number: {reservation.reservation_number || "MISSING"}
-					<br />
-					Room Number: {reservation.room_number || "MISSING"}
-					<br />
-					Rooms Object: {reservation.rooms?.room_number || "MISSING"}
-					<br />
-					Has Hotel Name: {reservation.hotel_name ? "YES" : "NO"}
-					<br />
-					Has Location Name: {reservation.location_name ? "YES" : "NO"}
-				</div>
-
 				{/* Hotel Logo */}
 				{reservation.logo_url && (
 					<div className="mb-4">
@@ -226,14 +203,14 @@ const PrintableReservation = React.forwardRef<
 				</div>
 				{reservation.location_name &&
 					reservation.location_name !==
-						(reservation.hotel_name || reservation.tenant_name) && (
+					(reservation.hotel_name || reservation.tenant_name) && (
 						<div className="text-lg text-gray-600 mb-2">
 							{reservation.location_name}
 						</div>
 					)}
 				<div className="text-lg text-gray-600 mb-2">
 					Confirmation Number:{" "}
-					<span className="font-bold text-blue-800">
+					<span className="font-bold text-black">
 						{reservation.reservation_number}
 					</span>
 				</div>
@@ -244,8 +221,8 @@ const PrintableReservation = React.forwardRef<
 
 			{/* Guest Information */}
 			<div className="mb-8">
-				<h2 className="text-xl font-bold mb-4 bg-blue-100 p-3 border-l-4 border-blue-500">
-					📋 Guest Information
+				<h2 className="text-xl font-bold mb-4 bg-gray-200 p-3 border-l-4 border-gray-500">
+					Guest Information
 				</h2>
 				<div className="print-grid">
 					<div>
@@ -301,14 +278,14 @@ const PrintableReservation = React.forwardRef<
 
 			{/* Room & Booking Details */}
 			<div className="mb-8">
-				<h2 className="text-xl font-bold mb-4 bg-green-100 p-3 border-l-4 border-green-500">
-					🏨 Accommodation Details
+				<h2 className="text-xl font-bold mb-4 bg-gray-200 p-3 border-l-4 border-gray-500">
+					Accommodation Details
 				</h2>
 				<div className="print-grid">
 					<div>
 						<div className="mb-3">
 							<span className="font-semibold text-gray-700">Room Number:</span>
-							<span className="ml-2 font-medium text-green-700">
+							<span className="ml-2 font-medium text-gray-700">
 								{reservation.room_number || reservation.rooms?.room_number}
 							</span>
 						</div>
@@ -367,7 +344,7 @@ const PrintableReservation = React.forwardRef<
 
 				{/* Room Description */}
 				{(reservation.room_description || reservation.rooms?.description) && (
-					<div className="mt-4 p-3 bg-green-50 rounded border">
+					<div className="mt-4 p-3 bg-gray-50 rounded border">
 						<span className="font-semibold text-gray-700">
 							Room Description:
 						</span>
@@ -381,30 +358,30 @@ const PrintableReservation = React.forwardRef<
 				{((reservation.amenities && reservation.amenities.length > 0) ||
 					(reservation.rooms?.amenities &&
 						reservation.rooms.amenities.length > 0)) && (
-					<div className="mt-4 p-3 bg-green-50 rounded border">
-						<span className="font-semibold text-gray-700">Room Amenities:</span>
-						<div className="mt-1 flex flex-wrap gap-2">
-							{(
-								reservation.amenities ||
-								reservation.rooms?.amenities ||
-								[]
-							).map((amenity, index) => (
-								<span
-									key={index}
-									className="px-2 py-1 bg-green-200 text-green-800 text-sm rounded"
-								>
-									{amenity}
-								</span>
-							))}
+						<div className="mt-4 p-3 bg-gray-50 rounded border">
+							<span className="font-semibold text-gray-700">Room Amenities:</span>
+							<div className="mt-1 flex flex-wrap gap-2">
+								{(
+									reservation.amenities ||
+									reservation.rooms?.amenities ||
+									[]
+								).map((amenity, index) => (
+									<span
+										key={index}
+										className="px-2 py-1 bg-gray-200 text-gray-800 text-sm rounded"
+									>
+										{amenity}
+									</span>
+								))}
+							</div>
 						</div>
-					</div>
-				)}
+					)}
 			</div>
 
 			{/* Booking Status & Source */}
 			<div className="mb-8">
-				<h2 className="text-xl font-bold mb-4 bg-purple-100 p-3 border-l-4 border-purple-500">
-					📊 Booking Status & Information
+				<h2 className="text-xl font-bold mb-4 bg-gray-200 p-3 border-l-4 border-gray-500">
+					Booking Status & Information
 				</h2>
 				<div className="print-grid">
 					<div>
@@ -427,11 +404,7 @@ const PrintableReservation = React.forwardRef<
 						<div className="mb-3">
 							<span className="font-semibold text-gray-700">GRC Approved:</span>
 							<span
-								className={`ml-2 px-2 py-1 rounded text-sm font-medium ${
-									reservation.grc_approved
-										? "bg-green-100 text-green-800"
-										: "bg-red-100 text-red-800"
-								}`}
+								className="ml-2 px-2 py-1 rounded text-sm bg-gray-100 text-gray-800 font-medium"
 							>
 								{reservation.grc_approved ? "YES" : "NO"}
 							</span>
@@ -476,8 +449,8 @@ const PrintableReservation = React.forwardRef<
 			{/* Guide Information */}
 			{(reservation.guide_name || reservation.guide_id) && (
 				<div className="mb-8">
-					<h2 className="text-xl font-bold mb-4 bg-blue-100 p-3 border-l-4 border-blue-500">
-						👨‍🏫 Guide Information
+					<h2 className="text-xl font-bold mb-4 bg-gray-200 p-3 border-l-4 border-gray-500">
+						Guide Information
 					</h2>
 					<div className="print-grid">
 						<div>
@@ -539,8 +512,8 @@ const PrintableReservation = React.forwardRef<
 			{/* Agent Information */}
 			{(reservation.agent_name || reservation.agent_id) && (
 				<div className="mb-8">
-					<h2 className="text-xl font-bold mb-4 bg-purple-100 p-3 border-l-4 border-purple-500">
-						🏢 Travel Agent Information
+					<h2 className="text-xl font-bold mb-4 bg-gray-200 p-3 border-l-4 border-gray-500">
+						Travel Agent Information
 					</h2>
 					<div className="print-grid">
 						<div>
@@ -582,7 +555,7 @@ const PrintableReservation = React.forwardRef<
 										<span className="font-semibold text-gray-700">
 											Commission:
 										</span>
-										<span className="ml-2 font-medium text-purple-700">
+										<span className="ml-2 font-medium text-gray-700">
 											{getCurrencySymbol(reservation.currency)}
 											{reservation.agent_commission.toLocaleString()}
 										</span>
@@ -595,8 +568,8 @@ const PrintableReservation = React.forwardRef<
 
 			{/* Hotel Contact Information */}
 			<div className="mb-8">
-				<h2 className="text-xl font-bold mb-4 bg-yellow-100 p-3 border-l-4 border-yellow-500">
-					📞 Hotel Contact Information
+				<h2 className="text-xl font-bold mb-4 bg-gray-200 p-3 border-l-4 border-gray-500">
+					Hotel Contact Information
 				</h2>
 				<div className="print-grid">
 					<div>
@@ -653,18 +626,18 @@ const PrintableReservation = React.forwardRef<
 			{/* Commission Details */}
 			{(reservation.guide_commission || reservation.agent_commission) && (
 				<div className="mb-8">
-					<h2 className="text-xl font-bold mb-4 bg-orange-100 p-3 border-l-4 border-orange-500">
-						💰 Commission Details
+					<h2 className="text-xl font-bold mb-4 bg-gray-200 p-3 border-l-4 border-gray-500">
+						Commission Details
 					</h2>
 					<div className="print-grid">
 						{reservation.guide_commission && (
-							<div className="p-4 bg-orange-50 rounded border">
+							<div className="p-4 bg-gray-50 rounded border">
 								<div className="mb-2">
 									<span className="font-semibold text-gray-700">
 										Guide Commission:
 									</span>
 								</div>
-								<div className="text-lg font-bold text-orange-700">
+								<div className="text-lg font-bold text-gray-700">
 									{getCurrencySymbol(reservation.currency)}
 									{reservation.guide_commission.toLocaleString()}
 								</div>
@@ -676,13 +649,13 @@ const PrintableReservation = React.forwardRef<
 							</div>
 						)}
 						{reservation.agent_commission && (
-							<div className="p-4 bg-orange-50 rounded border">
+							<div className="p-4 bg-gray-50 rounded border">
 								<div className="mb-2">
 									<span className="font-semibold text-gray-700">
 										Agent Commission:
 									</span>
 								</div>
-								<div className="text-lg font-bold text-orange-700">
+								<div className="text-lg font-bold text-gray-700">
 									{getCurrencySymbol(reservation.currency)}
 									{reservation.agent_commission.toLocaleString()}
 								</div>
@@ -700,10 +673,10 @@ const PrintableReservation = React.forwardRef<
 			{/* Special Requests */}
 			{reservation.special_requests && (
 				<div className="mb-8">
-					<h2 className="text-xl font-bold mb-4 bg-purple-100 p-3 border-l-4 border-purple-500">
-						📝 Special Requests
+					<h2 className="text-xl font-bold mb-4 bg-gray-200 p-3 border-l-4 border-gray-500">
+						Special Requests
 					</h2>
-					<div className="p-4 bg-purple-50 rounded border">
+					<div className="p-4 bg-gray-100 rounded border">
 						<div className="whitespace-pre-wrap">
 							{reservation.special_requests}
 						</div>
@@ -713,8 +686,8 @@ const PrintableReservation = React.forwardRef<
 
 			{/* Financial Summary */}
 			<div className="mb-8">
-				<h2 className="text-xl font-bold mb-4 bg-red-100 p-3 border-l-4 border-red-500">
-					💵 Financial Summary
+				<h2 className="text-xl font-bold mb-4 bg-gray-200 p-3 border-l-4 border-gray-500">
+					Financial Summary
 				</h2>
 				<div className="bg-gray-50 p-6 rounded border">
 					<table className="w-full">
@@ -758,19 +731,19 @@ const PrintableReservation = React.forwardRef<
 									</tr>
 								)}
 							<tr className="border-b border-gray-200">
-								<td className="py-3 font-semibold text-green-700">
+								<td className="py-3 font-semibold text-gray-700">
 									Paid Amount:
 								</td>
-								<td className="py-3 text-right text-green-700 font-medium">
+								<td className="py-3 text-right text-gray-700 font-medium">
 									{getCurrencySymbol(reservation.currency)}
 									{(reservation.paid_amount || 0).toLocaleString()}
 								</td>
 							</tr>
 							<tr>
-								<td className="py-3 font-bold text-red-700 text-lg">
+								<td className="py-3 font-bold text-gray-700 text-lg">
 									Balance Due:
 								</td>
-								<td className="py-3 text-right font-bold text-red-700 text-lg">
+								<td className="py-3 text-right font-bold text-gray-700 text-lg">
 									{getCurrencySymbol(reservation.currency)}
 									{(reservation.balance_amount || 0).toLocaleString()}
 								</td>
@@ -782,10 +755,10 @@ const PrintableReservation = React.forwardRef<
 
 			{/* Terms and Conditions */}
 			<div className="mb-8">
-				<h2 className="text-xl font-bold mb-4 bg-red-100 p-3 border-l-4 border-red-500">
-					📋 Terms and Conditions
+				<h2 className="text-xl font-bold mb-4 bg-gray-200 p-3 border-l-4 border-gray-500">
+					Terms and Conditions
 				</h2>
-				<div className="text-sm space-y-2 bg-red-50 p-4 rounded border">
+				<div className="text-sm space-y-2 bg-gray-50 p-4 rounded border">
 					<p>
 						<strong>Check-in:</strong> 2:00 PM | <strong>Check-out:</strong>{" "}
 						12:00 PM
@@ -795,7 +768,7 @@ const PrintableReservation = React.forwardRef<
 						hours before arrival
 					</p>
 					<p>
-						<strong>Identification:</strong> Valid government-issued ID required
+						<strong>Identification:</strong> Valid government-issued ID requigray
 						at check-in
 					</p>
 					<p>
@@ -841,7 +814,7 @@ const PrintableReservation = React.forwardRef<
 				<div className="border-t border-gray-200 pt-3 mt-3">
 					<p>Generated on {format(new Date(), "MMMM do, yyyy 'at' h:mm a")}</p>
 					<p className="mt-2 italic font-light">
-						This is a system-generated confirmation. No signature required.
+						This is a system-generated confirmation. No signature requigray.
 					</p>
 				</div>
 			</div>

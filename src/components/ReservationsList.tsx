@@ -134,6 +134,14 @@ type Reservation = ReservationWithJoins;
 
 type Payment = Tables<"payments">;
 
+type IncomeRecord = {
+	id: string;
+	booking_id: string;
+	amount: number;
+	payment_method: string;
+	currency: string;
+};
+
 export const ReservationsList = () => {
 	const navigate = useNavigate();
 	const { toast } = useToast();
@@ -142,6 +150,7 @@ export const ReservationsList = () => {
 		useLocationContext();
 	const [reservations, setReservations] = useState<ReservationWithJoins[]>([]);
 	const [payments, setPayments] = useState<Payment[]>([]);
+	const [incomeRecords, setIncomeRecords] = useState<IncomeRecord[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState("all");
@@ -279,13 +288,39 @@ export const ReservationsList = () => {
 						.eq("reservations.location_id", selectedLocation)
 						.order("created_at", { ascending: false });
 
-			const [reservationsData, paymentsData] = await Promise.all([
+			// Fetch income records to get pending expenses
+			const incomeQuery = !selectedLocation
+				? supabase
+						.from("income")
+						.select(`
+							id,
+							booking_id,
+							amount,
+							payment_method,
+							currency
+						`)
+						.eq("tenant_id", tenant?.id || "")
+				: supabase
+						.from("income")
+						.select(`
+							id,
+							booking_id,
+							amount,
+							payment_method,
+							currency
+						`)
+						.eq("tenant_id", tenant?.id || "")
+						.eq("location_id", selectedLocation);
+
+			const [reservationsData, paymentsData, incomeData] = await Promise.all([
 				reservationsQuery,
 				paymentsQuery,
+				incomeQuery,
 			]);
 
 			setReservations((reservationsData.data as ReservationWithJoins[]) || []);
 			setPayments(paymentsData.data || []);
+			setIncomeRecords(incomeData.data || []);
 		} catch (error) {
 			console.error("Error fetching data:", error);
 		} finally {
@@ -334,8 +369,23 @@ export const ReservationsList = () => {
 		});
 	};
 
-	const canShowPaymentButton = (status: string) => {
-		return status === "tentative" || status === "pending";
+	const getPendingExpenses = (reservationId: string) => {
+		return incomeRecords
+			.filter(inc => inc.booking_id === reservationId && inc.payment_method === "pending")
+			.reduce((sum, inc) => sum + Number(inc.amount), 0);
+	};
+
+	const getTotalBalance = (reservation: Reservation) => {
+		return (reservation.balance_amount || 0) + getPendingExpenses(reservation.id);
+	};
+
+	const canShowPaymentButton = (reservation: Reservation) => {
+		// Show payment button if there's a balance or pending expenses
+		const hasPendingExpenses = getPendingExpenses(reservation.id) > 0;
+		const hasBalance = (reservation.balance_amount || 0) > 0;
+		const isPayableStatus = ["tentative", "pending", "confirmed"].includes(reservation.status);
+		
+		return isPayableStatus && (hasBalance || hasPendingExpenses);
 	};
 
 	const filteredReservations = reservations.filter((reservation) => {
@@ -442,7 +492,8 @@ export const ReservationsList = () => {
 											<TableHead>Room</TableHead>
 											<TableHead>Check-in</TableHead>
 											<TableHead>Check-out</TableHead>
-											<TableHead>Amount</TableHead>
+											<TableHead>Room Amount</TableHead>
+											<TableHead>Expenses</TableHead>
 											<TableHead>Status</TableHead>
 											<TableHead>Actions</TableHead>
 										</TableRow>
@@ -473,6 +524,35 @@ export const ReservationsList = () => {
 													{reservation.total_amount.toLocaleString()}
 												</TableCell>
 												<TableCell>
+													{(() => {
+														const pendingExpenses = getPendingExpenses(reservation.id);
+														const totalExpenses = incomeRecords
+															.filter(inc => inc.booking_id === reservation.id)
+															.reduce((sum, inc) => sum + Number(inc.amount), 0);
+														
+														return (
+															<div className="text-sm">
+																{totalExpenses > 0 ? (
+																	<div className="space-y-1">
+																		<div className="font-medium">
+																			{getCurrencySymbol(reservation.currency)}{" "}
+																			{totalExpenses.toLocaleString()}
+																		</div>
+																		{pendingExpenses > 0 && (
+																			<div className="text-yellow-600 text-xs">
+																				Pending: {getCurrencySymbol(reservation.currency)}{" "}
+																				{pendingExpenses.toLocaleString()}
+																			</div>
+																		)}
+																	</div>
+																) : (
+																	<span className="text-muted-foreground">-</span>
+																)}
+															</div>
+														);
+													})()}
+												</TableCell>
+												<TableCell>
 													<Badge className={getStatusColor(reservation.status)}>
 														{reservation.status}
 													</Badge>
@@ -495,13 +575,13 @@ export const ReservationsList = () => {
 															buttonSize="icon"
 															showIcon={true}
 														/>
-														{canShowPaymentButton(reservation.status) && (
+														{canShowPaymentButton(reservation) && (
 															<Button
 																variant="ghost"
 																size="icon"
 																onClick={() =>
 																	navigate(
-																		`/payments/new?reservation=${reservation.id}&amount=${reservation.balance_amount}&currency=${reservation.currency}`,
+																		`/payments/new?reservation=${reservation.id}&amount=${getTotalBalance(reservation)}&currency=${reservation.currency}`,
 																	)
 																}
 																className="text-green-600 hover:text-green-700"
@@ -573,10 +653,35 @@ export const ReservationsList = () => {
 										<div className="flex items-center gap-2">
 											<DollarSign className="h-3 w-3" />
 											<span>
-												{getCurrencySymbol(reservation.currency)}{" "}
+												Room: {getCurrencySymbol(reservation.currency)}{" "}
 												{reservation.total_amount.toLocaleString()}
 											</span>
 										</div>
+										{(() => {
+											const pendingExpenses = getPendingExpenses(reservation.id);
+											const totalExpenses = incomeRecords
+												.filter(inc => inc.booking_id === reservation.id)
+												.reduce((sum, inc) => sum + Number(inc.amount), 0);
+											
+											if (totalExpenses > 0) {
+												return (
+													<div className="flex items-center gap-2">
+														<DollarSign className="h-3 w-3" />
+														<span>
+															Expenses: {getCurrencySymbol(reservation.currency)}{" "}
+															{totalExpenses.toLocaleString()}
+															{pendingExpenses > 0 && (
+																<span className="text-yellow-600 ml-2">
+																	(Pending: {getCurrencySymbol(reservation.currency)}{" "}
+																	{pendingExpenses.toLocaleString()})
+																</span>
+															)}
+														</span>
+													</div>
+												);
+											}
+											return null;
+										})()}
 									</div>
 
 									<div className="flex gap-2 mt-4">
@@ -598,13 +703,13 @@ export const ReservationsList = () => {
 											buttonSize="sm"
 											showIcon={true}
 										/>
-										{canShowPaymentButton(reservation.status) && (
+										{canShowPaymentButton(reservation) && (
 											<Button
 												variant="outline"
 												size="sm"
 												onClick={() =>
 													navigate(
-														`/payments/new?reservation=${reservation.id}&amount=${reservation.balance_amount}&currency=${reservation.currency}`,
+														`/payments/new?reservation=${reservation.id}&amount=${getTotalBalance(reservation)}&currency=${reservation.currency}`,
 													)
 												}
 												className="text-green-600 hover:text-green-700"
