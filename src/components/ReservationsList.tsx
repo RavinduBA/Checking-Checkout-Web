@@ -9,10 +9,10 @@ import {
 	User,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import ReactDOM from "react-dom";
 import { useNavigate } from "react-router";
 import { OTPVerification } from "@/components/OTPVerification";
 import { ReservationEditDialog } from "@/components/ReservationEditDialog";
+import { ReservationPrintButton } from "@/components/ReservationPrintButton";
 import { ReservationPrintableView } from "@/components/ReservationPrintableView";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -167,54 +167,6 @@ export const ReservationsList = () => {
 		return status === "tentative" || status === "pending";
 	};
 
-	const handlePrintReservation = (reservation: Reservation) => {
-		// Open the reservation details with print option in a new window/modal
-		console.log("Opening print view for reservation:", reservation);
-
-		// Create a new window to display the printable view
-		const printWindow = window.open("", "_blank", "width=1000,height=800");
-		if (!printWindow) {
-			toast({
-				title: "Print Error",
-				description:
-					"Unable to open print window. Please allow pop-ups and try again.",
-				variant: "destructive",
-			});
-			return;
-		}
-
-		// Create a container for the print component
-		const printContainer = document.createElement("div");
-		printWindow.document.body.appendChild(printContainer);
-
-		// Set up the print window with React and Tailwind styles
-		printWindow.document.head.innerHTML = `
-      <title>Reservation ${reservation.reservation_number}</title>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <script src="https://cdn.tailwindcss.com"></script>
-      <style>
-        body { 
-          margin: 0; 
-          padding: 0; 
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; 
-          background: white;
-        }
-        @media print {
-          body { margin: 0; padding: 0; }
-          @page { size: A4; margin: 1cm; }
-          .no-print { display: none !important; }
-        }
-      </style>
-    `;
-
-		// Render the print component
-		ReactDOM.render(
-			<ReservationPrintableView reservation={reservation} />,
-			printContainer,
-		);
-	};
-
 	const filteredReservations = reservations.filter((reservation) => {
 		const matchesLocation =
 			!selectedLocation || reservation.location_id === selectedLocation;
@@ -365,15 +317,13 @@ export const ReservationsList = () => {
 														>
 															<Eye className="size-4" />
 														</Button>
-														<Button
-															variant="ghost"
-															size="icon"
-															onClick={() =>
-																handlePrintReservation(reservation)
-															}
-														>
-															<Printer className="size-4" />
-														</Button>
+														<ReservationPrintButton
+															reservation={reservation}
+															buttonText=""
+															buttonVariant="ghost"
+															buttonSize="icon"
+															showIcon={true}
+														/>
 														{canShowPaymentButton(reservation.status) && (
 															<Button
 																variant="ghost"
@@ -470,13 +420,13 @@ export const ReservationsList = () => {
 											<Eye className="size-4 mr-1" />
 											View
 										</Button>
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() => handlePrintReservation(reservation)}
-										>
-											<Printer className="size-4" />
-										</Button>
+										<ReservationPrintButton
+											reservation={reservation}
+											buttonText=""
+											buttonVariant="outline"
+											buttonSize="sm"
+											showIcon={true}
+										/>
 										{canShowPaymentButton(reservation.status) && (
 											<Button
 												variant="outline"
