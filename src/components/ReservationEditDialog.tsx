@@ -19,7 +19,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { AvailabilityCalendar } from "./AvailabilityCalendar";
+import { DatePicker } from "@/components/ui/date-picker";
 import { OTPVerification } from "./OTPVerification";
 
 interface Reservation {
@@ -283,29 +283,83 @@ export function ReservationEditDialog({
 						</div>
 					</div>
 
-					<div>
-						<AvailabilityCalendar
-							selectedRoomId={formData.room_id}
-							checkInDate={formData.check_in_date || ""}
-							checkOutDate={formData.check_out_date || ""}
-							onDateSelect={(checkIn, checkOut) => {
-								const checkInDate = new Date(checkIn);
-								const checkOutDate = new Date(checkOut);
-								const nights = Math.ceil(
-									(checkOutDate.getTime() - checkInDate.getTime()) /
-										(1000 * 60 * 60 * 24),
-								);
-								setFormData({
-									...formData,
-									check_in_date: checkIn,
-									check_out_date: checkOut,
-									nights,
-									total_amount: (formData.room_rate || 0) * nights,
-								});
-							}}
-							excludeReservationId={reservation?.id}
-							className="w-full"
-						/>
+					<div className="grid grid-cols-2 gap-4">
+						<div>
+							<Label htmlFor="check_in_date">Check-in Date</Label>
+							<DatePicker
+								value={formData.check_in_date || ""}
+								onChange={(value) => {
+									// Parse dates as local dates to avoid timezone issues
+									const parseLocalDate = (dateStr: string) => {
+										const [year, month, day] = dateStr.split('-').map(Number);
+										return new Date(year, month - 1, day);
+									};
+									
+									const checkInDate = parseLocalDate(value);
+									const checkOutDate = formData.check_out_date ? parseLocalDate(formData.check_out_date) : null;
+									let nights = 1;
+									if (checkOutDate) {
+										nights = Math.max(1, Math.ceil(
+											(checkOutDate.getTime() - checkInDate.getTime()) /
+												(1000 * 60 * 60 * 24)
+										));
+									}
+									setFormData({
+										...formData,
+										check_in_date: value,
+										nights,
+										total_amount: (formData.room_rate || 0) * nights,
+									});
+								}}
+								placeholder="Select check-in date"
+								min={(() => {
+									const today = new Date();
+									const year = today.getFullYear();
+									const month = String(today.getMonth() + 1).padStart(2, '0');
+									const day = String(today.getDate()).padStart(2, '0');
+									return `${year}-${month}-${day}`;
+								})()}
+								className="w-full"
+							/>
+						</div>
+						<div>
+							<Label htmlFor="check_out_date">Check-out Date</Label>
+							<DatePicker
+								value={formData.check_out_date || ""}
+								onChange={(value) => {
+									// Parse dates as local dates to avoid timezone issues
+									const parseLocalDate = (dateStr: string) => {
+										const [year, month, day] = dateStr.split('-').map(Number);
+										return new Date(year, month - 1, day);
+									};
+									
+									const checkInDate = formData.check_in_date ? parseLocalDate(formData.check_in_date) : new Date();
+									const checkOutDate = parseLocalDate(value);
+									const nights = Math.max(1, Math.ceil(
+										(checkOutDate.getTime() - checkInDate.getTime()) /
+											(1000 * 60 * 60 * 24)
+									));
+									setFormData({
+										...formData,
+										check_out_date: value,
+										nights,
+										total_amount: (formData.room_rate || 0) * nights,
+									});
+								}}
+								placeholder="Select check-out date"
+								min={
+									formData.check_in_date ||
+									(() => {
+										const today = new Date();
+										const year = today.getFullYear();
+										const month = String(today.getMonth() + 1).padStart(2, '0');
+										const day = String(today.getDate()).padStart(2, '0');
+										return `${year}-${month}-${day}`;
+									})()
+								}
+								className="w-full"
+							/>
+						</div>
 					</div>
 
 					<div className="grid grid-cols-2 gap-4">

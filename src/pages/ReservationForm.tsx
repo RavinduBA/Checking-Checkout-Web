@@ -11,8 +11,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
-import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
-import { AvailabilityDialog } from "@/components/AvailabilityDialog";
+
 import { CurrencySelector } from "@/components/CurrencySelector";
 import { PhotoAttachment } from "@/components/PhotoAttachment";
 import { PricingDisplay } from "@/components/PricingDisplay";
@@ -42,7 +41,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useLocationContext } from "@/context/LocationContext";
 import { useToast } from "@/hooks/use-toast";
-import { useAvailability } from "@/hooks/useAvailability";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useProfile } from "@/hooks/useProfile";
 import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,17 +73,7 @@ export default function ReservationForm() {
 	const [idPhotos, setIdPhotos] = useState<string[]>([]);
 	const [guestSignature, setGuestSignature] = useState("");
 
-	// Availability checking state
-	const { checkRoomAvailability, getAlternativeOptions } = useAvailability();
-	const [showAvailabilityDialog, setShowAvailabilityDialog] = useState(false);
-	const [availabilityConflicts, setAvailabilityConflicts] = useState<any[]>([]);
-	const [sameLocationAlternatives, setSameLocationAlternatives] = useState<
-		any[]
-	>([]);
-	const [otherLocationAlternatives, setOtherLocationAlternatives] = useState<
-		any[]
-	>([]);
-	const [availabilityLoading, setAvailabilityLoading] = useState(false);
+	// Removed availability checking components - using simple date picker instead
 
 	const [formData, setFormData] = useState({
 		location_id: searchParams.get("location") || "",
@@ -224,11 +213,18 @@ export default function ReservationForm() {
 
 	const calculateNights = (checkIn: string, checkOut: string) => {
 		if (!checkIn || !checkOut) return 1;
-		const start = new Date(checkIn);
-		const end = new Date(checkOut);
+		
+		// Parse dates as local dates to avoid timezone issues
+		const parseLocalDate = (dateStr: string) => {
+			const [year, month, day] = dateStr.split('-').map(Number);
+			return new Date(year, month - 1, day);
+		};
+		
+		const start = parseLocalDate(checkIn);
+		const end = parseLocalDate(checkOut);
 		const diffTime = Math.abs(end.getTime() - start.getTime());
 		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-		return diffDays || 1;
+		return Math.max(1, diffDays);
 	};
 
 	const calculateTotal = () => {
@@ -375,7 +371,7 @@ export default function ReservationForm() {
 		}
 	};
 
-	// Check room availability and show alternatives if conflicts exist
+	// Validate form and proceed with submission
 	const checkAvailabilityAndProceed = async (forceBook: boolean = false) => {
 		if (
 			!formData.room_id ||
@@ -390,60 +386,10 @@ export default function ReservationForm() {
 			return;
 		}
 
-		setAvailabilityLoading(true);
-		try {
-			const { isAvailable, conflicts } = await checkRoomAvailability(
-				formData.room_id,
-				formData.check_in_date,
-				formData.check_out_date,
-				id, // exclude current reservation if editing
-			);
-
-			if (isAvailable || forceBook) {
-				return handleSubmit(null, forceBook);
-			}
-
-			// Room is not available, show alternatives dialog
-			const { sameLocationAlternatives, otherLocationAlternatives } =
-				await getAlternativeOptions(
-					formData.room_id,
-					formData.check_in_date,
-					formData.check_out_date,
-					id,
-				);
-
-			setAvailabilityConflicts(conflicts);
-			setSameLocationAlternatives(sameLocationAlternatives);
-			setOtherLocationAlternatives(otherLocationAlternatives);
-			setShowAvailabilityDialog(true);
-		} catch (error) {
-			console.error("Error checking availability:", error);
-			// If availability check fails, proceed with booking
-			return handleSubmit(null, forceBook);
-		} finally {
-			setAvailabilityLoading(false);
-		}
+		// Directly proceed with submission
+		return handleSubmit(null, forceBook);
 	};
 
-	const handleSelectAlternativeRoom = (room: any) => {
-		setFormData((prev) => ({
-			...prev,
-			room_id: room.id,
-			location_id: room.location_id,
-			room_rate: room.base_price,
-		}));
-		setShowAvailabilityDialog(false);
-		// Recalculate total with new room rate
-		setTimeout(() => {
-			const total = room.base_price * formData.nights;
-			const balanceAmount = total - formData.advance_amount;
-			setFormData((prev) => ({
-				...prev,
-				total_amount: total,
-				balance_amount: balanceAmount,
-			}));
-		}, 100);
-	};
 
 	const handleSubmit = async (
 		e: React.FormEvent | null,
@@ -744,18 +690,40 @@ export default function ReservationForm() {
 									</div>
 								</div>
 
-								{/* Date Selection with Availability Calendar */}
+								{/* Date Selection */}
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-									<div className="col-span-1 md:col-span-2">
-										<AvailabilityCalendar
-											selectedRoomId={formData.room_id}
-											checkInDate={formData.check_in_date}
-											checkOutDate={formData.check_out_date}
-											onDateSelect={(checkIn, checkOut) => {
-												handleInputChange("check_in_date", checkIn);
-												handleInputChange("check_out_date", checkOut);
-											}}
-											excludeReservationId={id}
+									<div>
+										<Label htmlFor="check_in_date">Check-in Date</Label>
+										<DatePicker
+											value={formData.check_in_date}
+											onChange={(value) => handleInputChange("check_in_date", value)}
+											placeholder="Select check-in date"
+											min={(() => {
+												const today = new Date();
+												const year = today.getFullYear();
+												const month = String(today.getMonth() + 1).padStart(2, '0');
+												const day = String(today.getDate()).padStart(2, '0');
+												return `${year}-${month}-${day}`;
+											})()}
+											className="w-full"
+										/>
+									</div>
+									<div>
+										<Label htmlFor="check_out_date">Check-out Date</Label>
+										<DatePicker
+											value={formData.check_out_date}
+											onChange={(value) => handleInputChange("check_out_date", value)}
+											placeholder="Select check-out date"
+											min={
+												formData.check_in_date ||
+												(() => {
+													const today = new Date();
+													const year = today.getFullYear();
+													const month = String(today.getMonth() + 1).padStart(2, '0');
+													const day = String(today.getDate()).padStart(2, '0');
+													return `${year}-${month}-${day}`;
+												})()
+											}
 											className="w-full"
 										/>
 									</div>
@@ -877,19 +845,15 @@ export default function ReservationForm() {
 							>
 								{submitting ? (
 									"Saving..."
-								) : availabilityLoading ? (
-									"Checking Availability..."
 								) : (
 									<>
 										<Save className="size-5 mr-2" />
 										{isEdit
 											? "Update Reservation"
-											: "Check Availability & Create"}
+											: "Save Reservation"}
 									</>
 								)}
-							</Button>
-
-							<Button
+							</Button>							<Button
 								type="button"
 								variant="outline"
 								onClick={() => navigate("/calendar")}
@@ -1189,23 +1153,6 @@ export default function ReservationForm() {
 				</Card>
 			</form>
 
-			{/* Availability Dialog */}
-			<AvailabilityDialog
-				open={showAvailabilityDialog}
-				onOpenChange={setShowAvailabilityDialog}
-				checkInDate={formData.check_in_date}
-				checkOutDate={formData.check_out_date}
-				originalRoom={rooms.find((r) => r.id === formData.room_id) as any}
-				conflicts={availabilityConflicts}
-				sameLocationAlternatives={sameLocationAlternatives}
-				otherLocationAlternatives={otherLocationAlternatives}
-				onSelectRoom={handleSelectAlternativeRoom}
-				onForceBook={() => {
-					setShowAvailabilityDialog(false);
-					checkAvailabilityAndProceed(true);
-				}}
-				loading={availabilityLoading}
-			/>
 		</div>
 	);
 }

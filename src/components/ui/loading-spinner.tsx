@@ -26,10 +26,10 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 			className={`flex-col gap-4 w-full flex items-center justify-center ${className}`}
 		>
 			<div
-				className={`${sizeClasses[size]} border-4 border-transparent text-blue-400 text-xl sm:text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full`}
+				className={`${sizeClasses[size]} border-4 border-transparent text-black text-xl sm:text-4xl animate-spin flex items-center justify-center border-t-black rounded-full`}
 			>
 				<div
-					className={`${innerSizeClasses[size]} border-4 border-transparent text-red-400 text-md sm:text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full`}
+					className={`${innerSizeClasses[size]} border-4 border-transparent text-gray-600 text-md sm:text-2xl animate-spin flex items-center justify-center border-t-gray-600 rounded-full`}
 				></div>
 			</div>
 		</div>

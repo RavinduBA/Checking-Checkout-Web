@@ -67,7 +67,7 @@ export const CurrencySelector = ({
 					onValueChange={onCurrencyChange}
 					disabled={loading}
 				>
-					<SelectTrigger className="flex-1">
+					<SelectTrigger className="flex-1 h-11">
 						<SelectValue>
 							{selectedCurrency ? (
 								<div className="flex items-center gap-2">
