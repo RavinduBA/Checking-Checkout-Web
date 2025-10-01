@@ -33,6 +33,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrencySymbol } from "@/utils/currency";
+import { useLocationContext } from "@/context/LocationContext";
 
 type Location = {
 	id: string;
@@ -55,7 +56,7 @@ type FinancialData = {
 };
 
 export default function FinancialReports() {
-	const [selectedLocation, setSelectedLocation] = useState("");
+	const { selectedLocation } = useLocationContext();
 	const [selectedMonth, setSelectedMonth] = useState("all");
 	const [startDate, setStartDate] = useState("");
 	const [endDate, setEndDate] = useState("");
@@ -78,18 +79,15 @@ export default function FinancialReports() {
 
 	useEffect(() => {
 		fetchInitialData();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	useEffect(() => {
-		fetchFinancialData();
-	}, [selectedLocation, selectedMonth, startDate, endDate]);
-
-	// Auto-select first location when locations are loaded
-	useEffect(() => {
-		if (locations.length > 0 && !selectedLocation) {
-			setSelectedLocation(locations[0].id);
+		if (selectedLocation) {
+			fetchFinancialData();
 		}
-	}, [locations, selectedLocation]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [selectedLocation, selectedMonth, startDate, endDate]);
 
 	const fetchInitialData = async () => {
 		try {
@@ -274,22 +272,8 @@ export default function FinancialReports() {
 					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-						<div>
-							<Label htmlFor="location">Location</Label>
-							<Select
-								value={selectedLocation}
-								onValueChange={setSelectedLocation}
-							>
-								<SelectContent>
-									{locations.map((location) => (
-										<SelectItem key={location.id} value={location.id}>
-											{location.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
+					<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+						{/* Location selector removed - now handled by sidebar */}
 
 						<div>
 							<Label htmlFor="month">Month Filter</Label>

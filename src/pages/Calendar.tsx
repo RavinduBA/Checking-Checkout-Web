@@ -106,7 +106,7 @@ export default function Calendar() {
 	const [showBookingDialog, setShowBookingDialog] = useState(false);
 	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-	const { selectedLocation, setSelectedLocation } = useLocationContext();
+	const { selectedLocation } = useLocationContext();
 
 	// Helper function to get location from external booking based on property mappings
 	const getLocationFromExternalBooking = (
@@ -376,21 +376,7 @@ export default function Calendar() {
 				{/* Filters & Controls */}
 				<div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center justify-between">
 					<div className="flex items-center gap-2 w-full sm:w-auto">
-						<Select
-							value={selectedLocation}
-							onValueChange={setSelectedLocation}
-						>
-							<SelectTrigger className="w-full sm:w-48">
-								<SelectValue placeholder="Select location" />
-							</SelectTrigger>
-							<SelectContent className="z-50 bg-background border">
-								{locations.map((location) => (
-									<SelectItem key={location.id} value={location.id}>
-										{location.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						{/* Location selector removed - now handled by sidebar */}
 					</div>
 
 					<div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">

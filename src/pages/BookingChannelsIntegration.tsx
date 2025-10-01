@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
+import { useLocationContext } from "@/context/LocationContext";
 
 interface ExternalBooking {
 	id: string;
@@ -88,6 +89,7 @@ interface SyncStats {
 }
 
 export default function BookingChannelsIntegration() {
+	const { selectedLocation } = useLocationContext();
 	const [bookings, setBookings] = useState<ExternalBooking[]>([]);
 	const [locations, setLocations] = useState<Location[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -103,7 +105,6 @@ export default function BookingChannelsIntegration() {
 		sourceBreakdown: {},
 		statusBreakdown: {},
 	});
-	const [selectedLocation, setSelectedLocation] = useState<string>("");
 	const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
 	const [propertyMappings, setPropertyMappings] = useState<PropertyMapping[]>(
 		[],
@@ -220,12 +221,8 @@ export default function BookingChannelsIntegration() {
 		return () => clearInterval(interval);
 	}, []); // Dependencies are intentionally empty for initial setup
 
-	// Auto-select first location when locations are loaded
-	useEffect(() => {
-		if (locations.length > 0 && !selectedLocation) {
-			setSelectedLocation(locations[0].id);
-		}
-	}, [locations, selectedLocation]);
+	// Auto-select first location when locations are loaded - removed
+	// Location is now managed by sidebar context
 
 	const fetchData = async () => {
 		setLoading(true);
@@ -696,7 +693,8 @@ export default function BookingChannelsIntegration() {
 												selectedLocation === location.id ? "default" : "outline"
 											}
 											size="sm"
-											onClick={() => setSelectedLocation(location.id)}
+											disabled
+											title="Location switching is now handled in the sidebar"
 										>
 											{location.name} ({locationBookings})
 										</Button>

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
 	AccountBalances,
 	DashboardHeader,
@@ -6,12 +5,13 @@ import {
 	UpcomingBookings,
 } from "@/components/dashboard";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useLocationContext } from "@/context/LocationContext";
 import { Tables } from "@/integrations/supabase/types";
 
 type Location = Tables<"locations">;
 
 export default function Dashboard() {
-	const [selectedLocation, setSelectedLocation] = useState("");
+	const { selectedLocation } = useLocationContext();
 	const [selectedMonth, setSelectedMonth] = useState("");
 	const [locations, setLocations] = useState<Location[]>([]);
 	const { hasAnyPermission } = usePermissions();
@@ -21,7 +21,6 @@ export default function Dashboard() {
 			{/* Header with Filters */}
 			<DashboardHeader
 				selectedLocation={selectedLocation}
-				setSelectedLocation={setSelectedLocation}
 				selectedMonth={selectedMonth}
 				setSelectedMonth={setSelectedMonth}
 				hasIncomePermission={hasAnyPermission(["access_income"])}

@@ -33,6 +33,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { useLocationContext } from "@/context/LocationContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -50,10 +51,9 @@ type Location = Tables<"locations">;
 export default function EnhancedCalendar() {
 	const navigate = useNavigate();
 	const isMobile = useIsMobile();
-	const [selectedLocation, setSelectedLocation] = useState("");
+	const { selectedLocation, locations } = useLocationContext();
 	const [reservations, setReservations] = useState<Reservation[]>([]);
 	const [rooms, setRooms] = useState<Room[]>([]);
-	const [locations, setLocations] = useState<Location[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [currentDate, setCurrentDate] = useState(new Date());
 	const [viewMode, setViewMode] = useState<"timeline" | "grid">("timeline");
@@ -63,14 +63,7 @@ export default function EnhancedCalendar() {
 
 	useEffect(() => {
 		fetchData();
-	}, []);
-
-	// Auto-select first location when locations are loaded
-	useEffect(() => {
-		if (locations.length > 0 && !selectedLocation) {
-			setSelectedLocation(locations[0].id);
-		}
-	}, [locations, selectedLocation]);
+	}, [selectedLocation]);
 
 	// Auto-switch to grid view on mobile - REMOVED to allow timeline on mobile
 	// useEffect(() => {
@@ -81,12 +74,6 @@ export default function EnhancedCalendar() {
 
 	const fetchData = async () => {
 		try {
-			// Fetch locations
-			const { data: locationsData } = await supabase
-				.from("locations")
-				.select("*")
-				.eq("is_active", true);
-
 			// Fetch rooms
 			const { data: roomsData } = await supabase
 				.from("rooms")
@@ -104,7 +91,6 @@ export default function EnhancedCalendar() {
         `)
 				.order("check_in_date", { ascending: true });
 
-			setLocations(locationsData || []);
 			setRooms(roomsData || []);
 			setReservations(reservationsData || []);
 		} catch (error) {
@@ -278,37 +264,22 @@ export default function EnhancedCalendar() {
 				</div>
 			</div>
 
-			{/* Controls */}
-			<div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-				<div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
-					<Select value={selectedLocation} onValueChange={setSelectedLocation}>
-						<SelectTrigger className="w-full sm:w-48">
-							<SelectValue placeholder="Select location" />
-						</SelectTrigger>
-						<SelectContent>
-							{locations.map((location) => (
-								<SelectItem key={location.id} value={location.id}>
-									{location.name}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-
-					<Select
-						value={viewMode}
-						onValueChange={(value) => setViewMode(value as "timeline" | "grid")}
-					>
-						<SelectTrigger className="w-full sm:w-32">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="timeline">Timeline</SelectItem>
-							<SelectItem value="grid">Grid</SelectItem>
-						</SelectContent>
-					</Select>
-				</div>
-
-				{/* Month Navigation */}
+		{/* Controls */}
+		<div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+			<div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
+				<Select
+					value={viewMode}
+					onValueChange={(value) => setViewMode(value as "timeline" | "grid")}
+				>
+					<SelectTrigger className="w-full sm:w-32">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="timeline">Timeline</SelectItem>
+						<SelectItem value="grid">Grid</SelectItem>
+					</SelectContent>
+				</Select>
+			</div>				{/* Month Navigation */}
 				<div className="flex items-center gap-2 w-full md:w-auto justify-center md:justify-end">
 					<Button
 						variant="outline"

@@ -38,6 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useProfile } from "@/hooks/useProfile";
 import { useTenant } from "@/hooks/useTenant";
 import { useFormFieldPreferences } from "@/hooks/useFormFieldPreferences";
+import { useLocationContext } from "@/context/LocationContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
 	addCustomCurrency,
@@ -84,6 +85,7 @@ export default function Settings() {
 	const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);
 	const [incomeTypes, setIncomeTypes] = useState<IncomeType[]>([]);
 	const [locations, setLocations] = useState<Location[]>([]);
+	const { selectedLocation: contextLocation } = useLocationContext();
 	const [selectedLocationId, setSelectedLocationId] = useState<string>("");
 	const [newMainType, setNewMainType] = useState("");
 	const [newSubType, setNewSubType] = useState("");
@@ -138,6 +140,13 @@ export default function Settings() {
 		fetchLocations();
 		fetchCurrencyRates();
 	}, []);
+
+	// Set default location from context
+	useEffect(() => {
+		if (contextLocation && !selectedLocationId) {
+			setSelectedLocationId(contextLocation);
+		}
+	}, [contextLocation, selectedLocationId]);
 
 	const fetchCurrencyRates = async () => {
 		try {

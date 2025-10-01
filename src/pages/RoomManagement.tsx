@@ -60,6 +60,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/currency";
+import { useLocationContext } from "@/context/LocationContext";
 
 type Location = {
 	id: string;
@@ -113,12 +114,12 @@ const amenityOptions = [
 ];
 
 export default function RoomManagement() {
+	const { selectedLocation } = useLocationContext();
 	const [rooms, setRooms] = useState<Room[]>([]);
 	const [locations, setLocations] = useState<Location[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [editingRoom, setEditingRoom] = useState<Room | null>(null);
-	const [selectedLocation, setSelectedLocation] = useState<string>("");
 	const [deletingRoom, setDeletingRoom] = useState<Room | null>(null);
 	const [formData, setFormData] = useState({
 		location_id: "",
@@ -138,15 +139,7 @@ export default function RoomManagement() {
 
 	useEffect(() => {
 		fetchData();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
-
-	// Auto-select first location when locations are loaded
-	useEffect(() => {
-		if (locations.length > 0 && !selectedLocation) {
-			setSelectedLocation(locations[0].id);
-		}
-	}, [locations, selectedLocation]);
+	}, [selectedLocation]); // Fetch data when selected location changes
 
 	const fetchData = async () => {
 		try {
@@ -353,21 +346,7 @@ export default function RoomManagement() {
 								</CardDescription>
 							</div>
 							<div className="flex gap-4">
-								<Select
-									value={selectedLocation}
-									onValueChange={setSelectedLocation}
-								>
-									<SelectTrigger className="w-48">
-										<SelectValue placeholder="Filter by location" />
-									</SelectTrigger>
-									<SelectContent>
-										{locations.map((location) => (
-											<SelectItem key={location.id} value={location.id}>
-												{location.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								{/* Location selector removed - now handled by sidebar */}
 								<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
 									<DialogTrigger asChild>
 										<Button

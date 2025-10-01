@@ -20,7 +20,6 @@ type Location = Tables<"locations">;
 
 interface DashboardHeaderProps {
 	selectedLocation: string;
-	setSelectedLocation: (value: string) => void;
 	selectedMonth: string;
 	setSelectedMonth: (value: string) => void;
 	hasIncomePermission: boolean;
@@ -30,7 +29,6 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({
 	selectedLocation,
-	setSelectedLocation,
 	selectedMonth,
 	setSelectedMonth,
 	hasIncomePermission,
@@ -41,13 +39,7 @@ export function DashboardHeader({
 	const [locations, setLocations] = useState<Location[]>([]);
 	const { tenant } = useAuth();
 
-	// Auto-select first location when locations are loaded
-	useEffect(() => {
-		if (locations.length > 0 && !selectedLocation) {
-			setSelectedLocation(locations[0].id);
-		}
-	}, [locations, selectedLocation, setSelectedLocation]);
-
+	// Location selection is now handled by sidebar
 	useEffect(() => {
 		const fetchLocations = async () => {
 			if (!tenant?.id) {
@@ -130,29 +122,7 @@ export function DashboardHeader({
 
 			{/* Filters Row */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-				<div className="space-y-1">
-					<Label className="text-xs">Location Filter</Label>
-					<Select
-						value={selectedLocation}
-						onValueChange={setSelectedLocation}
-					>
-						<SelectTrigger className="h-9">
-							<SelectValue
-								placeholder={
-									locations.find((l) => l.id === selectedLocation)?.name ||
-									"Select Location"
-								}
-							/>
-						</SelectTrigger>
-						<SelectContent>
-							{locations.map((location) => (
-								<SelectItem key={location.id} value={location.id}>
-									{location.name}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
+				{/* Location selector removed - now handled by sidebar */}
 				<div className="space-y-1">
 					<Label className="text-xs">Month Filter</Label>
 					<Input
