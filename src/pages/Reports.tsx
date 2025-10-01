@@ -12,6 +12,7 @@ import {
 	TrendingUp,
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router";
+import AccountsReports from "@/components/reports/AccountsReports";
 import CommissionReports from "@/components/reports/CommissionReports";
 import ComprehensiveReports from "@/components/reports/ComprehensiveReports";
 import DetailedBalanceSheet from "@/components/reports/DetailedBalanceSheet";
@@ -164,7 +165,7 @@ export default function Reports() {
 							</TabsContent>
 
 							<TabsContent value="accounts" className="mt-0">
-								<DetailedBalanceSheet />
+								<AccountsReports />
 							</TabsContent>
 
 							<TabsContent value="commission" className="mt-0">
