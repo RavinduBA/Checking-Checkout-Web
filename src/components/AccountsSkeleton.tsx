@@ -84,7 +84,10 @@ export function AccountsSkeleton() {
 						<CardContent>
 							<div className="space-y-3">
 								{Array.from({ length: 8 }).map((_, index) => (
-									<div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+									<div
+										key={index}
+										className="flex items-center justify-between p-3 border rounded-lg"
+									>
 										<div className="flex items-center gap-3">
 											<Skeleton className="h-8 w-8 rounded-full" />
 											<div className="space-y-1">

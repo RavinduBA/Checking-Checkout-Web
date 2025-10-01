@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "@/hooks/useTenant";
 import { useToast } from "@/hooks/use-toast";
+import { useTenant } from "@/hooks/useTenant";
+import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
 type FormFieldPreferences = Tables<"form_field_preferences">;
@@ -9,7 +9,9 @@ type FormFieldPreferences = Tables<"form_field_preferences">;
 export function useFormFieldPreferences() {
 	const { tenant } = useTenant();
 	const { toast } = useToast();
-	const [preferences, setPreferences] = useState<FormFieldPreferences | null>(null);
+	const [preferences, setPreferences] = useState<FormFieldPreferences | null>(
+		null,
+	);
 	const [loading, setLoading] = useState(true);
 
 	const fetchPreferences = useCallback(async () => {

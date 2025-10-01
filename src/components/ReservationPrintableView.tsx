@@ -203,7 +203,7 @@ const PrintableReservation = React.forwardRef<
 				</div>
 				{reservation.location_name &&
 					reservation.location_name !==
-					(reservation.hotel_name || reservation.tenant_name) && (
+						(reservation.hotel_name || reservation.tenant_name) && (
 						<div className="text-lg text-gray-600 mb-2">
 							{reservation.location_name}
 						</div>
@@ -358,24 +358,24 @@ const PrintableReservation = React.forwardRef<
 				{((reservation.amenities && reservation.amenities.length > 0) ||
 					(reservation.rooms?.amenities &&
 						reservation.rooms.amenities.length > 0)) && (
-						<div className="mt-4 p-3 bg-gray-50 rounded border">
-							<span className="font-semibold text-gray-700">Room Amenities:</span>
-							<div className="mt-1 flex flex-wrap gap-2">
-								{(
-									reservation.amenities ||
-									reservation.rooms?.amenities ||
-									[]
-								).map((amenity, index) => (
-									<span
-										key={index}
-										className="px-2 py-1 bg-gray-200 text-gray-800 text-sm rounded"
-									>
-										{amenity}
-									</span>
-								))}
-							</div>
+					<div className="mt-4 p-3 bg-gray-50 rounded border">
+						<span className="font-semibold text-gray-700">Room Amenities:</span>
+						<div className="mt-1 flex flex-wrap gap-2">
+							{(
+								reservation.amenities ||
+								reservation.rooms?.amenities ||
+								[]
+							).map((amenity, index) => (
+								<span
+									key={index}
+									className="px-2 py-1 bg-gray-200 text-gray-800 text-sm rounded"
+								>
+									{amenity}
+								</span>
+							))}
 						</div>
-					)}
+					</div>
+				)}
 			</div>
 
 			{/* Booking Status & Source */}
@@ -403,9 +403,7 @@ const PrintableReservation = React.forwardRef<
 						</div>
 						<div className="mb-3">
 							<span className="font-semibold text-gray-700">GRC Approved:</span>
-							<span
-								className="ml-2 px-2 py-1 rounded text-sm bg-gray-100 text-gray-800 font-medium"
-							>
+							<span className="ml-2 px-2 py-1 rounded text-sm bg-gray-100 text-gray-800 font-medium">
 								{reservation.grc_approved ? "YES" : "NO"}
 							</span>
 						</div>
@@ -768,8 +766,8 @@ const PrintableReservation = React.forwardRef<
 						hours before arrival
 					</p>
 					<p>
-						<strong>Identification:</strong> Valid government-issued ID requigray
-						at check-in
+						<strong>Identification:</strong> Valid government-issued ID
+						requigray at check-in
 					</p>
 					<p>
 						<strong>Additional Charges:</strong> Extra services, minibar, and

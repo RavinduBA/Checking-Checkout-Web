@@ -276,7 +276,10 @@ export default function PaymentForm() {
 				.eq("payment_method", "pending");
 
 			if (updateIncomeError) {
-				console.error("Failed to update pending income records:", updateIncomeError);
+				console.error(
+					"Failed to update pending income records:",
+					updateIncomeError,
+				);
 				// Don't throw error here as payment was successful, just log the issue
 			}
 

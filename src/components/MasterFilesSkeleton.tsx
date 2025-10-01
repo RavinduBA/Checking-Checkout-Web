@@ -65,7 +65,10 @@ export function MasterFilesSkeleton() {
 								{tab === "rooms" ? (
 									<div className="space-y-3">
 										{Array.from({ length: 8 }).map((_, index) => (
-											<div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+											<div
+												key={index}
+												className="flex items-center justify-between p-4 border rounded-lg"
+											>
 												<div className="flex items-center gap-4">
 													<Skeleton className="h-8 w-12" />
 													<div className="space-y-1">

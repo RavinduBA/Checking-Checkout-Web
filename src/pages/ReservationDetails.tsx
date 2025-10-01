@@ -66,7 +66,7 @@ export default function ReservationDetails() {
 						payment_method,
 						currency
 					`)
-					.eq("booking_id", id)
+					.eq("booking_id", id),
 			]);
 
 			if (reservationRes.error) throw reservationRes.error;
@@ -90,21 +90,21 @@ export default function ReservationDetails() {
 		if (id) {
 			fetchReservation();
 		}
-	}, [id, fetchReservation]);	const getPendingExpenses = () => {
+	}, [id, fetchReservation]);
+	const getPendingExpenses = () => {
 		return incomeRecords
-			.filter(inc => inc.payment_method === "pending")
+			.filter((inc) => inc.payment_method === "pending")
 			.reduce((sum, inc) => sum + Number(inc.amount), 0);
 	};
 
 	const getTotalExpenses = () => {
-		return incomeRecords
-			.reduce((sum, inc) => sum + Number(inc.amount), 0);
+		return incomeRecords.reduce((sum, inc) => sum + Number(inc.amount), 0);
 	};
 
 	const getTotalBalance = () => {
 		const roomBalance = reservation?.balance_amount || 0;
 		const pendingExpenses = getPendingExpenses();
-		
+
 		// If room is fully paid (balance = 0), only return pending expenses
 		// If room has balance, return room balance + pending expenses
 		return roomBalance + pendingExpenses;
@@ -193,7 +193,9 @@ export default function ReservationDetails() {
 						onClick={() => {
 							const totalBalance = getTotalBalance();
 							if (totalBalance > 0) {
-								navigate(`/payments/new?reservation=${reservation.id}&amount=${totalBalance}&currency=${reservation.currency}`);
+								navigate(
+									`/payments/new?reservation=${reservation.id}&amount=${totalBalance}&currency=${reservation.currency}`,
+								);
 							} else {
 								navigate(`/reservations?reservation=${reservation.id}`);
 							}
@@ -423,7 +425,9 @@ export default function ReservationDetails() {
 								</div>
 								{getPendingExpenses() > 0 && (
 									<div className="flex justify-between">
-										<span className="text-muted-foreground">Pending Expenses</span>
+										<span className="text-muted-foreground">
+											Pending Expenses
+										</span>
 										<span className="font-semibold text-yellow-600">
 											LKR {getPendingExpenses().toLocaleString()}
 										</span>
@@ -440,7 +444,9 @@ export default function ReservationDetails() {
 						</div>
 						{getPendingExpenses() > 0 && (
 							<div className="flex justify-between text-lg">
-								<span className="font-medium">Total Balance (Room + Expenses)</span>
+								<span className="font-medium">
+									Total Balance (Room + Expenses)
+								</span>
 								<span className="font-bold text-red-600">
 									LKR {getTotalBalance().toLocaleString()}
 								</span>

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { CalendarSkeleton } from "@/components/CalendarSkeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +28,6 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { SectionLoader } from "@/components/ui/loading-spinner";
-import { CalendarSkeleton } from "@/components/CalendarSkeleton";
 import {
 	Select,
 	SelectContent,

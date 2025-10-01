@@ -1,7 +1,7 @@
 import {
+	AccountBalancesSkeleton,
 	DashboardHeaderSkeleton,
 	SummaryCardsSkeleton,
-	AccountBalancesSkeleton,
 	UpcomingBookingsSkeleton,
 } from "@/components/dashboard";
 

@@ -38,7 +38,10 @@ export function EnhancedCalendarSkeleton() {
 						{/* Calendar Header */}
 						<div className="grid grid-cols-[150px_1fr] border-b bg-gray-50">
 							<div className="p-3 font-semibold border-r text-sm">Rooms</div>
-							<div className="grid gap-0" style={{ gridTemplateColumns: 'repeat(31, minmax(40px, 1fr))' }}>
+							<div
+								className="grid gap-0"
+								style={{ gridTemplateColumns: "repeat(31, minmax(40px, 1fr))" }}
+							>
 								{Array.from({ length: 31 }).map((_, index) => (
 									<div key={index} className="p-2 text-center text-xs border-r">
 										<Skeleton className="h-3 w-4 mx-auto mb-1" />
@@ -50,7 +53,10 @@ export function EnhancedCalendarSkeleton() {
 
 						{/* Room Rows */}
 						{Array.from({ length: 8 }).map((_, roomIndex) => (
-							<div key={roomIndex} className="grid grid-cols-[150px_1fr] border-b hover:bg-gray-50/50">
+							<div
+								key={roomIndex}
+								className="grid grid-cols-[150px_1fr] border-b hover:bg-gray-50/50"
+							>
 								{/* Room Info */}
 								<div className="p-2 border-r">
 									<div className="flex flex-col gap-1">
@@ -63,9 +69,17 @@ export function EnhancedCalendarSkeleton() {
 								</div>
 
 								{/* Calendar Days for this Room */}
-								<div className="grid gap-0" style={{ gridTemplateColumns: 'repeat(31, minmax(40px, 1fr))' }}>
+								<div
+									className="grid gap-0"
+									style={{
+										gridTemplateColumns: "repeat(31, minmax(40px, 1fr))",
+									}}
+								>
 									{Array.from({ length: 31 }).map((_, dayIndex) => (
-										<div key={dayIndex} className="h-16 border-r border-gray-200 relative flex items-center justify-center">
+										<div
+											key={dayIndex}
+											className="h-16 border-r border-gray-200 relative flex items-center justify-center"
+										>
 											{Math.random() > 0.7 && (
 												<Skeleton className="absolute inset-1 bg-blue-200 rounded" />
 											)}

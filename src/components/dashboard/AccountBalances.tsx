@@ -52,17 +52,20 @@ export function AccountBalances({ selectedLocation }: AccountBalancesProps) {
 
 			// Optimized single query to get all account balances at once
 			// This replaces the N+1 query problem with efficient joins and aggregations
-			const { data: balanceData, error } = await supabase.rpc('get_account_balances', {
-				p_tenant_id: tenant.id,
-				p_location_ids: tenantLocationIds
-			});
+			const { data: balanceData, error } = await supabase.rpc(
+				"get_account_balances",
+				{
+					p_tenant_id: tenant.id,
+					p_location_ids: tenantLocationIds,
+				},
+			);
 
 			if (error) {
 				// If RPC doesn't exist, fall back to optimized SQL query
 				console.log("RPC not found, using direct SQL query");
-				
+
 				const { data: directBalanceData, error: directError } = await supabase
-					.from('accounts')
+					.from("accounts")
 					.select(`
 						id,
 						name,
@@ -74,7 +77,7 @@ export function AccountBalances({ selectedLocation }: AccountBalancesProps) {
 						incoming_transfers:account_transfers!to_account_id(amount, conversion_rate),
 						outgoing_transfers:account_transfers!from_account_id(amount)
 					`)
-					.eq('tenant_id', tenant.id);
+					.eq("tenant_id", tenant.id);
 
 				if (directError) {
 					throw directError;
@@ -84,28 +87,34 @@ export function AccountBalances({ selectedLocation }: AccountBalancesProps) {
 				const processedBalances = (directBalanceData || [])
 					.filter((account) =>
 						account.location_access.some((locationId) =>
-							tenantLocationIds.includes(locationId)
-						)
+							tenantLocationIds.includes(locationId),
+						),
 					)
 					.map((account) => {
 						const totalIncome = (account.account_income || []).reduce(
-							(sum: number, item: any) => sum + (item.amount || 0), 
-							0
+							(sum: number, item: any) => sum + (item.amount || 0),
+							0,
 						);
 						const totalExpenses = (account.account_expenses || []).reduce(
-							(sum: number, item: any) => sum + (item.amount || 0), 
-							0
+							(sum: number, item: any) => sum + (item.amount || 0),
+							0,
 						);
 						const totalIncoming = (account.incoming_transfers || []).reduce(
-							(sum: number, item: any) => sum + ((item.amount || 0) * (item.conversion_rate || 1)), 
-							0
+							(sum: number, item: any) =>
+								sum + (item.amount || 0) * (item.conversion_rate || 1),
+							0,
 						);
 						const totalOutgoing = (account.outgoing_transfers || []).reduce(
-							(sum: number, item: any) => sum + (item.amount || 0), 
-							0
+							(sum: number, item: any) => sum + (item.amount || 0),
+							0,
 						);
 
-						const currentBalance = account.initial_balance + totalIncome - totalExpenses + totalIncoming - totalOutgoing;
+						const currentBalance =
+							account.initial_balance +
+							totalIncome -
+							totalExpenses +
+							totalIncoming -
+							totalOutgoing;
 
 						return {
 							id: account.id,
@@ -113,17 +122,18 @@ export function AccountBalances({ selectedLocation }: AccountBalancesProps) {
 							currency: account.currency,
 							initial_balance: account.initial_balance,
 							current_balance: currentBalance,
-							location_access: account.location_access
+							location_access: account.location_access,
 						};
 					});
 
 				setAccountBalances(processedBalances);
 			} else {
 				// Filter accounts by location access if using RPC
-				const filteredBalances = (balanceData || []).filter((account: AccountBalance) =>
-					account.location_access.some((locationId) =>
-						tenantLocationIds.includes(locationId)
-					)
+				const filteredBalances = (balanceData || []).filter(
+					(account: AccountBalance) =>
+						account.location_access.some((locationId) =>
+							tenantLocationIds.includes(locationId),
+						),
 				);
 				setAccountBalances(filteredBalances);
 			}

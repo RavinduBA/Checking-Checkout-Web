@@ -43,8 +43,8 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
 import { useLocationContext } from "@/context/LocationContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ExternalBooking {
 	id: string;

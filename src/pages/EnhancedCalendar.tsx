@@ -21,11 +21,11 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { EnhancedCalendarSkeleton } from "@/components/EnhancedCalendarSkeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SectionLoader } from "@/components/ui/loading-spinner";
-import { EnhancedCalendarSkeleton } from "@/components/EnhancedCalendarSkeleton";
 import {
 	Select,
 	SelectContent,
@@ -264,22 +264,23 @@ export default function EnhancedCalendar() {
 				</div>
 			</div>
 
-		{/* Controls */}
-		<div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-			<div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
-				<Select
-					value={viewMode}
-					onValueChange={(value) => setViewMode(value as "timeline" | "grid")}
-				>
-					<SelectTrigger className="w-full sm:w-32">
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="timeline">Timeline</SelectItem>
-						<SelectItem value="grid">Grid</SelectItem>
-					</SelectContent>
-				</Select>
-			</div>				{/* Month Navigation */}
+			{/* Controls */}
+			<div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+				<div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
+					<Select
+						value={viewMode}
+						onValueChange={(value) => setViewMode(value as "timeline" | "grid")}
+					>
+						<SelectTrigger className="w-full sm:w-32">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="timeline">Timeline</SelectItem>
+							<SelectItem value="grid">Grid</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>{" "}
+				{/* Month Navigation */}
 				<div className="flex items-center gap-2 w-full md:w-auto justify-center md:justify-end">
 					<Button
 						variant="outline"

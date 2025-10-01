@@ -21,11 +21,11 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { useLocation } from "react-router";
+import { AppSidebarSkeleton } from "@/components/AppSidebarSkeleton";
 import { NavMain } from "@/components/nav-main";
 import { NavProjects } from "@/components/nav-projects";
 import { NavUser } from "@/components/nav-user";
 import { LocationSwitcher } from "@/components/team-switcher";
-import { AppSidebarSkeleton } from "@/components/AppSidebarSkeleton";
 import {
 	Sidebar,
 	SidebarContent,

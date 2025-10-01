@@ -18,7 +18,10 @@ interface UpcomingBookingsProps {
 	hasCalendarPermission: boolean;
 }
 
-export function UpcomingBookings({ selectedLocation, hasCalendarPermission }: UpcomingBookingsProps) {
+export function UpcomingBookings({
+	selectedLocation,
+	hasCalendarPermission,
+}: UpcomingBookingsProps) {
 	const [loading, setLoading] = useState(true);
 	const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
 	const { tenant } = useAuth();
@@ -66,7 +69,9 @@ export function UpcomingBookings({ selectedLocation, hasCalendarPermission }: Up
 	}, [selectedLocation, tenant?.id]);
 
 	if (loading) {
-		return <UpcomingBookingsSkeleton hasCalendarPermission={hasCalendarPermission} />;
+		return (
+			<UpcomingBookingsSkeleton hasCalendarPermission={hasCalendarPermission} />
+		);
 	}
 	return (
 		<Card className="bg-card border">
@@ -108,9 +113,7 @@ export function UpcomingBookings({ selectedLocation, hasCalendarPermission }: Up
 									<div className="flex flex-wrap items-center gap-2">
 										<Badge
 											variant={
-												booking.status === "confirmed"
-													? "default"
-													: "secondary"
+												booking.status === "confirmed" ? "default" : "secondary"
 											}
 											className="capitalize text-xs"
 										>

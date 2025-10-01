@@ -1,6 +1,7 @@
 import { ArrowRightLeft, Edit, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { AccountsSkeleton } from "@/components/AccountsSkeleton";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -23,7 +24,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InlineLoader, SectionLoader } from "@/components/ui/loading-spinner";
-import { AccountsSkeleton } from "@/components/AccountsSkeleton";
 import {
 	Select,
 	SelectContent,
@@ -322,19 +322,20 @@ export default function Accounts() {
 				amount: 0,
 				conversionRate: 1,
 				note: "",
-				});
-				setShowTransferDialog(false);
-			} catch (error) {
-				console.error("Error creating transfer:", error);
-				toast({
-					title: "Error",
-					description: "Failed to complete transfer",
-					variant: "destructive",
-				});
-			} finally {
-				setIsTransferring(false);
-			}
-		};	const getExchangeRate = (fromCurrency: string, toCurrency: string) => {
+			});
+			setShowTransferDialog(false);
+		} catch (error) {
+			console.error("Error creating transfer:", error);
+			toast({
+				title: "Error",
+				description: "Failed to complete transfer",
+				variant: "destructive",
+			});
+		} finally {
+			setIsTransferring(false);
+		}
+	};
+	const getExchangeRate = (fromCurrency: string, toCurrency: string) => {
 		if (fromCurrency === toCurrency) return 1;
 		if (fromCurrency === "USD" && toCurrency === "LKR")
 			return currentExchangeRate.usdToLkr;
@@ -504,10 +505,13 @@ export default function Accounts() {
 							</div>
 							<div className="flex gap-2">
 								<Button type="submit" disabled={isSubmitting}>
-									{isSubmitting 
-										? (editingAccount ? "Updating..." : "Adding...") 
-										: (editingAccount ? "Update Account" : "Add Account")
-									}
+									{isSubmitting
+										? editingAccount
+											? "Updating..."
+											: "Adding..."
+										: editingAccount
+											? "Update Account"
+											: "Add Account"}
 								</Button>
 								<Button type="button" variant="outline" onClick={resetForm}>
 									Cancel

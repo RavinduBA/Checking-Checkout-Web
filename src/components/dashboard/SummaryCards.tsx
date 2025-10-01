@@ -185,12 +185,9 @@ export function SummaryCards({
 				</CardHeader>
 				<CardContent>
 					<div className="text-xl lg:text-2xl font-bold text-success">
-						Rs.{" "}
-						{(selectedMonth ? weeklyIncome : todayIncome).toLocaleString()}
+						Rs. {(selectedMonth ? weeklyIncome : todayIncome).toLocaleString()}
 					</div>
-					<p className="text-xs text-muted-foreground">
-						{locationName}
-					</p>
+					<p className="text-xs text-muted-foreground">{locationName}</p>
 				</CardContent>
 			</Card>
 
@@ -204,14 +201,9 @@ export function SummaryCards({
 				<CardContent>
 					<div className="text-xl lg:text-2xl font-bold text-destructive">
 						Rs.{" "}
-						{(selectedMonth
-							? weeklyExpenses
-							: todayExpenses
-						).toLocaleString()}
+						{(selectedMonth ? weeklyExpenses : todayExpenses).toLocaleString()}
 					</div>
-					<p className="text-xs text-muted-foreground">
-						{locationName}
-					</p>
+					<p className="text-xs text-muted-foreground">{locationName}</p>
 				</CardContent>
 			</Card>
 

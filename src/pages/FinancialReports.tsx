@@ -30,10 +30,10 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useLocationContext } from "@/context/LocationContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrencySymbol } from "@/utils/currency";
-import { useLocationContext } from "@/context/LocationContext";
 
 type Location = {
 	id: string;

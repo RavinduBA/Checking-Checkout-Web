@@ -92,7 +92,10 @@ export function SettingsSkeleton() {
 							</CardHeader>
 							<CardContent className="space-y-4">
 								{Array.from({ length: 5 }).map((_, index) => (
-									<div key={index} className="flex items-center justify-between">
+									<div
+										key={index}
+										className="flex items-center justify-between"
+									>
 										<div className="space-y-1">
 											<Skeleton className="h-4 w-40" />
 											<Skeleton className="h-3 w-56" />

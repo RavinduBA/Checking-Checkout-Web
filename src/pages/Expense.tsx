@@ -3,13 +3,13 @@ import { AlertCircle, ArrowLeft, Calendar, Minus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { ExpenseShortcuts } from "@/components/ExpenseShortcuts";
+import { ExpenseSkeleton } from "@/components/ExpenseSkeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionLoader } from "@/components/ui/loading-spinner";
-import { ExpenseSkeleton } from "@/components/ExpenseSkeleton";
 import {
 	Select,
 	SelectContent,
@@ -402,9 +402,7 @@ export default function Expense() {
 											.filter(
 												(account) =>
 													account.location_access.length === 0 ||
-													account.location_access.includes(
-														formData.locationId,
-													),
+													account.location_access.includes(formData.locationId),
 											)
 											.map((account) => (
 												<SelectItem key={account.id} value={account.id}>
@@ -448,8 +446,8 @@ export default function Expense() {
 						</div>
 
 						{/* Submit button */}
-						<Button 
-							type="submit" 
+						<Button
+							type="submit"
 							disabled={!formData.locationId || isSubmitting}
 						>
 							<Minus className="size-4 mr-2" />
@@ -505,12 +503,14 @@ export default function Expense() {
 										{expense.amount.toLocaleString()}
 									</TableCell>
 									<TableCell>
-										{accounts.find((a) => a.id === expense.account_id)?.name} 
-										({accounts.find((a) => a.id === expense.account_id)?.currency})
+										{accounts.find((a) => a.id === expense.account_id)?.name}(
+										{
+											accounts.find((a) => a.id === expense.account_id)
+												?.currency
+										}
+										)
 									</TableCell>
-									<TableCell>
-										{expense.note || "-"}
-									</TableCell>
+									<TableCell>{expense.note || "-"}</TableCell>
 								</TableRow>
 							))}
 							{recentExpenses.length === 0 && (

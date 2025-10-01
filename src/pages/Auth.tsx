@@ -170,7 +170,8 @@ export default function Auth() {
 							Welcome to Checking &amp; Checkout
 						</h2>
 						<p className="mt-4 text-white dark:text-white">
-							The all-in-one hotel management solution for small to medium businesses.
+							The all-in-one hotel management solution for small to medium
+							businesses.
 						</p>
 						<div className="mt-14 rounded-xl bg-white/10 p-1.5 ring-1 ring-white/20">
 							<img
@@ -192,7 +193,9 @@ export default function Auth() {
 							{isLogin ? "Get started now" : "Create your account"}
 						</h2>
 						<p className="text-sm text-gray-700 dark:text-gray-400">
-							{isLogin ? "Enter your credentials to access your account" : "Start your 7-day free trial today"}
+							{isLogin
+								? "Enter your credentials to access your account"
+								: "Start your 7-day free trial today"}
 						</p>
 					</div>
 					<form onSubmit={handleAuth} className="space-y-4">

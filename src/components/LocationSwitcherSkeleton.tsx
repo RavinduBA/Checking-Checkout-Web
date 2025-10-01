@@ -1,11 +1,11 @@
 import { ChevronsUpDown, MapPin } from "lucide-react";
+import Logo from "@/components/ui/logo";
 import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import Logo from "@/components/ui/logo";
 
 export function LocationSwitcherSkeleton() {
 	return (

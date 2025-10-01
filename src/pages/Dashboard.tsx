@@ -1,13 +1,13 @@
+import { useState } from "react";
 import {
 	AccountBalances,
 	DashboardHeader,
 	SummaryCards,
 	UpcomingBookings,
 } from "@/components/dashboard";
-import { usePermissions } from "@/hooks/usePermissions";
 import { useLocationContext } from "@/context/LocationContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Tables } from "@/integrations/supabase/types";
-import { useState } from "react";
 
 type Location = Tables<"locations">;
 
@@ -37,9 +37,7 @@ export default function Dashboard() {
 			/>
 
 			{/* Account Balances */}
-			<AccountBalances
-				selectedLocation={selectedLocation}
-			/>
+			<AccountBalances selectedLocation={selectedLocation} />
 
 			{/* Upcoming Bookings */}
 			<UpcomingBookings

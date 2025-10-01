@@ -39,7 +39,10 @@ export function CalendarSkeleton() {
 					{Array.from({ length: 6 }).map((_, weekIndex) => (
 						<div key={weekIndex} className="grid grid-cols-7">
 							{Array.from({ length: 7 }).map((_, dayIndex) => (
-								<div key={dayIndex} className="min-h-24 p-2 border-r border-b space-y-1">
+								<div
+									key={dayIndex}
+									className="min-h-24 p-2 border-r border-b space-y-1"
+								>
 									<Skeleton className="h-4 w-6" />
 									{Math.random() > 0.7 && (
 										<div className="space-y-1">

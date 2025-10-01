@@ -7,7 +7,9 @@ interface UpcomingBookingsSkeletonProps {
 	hasCalendarPermission: boolean;
 }
 
-export function UpcomingBookingsSkeleton({ hasCalendarPermission }: UpcomingBookingsSkeletonProps) {
+export function UpcomingBookingsSkeleton({
+	hasCalendarPermission,
+}: UpcomingBookingsSkeletonProps) {
 	return (
 		<Card className="bg-card border">
 			<CardHeader className="flex flex-row items-center justify-between">

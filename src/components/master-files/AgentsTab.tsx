@@ -362,9 +362,14 @@ export default function AgentsTab() {
 									Cancel
 								</Button>
 								<Button type="submit" disabled={isSubmitting}>
-									{isSubmitting 
-										? (editingAgent ? "Updating..." : "Creating...") 
-										: (editingAgent ? "Update" : "Create")} Agent
+									{isSubmitting
+										? editingAgent
+											? "Updating..."
+											: "Creating..."
+										: editingAgent
+											? "Update"
+											: "Create"}{" "}
+									Agent
 								</Button>
 							</div>
 						</form>

@@ -56,11 +56,11 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { useLocationContext } from "@/context/LocationContext";
 import { useToast } from "@/hooks/use-toast";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/currency";
-import { useLocationContext } from "@/context/LocationContext";
 
 type Location = {
 	id: string;
@@ -628,9 +628,14 @@ export default function RoomManagement() {
 													Cancel
 												</Button>
 												<Button type="submit" disabled={isSubmitting}>
-													{isSubmitting 
-														? (editingRoom ? "Updating..." : "Creating...") 
-														: (editingRoom ? "Update" : "Create")} Room
+													{isSubmitting
+														? editingRoom
+															? "Updating..."
+															: "Creating..."
+														: editingRoom
+															? "Update"
+															: "Create"}{" "}
+													Room
 												</Button>
 											</div>
 										</form>

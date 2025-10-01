@@ -84,7 +84,10 @@ export function ReportsSkeleton() {
 							</CardHeader>
 							<CardContent className="space-y-3">
 								{Array.from({ length: 6 }).map((_, index) => (
-									<div key={index} className="flex justify-between items-center p-2 border rounded">
+									<div
+										key={index}
+										className="flex justify-between items-center p-2 border rounded"
+									>
 										<Skeleton className="h-4 w-24" />
 										<Skeleton className="h-4 w-20" />
 									</div>
@@ -101,7 +104,10 @@ export function ReportsSkeleton() {
 						<CardContent>
 							<div className="space-y-3">
 								{Array.from({ length: 10 }).map((_, index) => (
-									<div key={index} className="grid grid-cols-5 gap-4 p-3 border rounded">
+									<div
+										key={index}
+										className="grid grid-cols-5 gap-4 p-3 border rounded"
+									>
 										<Skeleton className="h-4 w-20" />
 										<Skeleton className="h-4 w-24" />
 										<Skeleton className="h-4 w-16" />

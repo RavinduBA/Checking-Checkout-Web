@@ -1,5 +1,6 @@
 import { AlertCircle, DollarSign } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { IncomeSkeleton } from "@/components/IncomeSkeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionLoader } from "@/components/ui/loading-spinner";
-import { IncomeSkeleton } from "@/components/IncomeSkeleton";
 import {
 	Select,
 	SelectContent,

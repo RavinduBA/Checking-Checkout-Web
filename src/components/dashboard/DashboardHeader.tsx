@@ -56,7 +56,7 @@ export function DashboardHeader({
 
 				const fetchedLocations = locationsData || [];
 				setLocations(fetchedLocations);
-				
+
 				// Pass locations to parent if callback provided
 				if (onLocationsLoad) {
 					onLocationsLoad(fetchedLocations);

@@ -13,12 +13,12 @@ import { useNavigate } from "react-router";
 import { OTPVerification } from "@/components/OTPVerification";
 import { ReservationEditDialog } from "@/components/ReservationEditDialog";
 import { ReservationPrintButton } from "@/components/ReservationPrintButton";
+import { ReservationsListSkeleton } from "@/components/ReservationsListSkeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { SectionLoader } from "@/components/ui/loading-spinner";
-import { ReservationsListSkeleton } from "@/components/ReservationsListSkeleton";
 import {
 	Select,
 	SelectContent,
@@ -372,14 +372,17 @@ export const ReservationsList = () => {
 
 	const getPendingExpenses = (reservationId: string) => {
 		return incomeRecords
-			.filter(inc => inc.booking_id === reservationId && inc.payment_method === "pending")
+			.filter(
+				(inc) =>
+					inc.booking_id === reservationId && inc.payment_method === "pending",
+			)
 			.reduce((sum, inc) => sum + Number(inc.amount), 0);
 	};
 
 	const getTotalPayableAmount = (reservation: Reservation) => {
 		const roomBalance = reservation.balance_amount || 0;
 		const pendingExpenses = getPendingExpenses(reservation.id);
-		
+
 		// If room is fully paid (balance = 0), only return pending expenses
 		// If room has balance, return room balance + pending expenses
 		return roomBalance + pendingExpenses;
@@ -388,8 +391,10 @@ export const ReservationsList = () => {
 	const canShowPaymentButton = (reservation: Reservation) => {
 		// Show payment button if there are any amounts to pay
 		const totalPayable = getTotalPayableAmount(reservation);
-		const isPayableStatus = ["tentative", "pending", "confirmed"].includes(reservation.status);
-		
+		const isPayableStatus = ["tentative", "pending", "confirmed"].includes(
+			reservation.status,
+		);
+
 		return isPayableStatus && totalPayable > 0;
 	};
 
@@ -530,11 +535,18 @@ export const ReservationsList = () => {
 												</TableCell>
 												<TableCell>
 													{(() => {
-														const pendingExpenses = getPendingExpenses(reservation.id);
+														const pendingExpenses = getPendingExpenses(
+															reservation.id,
+														);
 														const totalExpenses = incomeRecords
-															.filter(inc => inc.booking_id === reservation.id)
-															.reduce((sum, inc) => sum + Number(inc.amount), 0);
-														
+															.filter(
+																(inc) => inc.booking_id === reservation.id,
+															)
+															.reduce(
+																(sum, inc) => sum + Number(inc.amount),
+																0,
+															);
+
 														return (
 															<div className="text-sm">
 																{totalExpenses > 0 ? (
@@ -545,13 +557,18 @@ export const ReservationsList = () => {
 																		</div>
 																		{pendingExpenses > 0 && (
 																			<div className="text-yellow-600 text-xs">
-																				Pending: {getCurrencySymbol(reservation.currency)}{" "}
+																				Pending:{" "}
+																				{getCurrencySymbol(
+																					reservation.currency,
+																				)}{" "}
 																				{pendingExpenses.toLocaleString()}
 																			</div>
 																		)}
 																	</div>
 																) : (
-																	<span className="text-muted-foreground">-</span>
+																	<span className="text-muted-foreground">
+																		-
+																	</span>
 																)}
 															</div>
 														);
@@ -663,21 +680,25 @@ export const ReservationsList = () => {
 											</span>
 										</div>
 										{(() => {
-											const pendingExpenses = getPendingExpenses(reservation.id);
+											const pendingExpenses = getPendingExpenses(
+												reservation.id,
+											);
 											const totalExpenses = incomeRecords
-												.filter(inc => inc.booking_id === reservation.id)
+												.filter((inc) => inc.booking_id === reservation.id)
 												.reduce((sum, inc) => sum + Number(inc.amount), 0);
-											
+
 											if (totalExpenses > 0) {
 												return (
 													<div className="flex items-center gap-2">
 														<DollarSign className="h-3 w-3" />
 														<span>
-															Expenses: {getCurrencySymbol(reservation.currency)}{" "}
+															Expenses:{" "}
+															{getCurrencySymbol(reservation.currency)}{" "}
 															{totalExpenses.toLocaleString()}
 															{pendingExpenses > 0 && (
 																<span className="text-yellow-600 ml-2">
-																	(Pending: {getCurrencySymbol(reservation.currency)}{" "}
+																	(Pending:{" "}
+																	{getCurrencySymbol(reservation.currency)}{" "}
 																	{pendingExpenses.toLocaleString()})
 																</span>
 															)}

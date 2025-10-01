@@ -1,5 +1,6 @@
 import { Edit, Shield, Trash2, User, UserCheck } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { UsersSkeleton } from "@/components/UsersSkeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +21,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionLoader } from "@/components/ui/loading-spinner";
-import { UsersSkeleton } from "@/components/UsersSkeleton";
 import {
 	Select,
 	SelectContent,
