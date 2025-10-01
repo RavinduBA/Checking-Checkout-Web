@@ -129,7 +129,7 @@ export function DashboardHeader({
 						type="month"
 						value={selectedMonth}
 						onChange={(e) => setSelectedMonth(e.target.value)}
-						className="h-9"
+						className="h-9 w-fit min-w-40"
 					/>
 				</div>
 			</div>

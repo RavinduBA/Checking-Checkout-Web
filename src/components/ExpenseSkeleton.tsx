@@ -13,10 +13,7 @@ export function ExpenseSkeleton() {
 	return (
 		<div className="p-6 space-y-6">
 			{/* Header with back button */}
-			<div className="flex items-center gap-4">
-				<Skeleton className="h-8 w-8" />
-				<Skeleton className="h-8 w-48" />
-			</div>
+			<Skeleton className="h-8 w-64" />
 
 			{/* Expense Form Card */}
 			<Card>

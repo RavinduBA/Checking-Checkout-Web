@@ -275,7 +275,7 @@ export default function FinancialReports() {
 					<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 						{/* Location selector removed - now handled by sidebar */}
 
-						<div>
+						<div className="">
 							<Label htmlFor="month">Month Filter</Label>
 							<Select value={selectedMonth} onValueChange={setSelectedMonth}>
 								<SelectTrigger>

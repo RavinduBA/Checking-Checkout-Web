@@ -277,11 +277,6 @@ export default function Expense() {
 		<div className="p-6 space-y-6">
 			{/* Header with back button */}
 			<div className="flex items-center gap-4">
-				<Button asChild variant="outline" size="icon">
-					<Link to="/dashboard">
-						<ArrowLeft className="h-4 w-4" />
-					</Link>
-				</Button>
 				<h1 className="text-2xl font-bold">Expense Management</h1>
 				{hasAnyPermission("access_reports") && (
 					<Button asChild variant="outline" className="ml-auto">

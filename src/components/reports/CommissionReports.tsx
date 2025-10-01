@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionLoader } from "@/components/ui/loading-spinner";
+import { CommissionReportsSkeleton } from "@/pages/Reports";
 import {
 	Select,
 	SelectContent,
@@ -222,11 +223,7 @@ export default function CommissionReports() {
 	};
 
 	if (loading) {
-		return (
-			<div className="flex items-center justify-center h-64">
-				<SectionLoader />
-			</div>
-		);
+		return <CommissionReportsSkeleton />;
 	}
 
 	return (

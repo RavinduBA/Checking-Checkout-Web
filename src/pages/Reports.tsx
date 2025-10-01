@@ -11,15 +11,11 @@ import {
 	RefreshCw,
 	TrendingUp,
 } from "lucide-react";
-import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import { ReportsSkeleton } from "@/components/ReportsSkeleton";
-import AccountsReports from "@/components/reports/AccountsReports";
 import CommissionReports from "@/components/reports/CommissionReports";
 import ComprehensiveReports from "@/components/reports/ComprehensiveReports";
 import DetailedBalanceSheet from "@/components/reports/DetailedBalanceSheet";
 import EnhancedFinancialReports from "@/components/reports/EnhancedFinancialReports";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -28,6 +24,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import FinancialReports from "./FinancialReports";
@@ -38,64 +35,6 @@ export default function Reports() {
 
 	return (
 		<div className="max-w-full pb-20 w-full mx-auto p-2 lg:p-6 space-y-4 animate-fade-in">
-			{/* Stats Cards */}
-			{/* <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-        <Card className="bg-card border">
-          <CardContent className="p-3 lg:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs lg:text-sm font-medium text-muted-foreground">Total Revenue</p>
-                <div className="flex items-center gap-1">
-                  <DollarSign className="size-4 text-emerald-500" />
-                  <p className="text-lg lg:text-2xl font-bold">$24,580</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border">
-          <CardContent className="p-3 lg:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs lg:text-sm font-medium text-muted-foreground">Total Expenses</p>
-                <div className="flex items-center gap-1">
-                  <TrendingUp className="size-4 text-red-500" />
-                  <p className="text-lg lg:text-2xl font-bold">$12,450</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border">
-          <CardContent className="p-3 lg:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs lg:text-sm font-medium text-muted-foreground">Net Profit</p>
-                <div className="flex items-center gap-1">
-                  <BarChart3 className="size-4 text-primary" />
-                  <p className="text-lg lg:text-2xl font-bold">$12,130</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border">
-          <CardContent className="p-3 lg:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs lg:text-sm font-medium text-muted-foreground">Commissions</p>
-                <div className="flex items-center gap-1">
-                  <Percent className="size-4 text-purple-500" />
-                  <p className="text-lg lg:text-2xl font-bold">$2,340</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div> */}
 
 			{/* Reports Content */}
 			<Card className="bg-card border">
@@ -233,6 +172,230 @@ export default function Reports() {
 							</TabsContent>
 						</div>
 					</Tabs>
+				</CardContent>
+			</Card>
+		</div>
+	);
+}
+
+// Skeleton Loading Components for Reports
+export function ComprehensiveReportsSkeleton() {
+	return (
+		<div className="space-y-6">
+			{/* Summary Cards Skeleton */}
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+				{Array.from({ length: 4 }).map((_, i) => (
+					<Card key={i}>
+						<CardHeader className="pb-2">
+							<Skeleton className="h-4 w-24" />
+						</CardHeader>
+						<CardContent>
+							<Skeleton className="h-8 w-32 mb-2" />
+							<Skeleton className="h-3 w-20" />
+						</CardContent>
+					</Card>
+				))}
+			</div>
+
+			{/* Charts Skeleton */}
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+				<Card>
+					<CardHeader>
+						<Skeleton className="h-6 w-48" />
+						<Skeleton className="h-4 w-32" />
+					</CardHeader>
+					<CardContent>
+						<Skeleton className="h-64 w-full" />
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader>
+						<Skeleton className="h-6 w-48" />
+						<Skeleton className="h-4 w-32" />
+					</CardHeader>
+					<CardContent>
+						<Skeleton className="h-64 w-full" />
+					</CardContent>
+				</Card>
+			</div>
+		</div>
+	);
+}
+
+export function EnhancedFinancialReportsSkeleton() {
+	return (
+		<div className="space-y-6">
+			{/* Filter Controls Skeleton */}
+			<Card>
+				<CardHeader>
+					<Skeleton className="h-6 w-40" />
+				</CardHeader>
+				<CardContent>
+					<div className="flex flex-wrap gap-4">
+						<Skeleton className="h-10 w-32" />
+						<Skeleton className="h-10 w-32" />
+						<Skeleton className="h-10 w-32" />
+						<Skeleton className="h-10 w-24" />
+					</div>
+				</CardContent>
+			</Card>
+
+			{/* Financial Tables Skeleton */}
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+				<Card>
+					<CardHeader>
+						<Skeleton className="h-6 w-32" />
+					</CardHeader>
+					<CardContent>
+						<div className="space-y-3">
+							{Array.from({ length: 6 }).map((_, i) => (
+								<div key={i} className="flex justify-between items-center">
+									<Skeleton className="h-4 w-24" />
+									<Skeleton className="h-4 w-16" />
+								</div>
+							))}
+						</div>
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader>
+						<Skeleton className="h-6 w-32" />
+					</CardHeader>
+					<CardContent>
+						<div className="space-y-3">
+							{Array.from({ length: 6 }).map((_, i) => (
+								<div key={i} className="flex justify-between items-center">
+									<Skeleton className="h-4 w-24" />
+									<Skeleton className="h-4 w-16" />
+								</div>
+							))}
+						</div>
+					</CardContent>
+				</Card>
+			</div>
+
+			{/* Chart Skeleton */}
+			<Card>
+				<CardHeader>
+					<Skeleton className="h-6 w-48" />
+				</CardHeader>
+				<CardContent>
+					<Skeleton className="h-80 w-full" />
+				</CardContent>
+			</Card>
+		</div>
+	);
+}
+
+export function DetailedBalanceSheetSkeleton() {
+	return (
+		<div className="space-y-6">
+			{/* Account Summary Skeleton */}
+			<Card>
+				<CardHeader>
+					<Skeleton className="h-6 w-36" />
+					<Skeleton className="h-4 w-48" />
+				</CardHeader>
+				<CardContent>
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+						{Array.from({ length: 3 }).map((_, i) => (
+							<div key={i} className="text-center p-4 border rounded-lg">
+								<Skeleton className="h-8 w-24 mx-auto mb-2" />
+								<Skeleton className="h-4 w-20 mx-auto" />
+							</div>
+						))}
+					</div>
+				</CardContent>
+			</Card>
+
+			{/* Account Details Table Skeleton */}
+			<Card>
+				<CardHeader>
+					<Skeleton className="h-6 w-32" />
+				</CardHeader>
+				<CardContent>
+					<div className="space-y-4">
+						{/* Table Header */}
+						<div className="grid grid-cols-4 gap-4 pb-2 border-b">
+							<Skeleton className="h-4 w-20" />
+							<Skeleton className="h-4 w-16" />
+							<Skeleton className="h-4 w-20" />
+							<Skeleton className="h-4 w-16" />
+						</div>
+						{/* Table Rows */}
+						{Array.from({ length: 8 }).map((_, i) => (
+							<div key={i} className="grid grid-cols-4 gap-4 py-2">
+								<Skeleton className="h-4 w-24" />
+								<Skeleton className="h-4 w-12" />
+								<Skeleton className="h-4 w-16" />
+								<Skeleton className="h-4 w-14" />
+							</div>
+						))}
+					</div>
+				</CardContent>
+			</Card>
+		</div>
+	);
+}
+
+export function CommissionReportsSkeleton() {
+	return (
+		<div className="space-y-6">
+			{/* Commission Summary Cards Skeleton */}
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+				{Array.from({ length: 4 }).map((_, i) => (
+					<Card key={i}>
+						<CardHeader className="pb-2">
+							<div className="flex items-center gap-2">
+								<Skeleton className="h-4 w-4 rounded" />
+								<Skeleton className="h-4 w-28" />
+							</div>
+						</CardHeader>
+						<CardContent>
+							<Skeleton className="h-8 w-24 mb-1" />
+							<Skeleton className="h-3 w-16" />
+						</CardContent>
+					</Card>
+				))}
+			</div>
+
+			{/* Commission Details Table Skeleton */}
+			<Card>
+				<CardHeader>
+					<Skeleton className="h-6 w-40" />
+					<Skeleton className="h-4 w-56" />
+				</CardHeader>
+				<CardContent>
+					<div className="space-y-4">
+						{/* Table Header */}
+						<div className="grid grid-cols-5 gap-4 pb-2 border-b">
+							<Skeleton className="h-4 w-16" />
+							<Skeleton className="h-4 w-20" />
+							<Skeleton className="h-4 w-16" />
+							<Skeleton className="h-4 w-18" />
+							<Skeleton className="h-4 w-14" />
+						</div>
+						{/* Table Rows */}
+						{Array.from({ length: 10 }).map((_, i) => (
+							<div key={i} className="grid grid-cols-5 gap-4 py-3 border-b last:border-b-0">
+								<Skeleton className="h-4 w-20" />
+								<Skeleton className="h-4 w-24" />
+								<Skeleton className="h-4 w-16" />
+								<Skeleton className="h-4 w-12" />
+								<Skeleton className="h-4 w-16" />
+							</div>
+						))}
+					</div>
+				</CardContent>
+			</Card>
+
+			{/* Commission Chart Skeleton */}
+			<Card>
+				<CardHeader>
+					<Skeleton className="h-6 w-44" />
+				</CardHeader>
+				<CardContent>
+					<Skeleton className="h-64 w-full" />
 				</CardContent>
 			</Card>
 		</div>

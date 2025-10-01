@@ -554,16 +554,13 @@ export default function BookingChannelsIntegration() {
 	if (loading) {
 		return (
 			<div className="space-y-6">
-				<div className="flex items-center justify-between">
-					<h1 className="text-md sm:text-3xl font-bold">Booking Channels</h1>
-				</div>
 				<SectionLoader className="h-64" />
 			</div>
 		);
 	}
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6 px-4 sm:px-6">
 			{/* Header */}
 			<div className="flex items-center gap-2">
 				<Button
