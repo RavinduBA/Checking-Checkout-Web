@@ -21,7 +21,7 @@ export function AppSidebarSkeleton({ ...props }: AppSidebarSkeletonProps) {
 			</SidebarHeader>
 			<SidebarContent>
 				<NavMainSkeleton />
-				<NavProjectsSkeleton />
+				{/* <NavProjectsSkeleton /> */}
 			</SidebarContent>
 			<SidebarFooter>
 				<NavUserSkeleton />

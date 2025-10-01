@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { SectionLoader } from "@/components/ui/loading-spinner";
+import { ReservationsListSkeleton } from "@/components/ReservationsListSkeleton";
 import {
 	Select,
 	SelectContent,
@@ -418,7 +419,7 @@ export const ReservationsList = () => {
 	});
 
 	if (loading) {
-		return <SectionLoader className="min-h-64" />;
+		return <ReservationsListSkeleton />;
 	}
 
 	return (
