@@ -53,31 +53,59 @@ export const createCheckoutSession = async (params: {
 			units: params.units || 1,
 			discountCode: params.discountCode,
 			customer: params.customer,
+			successUrl: params.success_url,
 			hasApiKey: !!VITE_CREEM_API_KEY,
 			apiKeyLength: VITE_CREEM_API_KEY?.length,
 		});
 
-		const result = await creem.createCheckout({
-			xApiKey: VITE_CREEM_API_KEY,
-			createCheckoutRequest: {
-				productId: params.product_id, // SDK uses camelCase internally
-				units: params.units || 1,
-				discountCode: params.discountCode,
-				customer: params.customer,
-				metadata: {
-					success_url: params.success_url,
-					error_url: params.error_url,
-					cancel_url: params.cancel_url,
-					request_id: params.request_id,
-					...params.metadata,
-				},
-			},
+		// Use direct API call instead of SDK to ensure success_url is properly passed
+		const apiUrl = import.meta.env.DEV
+			? `${window.location.origin}/api/creem/v1/checkouts`
+			: "https://test-api.creem.io/v1/checkouts";
+
+		const requestBody = {
+			product_id: params.product_id,
+			...(params.success_url && { success_url: params.success_url }),
+			...(params.request_id && { request_id: params.request_id }),
+			...(params.units && { units: params.units }),
+			...(params.discountCode && { discount_code: params.discountCode }),
+			...(params.customer && { customer: params.customer }),
+			...(params.metadata && { metadata: params.metadata }),
+		};
+
+		console.log("API Request:", {
+			url: apiUrl,
+			body: requestBody,
 		});
 
+		const response = await fetch(apiUrl, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"x-api-key": VITE_CREEM_API_KEY,
+				"accept": "application/json",
+			},
+			body: JSON.stringify(requestBody),
+		});
+
+		if (!response.ok) {
+			const errorText = await response.text();
+			console.error("Creem API Error:", {
+				status: response.status,
+				statusText: response.statusText,
+				body: errorText,
+			});
+			throw new Error(`Creem API Error: ${response.status} - ${errorText}`);
+		}
+
+		const result = await response.json();
 		console.log("Checkout session created:", result);
 
-		// The result should contain a checkoutUrl property
-		return result;
+		// Return in the same format as the SDK would
+		return {
+			checkoutUrl: result.checkout_url || result.url,
+			...result,
+		};
 	} catch (error) {
 		console.error("Failed to create checkout session:", error);
 
