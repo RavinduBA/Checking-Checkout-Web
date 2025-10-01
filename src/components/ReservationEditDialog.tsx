@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DatePicker } from "@/components/ui/date-picker";
 import { OTPVerification } from "./OTPVerification";
+import { convertCurrency } from "@/utils/currency";
 
 interface Reservation {
 	id: string;
@@ -85,7 +86,7 @@ export function ReservationEditDialog({
 		const fetchRooms = async () => {
 			const { data } = await supabase
 				.from("rooms")
-				.select("id, room_number, room_type, location_id, base_price")
+				.select("id, room_number, room_type, location_id, base_price, currency")
 				.eq("is_active", true);
 			setRooms(data || []);
 		};
@@ -369,14 +370,32 @@ export function ReservationEditDialog({
 								value={formData.room_id || ""}
 								onValueChange={(value) => {
 									const selectedRoom = rooms.find((r) => r.id === value);
-									setFormData({
-										...formData,
-										room_id: value,
-										room_rate: selectedRoom?.base_price || formData.room_rate,
-										total_amount:
-											(selectedRoom?.base_price || formData.room_rate || 0) *
-											(formData.nights || 1),
-									});
+									if (selectedRoom) {
+										// Convert room price from room's currency to reservation currency
+										convertCurrency(
+											selectedRoom.base_price,
+											selectedRoom.currency,
+											formData.currency || "USD"
+										).then(convertedPrice => {
+											setFormData({
+												...formData,
+												room_id: value,
+												room_rate: convertedPrice,
+												total_amount: convertedPrice * (formData.nights || 1),
+											});
+										}).catch(error => {
+											console.error('Currency conversion failed:', error);
+											// Fallback to original price
+											setFormData({
+												...formData,
+												room_id: value,
+												room_rate: selectedRoom.base_price,
+												total_amount: selectedRoom.base_price * (formData.nights || 1),
+											});
+										});
+									} else {
+										setFormData({ ...formData, room_id: value });
+									}
 								}}
 							>
 								<SelectTrigger>

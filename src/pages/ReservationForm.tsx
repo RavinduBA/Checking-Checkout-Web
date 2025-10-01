@@ -46,6 +46,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
+import { convertCurrency } from "@/utils/currency";
 
 type Location = Tables<"locations">;
 type Room = Tables<"rooms">;
@@ -254,7 +255,19 @@ export default function ReservationForm() {
 			if (field === "room_id") {
 				const selectedRoom = rooms.find((room) => room.id === value);
 				if (selectedRoom) {
-					updated.room_rate = selectedRoom.base_price;
+					// Convert room price from room's currency to reservation currency
+					convertCurrency(
+						selectedRoom.base_price,
+						selectedRoom.currency,
+						updated.currency
+					).then(convertedPrice => {
+						updated.room_rate = convertedPrice;
+						setFormData(prev => ({ ...prev, room_rate: convertedPrice }));
+					}).catch(error => {
+						console.error('Currency conversion failed:', error);
+						// Fallback to original price
+						updated.room_rate = selectedRoom.base_price;
+					});
 				}
 			}
 
@@ -284,6 +297,33 @@ export default function ReservationForm() {
 			if (field === "has_agent" && !value) {
 				updated.agent_id = "";
 				updated.agent_commission = 0;
+			}
+
+			// Convert room rate when currency changes
+			if (field === "currency" && formData.room_id) {
+				const selectedRoom = rooms.find((room) => room.id === formData.room_id);
+				if (selectedRoom && selectedRoom.currency !== value) {
+					convertCurrency(
+						selectedRoom.base_price,
+						selectedRoom.currency,
+						value as string
+					).then(convertedPrice => {
+						setFormData(prev => ({ 
+							...prev, 
+							room_rate: convertedPrice,
+							total_amount: convertedPrice * prev.nights,
+							advance_amount: 0,
+							balance_amount: convertedPrice * prev.nights
+						}));
+					}).catch(error => {
+						console.error('Currency conversion failed:', error);
+						toast({
+							title: "Currency Conversion Error",
+							description: "Failed to convert room price. Please check the rate manually.",
+							variant: "destructive",
+						});
+					});
+				}
 			}
 
 			return updated;
@@ -681,7 +721,7 @@ export default function ReservationForm() {
 											<SelectContent className="z-50 bg-background border">
 												{filteredRooms.map((room) => (
 													<SelectItem key={room.id} value={room.id}>
-														{room.room_number} - {room.room_type} (LKR{" "}
+														{room.room_number} - {room.room_type} ({room.currency}{" "}
 														{room.base_price.toLocaleString()}/night)
 													</SelectItem>
 												))}
