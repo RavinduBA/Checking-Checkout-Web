@@ -1,28 +1,173 @@
 import { ArrowDownCircle, ArrowUpCircle, TrendingUp } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SectionLoader } from "@/components/ui/loading-spinner";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
 type Location = Tables<"locations">;
 
 interface SummaryCardsProps {
-	todayIncome: number;
-	todayExpenses: number;
-	weeklyIncome: number;
-	weeklyExpenses: number;
 	selectedLocation: string;
 	selectedMonth: string;
 	locations: Location[];
 }
 
 export function SummaryCards({
-	todayIncome,
-	todayExpenses,
-	weeklyIncome,
-	weeklyExpenses,
 	selectedLocation,
 	selectedMonth,
 	locations,
 }: SummaryCardsProps) {
+	const [loading, setLoading] = useState(true);
+	const [todayIncome, setTodayIncome] = useState(0);
+	const [todayExpenses, setTodayExpenses] = useState(0);
+	const [weeklyIncome, setWeeklyIncome] = useState(0);
+	const [weeklyExpenses, setWeeklyExpenses] = useState(0);
+	const { tenant } = useAuth();
+
+	useEffect(() => {
+		const fetchSummaryData = async () => {
+			if (!tenant?.id) {
+				setLoading(false);
+				return;
+			}
+
+			try {
+				// Set date filters based on selected month
+				const today = new Date().toISOString().split("T")[0];
+				const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+					.toISOString()
+					.split("T")[0];
+
+				let monthStart = "";
+				let monthEnd = "";
+				if (selectedMonth) {
+					const [year, month] = selectedMonth.split("-");
+					monthStart = `${year}-${month}-01`;
+					const nextMonth = new Date(parseInt(year), parseInt(month), 1);
+					monthEnd = nextMonth.toISOString().split("T")[0];
+				}
+
+				// Get locations for the tenant first to filter by tenant
+				const { data: tenantLocations } = await supabase
+					.from("locations")
+					.select("id")
+					.eq("tenant_id", tenant.id)
+					.eq("is_active", true);
+
+				const tenantLocationIds = tenantLocations?.map((loc) => loc.id) || [];
+
+				if (tenantLocationIds.length === 0) {
+					setTodayIncome(0);
+					setTodayExpenses(0);
+					setWeeklyIncome(0);
+					setWeeklyExpenses(0);
+					setLoading(false);
+					return;
+				}
+
+				// Build query filters
+				const locationFilter = !selectedLocation
+					? {}
+					: { location_id: selectedLocation };
+
+				const [
+					todayIncomeData,
+					todayExpensesData,
+					weeklyIncomeData,
+					weeklyExpensesData,
+				] = await Promise.all([
+					selectedMonth
+						? supabase
+								.from("income")
+								.select("amount")
+								.gte("date", monthStart)
+								.lt("date", monthEnd)
+								.in("location_id", tenantLocationIds)
+								.match(locationFilter)
+						: supabase
+								.from("income")
+								.select("amount")
+								.eq("date", today)
+								.in("location_id", tenantLocationIds)
+								.match(locationFilter),
+					selectedMonth
+						? supabase
+								.from("expenses")
+								.select("amount")
+								.gte("date", monthStart)
+								.lt("date", monthEnd)
+								.in("location_id", tenantLocationIds)
+								.match(locationFilter)
+						: supabase
+								.from("expenses")
+								.select("amount")
+								.eq("date", today)
+								.in("location_id", tenantLocationIds)
+								.match(locationFilter),
+					selectedMonth
+						? supabase
+								.from("income")
+								.select("amount")
+								.gte("date", monthStart)
+								.lt("date", monthEnd)
+								.in("location_id", tenantLocationIds)
+								.match(locationFilter)
+						: supabase
+								.from("income")
+								.select("amount")
+								.gte("date", weekAgo)
+								.in("location_id", tenantLocationIds)
+								.match(locationFilter),
+					selectedMonth
+						? supabase
+								.from("expenses")
+								.select("amount")
+								.gte("date", monthStart)
+								.lt("date", monthEnd)
+								.in("location_id", tenantLocationIds)
+								.match(locationFilter)
+						: supabase
+								.from("expenses")
+								.select("amount")
+								.gte("date", weekAgo)
+								.in("location_id", tenantLocationIds)
+								.match(locationFilter),
+				]);
+
+				setTodayIncome(
+					todayIncomeData.data?.reduce((sum, item) => sum + item.amount, 0) ||
+						0,
+				);
+				setTodayExpenses(
+					todayExpensesData.data?.reduce((sum, item) => sum + item.amount, 0) ||
+						0,
+				);
+				setWeeklyIncome(
+					weeklyIncomeData.data?.reduce((sum, item) => sum + item.amount, 0) ||
+						0,
+				);
+				setWeeklyExpenses(
+					weeklyExpensesData.data?.reduce(
+						(sum, item) => sum + item.amount,
+						0,
+					) || 0,
+				);
+			} catch (error) {
+				console.error("Error fetching summary data:", error);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		fetchSummaryData();
+	}, [selectedLocation, selectedMonth, tenant?.id]);
+
+	if (loading) {
+		return <SectionLoader className="h-32" />;
+	}
+
 	const profit = weeklyIncome - weeklyExpenses;
 	const profitPercentage =
 		weeklyIncome > 0 ? ((profit / weeklyIncome) * 100).toFixed(1) : "0";

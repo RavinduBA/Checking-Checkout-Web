@@ -1,8 +1,10 @@
 import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SectionLoader } from "@/components/ui/loading-spinner";
 import {
 	Select,
 	SelectContent,
@@ -10,6 +12,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
 type Location = Tables<"locations">;
@@ -19,9 +23,9 @@ interface DashboardHeaderProps {
 	setSelectedLocation: (value: string) => void;
 	selectedMonth: string;
 	setSelectedMonth: (value: string) => void;
-	locations: Location[];
 	hasIncomePermission: boolean;
 	hasExpensePermission: boolean;
+	onLocationsLoad?: (locations: Location[]) => void;
 }
 
 export function DashboardHeader({
@@ -29,10 +33,55 @@ export function DashboardHeader({
 	setSelectedLocation,
 	selectedMonth,
 	setSelectedMonth,
-	locations,
 	hasIncomePermission,
 	hasExpensePermission,
+	onLocationsLoad,
 }: DashboardHeaderProps) {
+	const [loading, setLoading] = useState(true);
+	const [locations, setLocations] = useState<Location[]>([]);
+	const { tenant } = useAuth();
+
+	// Auto-select first location when locations are loaded
+	useEffect(() => {
+		if (locations.length > 0 && !selectedLocation) {
+			setSelectedLocation(locations[0].id);
+		}
+	}, [locations, selectedLocation, setSelectedLocation]);
+
+	useEffect(() => {
+		const fetchLocations = async () => {
+			if (!tenant?.id) {
+				setLoading(false);
+				return;
+			}
+
+			try {
+				const { data: locationsData } = await supabase
+					.from("locations")
+					.select("*")
+					.eq("tenant_id", tenant.id)
+					.eq("is_active", true);
+
+				const fetchedLocations = locationsData || [];
+				setLocations(fetchedLocations);
+				
+				// Pass locations to parent if callback provided
+				if (onLocationsLoad) {
+					onLocationsLoad(fetchedLocations);
+				}
+			} catch (error) {
+				console.error("Error fetching locations:", error);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		fetchLocations();
+	}, [tenant?.id, onLocationsLoad]);
+
+	if (loading) {
+		return <SectionLoader className="h-32" />;
+	}
 	return (
 		<div className="flex flex-col space-y-4">
 			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

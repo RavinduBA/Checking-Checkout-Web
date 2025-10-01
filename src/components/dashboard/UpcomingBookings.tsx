@@ -1,8 +1,12 @@
 import { Calendar, Eye } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SectionLoader } from "@/components/ui/loading-spinner";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
 type Booking = Tables<"bookings"> & {
@@ -10,11 +14,60 @@ type Booking = Tables<"bookings"> & {
 };
 
 interface UpcomingBookingsProps {
-	upcomingBookings: Booking[];
+	selectedLocation: string;
 	hasCalendarPermission: boolean;
 }
 
-export function UpcomingBookings({ upcomingBookings, hasCalendarPermission }: UpcomingBookingsProps) {
+export function UpcomingBookings({ selectedLocation, hasCalendarPermission }: UpcomingBookingsProps) {
+	const [loading, setLoading] = useState(true);
+	const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
+	const { tenant } = useAuth();
+
+	useEffect(() => {
+		const fetchBookingsData = async () => {
+			if (!tenant?.id) {
+				setLoading(false);
+				return;
+			}
+
+			try {
+				// Get locations for the tenant first to filter by tenant
+				const { data: tenantLocations } = await supabase
+					.from("locations")
+					.select("id")
+					.eq("tenant_id", tenant.id)
+					.eq("is_active", true);
+
+				const tenantLocationIds = tenantLocations?.map((loc) => loc.id) || [];
+
+				if (tenantLocationIds.length === 0) {
+					setUpcomingBookings([]);
+					setLoading(false);
+					return;
+				}
+
+				const { data: bookingsData } = await supabase
+					.from("bookings")
+					.select("*, locations(*)")
+					.in("location_id", tenantLocationIds)
+					.match(!selectedLocation ? {} : { location_id: selectedLocation })
+					.order("check_in")
+					.limit(5);
+
+				setUpcomingBookings(bookingsData || []);
+			} catch (error) {
+				console.error("Error fetching bookings data:", error);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		fetchBookingsData();
+	}, [selectedLocation, tenant?.id]);
+
+	if (loading) {
+		return <SectionLoader className="h-32" />;
+	}
 	return (
 		<Card className="bg-card border">
 			<CardHeader className="flex flex-row items-center justify-between">
