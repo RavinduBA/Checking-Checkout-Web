@@ -57,11 +57,11 @@ type EnhancedReservation = Tables<"reservations"> & {
 	} | null;
 	tenants?: {
 		id: string;
-		hotel_name: string;
-		address: string | null;
-		phone: string | null;
-		email: string | null;
-		website: string | null;
+		hotel_name: string | null;
+		hotel_address: string | null;
+		hotel_phone: string | null;
+		hotel_email: string | null;
+		hotel_website: string | null;
 		logo_url: string | null;
 	} | null;
 };
@@ -77,10 +77,10 @@ const transformToPrintableData = (reservation: EnhancedReservation): PrintableRe
 		// Enhanced hotel/tenant information
 		tenant_name: reservation.tenants?.hotel_name,
 		hotel_name: reservation.tenants?.hotel_name,
-		hotel_address: reservation.tenants?.address,
-		hotel_phone: reservation.tenants?.phone,
-		hotel_email: reservation.tenants?.email,
-		hotel_website: reservation.tenants?.website,
+		hotel_address: reservation.tenants?.hotel_address,
+		hotel_phone: reservation.tenants?.hotel_phone,
+		hotel_email: reservation.tenants?.hotel_email,
+		hotel_website: reservation.tenants?.hotel_website,
 		logo_url: reservation.tenants?.logo_url,
 		
 		// Enhanced location information
