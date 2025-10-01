@@ -27,6 +27,7 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { SectionLoader } from "@/components/ui/loading-spinner";
+import { CalendarSkeleton } from "@/components/CalendarSkeleton";
 import {
 	Select,
 	SelectContent,
@@ -343,7 +344,7 @@ export default function Calendar() {
 	const calendarDates = generateCalendarDates();
 
 	if (loading) {
-		return <SectionLoader className="min-h-64" />;
+		return <CalendarSkeleton />;
 	}
 
 	return (

@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InlineLoader, SectionLoader } from "@/components/ui/loading-spinner";
+import { AccountsSkeleton } from "@/components/AccountsSkeleton";
 import {
 	Select,
 	SelectContent,
@@ -373,7 +374,7 @@ export default function Accounts() {
 	};
 
 	if (loading) {
-		return <SectionLoader className="min-h-64" />;
+		return <AccountsSkeleton />;
 	}
 
 	return (

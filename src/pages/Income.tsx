@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionLoader } from "@/components/ui/loading-spinner";
+import { IncomeSkeleton } from "@/components/IncomeSkeleton";
 import {
 	Select,
 	SelectContent,
@@ -207,7 +208,7 @@ const Income = () => {
 		);
 	}
 
-	if (loading) return <SectionLoader />;
+	if (loading) return <IncomeSkeleton />;
 
 	return (
 		<div className="p-6 space-y-6">

@@ -18,6 +18,7 @@ import CommissionReports from "@/components/reports/CommissionReports";
 import ComprehensiveReports from "@/components/reports/ComprehensiveReports";
 import DetailedBalanceSheet from "@/components/reports/DetailedBalanceSheet";
 import EnhancedFinancialReports from "@/components/reports/EnhancedFinancialReports";
+import { ReportsSkeleton } from "@/components/ReportsSkeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

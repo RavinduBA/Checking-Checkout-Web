@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionLoader } from "@/components/ui/loading-spinner";
+import { UsersSkeleton } from "@/components/UsersSkeleton";
 import {
 	Select,
 	SelectContent,
@@ -513,11 +514,7 @@ export default function Users() {
 	};
 
 	if (loading) {
-		return (
-			<div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
-				<SectionLoader className="min-h-64" />
-			</div>
-		);
+		return <UsersSkeleton />;
 	}
 
 	return (

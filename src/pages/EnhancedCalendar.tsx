@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SectionLoader } from "@/components/ui/loading-spinner";
+import { EnhancedCalendarSkeleton } from "@/components/EnhancedCalendarSkeleton";
 import {
 	Select,
 	SelectContent,
@@ -252,7 +253,7 @@ export default function EnhancedCalendar() {
 	};
 
 	if (loading) {
-		return <SectionLoader className="min-h-64" />;
+		return <EnhancedCalendarSkeleton />;
 	}
 
 	return (
