@@ -91,7 +91,8 @@ const Income = () => {
 			const incomeData = {
 				note: incomeForm.note || `Income for reservation ${selectedReservation.reservation_number}`,
 				amount: incomeForm.amount,
-				account_id: incomeForm.account_id,
+				// For direct payments: require account_id, for deferred: set to null
+				account_id: incomeForm.payment_type === "direct" ? incomeForm.account_id : null,
 				income_type_id: incomeForm.income_type_id || null,
 				type: "booking" as const,
 				payment_method: incomeForm.payment_type === "direct" ? "cash" : "pending",
