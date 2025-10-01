@@ -7,8 +7,9 @@ This is a multi-tenant hospitality ERP system built with React, TypeScript, Vite
 - **Frontend**: React 18 + TypeScript + Vite + TailwindCSS + shadcn/ui
 - **Backend**: Supabase (PostgreSQL database, Auth, Edge Functions)
 - **State**: Context API for auth/location, TanStack Query for data fetching
-- **Routing**: React Router v6 with nested protected routes
+- **Routing**: React Router v7 with nested protected routes
 - **Multi-tenancy**: Complete tenant isolation with `tenant_id` foreign keys
+- **Code Quality**: Biome for linting and formatting (replaces ESLint/Prettier)
 
 ## Database Schema Overview
 
@@ -43,12 +44,27 @@ All protected routes follow this structure:
 </Route>
 ```
 
+### Pages Structure
+Current pages in `/src/pages/`:
+- **Auth Flow**: Auth, ForgotPassword, ResetPassword, Onboarding
+- **Core**: Dashboard, Calendar, EnhancedCalendar
+- **Reservations**: Reservations, ReservationDetails, ReservationForm, ReservationFormCompact, BookingForm
+- **Financial**: Income, Expense, Accounts, PaymentForm
+- **Reports**: Reports, FinancialReports
+- **Configuration**: MasterFiles, RoomManagement, Settings, Users
+- **Integration**: BookingChannelsIntegration
+- **Billing**: BillingSubscription, BillingSuccess, BillingError
+- **Utility**: AccessDenied, NotFound
+
 ### Component Organization
-- **Pages**: In `/src/pages/` for route components
+- **Pages**: In `/src/pages/` for route components (28 pages including Auth, Dashboard, Reservations, etc.)
 - **Components**: Shared UI in `/src/components/`, domain-specific in subfolders
+  - **master-files/**: AgentsTab, CommissionsTab, GuidesTab, LocationsTab, RoomsTab
+  - **reports/**: AccountsReports, CommissionReports, ComprehensiveReports, DetailedBalanceSheet, EnhancedFinancialReports
 - **UI Components**: shadcn/ui components in `/src/components/ui/`
+- **Layout**: Uses `AppSidebar` component with `NavMain`, `NavUser`, `NavProjects`, and `LocationSwitcher` (team-switcher)
 - **Contexts**: Auth and Location management
-- **Hooks**: Custom hooks like `usePermissions`, `useProfile`
+- **Hooks**: Custom hooks like `usePermissions`, `useProfile`, `useTenant`
 
 ## Supabase Integration
 
@@ -86,10 +102,14 @@ All protected routes follow this structure:
 ### Edge Functions
 Located in `/supabase/functions/`:
 - `fetch-beds24-bookings`: Channel manager API sync
+- `beds24-token-exchange`: Beds24 OAuth token management
+- `setup-beds24-integration`: Initial Beds24 setup and configuration
 - `send-sms-notification`: Payment/booking SMS alerts via Hutch API
+- `send-phone-otp` / `verify-phone-otp`: Phone verification workflow
 - `booking-reminders`: Automated guest communication
-- `sync-ical`: External calendar synchronization
-- `invite-user`: Team member onboarding workflow
+- `sync-ical` / `scheduled-calendar-sync`: External calendar synchronization
+- `send-user-credentials`: User credential management
+- `clear-bookings`: Booking cleanup operations
 
 ## Development Workflow
 
@@ -97,6 +117,10 @@ Located in `/supabase/functions/`:
 - `bun dev` - Start development server
 - `bun build` - Production build
 - `bun build:dev` - Development build
+- `bun lint` - Run Biome linting
+- `bun format` - Format code with Biome
+- `bun check` - Run Biome checks and auto-fix
+- `bun preview` - Preview production build
 
 ### State Management
 - Auth state: `AuthContext` + `useAuth()`
@@ -131,8 +155,8 @@ const { data, loading } = useQuery({
 ```
 
 #### Location-Aware Components
-Always filter data by selected location when applicable using `useLocationContext()`.
-Use `"all"` for cross-location reporting when user has appropriate permissions.
+Always filter data by selected location using `useLocationContext()`.
+Components should respect the currently selected location and filter all queries accordingly.
 
 ## Integration Points
 
@@ -149,9 +173,10 @@ Use `"all"` for cross-location reporting when user has appropriate permissions.
 ## File Conventions
 
 - TypeScript throughout with strict types from Supabase 
-- generate types using Supabase CLI : npx supabase gen types typescript --project-id "$PROJECT_REF" --schema public > src/integrations/supabase/types.ts
-- Kebab-case for files/directories
-- PascalCase for components
+- Generate types using Supabase CLI: `npx supabase gen types typescript --project-id "$PROJECT_REF" --schema public > src/integrations/supabase/types.ts`
+- PascalCase for React components (e.g., `UserProfile.tsx`)
+- camelCase for functions and variables (e.g., `fetchUserData`, `userName`)
+- kebab-case for directories and non-component files (e.g., `user-profile/`, `utils.ts`)
 - Database types auto-generated, never edit manually
 - Use absolute imports with `@/` prefix
 
@@ -188,4 +213,4 @@ Required for: Supabase, React, TypeScript, TailwindCSS, TanStack Query, React Ro
 - Toast notifications via sonner for user feedback
 - **MANDATORY**: Use Rube MCP for all Supabase changes
 - **MANDATORY**: Verify third-party library usage with Context7 docs
-- **MANDATORY**: for end of each respond, git add changed files and create a commit with a descriptive message
+- **MANDATORY**: For end of each response, git add changed files and create a commit with a descriptive message
