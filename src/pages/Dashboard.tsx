@@ -55,11 +55,18 @@ export default function Dashboard() {
 	const [accountBalances, setAccountBalances] = useState<
 		Record<string, number>
 	>({});
-	const [selectedLocation, setSelectedLocation] = useState("all");
+	const [selectedLocation, setSelectedLocation] = useState("");
 	const [selectedMonth, setSelectedMonth] = useState("");
 	const [locations, setLocations] = useState<Location[]>([]);
 	const { hasAnyPermission, hasPermission } = usePermissions();
 	const { tenant } = useAuth();
+
+	// Auto-select first location when locations are loaded
+	useEffect(() => {
+		if (locations.length > 0 && !selectedLocation) {
+			setSelectedLocation(locations[0].id);
+		}
+	}, [locations, selectedLocation]);
 
 	useEffect(() => {
 		const fetchDashboardData = async () => {

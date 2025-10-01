@@ -96,7 +96,7 @@ export default function ComprehensiveReports() {
 		totalTransactions: 0,
 	});
 	const [locations, setLocations] = useState<any[]>([]);
-	const [selectedLocation, setSelectedLocation] = useState("all");
+	const [selectedLocation, setSelectedLocation] = useState("");
 	const [dateFrom, setDateFrom] = useState("");
 	const [dateTo, setDateTo] = useState("");
 	const [baseCurrency, setBaseCurrency] = useState<string>("LKR");
@@ -122,6 +122,13 @@ export default function ComprehensiveReports() {
 	useEffect(() => {
 		fetchComprehensiveData();
 	}, [selectedLocation, dateFrom, dateTo, baseCurrency]);
+
+	// Auto-select first location when locations are loaded
+	useEffect(() => {
+		if (locations.length > 0 && !selectedLocation) {
+			setSelectedLocation(locations[0].id);
+		}
+	}, [locations, selectedLocation]);
 
 	const fetchLocations = async () => {
 		try {

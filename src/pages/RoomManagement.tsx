@@ -118,7 +118,7 @@ export default function RoomManagement() {
 	const [loading, setLoading] = useState(true);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [editingRoom, setEditingRoom] = useState<Room | null>(null);
-	const [selectedLocation, setSelectedLocation] = useState<string>("all");
+	const [selectedLocation, setSelectedLocation] = useState<string>("");
 	const [deletingRoom, setDeletingRoom] = useState<Room | null>(null);
 	const [formData, setFormData] = useState({
 		location_id: "",
@@ -140,6 +140,13 @@ export default function RoomManagement() {
 		fetchData();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
+
+	// Auto-select first location when locations are loaded
+	useEffect(() => {
+		if (locations.length > 0 && !selectedLocation) {
+			setSelectedLocation(locations[0].id);
+		}
+	}, [locations, selectedLocation]);
 
 	const fetchData = async () => {
 		try {
@@ -319,8 +326,8 @@ export default function RoomManagement() {
 	};
 
 	const filteredRooms =
-		selectedLocation === "all"
-			? rooms
+		!selectedLocation
+			? []
 			: rooms.filter((room) => room.location_id === selectedLocation);
 
 	if (loading) {

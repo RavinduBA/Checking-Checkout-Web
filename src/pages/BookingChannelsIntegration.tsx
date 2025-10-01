@@ -103,7 +103,7 @@ export default function BookingChannelsIntegration() {
 		sourceBreakdown: {},
 		statusBreakdown: {},
 	});
-	const [selectedLocation, setSelectedLocation] = useState<string>("all");
+	const [selectedLocation, setSelectedLocation] = useState<string>("");
 	const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
 	const [propertyMappings, setPropertyMappings] = useState<PropertyMapping[]>(
 		[],
@@ -219,6 +219,13 @@ export default function BookingChannelsIntegration() {
 
 		return () => clearInterval(interval);
 	}, []); // Dependencies are intentionally empty for initial setup
+
+	// Auto-select first location when locations are loaded
+	useEffect(() => {
+		if (locations.length > 0 && !selectedLocation) {
+			setSelectedLocation(locations[0].id);
+		}
+	}, [locations, selectedLocation]);
 
 	const fetchData = async () => {
 		setLoading(true);
@@ -535,27 +542,17 @@ export default function BookingChannelsIntegration() {
 		setShowBookingDialog(true);
 	};
 
-	const filteredBookings =
-		selectedLocation === "all"
-			? bookings.map((booking) => {
+	const filteredBookings = !selectedLocation
+		? []
+		: bookings
+				.map((booking) => {
 					const mappedLocation = getLocationFromBooking(booking);
-					console.log(
-						`Booking ${booking.external_id}: mapped to ${mappedLocation?.name || "none"}`,
-					);
 					return {
 						...booking,
 						mappedLocation: mappedLocation,
 					};
 				})
-			: bookings
-					.map((booking) => {
-						const mappedLocation = getLocationFromBooking(booking);
-						return {
-							...booking,
-							mappedLocation: mappedLocation,
-						};
-					})
-					.filter((booking) => booking.mappedLocation?.id === selectedLocation);
+				.filter((booking) => booking.mappedLocation?.id === selectedLocation);
 
 	if (loading) {
 		return (

@@ -55,7 +55,7 @@ type FinancialData = {
 };
 
 export default function FinancialReports() {
-	const [selectedLocation, setSelectedLocation] = useState("all");
+	const [selectedLocation, setSelectedLocation] = useState("");
 	const [selectedMonth, setSelectedMonth] = useState("all");
 	const [startDate, setStartDate] = useState("");
 	const [endDate, setEndDate] = useState("");
@@ -83,6 +83,13 @@ export default function FinancialReports() {
 	useEffect(() => {
 		fetchFinancialData();
 	}, [selectedLocation, selectedMonth, startDate, endDate]);
+
+	// Auto-select first location when locations are loaded
+	useEffect(() => {
+		if (locations.length > 0 && !selectedLocation) {
+			setSelectedLocation(locations[0].id);
+		}
+	}, [locations, selectedLocation]);
 
 	const fetchInitialData = async () => {
 		try {

@@ -49,7 +49,7 @@ type Location = Tables<"locations">;
 export default function EnhancedCalendar() {
 	const navigate = useNavigate();
 	const isMobile = useIsMobile();
-	const [selectedLocation, setSelectedLocation] = useState("all");
+	const [selectedLocation, setSelectedLocation] = useState("");
 	const [reservations, setReservations] = useState<Reservation[]>([]);
 	const [rooms, setRooms] = useState<Room[]>([]);
 	const [locations, setLocations] = useState<Location[]>([]);
@@ -63,6 +63,13 @@ export default function EnhancedCalendar() {
 	useEffect(() => {
 		fetchData();
 	}, []);
+
+	// Auto-select first location when locations are loaded
+	useEffect(() => {
+		if (locations.length > 0 && !selectedLocation) {
+			setSelectedLocation(locations[0].id);
+		}
+	}, [locations, selectedLocation]);
 
 	// Auto-switch to grid view on mobile - REMOVED to allow timeline on mobile
 	// useEffect(() => {
@@ -108,12 +115,12 @@ export default function EnhancedCalendar() {
 
 	const filteredRooms = rooms.filter(
 		(room) =>
-			selectedLocation === "all" || room.location_id === selectedLocation,
+			!selectedLocation || room.location_id === selectedLocation,
 	);
 
 	const filteredReservations = reservations.filter(
 		(reservation) =>
-			selectedLocation === "all" ||
+			!selectedLocation ||
 			reservation.location_id === selectedLocation,
 	);
 
