@@ -98,6 +98,7 @@ const Income = () => {
 				payment_method: incomeForm.payment_type === "direct" ? "cash" : "pending",
 				location_id: selectedReservation.location_id,
 				tenant_id: profile?.tenant_id,
+				// booking_id now references reservations table (renamed foreign key constraint)
 				booking_id: selectedReservation.id,
 			};
 
