@@ -28,46 +28,32 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useLocationContext } from "@/context/LocationContext";
-import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
-import { supabase } from "@/integrations/supabase/client";
-import { inviteUserToLocation, type LocationPermissions } from "@/lib/invite";
 
 interface UserPermissions {
-	dashboard: boolean;
-	income: boolean;
-	expenses: boolean;
-	reports: boolean;
-	calendar: boolean;
-	bookings: boolean;
-	rooms: boolean;
-	master_files: boolean;
-	accounts: boolean;
-	users: boolean;
-	settings: boolean;
-	booking_channels: boolean;
-}
-
-interface RpcResponse {
-	success: boolean;
-	message?: string;
-	error?: string;
-	user_id?: string;
-	tenant_id?: string;
-	updated_by?: string;
-	updated_at?: string;
-	[key: string]: any;
+	[key: string]: boolean;
 }
 
 interface User {
 	id: string;
 	name: string;
 	email: string;
-	permissions: Record<string, UserPermissions>;
 	is_tenant_admin: boolean;
-	created_at: string;
+	permissions: {
+		[locationName: string]: UserPermissions;
+	};
 }
 
 interface Location {
@@ -92,9 +78,8 @@ const permissionTypes = [
 
 export default function Users() {
 	const [users, setUsers] = useState<User[]>([]);
-	const [showInviteUser, setShowInviteUser] = useState(false);
+	const [showInviteDialog, setShowInviteDialog] = useState(false);
 	const [loading, setLoading] = useState(true);
-
 	const [inviteEmail, setInviteEmail] = useState("");
 	const [inviteLocationId, setInviteLocationId] = useState("");
 	const [invitePermissions, setInvitePermissions] = useState({
@@ -114,7 +99,6 @@ export default function Users() {
 	const [inviteLoading, setInviteLoading] = useState(false);
 	const [editingUser, setEditingUser] = useState<User | null>(null);
 	const [showEditUser, setShowEditUser] = useState(false);
-	const { toast } = useToast();
 	const { user: currentUser, tenant } = useAuth();
 	const { hasPermission } = usePermissions();
 	const { selectedLocation, getSelectedLocationData, locations } =
@@ -130,7 +114,6 @@ export default function Users() {
 			setLoading(true);
 
 			// Fetch users with permissions for the current tenant
-			// First get all user_permissions for this tenant to find which users have access
 			const { data: tenantPermissions, error: permissionsError } =
 				await supabase
 					.from("user_permissions")
@@ -156,8 +139,6 @@ export default function Users() {
 					.eq("locations.is_active", true);
 
 			if (permissionsError) throw permissionsError;
-
-			console.log("Fetched tenant permissions data:", tenantPermissions);
 
 			// Group permissions by user and filter by selected location if needed
 			const userPermissionsMap = new Map<string, any>();
@@ -198,9 +179,7 @@ export default function Users() {
 			});
 
 			const usersWithPermissions = Array.from(userPermissionsMap.values());
-
 			setUsers(usersWithPermissions);
-			console.log("Updated users state:", usersWithPermissions);
 		} catch (error: any) {
 			console.error("Error fetching data:", error);
 			toast({
@@ -211,14 +190,13 @@ export default function Users() {
 		} finally {
 			setLoading(false);
 		}
-	}, [toast, tenant?.id, selectedLocation]);
+	}, [tenant?.id, selectedLocation]);
 
 	// Invitation handlers
 	const handleInviteMember = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!tenant?.id || !inviteEmail.trim() || !currentUser?.id) return;
 
-		// Check if a specific location is selected
 		if (!inviteLocationId) {
 			toast({
 				title: "Location Required",
@@ -238,81 +216,64 @@ export default function Users() {
 			return;
 		}
 
-		// Check permissions
-		if (!hasPermission("access_users")) {
-			toast({
-				title: "Access Denied",
-				description: "You don't have permission to invite users",
-				variant: "destructive",
-			});
-			return;
-		}
-
 		try {
 			setInviteLoading(true);
 
-			// Convert permissions to LocationPermissions format
-			const locationPermissions: LocationPermissions = {
-				access_dashboard: invitePermissions.access_dashboard,
-				access_income: invitePermissions.access_income,
-				access_expenses: invitePermissions.access_expenses,
-				access_reports: invitePermissions.access_reports,
-				access_calendar: invitePermissions.access_calendar,
-				access_bookings: invitePermissions.access_bookings,
-				access_rooms: invitePermissions.access_rooms,
-				access_master_files: invitePermissions.access_master_files,
-				access_accounts: invitePermissions.access_accounts,
-				access_users: invitePermissions.access_users,
-				access_settings: invitePermissions.access_settings,
-				access_booking_channels: invitePermissions.access_booking_channels,
-			};
+			const { data: result, error } = await supabase.rpc(
+				"create_user_invitation",
+				{
+					p_email: inviteEmail.trim().toLowerCase(),
+					p_tenant_id: tenant.id,
+				},
+			);
 
-			const result = await inviteUserToLocation({
-				email: inviteEmail,
-				tenantId: tenant.id,
-				locationId: inviteLocationId,
-				addedBy: currentUser.id,
-				permissions: locationPermissions,
+			if (error) throw error;
+
+			console.log("Invitation result:", result);
+
+			toast({
+				title: "Invitation Sent",
+				description: "Invitation sent and login credentials have been emailed",
 			});
 
-			if (result.success) {
-				const actionText = result.user_exists
-					? "User has been granted access to this location"
-					: "Invitation sent and login credentials have been emailed";
+			// Reset form
+			setInviteEmail("");
+			setInviteLocationId("");
+			setInvitePermissions({
+				access_dashboard: true,
+				access_income: false,
+				access_expenses: false,
+				access_reports: false,
+				access_calendar: true,
+				access_bookings: true,
+				access_rooms: false,
+				access_master_files: false,
+				access_accounts: false,
+				access_users: false,
+				access_settings: false,
+				access_booking_channels: false,
+			});
+			setShowInviteDialog(false);
 
-				toast({
-					title: result.user_exists ? "Access Granted" : "Invitation Sent",
-					description: `${actionText} for ${inviteEmail} to ${locationData.name}.`,
-					duration: 5000,
-				});
-				setInviteEmail("");
-				setInviteLocationId("");
-				setInvitePermissions({
-					access_dashboard: true,
-					access_income: false,
-					access_expenses: false,
-					access_reports: false,
-					access_calendar: true,
-					access_bookings: true,
-					access_rooms: false,
-					access_master_files: false,
-					access_accounts: false,
-					access_users: false,
-					access_settings: false,
-					access_booking_channels: false,
-				});
-				await fetchData(); // Refresh user list to show new permissions
-			} else {
-				toast({
-					title: "Error",
-					description: result.error || "Failed to send invitation",
-					variant: "destructive",
-				});
-			}
+			// Refresh data
+			await fetchData();
 		} catch (error: any) {
+			console.error("Error inviting member:", error);
+			
+			let errorMessage = "Failed to send invitation";
+			if (error.message) {
+				if (error.message.includes("already has access")) {
+					errorMessage = "User already has access to this location";
+				} else if (error.message.includes("rate limit")) {
+					errorMessage = "Too many invitations sent. Please try again later.";
+				} else {
+					errorMessage = error.message;
+				}
+			}
+
 			toast({
 				title: "Error",
-				description: error.message || "Failed to send invitation",
+				description: errorMessage,
 				variant: "destructive",
 			});
 		} finally {
@@ -320,184 +281,112 @@ export default function Users() {
 		}
 	};
 
-	useEffect(() => {
-		fetchData();
-	}, [fetchData]);
+	const handleEditUser = (user: User) => {
+		setEditingUser({ ...user });
+		setShowEditUser(true);
+	};
 
 	const handleDeleteUser = async (userId: string) => {
+		if (!tenant?.id) return;
+
 		if (
 			!confirm(
-				"Are you sure you want to delete this user? This action cannot be undone.",
+				"Are you sure you want to remove this user's access? This action cannot be undone.",
 			)
 		) {
 			return;
 		}
 
 		try {
-			// Delete user permissions first (foreign key constraint)
-			const { error: permError } = await supabase
+			const { error } = await supabase
 				.from("user_permissions")
 				.delete()
-				.eq("user_id", userId);
+				.eq("user_id", userId)
+				.eq("tenant_id", tenant.id);
 
-			if (permError) {
-				console.error("Error deleting permissions:", permError);
-				// Continue anyway, as permissions might not exist
-			}
+			if (error) throw error;
 
-			// Note: We cannot delete from auth.users table directly
-			// Instead, we'll just delete the profile and mark the user as inactive
-			const { error: profileError } = await supabase
-				.from("profiles")
-				.delete()
-				.eq("id", userId);
-
-			if (profileError) throw profileError;
-
-			fetchData();
-
+			await fetchData();
 			toast({
-				title: "User Deleted",
-				description:
-					"User profile and permissions have been removed from the system.",
+				title: "User Removed",
+				description: "User access has been removed successfully.",
 			});
 		} catch (error: any) {
-			console.error("Error deleting user:", error);
+			console.error("Error removing user:", error);
 			toast({
 				title: "Error",
-				description: error.message || "Failed to delete user",
+				description: error.message || "Failed to remove user",
 				variant: "destructive",
 			});
 		}
 	};
 
 	const updateEditUserPermission = (
-		location: string,
-		permission: string,
-		checked: boolean,
+		locationName: string,
+		permissionKey: string,
+		value: boolean,
 	) => {
 		if (!editingUser) return;
 
-		setEditingUser((prev) => ({
-			...prev!,
+		setEditingUser({
+			...editingUser,
 			permissions: {
-				...prev!.permissions,
-				[location]: {
-					...(prev!.permissions[location] || {
-						dashboard: false,
-						income: false,
-						expenses: false,
-						reports: false,
-						calendar: false,
-						bookings: false,
-						rooms: false,
-						master_files: false,
-						accounts: false,
-						users: false,
-						settings: false,
-						booking_channels: false,
-					}),
-					[permission]: checked,
+				...editingUser.permissions,
+				[locationName]: {
+					...editingUser.permissions[locationName],
+					[permissionKey]: value,
 				},
 			},
-		}));
-	};
-
-	const handleEditUser = (user: User) => {
-		// Initialize permissions for all active locations if user doesn't have any
-		const userWithInitializedPermissions = { ...user };
-
-		// Ensure user has permission entries for all active locations
-		locations.forEach((location) => {
-			if (!userWithInitializedPermissions.permissions[location.name]) {
-				userWithInitializedPermissions.permissions[location.name] = {
-					dashboard: false,
-					income: false,
-					expenses: false,
-					reports: false,
-					calendar: false,
-					bookings: false,
-					rooms: false,
-					master_files: false,
-					accounts: false,
-					users: false,
-					settings: false,
-					booking_channels: false,
-				};
-			}
 		});
-
-		setEditingUser(userWithInitializedPermissions);
-		setShowEditUser(true);
 	};
 
 	const handleSaveEditUser = async () => {
 		if (!editingUser || !tenant?.id) return;
 
 		try {
-			console.log(
-				"Updating user:",
-				editingUser.id,
-				"admin status:",
-				editingUser.is_tenant_admin,
-			);
+			// Update user basic info if needed (name, etc.)
+			const { error: profileError } = await supabase
+				.from("profiles")
+				.update({
+					name: editingUser.name,
+				})
+				.eq("id", editingUser.id);
 
-			// Update profile using RPC function
-			const { data: profileResult, error: profileError } = await supabase.rpc(
-				"update_user_profile",
-				{
-					p_user_id: editingUser.id,
-					p_tenant_id: tenant.id,
-					p_name: editingUser.name,
-					p_tenant_role: "tenant_staff" as any, // TODO: Remove role system from database
-					p_is_tenant_admin: editingUser.is_tenant_admin || false,
-				},
-			);
+			if (profileError) throw profileError;
 
-			console.log("Profile update result:", profileResult);
+			// Update permissions for each location
+			for (const [locationName, permissions] of Object.entries(
+				editingUser.permissions,
+			)) {
+				const location = locations.find((loc) => loc.name === locationName);
+				if (!location) continue;
 
-			if (profileError) {
-				console.error("Profile update error:", profileError);
-				throw profileError;
+				const { error: permissionError } = await supabase
+					.from("user_permissions")
+					.update({
+						access_dashboard: permissions.dashboard || false,
+						access_income: permissions.income || false,
+						access_expenses: permissions.expenses || false,
+						access_reports: permissions.reports || false,
+						access_calendar: permissions.calendar || false,
+						access_bookings: permissions.bookings || false,
+						access_rooms: permissions.rooms || false,
+						access_master_files: permissions.master_files || false,
+						access_accounts: permissions.accounts || false,
+						access_users: permissions.users || false,
+						access_settings: permissions.settings || false,
+						access_booking_channels: permissions.booking_channels || false,
+					})
+					.eq("user_id", editingUser.id)
+					.eq("location_id", location.id)
+					.eq("tenant_id", tenant.id);
+
+				if (permissionError) throw permissionError;
 			}
-
-			const profileResponse = profileResult as RpcResponse;
-			if (!profileResponse?.success) {
-				throw new Error(profileResponse?.error || "Failed to update profile");
-			}
-
-			console.log("Profile updated successfully");
-
-			// Update permissions using RPC function
-			const { data: permissionResult, error: permissionError } =
-				await supabase.rpc("update_user_permissions", {
-					p_user_id: editingUser.id,
-					p_tenant_id: tenant.id,
-					p_permissions: editingUser.permissions as any,
-				});
-
-			console.log("Permission update result:", permissionResult);
-
-			if (permissionError) {
-				console.error("Permission update error:", permissionError);
-				throw permissionError;
-			}
-
-			const permissionResponse = permissionResult as RpcResponse;
-			if (!permissionResponse?.success) {
-				throw new Error(
-					permissionResponse?.error || "Failed to update permissions",
-				);
-			}
-
-			console.log("Permissions updated successfully");
 
 			setShowEditUser(false);
 			setEditingUser(null);
-
-			console.log("About to refresh data...");
 			await fetchData();
-			console.log("Data refreshed");
 
 			toast({
 				title: "User Updated",
@@ -513,457 +402,155 @@ export default function Users() {
 		}
 	};
 
+	// Load data on component mount and when dependencies change
+	useEffect(() => {
+		fetchData();
+	}, [fetchData]);
+
 	if (loading) {
 		return <UsersSkeleton />;
 	}
 
 	return (
 		<div className="w-full pb-20 sm:pb-8 px-4 sm:px-0 mx-auto space-y-6 animate-fade-in">
-			{/* Action Buttons */}
-			<div className="flex items-center justify-end">
-				<div className="flex gap-2">
-					{/* Edit User Dialog */}
-					<Dialog open={showEditUser} onOpenChange={setShowEditUser}>
-						<DialogContent className="max-w-[380px] sm:max-w-2xl max-h-[90vh] sm:max-h-[80vh] overflow-y-auto">
-							<DialogHeader>
-								<DialogTitle>Edit User Permissions</DialogTitle>
-								<DialogDescription>
-									Modify user details and configure their permissions for
-									different locations and application features.
-								</DialogDescription>
-							</DialogHeader>
-							{editingUser && (
-								<div className="space-y-6">
-									<div className="grid grid-cols-2 gap-4">
-										<div className="space-y-2">
-											<Label>Full Name</Label>
-											<Input
-												placeholder="John Doe"
-												value={editingUser.name}
-												onChange={(e) =>
-													setEditingUser({
-														...editingUser,
-														name: e.target.value,
-													})
-												}
-											/>
-										</div>
-
-										<div className="space-y-2">
-											<Label>Email Address</Label>
-											<Input
-												type="email"
-												value={editingUser.email}
-												disabled
-												className="bg-muted"
-											/>
-										</div>
-									</div>
-
-									<div className="space-y-4">
-										<Label className="text-base font-semibold">
-											Location Permissions
-										</Label>
-										{locations.map((location) => (
-											<Card key={location.id} className="p-4">
-												<h3 className="font-semibold mb-3">{location.name}</h3>
-												<div className="grid grid-cols-2 gap-3">
-													{permissionTypes.map((permission) => (
-														<div
-															key={permission.key}
-															className="flex items-center space-x-2"
-														>
-															<Checkbox
-																id={`edit-${location.name}-${permission.key}`}
-																checked={
-																	editingUser.permissions[location.name]?.[
-																		permission.key as keyof UserPermissions
-																	] || false
-																}
-																onCheckedChange={(checked) =>
-																	updateEditUserPermission(
-																		location.name,
-																		permission.key,
-																		checked as boolean,
-																	)
-																}
-															/>
-															<Label
-																htmlFor={`edit-${location.name}-${permission.key}`}
-																className="text-sm"
-															>
-																{permission.label}
-															</Label>
-														</div>
-													))}
-												</div>
-											</Card>
-										))}
-									</div>
-
-									<div className="flex gap-2">
-										<Button
-											variant="outline"
-											onClick={() => setShowEditUser(false)}
-											className="flex-1"
-										>
-											Cancel
-										</Button>
-										<Button onClick={handleSaveEditUser} className="flex-1">
-											Save Changes
-										</Button>
-									</div>
-								</div>
-							)}
-						</DialogContent>
-					</Dialog>
-				</div>
-			</div>
-
-			{/* Invitation Section */}
-			<div className="grid gap-6 md:grid-cols-2">
-				{/* Invite Member Form */}
-				{hasPermission("access_users") ? (
-					<Card>
-						<CardHeader>
-							<CardTitle>Invite Member</CardTitle>
-							<CardDescription>
-								Send an invitation to join your organization at a specific
-								location.
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<form onSubmit={handleInviteMember} className="space-y-4">
-								<div>
-									<Label htmlFor="inviteEmail">Email Address</Label>
-									<Input
-										id="inviteEmail"
-										type="email"
-										placeholder="Enter email address"
-										value={inviteEmail}
-										onChange={(e) => setInviteEmail(e.target.value)}
-										required
-									/>
-								</div>
-								<div>
-									<Label htmlFor="inviteLocation">Location</Label>
-									<Select
-										value={inviteLocationId}
-										onValueChange={setInviteLocationId}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder="Select location" />
-										</SelectTrigger>
-										<SelectContent>
-											{locations.map((location) => (
-												<SelectItem key={location.id} value={location.id}>
-													{location.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-
-								{/* Permissions Section */}
-								<div className="space-y-3">
-									<Label>Permissions</Label>
-									<div className="grid grid-cols-2 gap-2 text-sm">
-										<div className="flex items-center space-x-2">
-											<Checkbox
-												id="access_dashboard"
-												checked={invitePermissions.access_dashboard}
-												onCheckedChange={(checked) =>
-													setInvitePermissions((prev) => ({
-														...prev,
-														access_dashboard: !!checked,
-													}))
-												}
-											/>
-											<Label
-												htmlFor="access_dashboard"
-												className="text-sm font-normal"
-											>
-												Dashboard
-											</Label>
-										</div>
-										<div className="flex items-center space-x-2">
-											<Checkbox
-												id="access_income"
-												checked={invitePermissions.access_income}
-												onCheckedChange={(checked) =>
-													setInvitePermissions((prev) => ({
-														...prev,
-														access_income: !!checked,
-													}))
-												}
-											/>
-											<Label
-												htmlFor="access_income"
-												className="text-sm font-normal"
-											>
-												Income
-											</Label>
-										</div>
-										<div className="flex items-center space-x-2">
-											<Checkbox
-												id="access_expenses"
-												checked={invitePermissions.access_expenses}
-												onCheckedChange={(checked) =>
-													setInvitePermissions((prev) => ({
-														...prev,
-														access_expenses: !!checked,
-													}))
-												}
-											/>
-											<Label
-												htmlFor="access_expenses"
-												className="text-sm font-normal"
-											>
-												Expenses
-											</Label>
-										</div>
-										<div className="flex items-center space-x-2">
-											<Checkbox
-												id="access_reports"
-												checked={invitePermissions.access_reports}
-												onCheckedChange={(checked) =>
-													setInvitePermissions((prev) => ({
-														...prev,
-														access_reports: !!checked,
-													}))
-												}
-											/>
-											<Label
-												htmlFor="access_reports"
-												className="text-sm font-normal"
-											>
-												Reports
-											</Label>
-										</div>
-										<div className="flex items-center space-x-2">
-											<Checkbox
-												id="access_calendar"
-												checked={invitePermissions.access_calendar}
-												onCheckedChange={(checked) =>
-													setInvitePermissions((prev) => ({
-														...prev,
-														access_calendar: !!checked,
-													}))
-												}
-											/>
-											<Label
-												htmlFor="access_calendar"
-												className="text-sm font-normal"
-											>
-												Calendar
-											</Label>
-										</div>
-										<div className="flex items-center space-x-2">
-											<Checkbox
-												id="access_bookings"
-												checked={invitePermissions.access_bookings}
-												onCheckedChange={(checked) =>
-													setInvitePermissions((prev) => ({
-														...prev,
-														access_bookings: !!checked,
-													}))
-												}
-											/>
-											<Label
-												htmlFor="access_bookings"
-												className="text-sm font-normal"
-											>
-												Bookings
-											</Label>
-										</div>
-										<div className="flex items-center space-x-2">
-											<Checkbox
-												id="access_rooms"
-												checked={invitePermissions.access_rooms}
-												onCheckedChange={(checked) =>
-													setInvitePermissions((prev) => ({
-														...prev,
-														access_rooms: !!checked,
-													}))
-												}
-											/>
-											<Label
-												htmlFor="access_rooms"
-												className="text-sm font-normal"
-											>
-												Rooms
-											</Label>
-										</div>
-										<div className="flex items-center space-x-2">
-											<Checkbox
-												id="access_accounts"
-												checked={invitePermissions.access_accounts}
-												onCheckedChange={(checked) =>
-													setInvitePermissions((prev) => ({
-														...prev,
-														access_accounts: !!checked,
-													}))
-												}
-											/>
-											<Label
-												htmlFor="access_accounts"
-												className="text-sm font-normal"
-											>
-												Accounts
-											</Label>
-										</div>
-										<div className="flex items-center space-x-2">
-											<Checkbox
-												id="access_users"
-												checked={invitePermissions.access_users}
-												onCheckedChange={(checked) =>
-													setInvitePermissions((prev) => ({
-														...prev,
-														access_users: !!checked,
-													}))
-												}
-											/>
-											<Label
-												htmlFor="access_users"
-												className="text-sm font-normal"
-											>
-												Users
-											</Label>
-										</div>
-										<div className="flex items-center space-x-2">
-											<Checkbox
-												id="access_settings"
-												checked={invitePermissions.access_settings}
-												onCheckedChange={(checked) =>
-													setInvitePermissions((prev) => ({
-														...prev,
-														access_settings: !!checked,
-													}))
-												}
-											/>
-											<Label
-												htmlFor="access_settings"
-												className="text-sm font-normal"
-											>
-												Settings
-											</Label>
-										</div>
-									</div>
-								</div>
-
-								<Button
-									type="submit"
-									disabled={inviteLoading || !inviteLocationId}
-									className={
-										!inviteLocationId ? "opacity-50 cursor-not-allowed" : ""
-									}
-								>
-									{inviteLoading
-										? "Sending..."
-										: !inviteLocationId
-											? "Select Location First"
-											: "Send Invitation"}
-								</Button>
-							</form>
-						</CardContent>
-					</Card>
-				) : (
-					<Card>
-						<CardHeader>
-							<CardTitle>Access Denied</CardTitle>
-							<CardDescription>
-								You don't have permission to invite users
-							</CardDescription>
-						</CardHeader>
-					</Card>
+			{/* Header */}
+			<div className="flex justify-between items-center">
+				<h1 className="text-2xl font-bold">Users</h1>
+				{hasPermission("access_users") && (
+					<Button onClick={() => setShowInviteDialog(true)}>
+						Invite Member
+					</Button>
 				)}
 			</div>
 
-			{/* Users List */}
-			<div className="space-y-4">
-				{users.map((user) => (
-					<Card key={user.id} className="bg-card border">
-						<CardHeader>
-							<div className="flex flex-col sm:flex-row gap-y-2 justify-between items-start">
-								<div className="flex items-center gap-3">
-									<div className="p-2 bg-primary/10 rounded-full">
-										<User className="size-5 text-primary" />
+			{/* Team Members Table */}
+			<Card>
+				<CardHeader>
+					<CardTitle>Team Members</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>User</TableHead>
+								<TableHead className="hidden sm:table-cell">Email</TableHead>
+								<TableHead>Role</TableHead>
+								<TableHead>Status</TableHead>
+								<TableHead className="hidden md:table-cell">Last Active</TableHead>
+								<TableHead>Actions</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{users.map((user) => (
+								<TableRow key={user.id}>
+									<TableCell>
+										<div className="flex items-center gap-3">
+											<div className="p-2 bg-primary/10 rounded-full">
+												<User className="size-4 text-primary" />
+											</div>
+											<div>
+												<div className="font-medium">{user.name}</div>
+												<div className="text-sm text-muted-foreground sm:hidden">
+													{user.email}
+												</div>
+											</div>
+										</div>
+									</TableCell>
+									<TableCell className="hidden sm:table-cell">
+										{user.email}
+									</TableCell>
+									<TableCell>
+										<Badge
+											variant={user.is_tenant_admin ? "default" : "secondary"}
+											className="flex items-center gap-1 w-fit"
+										>
+											{user.is_tenant_admin ? (
+												<>
+													<Shield className="h-3 w-3" />
+													Administrator
+												</>
+											) : (
+												<>
+													<UserCheck className="h-3 w-3" />
+													User
+												</>
+											)}
+										</Badge>
+									</TableCell>
+									<TableCell>
+										<Badge variant="outline" className="w-fit">
+											Active
+										</Badge>
+									</TableCell>
+									<TableCell className="text-sm text-muted-foreground hidden md:table-cell">
+										Recently
+									</TableCell>
+									<TableCell>
+										<div className="flex gap-1">
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={() => handleEditUser(user)}
+											>
+												<Edit className="size-4" />
+											</Button>
+											{user.id !== currentUser?.id && (
+												<Button
+													variant="ghost"
+													size="sm"
+													onClick={() => handleDeleteUser(user.id)}
+												>
+													<Trash2 className="size-4" />
+												</Button>
+											)}
+										</div>
+									</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+				</CardContent>
+			</Card>
+
+			{/* Permission Matrix */}
+			<Card>
+				<CardHeader>
+					<CardTitle>Permission Matrix</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<div className="space-y-4">
+						{users.map((user) => (
+							<div key={user.id} className="p-4 border rounded-lg">
+								<div className="flex items-center gap-3 mb-3">
+									<div className="p-1 bg-primary/10 rounded-full">
+										<User className="size-4 text-primary" />
 									</div>
-									<div>
-										<CardTitle className="text-lg">{user.name}</CardTitle>
-										<p className="text-sm text-muted-foreground">
-											{user.email}
-										</p>
-									</div>
-								</div>
-								<div className="flex items-center gap-2">
+									<div className="font-medium">{user.name}</div>
 									<Badge
 										variant={user.is_tenant_admin ? "default" : "secondary"}
-										className="flex items-center gap-1"
+										className="ml-auto"
 									>
-										{user.is_tenant_admin ? (
-											<>
-												<Shield className="h-3 w-3" />
-												Administrator
-											</>
-										) : (
-											<>
-												<UserCheck className="h-3 w-3" />
-												User
-											</>
-										)}
+										{user.is_tenant_admin ? "Admin" : "User"}
 									</Badge>
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() => handleEditUser(user)}
-									>
-										<Edit className="size-4" />
-									</Button>
-									{user.id !== currentUser?.id && (
-										<Button
-											variant="ghost"
-											size="sm"
-											onClick={() => handleDeleteUser(user.id)}
-										>
-											<Trash2 className="size-4" />
-										</Button>
-									)}
 								</div>
-							</div>
-						</CardHeader>
-						<CardContent>
-							<div className="space-y-3">
-								<h4 className="font-semibold text-sm">
-									Permissions by Location:
-								</h4>
+								
 								{Object.keys(user.permissions).length > 0 ? (
 									Object.entries(user.permissions).map(([location, perms]) => (
-										<div key={location} className="space-y-2">
-											<h5 className="font-medium text-sm text-primary">
+										<div key={location} className="mb-4">
+											<h5 className="font-medium text-sm text-primary mb-2">
 												{location}
 											</h5>
-											<div className="flex flex-wrap gap-1">
-												{Object.entries(perms).map(
-													([perm, enabled]) =>
-														enabled && (
-															<Badge
-																key={perm}
-																variant="outline"
-																className="text-xs rounded-sm"
-															>
-																{
-																	permissionTypes.find((p) => p.key === perm)
-																		?.label
-																}
-															</Badge>
-														),
-												)}
-												{Object.values(perms).every((p) => !p) && (
-													<Badge variant="secondary" className="text-xs">
-														No permissions assigned
-													</Badge>
-												)}
+											<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+												{permissionTypes.map((permType) => (
+													<div key={permType.key} className="flex items-center gap-2">
+														<Checkbox
+															checked={!!perms[permType.key]}
+															disabled
+															className="h-4 w-4"
+														/>
+														<span className="text-sm">{permType.label}</span>
+													</div>
+												))}
 											</div>
 										</div>
 									))
@@ -981,10 +568,10 @@ export default function Users() {
 									</div>
 								)}
 							</div>
-						</CardContent>
-					</Card>
-				))}
-			</div>
+						))}
+					</div>
+				</CardContent>
+			</Card>
 
 			{/* Stats */}
 			<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1014,6 +601,365 @@ export default function Users() {
 					</CardContent>
 				</Card>
 			</div>
+
+			{/* Invite Member Dialog */}
+			<Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>Invite Member</DialogTitle>
+						<DialogDescription>
+							Send an invitation to join your organization at a specific
+							location.
+						</DialogDescription>
+					</DialogHeader>
+					<form onSubmit={handleInviteMember} className="space-y-4">
+						<div>
+							<Label htmlFor="inviteEmail">Email Address</Label>
+							<Input
+								id="inviteEmail"
+								type="email"
+								placeholder="Enter email address"
+								value={inviteEmail}
+								onChange={(e) => setInviteEmail(e.target.value)}
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor="inviteLocation">Location</Label>
+							<Select
+								value={inviteLocationId}
+								onValueChange={setInviteLocationId}
+							>
+								<SelectTrigger>
+									<SelectValue placeholder="Select location" />
+								</SelectTrigger>
+								<SelectContent>
+									{locations.map((location) => (
+										<SelectItem key={location.id} value={location.id}>
+											{location.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+
+						{/* Permissions Section */}
+						<div className="space-y-3">
+							<Label>Permissions</Label>
+							<div className="grid grid-cols-2 gap-2 text-sm">
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="access_dashboard"
+										checked={invitePermissions.access_dashboard}
+										onCheckedChange={(checked) =>
+											setInvitePermissions((prev) => ({
+												...prev,
+												access_dashboard: !!checked,
+											}))
+										}
+									/>
+									<Label
+										htmlFor="access_dashboard"
+										className="text-sm font-normal"
+									>
+										Dashboard
+									</Label>
+								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="access_income"
+										checked={invitePermissions.access_income}
+										onCheckedChange={(checked) =>
+											setInvitePermissions((prev) => ({
+												...prev,
+												access_income: !!checked,
+											}))
+										}
+									/>
+									<Label
+										htmlFor="access_income"
+										className="text-sm font-normal"
+									>
+										Income
+									</Label>
+								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="access_expenses"
+										checked={invitePermissions.access_expenses}
+										onCheckedChange={(checked) =>
+											setInvitePermissions((prev) => ({
+												...prev,
+												access_expenses: !!checked,
+											}))
+										}
+									/>
+									<Label
+										htmlFor="access_expenses"
+										className="text-sm font-normal"
+									>
+										Expenses
+									</Label>
+								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="access_reports"
+										checked={invitePermissions.access_reports}
+										onCheckedChange={(checked) =>
+											setInvitePermissions((prev) => ({
+												...prev,
+												access_reports: !!checked,
+											}))
+										}
+									/>
+									<Label
+										htmlFor="access_reports"
+										className="text-sm font-normal"
+									>
+										Reports
+									</Label>
+								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="access_calendar"
+										checked={invitePermissions.access_calendar}
+										onCheckedChange={(checked) =>
+											setInvitePermissions((prev) => ({
+												...prev,
+												access_calendar: !!checked,
+											}))
+										}
+									/>
+									<Label
+										htmlFor="access_calendar"
+										className="text-sm font-normal"
+									>
+										Calendar
+									</Label>
+								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="access_bookings"
+										checked={invitePermissions.access_bookings}
+										onCheckedChange={(checked) =>
+											setInvitePermissions((prev) => ({
+												...prev,
+												access_bookings: !!checked,
+											}))
+										}
+									/>
+									<Label
+										htmlFor="access_bookings"
+										className="text-sm font-normal"
+									>
+										Bookings
+									</Label>
+								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="access_rooms"
+										checked={invitePermissions.access_rooms}
+										onCheckedChange={(checked) =>
+											setInvitePermissions((prev) => ({
+												...prev,
+												access_rooms: !!checked,
+											}))
+										}
+									/>
+									<Label
+										htmlFor="access_rooms"
+										className="text-sm font-normal"
+									>
+										Rooms
+									</Label>
+								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="access_master_files"
+										checked={invitePermissions.access_master_files}
+										onCheckedChange={(checked) =>
+											setInvitePermissions((prev) => ({
+												...prev,
+												access_master_files: !!checked,
+											}))
+										}
+									/>
+									<Label
+										htmlFor="access_master_files"
+										className="text-sm font-normal"
+									>
+										Master Files
+									</Label>
+								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="access_accounts"
+										checked={invitePermissions.access_accounts}
+										onCheckedChange={(checked) =>
+											setInvitePermissions((prev) => ({
+												...prev,
+												access_accounts: !!checked,
+											}))
+										}
+									/>
+									<Label
+										htmlFor="access_accounts"
+										className="text-sm font-normal"
+									>
+										Accounts
+									</Label>
+								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="access_users"
+										checked={invitePermissions.access_users}
+										onCheckedChange={(checked) =>
+											setInvitePermissions((prev) => ({
+												...prev,
+												access_users: !!checked,
+											}))
+										}
+									/>
+									<Label
+										htmlFor="access_users"
+										className="text-sm font-normal"
+									>
+										Users
+									</Label>
+								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="access_settings"
+										checked={invitePermissions.access_settings}
+										onCheckedChange={(checked) =>
+											setInvitePermissions((prev) => ({
+												...prev,
+												access_settings: !!checked,
+											}))
+										}
+									/>
+									<Label
+										htmlFor="access_settings"
+										className="text-sm font-normal"
+									>
+										Settings
+									</Label>
+								</div>
+							</div>
+						</div>
+
+						<Button
+							type="submit"
+							disabled={inviteLoading || !inviteLocationId}
+							className={
+								!inviteLocationId ? "opacity-50 cursor-not-allowed" : ""
+							}
+						>
+							{inviteLoading
+								? "Sending..."
+								: !inviteLocationId
+									? "Select Location First"
+									: "Send Invitation"}
+						</Button>
+					</form>
+				</DialogContent>
+			</Dialog>
+
+			{/* Edit User Dialog */}
+			<Dialog open={showEditUser} onOpenChange={setShowEditUser}>
+				<DialogContent className="max-w-[380px] sm:max-w-2xl max-h-[90vh] sm:max-h-[80vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle>Edit User Permissions</DialogTitle>
+						<DialogDescription>
+							Modify user details and configure their permissions for
+							different locations and application features.
+						</DialogDescription>
+					</DialogHeader>
+					{editingUser && (
+						<div className="space-y-6">
+							<div className="grid grid-cols-2 gap-4">
+								<div className="space-y-2">
+									<Label>Full Name</Label>
+									<Input
+										placeholder="John Doe"
+										value={editingUser.name}
+										onChange={(e) =>
+											setEditingUser({
+												...editingUser,
+												name: e.target.value,
+											})
+										}
+									/>
+								</div>
+
+								<div className="space-y-2">
+									<Label>Email Address</Label>
+									<Input
+										type="email"
+										value={editingUser.email}
+										disabled
+										className="bg-muted"
+									/>
+								</div>
+							</div>
+
+							<div className="space-y-4">
+								<Label className="text-base font-semibold">
+									Location Permissions
+								</Label>
+								{locations.map((location) => (
+									<Card key={location.id} className="p-4">
+										<h3 className="font-semibold mb-3">{location.name}</h3>
+										<div className="grid grid-cols-2 gap-3">
+											{permissionTypes.map((permission) => (
+												<div
+													key={permission.key}
+													className="flex items-center space-x-2"
+												>
+													<Checkbox
+														id={`edit-${location.name}-${permission.key}`}
+														checked={
+															editingUser.permissions[location.name]?.[
+																permission.key as keyof UserPermissions
+															] || false
+														}
+														onCheckedChange={(checked) =>
+															updateEditUserPermission(
+																location.name,
+																permission.key,
+																checked as boolean,
+															)
+														}
+													/>
+													<Label
+														htmlFor={`edit-${location.name}-${permission.key}`}
+														className="text-sm font-normal"
+													>
+														{permission.label}
+													</Label>
+												</div>
+											))}
+										</div>
+									</Card>
+								))}
+							</div>
+
+							<div className="flex gap-2">
+								<Button
+									variant="outline"
+									onClick={() => setShowEditUser(false)}
+									className="flex-1"
+								>
+									Cancel
+								</Button>
+								<Button onClick={handleSaveEditUser} className="flex-1">
+									Save Changes
+								</Button>
+							</div>
+						</div>
+					)}
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
