@@ -1081,7 +1081,7 @@ export default function ReservationForm() {
 				</div>
 
 				{/* Additional Services */}
-				<Card className="bg-card">
+				{(fieldPreferences?.show_guide || fieldPreferences?.show_agent) && (<Card className="bg-card">
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
 							<UserCheck className="size-5" />
@@ -1369,7 +1369,7 @@ export default function ReservationForm() {
 							</div>
 						)}
 					</CardContent>
-				</Card>
+				</Card>)}
 			</form>
 		</div>
 	);

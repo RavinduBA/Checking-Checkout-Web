@@ -8,7 +8,7 @@ export const SmartRedirect = () => {
 	const { locations, loading: locationsLoading } = useLocationContext();
 
 	if (loading || locationsLoading) {
-		return <FullScreenLoader />;
+		return null;
 	}
 
 	// If user has no locations, redirect to onboarding to set up their first location

@@ -159,21 +159,41 @@ export default function Auth() {
 	};
 
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-background overflow-hidden">
-			<div className="relative  bg-[url('/images/white-hotel-front-view.jpg')] bg-cover flex-1 hidden items-center justify-center h-screen bg-gray-900 lg:flex"></div>
+		<div className="min-h-screen fixed overflow-hidden flex items-center justify-center bg-background">
+			<aside
+				className="hidden h-screen flex-1 overflow-hidden lg:flex"
+				aria-label="Product showcase"
+			>
+				<div className="flex size-full items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600 p-16 dark:from-blue-600 dark:to-blue-500">
+					<div>
+						<h2 className="max-w-lg text-2xl font-semibold leading-9 text-white dark:text-white">
+							Welcome to Checking &amp; Checkout
+						</h2>
+						<p className="mt-4 text-white dark:text-white">
+							The all-in-one hotel management solution for small to medium businesses.
+						</p>
+						<div className="mt-14 rounded-xl bg-white/10 p-1.5 ring-1 ring-white/20">
+							<img
+								alt="Dashboard screenshot showing data visualization and analytics interface"
+								src="https://blocks.tremor.so/_next/image?url=%2Fhome%2Fdashboard.webp&w=3840&q=75"
+								width={2432}
+								height={1442}
+								className="rounded-md shadow-2xl shadow-black/50 ring-1 ring-gray-900/5"
+							/>
+						</div>
+					</div>
+				</div>
+			</aside>
+
 			<div className="flex-1 flex items-center justify-center h-screen">
 				<div className="w-full max-w-md space-y-8 px-4 bg-white text-gray-600 sm:px-0">
-					<div className="">
-						<div className="mt-5 space-y-2">
-							<p className="text-muted-foreground">
-								{isLogin ? "Sign in to your account" : "Create your account"}
-							</p>
-							{!isLogin && (
-								<p className="text-sm text-muted-foreground mt-2">
-									Start your 7-day free trial today
-								</p>
-							)}
-						</div>
+					<div className="space-y-1">
+						<h2 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-50">
+							{isLogin ? "Get started now" : "Create your account"}
+						</h2>
+						<p className="text-sm text-gray-700 dark:text-gray-400">
+							{isLogin ? "Enter your credentials to access your account" : "Start your 7-day free trial today"}
+						</p>
 					</div>
 					<form onSubmit={handleAuth} className="space-y-4">
 						{!isLogin && (

@@ -25,6 +25,7 @@ import { NavMain } from "@/components/nav-main";
 import { NavProjects } from "@/components/nav-projects";
 import { NavUser } from "@/components/nav-user";
 import { LocationSwitcher } from "@/components/team-switcher";
+import { AppSidebarSkeleton } from "@/components/AppSidebarSkeleton";
 import {
 	Sidebar,
 	SidebarContent,
@@ -266,9 +267,7 @@ export function AppSidebar({
 			</SidebarHeader>
 			<SidebarContent>
 				{loading ? (
-					<div className="p-4 text-sm text-muted-foreground">
-						Loading navigation...
-					</div>
+					<AppSidebarSkeleton />
 				) : (
 					<>
 						<NavMain items={getNavMainItems()} />

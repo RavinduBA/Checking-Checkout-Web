@@ -11,7 +11,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 	const location = useLocation();
 
 	if (loading) {
-		return <FullScreenLoader />;
+		return null;
 	}
 
 	if (!user) {

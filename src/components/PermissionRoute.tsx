@@ -1,7 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import { Navigate, useLocation } from "react-router";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FullScreenLoader } from "@/components/ui/loading-spinner";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -26,7 +25,7 @@ export const PermissionRoute = ({
 	const location = useLocation();
 
 	if (loading) {
-		return <FullScreenLoader />;
+		return null;
 	}
 
 	if (!hasAnyPermission(permission)) {

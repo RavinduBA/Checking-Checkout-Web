@@ -1,12 +1,11 @@
 import { Navigate } from "react-router";
-import { FullScreenLoader } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/context/AuthContext";
 
 export const AuthRedirect = () => {
 	const { user, profile, loading } = useAuth();
 
 	if (loading) {
-		return <FullScreenLoader />;
+		return null;
 	}
 
 	// If user is authenticated

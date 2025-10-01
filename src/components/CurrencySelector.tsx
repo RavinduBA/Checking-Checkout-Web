@@ -56,82 +56,76 @@ export const CurrencySelector = ({
 	};
 
 	return (
-		<div className="space-y-2">
-			<Label className="flex items-center gap-2">
-				<DollarSign className="size-4" />
-				{label}
-			</Label>
-			<div className="flex gap-2">
-				<Select
-					value={currency}
-					onValueChange={onCurrencyChange}
-					disabled={loading}
-				>
-					<SelectTrigger className="flex-1 h-11">
-						<SelectValue>
-							{selectedCurrency ? (
-								<div className="flex items-center gap-2">
-									<span className="font-medium">
-										{selectedCurrency.currency_code}
-									</span>
-									<span className="text-muted-foreground text-sm hidden sm:flex">
-										{selectedCurrency.currency_code === "USD"
-											? "- US Dollar"
-											: selectedCurrency.is_custom
-												? "- Custom Currency"
-												: ""}
-									</span>
-									{selectedCurrency.currency_code !== "USD" && (
-										<span className="text-xs text-muted-foreground">
-											(Rate: {selectedCurrency.usd_rate})
-										</span>
-									)}
-								</div>
-							) : (
-								<span className="text-muted-foreground">
-									{loading ? "Loading..." : "Select currency"}
+		<div className="flex gap-2">
+			<Select
+				value={currency}
+				onValueChange={onCurrencyChange}
+				disabled={loading}
+			>
+				<SelectTrigger className="flex-1">
+					<SelectValue>
+						{selectedCurrency ? (
+							<div className="flex items-center gap-2">
+								<span className="font-medium">
+									{selectedCurrency.currency_code}
 								</span>
-							)}
-						</SelectValue>
-					</SelectTrigger>
-					<SelectContent className="z-50 bg-background border">
-						{currencies.map((curr) => (
-							<SelectItem key={curr.currency_code} value={curr.currency_code}>
-								<div className="flex items-center gap-2">
-									<span className="font-medium min-w-[48px]">
-										{curr.currency_code}
+								<span className="text-muted-foreground text-sm hidden sm:flex">
+									{selectedCurrency.currency_code === "USD"
+										? "- US Dollar"
+										: selectedCurrency.is_custom
+											? "- Custom Currency"
+											: ""}
+								</span>
+								{selectedCurrency.currency_code !== "USD" && (
+									<span className="text-xs text-muted-foreground">
+										(Rate: {selectedCurrency.usd_rate})
 									</span>
-									<span className="text-muted-foreground flex-1">
-										{curr.currency_code === "USD"
-											? "US Dollar"
-											: curr.is_custom
-												? "Custom Currency"
-												: curr.currency_code}
+								)}
+							</div>
+						) : (
+							<span className="text-muted-foreground">
+								{loading ? "Loading..." : "Select currency"}
+							</span>
+						)}
+					</SelectValue>
+				</SelectTrigger>
+				<SelectContent className="z-50 bg-background border">
+					{currencies.map((curr) => (
+						<SelectItem key={curr.currency_code} value={curr.currency_code}>
+							<div className="flex items-center gap-2">
+								<span className="font-medium min-w-[48px]">
+									{curr.currency_code}
+								</span>
+								<span className="text-muted-foreground flex-1">
+									{curr.currency_code === "USD"
+										? "US Dollar"
+										: curr.is_custom
+											? "Custom Currency"
+											: curr.currency_code}
+								</span>
+								{curr.currency_code !== "USD" && (
+									<span className="text-xs text-muted-foreground">
+										Rate: {curr.usd_rate}
 									</span>
-									{curr.currency_code !== "USD" && (
-										<span className="text-xs text-muted-foreground">
-											Rate: {curr.usd_rate}
-										</span>
-									)}
-								</div>
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+								)}
+							</div>
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
 
-				{showGoogleSearchLink && currency && currency !== "USD" && (
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						onClick={handleGoogleSearchClick}
-						className="px-3"
-						title={`Search USD to ${currency} conversion rate`}
-					>
-						<ExternalLink className="size-4" />
-					</Button>
-				)}
-			</div>
+			{showGoogleSearchLink && currency && currency !== "USD" && (
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={handleGoogleSearchClick}
+					className="px-3"
+					title={`Search USD to ${currency} conversion rate`}
+				>
+					<ExternalLink className="size-4" />
+				</Button>
+			)}
 		</div>
 	);
 };
