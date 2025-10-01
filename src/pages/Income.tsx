@@ -22,6 +22,11 @@ type Reservation = Database["public"]["Tables"]["reservations"]["Row"];
 type Room = Database["public"]["Tables"]["rooms"]["Row"];
 type Account = Database["public"]["Tables"]["accounts"]["Row"];
 type Income = Database["public"]["Tables"]["income"]["Row"];
+type IncomeType = {
+	id: string;
+	type_name: string;
+	created_at: string;
+};
 
 const Income = () => {
 	const { toast } = useToast();
@@ -32,10 +37,12 @@ const Income = () => {
 	const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
 	const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
 	const [incomeHistory, setIncomeHistory] = useState<Income[]>([]);
+	const [incomeTypes, setIncomeTypes] = useState<IncomeType[]>([]);
 	const [incomeForm, setIncomeForm] = useState({
 		amount: 0,
 		description: "",
 		account_id: "",
+		income_type_id: "",
 		notes: "",
 	});
 
@@ -54,11 +61,25 @@ const Income = () => {
 		}
 	}, [profile?.tenant_id]);
 
+	const fetchIncomeTypes = useCallback(async () => {
+		try {
+			const { data, error } = await supabase
+				.from("income_types")
+				.select("*")
+				.order("type_name", { ascending: true });
+			if (error) throw error;
+			setIncomeTypes(data || []);
+		} catch (error) {
+			console.error("Error fetching income types:", error);
+		}
+	}, []);
+
 	useEffect(() => {
 		if (profile?.tenant_id) {
 			fetchIncomeHistory();
+			fetchIncomeTypes();
 		}
-	}, [profile?.tenant_id, fetchIncomeHistory]);
+	}, [profile?.tenant_id, fetchIncomeHistory, fetchIncomeTypes]);
 
 	const handleIncomeSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -69,6 +90,7 @@ const Income = () => {
 				description: incomeForm.description || `Income for reservation ${selectedReservation.reservation_number}`,
 				amount: incomeForm.amount,
 				account_id: incomeForm.account_id,
+				income_type_id: incomeForm.income_type_id || null,
 				type: "booking" as const,
 				payment_method: "cash",
 				location_id: selectedReservation.location_id,
@@ -91,7 +113,7 @@ const Income = () => {
 	};
 
 	const resetIncomeForm = () => {
-		setIncomeForm({ amount: 0, description: "", account_id: "", notes: "" });
+		setIncomeForm({ amount: 0, description: "", account_id: "", income_type_id: "", notes: "" });
 		setSelectedReservation(null);
 	};
 
@@ -224,6 +246,22 @@ const Income = () => {
 							<Input id="description" value={incomeForm.description}
 								onChange={(e) => setIncomeForm({ ...incomeForm, description: e.target.value })}
 								placeholder="Description of income" required />
+						</div>
+
+						<div>
+							<Label htmlFor="income_type_id">Income Type</Label>
+							<Select value={incomeForm.income_type_id} onValueChange={(value) => setIncomeForm({ ...incomeForm, income_type_id: value })}>
+								<SelectTrigger>
+									<SelectValue placeholder="Select income type" />
+								</SelectTrigger>
+								<SelectContent>
+									{incomeTypes.map((type) => (
+										<SelectItem key={type.id} value={type.id}>
+											{type.type_name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 						</div>
 
 						<div>
