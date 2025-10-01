@@ -102,7 +102,12 @@ export default function ReservationDetails() {
 	};
 
 	const getTotalBalance = () => {
-		return (reservation?.balance_amount || 0) + getPendingExpenses();
+		const roomBalance = reservation?.balance_amount || 0;
+		const pendingExpenses = getPendingExpenses();
+		
+		// If room is fully paid (balance = 0), only return pending expenses
+		// If room has balance, return room balance + pending expenses
+		return roomBalance + pendingExpenses;
 	};
 
 	const getStatusColor = (status: string) => {

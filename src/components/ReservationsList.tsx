@@ -375,17 +375,21 @@ export const ReservationsList = () => {
 			.reduce((sum, inc) => sum + Number(inc.amount), 0);
 	};
 
-	const getTotalBalance = (reservation: Reservation) => {
-		return (reservation.balance_amount || 0) + getPendingExpenses(reservation.id);
+	const getTotalPayableAmount = (reservation: Reservation) => {
+		const roomBalance = reservation.balance_amount || 0;
+		const pendingExpenses = getPendingExpenses(reservation.id);
+		
+		// If room is fully paid (balance = 0), only return pending expenses
+		// If room has balance, return room balance + pending expenses
+		return roomBalance + pendingExpenses;
 	};
 
 	const canShowPaymentButton = (reservation: Reservation) => {
-		// Show payment button if there's a balance or pending expenses
-		const hasPendingExpenses = getPendingExpenses(reservation.id) > 0;
-		const hasBalance = (reservation.balance_amount || 0) > 0;
+		// Show payment button if there are any amounts to pay
+		const totalPayable = getTotalPayableAmount(reservation);
 		const isPayableStatus = ["tentative", "pending", "confirmed"].includes(reservation.status);
 		
-		return isPayableStatus && (hasBalance || hasPendingExpenses);
+		return isPayableStatus && totalPayable > 0;
 	};
 
 	const filteredReservations = reservations.filter((reservation) => {
@@ -581,7 +585,7 @@ export const ReservationsList = () => {
 																size="icon"
 																onClick={() =>
 																	navigate(
-																		`/payments/new?reservation=${reservation.id}&amount=${getTotalBalance(reservation)}&currency=${reservation.currency}`,
+																		`/payments/new?reservation=${reservation.id}&amount=${getTotalPayableAmount(reservation)}&currency=${reservation.currency}`,
 																	)
 																}
 																className="text-green-600 hover:text-green-700"
@@ -709,7 +713,7 @@ export const ReservationsList = () => {
 												size="sm"
 												onClick={() =>
 													navigate(
-														`/payments/new?reservation=${reservation.id}&amount=${getTotalBalance(reservation)}&currency=${reservation.currency}`,
+														`/payments/new?reservation=${reservation.id}&amount=${getTotalPayableAmount(reservation)}&currency=${reservation.currency}`,
 													)
 												}
 												className="text-green-600 hover:text-green-700"
