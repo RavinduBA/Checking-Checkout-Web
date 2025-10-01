@@ -22,6 +22,12 @@ type Reservation = Database["public"]["Tables"]["reservations"]["Row"];
 type Room = Database["public"]["Tables"]["rooms"]["Row"];
 type Account = Database["public"]["Tables"]["accounts"]["Row"];
 type Income = Database["public"]["Tables"]["income"]["Row"];
+type IncomeType = {
+	id: string;
+	type_name: string;
+	created_at: string;
+	tenant_id: string;
+};
 
 const Income = () => {
 	const { toast } = useToast();
@@ -32,17 +38,19 @@ const Income = () => {
 	const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
 	const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
 	const [incomeHistory, setIncomeHistory] = useState<Income[]>([]);
+	const [incomeTypes, setIncomeTypes] = useState<IncomeType[]>([]);
 	const [incomeForm, setIncomeForm] = useState({
 		amount: 0,
 		note: "",
 		account_id: "",
+		income_type_id: "",
 	});
 
 	const fetchIncomeHistory = useCallback(async () => {
 		try {
 			const { data, error } = await supabase
 				.from("income")
-				.select("*, accounts(name)")
+				.select("*, accounts(name), income_types(type_name)")
 				.eq("tenant_id", profile?.tenant_id)
 				.order("created_at", { ascending: false })
 				.limit(20);
@@ -53,11 +61,26 @@ const Income = () => {
 		}
 	}, [profile?.tenant_id]);
 
+	const fetchIncomeTypes = useCallback(async () => {
+		try {
+			const { data, error } = await supabase
+				.from("income_types")
+				.select("*")
+				.eq("tenant_id", profile?.tenant_id)
+				.order("type_name", { ascending: true });
+			if (error) throw error;
+			setIncomeTypes(data || []);
+		} catch (error) {
+			console.error("Error fetching income types:", error);
+		}
+	}, [profile?.tenant_id]);
+
 	useEffect(() => {
 		if (profile?.tenant_id) {
 			fetchIncomeHistory();
+			fetchIncomeTypes();
 		}
-	}, [profile?.tenant_id, fetchIncomeHistory]);
+	}, [profile?.tenant_id, fetchIncomeHistory, fetchIncomeTypes]);
 
 	const handleIncomeSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -68,6 +91,7 @@ const Income = () => {
 				note: incomeForm.note || `Income for reservation ${selectedReservation.reservation_number}`,
 				amount: incomeForm.amount,
 				account_id: incomeForm.account_id,
+				income_type_id: incomeForm.income_type_id || null,
 				type: "booking" as const,
 				payment_method: "cash",
 				location_id: selectedReservation.location_id,
@@ -89,7 +113,7 @@ const Income = () => {
 	};
 
 	const resetIncomeForm = () => {
-		setIncomeForm({ amount: 0, note: "", account_id: "" });
+		setIncomeForm({ amount: 0, note: "", account_id: "", income_type_id: "" });
 		setSelectedReservation(null);
 	};
 
@@ -179,6 +203,7 @@ const Income = () => {
 							<TableRow>
 								<TableHead>Date</TableHead>
 								<TableHead>Note</TableHead>
+								<TableHead>Type</TableHead>
 								<TableHead>Amount</TableHead>
 								<TableHead>Account</TableHead>
 							</TableRow>
@@ -188,6 +213,7 @@ const Income = () => {
 								<TableRow key={income.id}>
 									<TableCell>{new Date(income.created_at).toLocaleDateString()}</TableCell>
 									<TableCell>{income.note}</TableCell>
+									<TableCell>{income.income_types?.type_name || '-'}</TableCell>
 									<TableCell>LKR {income.amount.toLocaleString()}</TableCell>
 									<TableCell>{income.accounts?.name || '-'}</TableCell>
 								</TableRow>
@@ -225,6 +251,22 @@ const Income = () => {
 						<Input id="note" value={incomeForm.note}
 							onChange={(e) => setIncomeForm({ ...incomeForm, note: e.target.value })}
 							placeholder="Note about this income" required />
+					</div>
+
+					<div>
+						<Label htmlFor="income_type_id">Income Type</Label>
+						<Select value={incomeForm.income_type_id} onValueChange={(value) => setIncomeForm({ ...incomeForm, income_type_id: value })}>
+							<SelectTrigger>
+								<SelectValue placeholder="Select income type" />
+							</SelectTrigger>
+							<SelectContent>
+								{incomeTypes.map((type) => (
+									<SelectItem key={type.id} value={type.id}>
+										{type.type_name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 					</div>
 
 					<div>
