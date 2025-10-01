@@ -39,6 +39,7 @@ export default function PaymentForm() {
 	const [reservation, setReservation] = useState<Reservation | null>(null);
 	const [accounts, setAccounts] = useState<Account[]>([]);
 	const [location, setLocation] = useState<any>(null);
+	const [incomeRecords, setIncomeRecords] = useState<any[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 
@@ -56,6 +57,7 @@ export default function PaymentForm() {
 		if (reservationId) {
 			fetchReservationAndAccounts();
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [reservationId]);
 
 	useEffect(() => {
@@ -80,7 +82,7 @@ export default function PaymentForm() {
 	const fetchReservationAndAccounts = async () => {
 		setLoading(true);
 		try {
-			const [reservationRes, accountsRes] = await Promise.all([
+			const [reservationRes, accountsRes, incomeRes] = await Promise.all([
 				supabase
 					.from("reservations")
 					.select(`
@@ -91,13 +93,20 @@ export default function PaymentForm() {
 					.eq("id", reservationId)
 					.single(),
 				supabase.from("accounts").select("*").order("name"),
+				supabase
+					.from("income")
+					.select("*, income_types(type_name), accounts(name)")
+					.eq("booking_id", reservationId)
+					.order("created_at", { ascending: false }),
 			]);
 
 			if (reservationRes.error) throw reservationRes.error;
 			if (accountsRes.error) throw accountsRes.error;
+			if (incomeRes.error) throw incomeRes.error;
 
 			setReservation(reservationRes.data);
 			setAccounts(accountsRes.data || []);
+			setIncomeRecords(incomeRes.data || []);
 
 			// Fetch location data for SMS
 			if (reservationRes.data?.location_id) {
@@ -370,6 +379,91 @@ export default function PaymentForm() {
 					</div>
 				</CardContent>
 			</Card>
+
+			{/* Traveler Expenses Breakdown */}
+			{incomeRecords.length > 0 && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Traveler Expenses</CardTitle>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<div className="space-y-2">
+							<div className="flex justify-between font-semibold border-b pb-2">
+								<span>Expense Type</span>
+								<span>Amount</span>
+								<span>Status</span>
+							</div>
+							{incomeRecords.map((income) => (
+								<div key={income.id} className="flex justify-between items-center py-2 border-b">
+									<div className="flex-1">
+										<p className="font-medium">
+											{income.income_types?.type_name || income.type}
+										</p>
+										{income.note && (
+											<p className="text-sm text-muted-foreground">{income.note}</p>
+										)}
+										<p className="text-xs text-muted-foreground">
+											{format(new Date(income.created_at), "MMM dd, yyyy")}
+										</p>
+									</div>
+									<div className="flex-1 text-right">
+										<p className="font-semibold">
+											{income.currency} {income.amount.toLocaleString()}
+										</p>
+										{income.accounts && (
+											<p className="text-xs text-muted-foreground">
+												via {income.accounts.name}
+											</p>
+										)}
+									</div>
+									<div className="flex-1 text-right">
+										{income.payment_method === "pending" ? (
+											<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+												Pending
+											</span>
+										) : (
+											<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+												Paid
+											</span>
+										)}
+									</div>
+								</div>
+							))}
+						</div>
+						<div className="pt-4 border-t space-y-2">
+							<div className="flex justify-between text-sm">
+								<span className="text-muted-foreground">Total Expenses:</span>
+								<span className="font-semibold">
+									{reservation.currency}{" "}
+									{incomeRecords
+										.reduce((sum, inc) => sum + Number(inc.amount), 0)
+										.toLocaleString()}
+								</span>
+							</div>
+							<div className="flex justify-between text-sm">
+								<span className="text-muted-foreground">Paid Expenses:</span>
+								<span className="font-semibold text-green-600">
+									{reservation.currency}{" "}
+									{incomeRecords
+										.filter((inc) => inc.payment_method !== "pending")
+										.reduce((sum, inc) => sum + Number(inc.amount), 0)
+										.toLocaleString()}
+								</span>
+							</div>
+							<div className="flex justify-between text-sm">
+								<span className="text-muted-foreground">Pending Expenses:</span>
+								<span className="font-semibold text-yellow-600">
+									{reservation.currency}{" "}
+									{incomeRecords
+										.filter((inc) => inc.payment_method === "pending")
+										.reduce((sum, inc) => sum + Number(inc.amount), 0)
+										.toLocaleString()}
+								</span>
+							</div>
+						</div>
+					</CardContent>
+				</Card>
+			)}
 
 			{/* Payment Form */}
 			<form id="payment-form" onSubmit={handleSubmit}>
