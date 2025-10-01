@@ -265,6 +265,21 @@ export default function PaymentForm() {
 				})
 				.eq("id", reservationId);
 
+			// Update pending income records to reflect the payment
+			// This ensures that pending services/charges are marked as paid
+			const { error: updateIncomeError } = await supabase
+				.from("income")
+				.update({
+					payment_method: formData.payment_method,
+				})
+				.eq("booking_id", reservationId)
+				.eq("payment_method", "pending");
+
+			if (updateIncomeError) {
+				console.error("Failed to update pending income records:", updateIncomeError);
+				// Don't throw error here as payment was successful, just log the issue
+			}
+
 			// Send SMS notification for payment
 			try {
 				const selectedAccount = accounts.find(
