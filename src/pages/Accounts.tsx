@@ -950,7 +950,7 @@ function RecentTransactions({ accounts }: { accounts: Account[] }) {
 		return (
 			<div className="space-y-4">
 				<h3 className="text-lg font-semibold">Recent Transactions</h3>
-				<SectionLoader />
+				<RecentTransactionsSkeleton />
 			</div>
 		);
 	}
@@ -1006,6 +1006,35 @@ function RecentTransactions({ accounts }: { accounts: Account[] }) {
 					</div>
 				))}
 			</div>
+		</div>
+	);
+}
+
+// Recent Transactions Skeleton Component
+function RecentTransactionsSkeleton() {
+	return (
+		<div className="space-y-3">
+			{Array.from({ length: 8 }).map((_, index) => (
+				<div key={index} className="p-4 border border-border rounded-lg">
+					<div className="flex items-center justify-between mb-2">
+						<div className="flex items-center gap-3">
+							<div className="size-4 bg-muted rounded animate-pulse" />
+							<div>
+								<div className="h-4 bg-muted rounded w-48 animate-pulse mb-1" />
+								<div className="h-3 bg-muted rounded w-16 animate-pulse" />
+							</div>
+						</div>
+						<div className="text-right">
+							<div className="h-4 bg-muted rounded w-20 animate-pulse mb-1" />
+							<div className="h-3 bg-muted rounded w-12 animate-pulse" />
+						</div>
+					</div>
+					<div className="flex items-center justify-between">
+						<div className="h-3 bg-muted rounded w-24 animate-pulse" />
+						<div className="h-3 bg-muted rounded w-32 animate-pulse" />
+					</div>
+				</div>
+			))}
 		</div>
 	);
 }
