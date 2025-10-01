@@ -10,116 +10,139 @@ import { AccountBalancesSkeleton } from "./AccountBalancesSkeleton";
 
 type Account = Tables<"accounts">;
 
+interface AccountBalance {
+	id: string;
+	name: string;
+	currency: string;
+	initial_balance: number;
+	current_balance: number;
+	location_access: string[];
+}
+
 interface AccountBalancesProps {
 	selectedLocation: string;
 }
 
 export function AccountBalances({ selectedLocation }: AccountBalancesProps) {
 	const [loading, setLoading] = useState(true);
-	const [accounts, setAccounts] = useState<Account[]>([]);
-	const [accountBalances, setAccountBalances] = useState<
-		Record<string, number>
-	>({});
+	const [accountBalances, setAccountBalances] = useState<AccountBalance[]>([]);
 	const { tenant } = useAuth();
 
-	const calculateAccountBalances = useCallback(async (accountsList: Account[]) => {
-		const balances: Record<string, number> = {};
-
-		for (const account of accountsList) {
-			let balance = account.initial_balance;
-
-			// Add income
-			const { data: income } = await supabase
-				.from("income")
-				.select("amount")
-				.eq("account_id", account.id);
-
-			// Subtract expenses
-			const { data: expenses } = await supabase
-				.from("expenses")
-				.select("amount")
-				.eq("account_id", account.id);
-
-			// Add incoming transfers
-			const { data: incomingTransfers } = await supabase
-				.from("account_transfers")
-				.select("amount, conversion_rate")
-				.eq("to_account_id", account.id);
-
-			// Subtract outgoing transfers
-			const { data: outgoingTransfers } = await supabase
-				.from("account_transfers")
-				.select("amount")
-				.eq("from_account_id", account.id);
-
-			balance += (income || []).reduce((sum, item) => sum + item.amount, 0);
-			balance -= (expenses || []).reduce((sum, item) => sum + item.amount, 0);
-			balance += (incomingTransfers || []).reduce(
-				(sum, item) => sum + item.amount * item.conversion_rate,
-				0,
-			);
-			balance -= (outgoingTransfers || []).reduce(
-				(sum, item) => sum + item.amount,
-				0,
-			);
-
-			balances[account.id] = balance;
+	const fetchAccountBalances = useCallback(async () => {
+		if (!tenant?.id) {
+			setLoading(false);
+			return;
 		}
 
-		setAccountBalances(balances);
-	}, []);
+		try {
+			// Get locations for the tenant first to filter by tenant
+			const { data: tenantLocations } = await supabase
+				.from("locations")
+				.select("id")
+				.eq("tenant_id", tenant.id)
+				.eq("is_active", true);
 
-	useEffect(() => {
-		const fetchAccountData = async () => {
-			if (!tenant?.id) {
+			const tenantLocationIds = tenantLocations?.map((loc) => loc.id) || [];
+
+			if (tenantLocationIds.length === 0) {
+				setAccountBalances([]);
 				setLoading(false);
 				return;
 			}
 
-			try {
-				// Get locations for the tenant first to filter by tenant
-				const { data: tenantLocations } = await supabase
-					.from("locations")
-					.select("id")
-					.eq("tenant_id", tenant.id)
-					.eq("is_active", true);
+			// Optimized single query to get all account balances at once
+			// This replaces the N+1 query problem with efficient joins and aggregations
+			const { data: balanceData, error } = await supabase.rpc('get_account_balances', {
+				p_tenant_id: tenant.id,
+				p_location_ids: tenantLocationIds
+			});
 
-				const tenantLocationIds = tenantLocations?.map((loc) => loc.id) || [];
+			if (error) {
+				// If RPC doesn't exist, fall back to optimized SQL query
+				console.log("RPC not found, using direct SQL query");
+				
+				const { data: directBalanceData, error: directError } = await supabase
+					.from('accounts')
+					.select(`
+						id,
+						name,
+						currency,
+						initial_balance,
+						location_access,
+						account_income:income!account_id(amount),
+						account_expenses:expenses!account_id(amount),
+						incoming_transfers:account_transfers!to_account_id(amount, conversion_rate),
+						outgoing_transfers:account_transfers!from_account_id(amount)
+					`)
+					.eq('tenant_id', tenant.id);
 
-				if (tenantLocationIds.length === 0) {
-					setAccounts([]);
-					setLoading(false);
-					return;
+				if (directError) {
+					throw directError;
 				}
 
-				const { data: accountsData } = await supabase
-					.from("accounts")
-					.select("*");
+				// Process the data to calculate balances
+				const processedBalances = (directBalanceData || [])
+					.filter((account) =>
+						account.location_access.some((locationId) =>
+							tenantLocationIds.includes(locationId)
+						)
+					)
+					.map((account) => {
+						const totalIncome = (account.account_income || []).reduce(
+							(sum: number, item: any) => sum + (item.amount || 0), 
+							0
+						);
+						const totalExpenses = (account.account_expenses || []).reduce(
+							(sum: number, item: any) => sum + (item.amount || 0), 
+							0
+						);
+						const totalIncoming = (account.incoming_transfers || []).reduce(
+							(sum: number, item: any) => sum + ((item.amount || 0) * (item.conversion_rate || 1)), 
+							0
+						);
+						const totalOutgoing = (account.outgoing_transfers || []).reduce(
+							(sum: number, item: any) => sum + (item.amount || 0), 
+							0
+						);
 
-				// Filter accounts to only those that have access to tenant's locations
-				const filteredAccounts = (accountsData || []).filter((account) =>
+						const currentBalance = account.initial_balance + totalIncome - totalExpenses + totalIncoming - totalOutgoing;
+
+						return {
+							id: account.id,
+							name: account.name,
+							currency: account.currency,
+							initial_balance: account.initial_balance,
+							current_balance: currentBalance,
+							location_access: account.location_access
+						};
+					});
+
+				setAccountBalances(processedBalances);
+			} else {
+				// Filter accounts by location access if using RPC
+				const filteredBalances = (balanceData || []).filter((account: AccountBalance) =>
 					account.location_access.some((locationId) =>
-						tenantLocationIds.includes(locationId),
-					),
+						tenantLocationIds.includes(locationId)
+					)
 				);
-
-				setAccounts(filteredAccounts);
-
-				// Calculate account balances
-				await calculateAccountBalances(filteredAccounts);
-			} catch (error) {
-				console.error("Error fetching account data:", error);
-			} finally {
-				setLoading(false);
+				setAccountBalances(filteredBalances);
 			}
-		};
+		} catch (error) {
+			console.error("Error fetching account balances:", error);
+			setAccountBalances([]);
+		} finally {
+			setLoading(false);
+		}
+	}, [tenant?.id]);
 
-		fetchAccountData();
-	}, [tenant?.id, calculateAccountBalances]);
+	useEffect(() => {
+		fetchAccountBalances();
+	}, [fetchAccountBalances]);
 
 	if (loading) {
 		return <AccountBalancesSkeleton />;
 	}
+
 	return (
 		<Card className="bg-card border">
 			<CardHeader>
@@ -129,9 +152,9 @@ export function AccountBalances({ selectedLocation }: AccountBalancesProps) {
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="space-y-3 lg:space-y-4">
-				{accounts.map((account, index) => (
+				{accountBalances.map((account, index) => (
 					<div
-						key={index}
+						key={account.id}
 						className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-border/50"
 					>
 						<div className="min-w-0 flex-1">
@@ -145,7 +168,7 @@ export function AccountBalances({ selectedLocation }: AccountBalancesProps) {
 						<div className="text-right ml-4">
 							<p className="font-bold text-lg">
 								{getCurrencySymbol(account.currency)}
-								{(accountBalances[account.id] || 0).toLocaleString()}
+								{account.current_balance.toLocaleString()}
 							</p>
 							<Badge variant="outline" className="mt-1">
 								{account.currency}
