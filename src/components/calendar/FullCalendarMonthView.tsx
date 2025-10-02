@@ -400,11 +400,11 @@ export function FullCalendarMonthView({
 											)}
 											{isCurrentMonth && hasMoreThanTwo && (
 												<div
-													className="absolute pointer-events-auto cursor-pointer h-8 bg-muted/80 hover:bg-muted transition-colors rounded-md flex items-center justify-center text-xs font-bold text-foreground shadow-sm"
+													className="absolute pointer-events-auto cursor-pointer h-6 bg-muted/80 hover:bg-muted transition-colors rounded-md flex items-center justify-center text-xs font-bold text-foreground shadow-sm"
 													style={{
-														top: `${36 + (2 * 36)}px`, // Position as 3rd line: 36px offset + (2 lanes * 36px spacing)
-														left: '0.25rem',
-														width: 'calc(100% - 0.5rem)',
+														top: `${36 + (2 * 34)}px`, // Position as 3rd line with adjusted spacing: 36px offset + (2 lanes * 34px spacing)
+														left: '0.5rem', // More padding from calendar edge
+														width: 'calc(100% - 1rem)', // Adjust width for increased padding
 														zIndex: 15
 													}}
 													onClick={(e) => {
@@ -437,14 +437,15 @@ export function FullCalendarMonthView({
 											"absolute pointer-events-auto cursor-pointer transition-colors",
 											"text-white text-xs font-medium flex items-center",
 											getStatusColor(reservation.status),
-											"rounded-md truncate shadow-sm h-8",
-											isStart && "pl-2", // Add left padding only for start segments
-											isEnd && "pr-2", // Add right padding only for end segments
+											"rounded-md truncate shadow-sm h-6", // Reduced from h-8 to h-6
+											"bg-[repeating-linear-gradient(45deg,_#e1e1e1_0,_#e1e1e1_1px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed",
+											isStart && "ml-2 pl-2", // Add left margin and padding for start segments
+											isEnd && "mr-2 pr-2", // Add right margin and padding for end segments
 											!isStart && "rounded-l-none",
 											!isEnd && "rounded-r-none"
 										)}
 										style={{
-											top: `${row * 121 + 36 + (lane * 36)}px`, // Reduced spacing: 36px per lane instead of 54px
+											top: `${row * 121 + 36 + (lane * 34)}px`, // Adjusted spacing for h-6: 34px per lane
 											left: `calc(${col * (100/7)}% + ${col > 0 ? '0.125rem' : '0px'})`,
 											width: `calc(${spanDays * (100/7)}% - ${spanDays > 1 ? '0.125rem' : '0px'})`,
 											zIndex: 10 + lane,
