@@ -66,8 +66,8 @@ export function NewReservationDialog({
 		guest_id_number: "",
 		adults: 1,
 		children: 0,
-		check_in_date: new Date(),
-		check_out_date: addDays(new Date(), 1),
+		check_in_date: format(new Date(), "yyyy-MM-dd"),
+		check_out_date: format(addDays(new Date(), 1), "yyyy-MM-dd"),
 		room_rate: 0,
 		total_amount: 0,
 		advance_amount: 0,
@@ -77,10 +77,12 @@ export function NewReservationDialog({
 	});
 
 	// Calculate nights when dates change
-	const nights = Math.ceil(
-		(formData.check_out_date.getTime() - formData.check_in_date.getTime()) /
-			(1000 * 60 * 60 * 24)
-	);
+	const nights = Math.max(1, Math.ceil(
+		formData.check_in_date && formData.check_out_date
+			? (new Date(formData.check_out_date).getTime() - new Date(formData.check_in_date).getTime()) /
+				(1000 * 60 * 60 * 24)
+			: 1
+	));
 
 	// Calculate total amount when room rate or nights change
 	useEffect(() => {
@@ -179,8 +181,8 @@ export function NewReservationDialog({
 				guest_id_number: formData.guest_id_number || null,
 				adults: formData.adults,
 				children: formData.children,
-				check_in_date: format(formData.check_in_date, "yyyy-MM-dd"),
-				check_out_date: format(formData.check_out_date, "yyyy-MM-dd"),
+				check_in_date: formData.check_in_date,
+				check_out_date: formData.check_out_date,
 				nights: nights,
 				room_rate: formData.room_rate,
 				total_amount: formData.total_amount,
@@ -219,8 +221,8 @@ export function NewReservationDialog({
 				guest_id_number: "",
 				adults: 1,
 				children: 0,
-				check_in_date: new Date(),
-				check_out_date: addDays(new Date(), 1),
+				check_in_date: format(new Date(), "yyyy-MM-dd"),
+				check_out_date: format(addDays(new Date(), 1), "yyyy-MM-dd"),
 				room_rate: 0,
 				total_amount: 0,
 				advance_amount: 0,
@@ -424,8 +426,8 @@ export function NewReservationDialog({
 							<div className="space-y-2">
 								<Label>Check-in Date *</Label>
 								<DatePicker
-									value={format(formData.check_in_date, "yyyy-MM-dd")}
-									onChange={(value) => handleInputChange("check_in_date", new Date(value))}
+									value={formData.check_in_date}
+									onChange={(value) => handleInputChange("check_in_date", value)}
 									min={format(new Date(), "yyyy-MM-dd")}
 								/>
 							</div>
@@ -433,9 +435,9 @@ export function NewReservationDialog({
 							<div className="space-y-2">
 								<Label>Check-out Date *</Label>
 								<DatePicker
-									value={format(formData.check_out_date, "yyyy-MM-dd")}
-									onChange={(value) => handleInputChange("check_out_date", new Date(value))}
-									min={format(addDays(formData.check_in_date, 1), "yyyy-MM-dd")}
+									value={formData.check_out_date}
+									onChange={(value) => handleInputChange("check_out_date", value)}
+									min={formData.check_in_date ? format(addDays(new Date(formData.check_in_date), 1), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd")}
 								/>
 							</div>
 						</div>
