@@ -1,13 +1,21 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import {
-	CalendarHeader,
 	CalendarNavigation,
-	GridView,
+	FullCalendarMonthView,
 	QuickBookDialog,
-	TimelineView,
 } from "@/components/calendar";
 import { PermissionRoute } from "@/components/PermissionRoute";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Search, Plus } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { getCurrencySymbol } from "@/utils/currency";
 
@@ -20,10 +28,8 @@ type Reservation = Database["public"]["Tables"]["reservations"]["Row"] & {
 export default function EnhancedCalendar() {
 	const navigate = useNavigate();
 	const [currentDate, setCurrentDate] = useState(new Date());
-	const [viewMode, setViewMode] = useState<"timeline" | "grid">("timeline");
 	const [searchTerm, setSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState("all");
-	const [roomFilter, setRoomFilter] = useState("all");
 	const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 	const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 	const [isQuickBookDialogOpen, setIsQuickBookDialogOpen] = useState(false);
@@ -91,44 +97,68 @@ export default function EnhancedCalendar() {
 	return (
 		<PermissionRoute permission={["access_calendar"]}>
 			<div className="space-y-6">
-				<CalendarHeader
-					viewMode={viewMode}
-					onViewModeChange={setViewMode}
-					searchTerm={searchTerm}
-					onSearchTermChange={setSearchTerm}
-					statusFilter={statusFilter}
-					onStatusFilterChange={setStatusFilter}
-					roomFilter={roomFilter}
-					onRoomFilterChange={setRoomFilter}
-				/>
+				{/* Header */}
+				<div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+					<div>
+						<h1 className="text-2xl font-bold">Calendar</h1>
+						<p className="text-sm text-muted-foreground">
+							Monthly calendar view with reservation details
+						</p>
+					</div>
+					<div className="flex items-center gap-2">
+						<Button
+							onClick={() => navigate("/reservations/new")}
+							className="gap-2"
+						>
+							<Plus className="size-4" />
+							New Reservation
+						</Button>
+					</div>
+				</div>
+
+				{/* Filters */}
+				<div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+					<div className="relative flex-1 max-w-sm">
+						<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground size-4" />
+						<Input
+							placeholder="Search reservations..."
+							value={searchTerm}
+							onChange={(e) => setSearchTerm(e.target.value)}
+							className="pl-10"
+						/>
+					</div>
+					<Select value={statusFilter} onValueChange={setStatusFilter}>
+						<SelectTrigger className="w-full sm:w-48">
+							<SelectValue placeholder="Filter by status" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="all">All Statuses</SelectItem>
+							<SelectItem value="confirmed">Confirmed</SelectItem>
+							<SelectItem value="tentative">Tentative</SelectItem>
+							<SelectItem value="pending">Pending</SelectItem>
+							<SelectItem value="checked_in">Checked In</SelectItem>
+							<SelectItem value="checked_out">Checked Out</SelectItem>
+							<SelectItem value="cancelled">Cancelled</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
 
 				<CalendarNavigation
 					currentDate={currentDate}
 					onDateChange={setCurrentDate}
 				/>
 
-				{viewMode === "timeline" ? (
-					<TimelineView
-						currentDate={currentDate}
-						searchTerm={searchTerm}
-						statusFilter={statusFilter}
-						roomFilter={roomFilter}
-						onBookingClick={handleBookingClick}
-						onQuickBook={handleQuickBook}
-						getStatusColor={getStatusColor}
-						getCurrencySymbol={getCurrencySymbol}
-					/>
-				) : (
-					<GridView
-						currentDate={currentDate}
-						searchTerm={searchTerm}
-						statusFilter={statusFilter}
-						roomFilter={roomFilter}
-						getCurrencySymbol={getCurrencySymbol}
-						getStatusColor={getStatusColor}
-						getStatusBorderColor={getStatusBorderColor}
-					/>
-				)}
+				<FullCalendarMonthView
+					currentDate={currentDate}
+					searchTerm={searchTerm}
+					statusFilter={statusFilter}
+					roomFilter="all"
+					onBookingClick={handleBookingClick}
+					onQuickBook={handleQuickBook}
+					getStatusColor={getStatusColor}
+					getStatusBorderColor={getStatusBorderColor}
+					getCurrencySymbol={getCurrencySymbol}
+				/>
 
 				<QuickBookDialog
 					isOpen={isQuickBookDialogOpen}
