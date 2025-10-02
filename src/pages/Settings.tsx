@@ -1,12 +1,16 @@
 import {
 	ArrowLeft,
+	CheckCircle2,
 	DollarSign,
 	Edit,
 	ExternalLink,
 	MapPin,
+	Phone,
 	Save,
+	Shield,
 	Trash2,
 	User,
+	XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
@@ -110,6 +114,8 @@ export default function Settings() {
 		email: "",
 		phone: "",
 	});
+	const [originalPhone, setOriginalPhone] = useState("");
+	const [showPhoneVerification, setShowPhoneVerification] = useState(false);
 
 	// Location editing state
 	const [isEditingLocation, setIsEditingLocation] = useState(false);
@@ -503,6 +509,7 @@ export default function Settings() {
 				email: profile.email || "",
 				phone: profile.phone || "",
 			});
+			setOriginalPhone(profile.phone || "");
 		}
 	}, [profile]);
 
@@ -512,23 +519,41 @@ export default function Settings() {
 
 	const handleProfileSave = async () => {
 		try {
+			const phoneChanged = profileForm.phone !== originalPhone;
+			const updateData: any = {
+				name: profileForm.name,
+				phone: profileForm.phone,
+			};
+
+			// If phone number changed, reset verification status
+			if (phoneChanged) {
+				updateData.is_phone_verified = false;
+				updateData.verification_code = null;
+				updateData.verification_code_expires = null;
+			}
+
 			const { error } = await supabase
 				.from("profiles")
-				.update({
-					name: profileForm.name,
-					phone: profileForm.phone,
-				})
+				.update(updateData)
 				.eq("id", profile?.id);
 
 			if (error) throw error;
 
 			toast({
 				title: "Success",
-				description: "Profile updated successfully",
+				description: phoneChanged 
+					? "Profile updated successfully. Please verify your new phone number."
+					: "Profile updated successfully",
 			});
 
 			setIsEditingProfile(false);
+			setOriginalPhone(profileForm.phone);
 			refetchProfile();
+
+			// Show phone verification if phone was changed
+			if (phoneChanged && profileForm.phone) {
+				setShowPhoneVerification(true);
+			}
 		} catch (error) {
 			console.error("Error updating profile:", error);
 			toast({
@@ -546,8 +571,22 @@ export default function Settings() {
 				email: profile.email || "",
 				phone: profile.phone || "",
 			});
+			setOriginalPhone(profile.phone || "");
 		}
 		setIsEditingProfile(false);
+	};
+
+	const handlePhoneVerificationClick = () => {
+		setShowPhoneVerification(true);
+	};
+
+	const handlePhoneVerificationSuccess = () => {
+		setShowPhoneVerification(false);
+		refetchProfile();
+		toast({
+			title: "Success",
+			description: "Phone number verified successfully",
+		});
 	};
 
 	// Location management functions
@@ -721,17 +760,50 @@ export default function Settings() {
 										/>
 									</div>
 									<div>
-										<Label htmlFor="profilePhone">Phone</Label>
-										<PhoneInput
-											value={profileForm.phone}
-											defaultCountry="LK"
-											international
-											onChange={(value) =>
-												setProfileForm((prev) => ({ ...prev, phone: value }))
-											}
-											disabled={!isEditingProfile}
-											placeholder="Enter your phone number"
-										/>
+										<Label htmlFor="profilePhone" className="flex items-center gap-2">
+											Phone
+											{profile?.phone && (
+												<div className="flex items-center gap-1">
+													{profile.is_phone_verified ? (
+														<div className="flex items-center gap-1 text-green-600">
+															<CheckCircle2 className="h-4 w-4" />
+															<span className="text-xs">Verified</span>
+														</div>
+													) : (
+														<div className="flex items-center gap-1 text-orange-600">
+															<XCircle className="h-4 w-4" />
+															<span className="text-xs">Not Verified</span>
+														</div>
+													)}
+												</div>
+											)}
+										</Label>
+										<div className="flex gap-2">
+											<div className="flex-1">
+												<PhoneInput
+													value={profileForm.phone}
+													defaultCountry="LK"
+													international
+													onChange={(value) =>
+														setProfileForm((prev) => ({ ...prev, phone: value }))
+													}
+													disabled={!isEditingProfile}
+													placeholder="Enter your phone number"
+												/>
+											</div>
+											{profile?.phone && !profile.is_phone_verified && (
+												<Button
+													onClick={handlePhoneVerificationClick}
+													variant="outline"
+													size="sm"
+													className="flex items-center gap-1 shrink-0"
+													disabled={isEditingProfile}
+												>
+													<Shield className="h-4 w-4" />
+													Verify
+												</Button>
+											)}
+										</div>
 									</div>
 								</div>
 								<div className="flex gap-2">
@@ -763,20 +835,58 @@ export default function Settings() {
 					</Card>
 
 					{/* Phone Verification Section */}
-					<div className="mt-4">
-						<PhoneVerification
-							phone={profile?.phone}
-							isVerified={profile?.is_phone_verified || false}
-							onVerificationSuccess={() => {
-								refetchProfile();
-								toast({
-									title: "Phone verified",
-									description:
-										"Your phone number has been successfully verified",
-								});
-							}}
-						/>
-					</div>
+					{profile?.phone && !profile?.is_phone_verified && (
+						<div className="mt-4">
+							<Card className="border-orange-200 bg-orange-50">
+								<CardContent className="pt-6">
+									<div className="flex items-center gap-3">
+										<div className="p-2 bg-orange-100 rounded-full">
+											<Phone className="h-5 w-5 text-orange-600" />
+										</div>
+										<div className="flex-1">
+											<h3 className="font-semibold text-orange-900">
+												Phone Verification Required
+											</h3>
+											<p className="text-sm text-orange-700">
+												Please verify your phone number to enable SMS notifications and enhanced security.
+											</p>
+										</div>
+										<Button
+											onClick={handlePhoneVerificationClick}
+											variant="outline"
+											className="border-orange-300 text-orange-700 hover:bg-orange-100"
+										>
+											<Shield className="h-4 w-4 mr-2" />
+											Verify Now
+										</Button>
+									</div>
+								</CardContent>
+							</Card>
+						</div>
+					)}
+
+					{/* Phone Verification Dialog */}
+					{showPhoneVerification && (
+						<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+							<div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+								<div className="flex items-center justify-between mb-4">
+									<h2 className="text-lg font-semibold">Verify Phone Number</h2>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => setShowPhoneVerification(false)}
+									>
+										×
+									</Button>
+								</div>
+								<PhoneVerification
+									phone={profile?.phone}
+									isVerified={profile?.is_phone_verified || false}
+									onVerificationSuccess={handlePhoneVerificationSuccess}
+								/>
+							</div>
+						</div>
+					)}
 				</TabsContent>
 
 				<TabsContent value="form-fields">
