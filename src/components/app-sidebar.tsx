@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { useLocation } from "react-router";
+import { useTranslation } from "react-i18next";
 import { AppSidebarSkeleton } from "@/components/AppSidebarSkeleton";
 import { NavMain } from "@/components/nav-main";
 import { NavProjects } from "@/components/nav-projects";
@@ -61,6 +62,7 @@ export function AppSidebar({
 	const { profile } = useProfile();
 	const { hasAnyPermission, permissions, loading } = usePermissions();
 	const location = useLocation();
+	const { t } = useTranslation();
 
 	// Handle location change with permission check
 	const handleLocationChange = React.useCallback(
@@ -83,7 +85,7 @@ export function AppSidebar({
 		// Core features
 		if (hasAnyPermission(["access_dashboard"])) {
 			items.push({
-				title: "Dashboard",
+				title: t('navigation.dashboard'),
 				url: "/dashboard",
 				icon: Home,
 				isActive: location.pathname === "/dashboard",
@@ -92,7 +94,7 @@ export function AppSidebar({
 
 		if (hasAnyPermission(["access_calendar"])) {
 			items.push({
-				title: "Calendar",
+				title: t('navigation.calendar'),
 				url: "/calendar",
 				icon: Calendar,
 				isActive: location.pathname === "/calendar",
@@ -102,7 +104,7 @@ export function AppSidebar({
 		// Reservations/Bookings
 		if (hasAnyPermission(["access_bookings"])) {
 			items.push({
-				title: "Reservations",
+				title: t('navigation.reservations'),
 				url: "/reservations",
 				icon: Building,
 				isActive:
@@ -114,7 +116,7 @@ export function AppSidebar({
 		// Income/Payments
 		if (hasAnyPermission(["access_income"])) {
 			items.push({
-				title: "Income",
+				title: t('navigation.income'),
 				url: "/income",
 				icon: DollarSign,
 				isActive: location.pathname === "/income",
@@ -124,7 +126,7 @@ export function AppSidebar({
 		// Expenses
 		if (hasAnyPermission(["access_expenses"])) {
 			items.push({
-				title: "Expenses",
+				title: t('navigation.expense'),
 				url: "/expense",
 				icon: CreditCard,
 				isActive: location.pathname === "/expense",
@@ -134,7 +136,7 @@ export function AppSidebar({
 		// Accounts
 		if (hasAnyPermission(["access_accounts"])) {
 			items.push({
-				title: "Accounts",
+				title: t('navigation.accounts'),
 				url: "/accounts",
 				icon: Building2,
 				isActive: location.pathname === "/accounts",
@@ -143,7 +145,7 @@ export function AppSidebar({
 
 		if (hasAnyPermission(["access_booking_channels"])) {
 			items.push({
-				title: "Booking Channels",
+				title: t('navigation.bookingChannels'),
 				url: "/booking-channels",
 				icon: Wifi,
 				isActive: location.pathname === "/booking-channels",
@@ -153,17 +155,17 @@ export function AppSidebar({
 		// Master Files with sub-items
 		if (hasAnyPermission(["access_master_files"])) {
 			items.push({
-				title: "Master Files",
+				title: t('navigation.masterFiles'),
 				url: "/master-files",
 				icon: FolderOpen,
 				isActive: location.pathname === "/master-files",
 				items: [
-					{ title: "Hotel Locations", url: "/master-files?tab=locations" },
-					{ title: "Rooms", url: "/master-files?tab=rooms" },
-					{ title: "Tour Guides", url: "/master-files?tab=guides" },
-					{ title: "Travel Agents", url: "/master-files?tab=agents" },
+					{ title: t('navigation.hotelLocations'), url: "/master-files?tab=locations" },
+					{ title: t('navigation.rooms'), url: "/master-files?tab=rooms" },
+					{ title: t('navigation.tourGuides'), url: "/master-files?tab=guides" },
+					{ title: t('navigation.travelAgents'), url: "/master-files?tab=agents" },
 					{
-						title: "Commission Settings",
+						title: t('navigation.commissionSettings'),
 						url: "/master-files?tab=commissions",
 					},
 				],
@@ -173,7 +175,7 @@ export function AppSidebar({
 		// Reports with sub-items
 		if (hasAnyPermission(["access_reports"])) {
 			items.push({
-				title: "Reports",
+				title: t('navigation.reports'),
 				url: "/reports?tab=comprehensive",
 				icon: BarChart3,
 				isActive: location.pathname === "/reports",
@@ -182,7 +184,7 @@ export function AppSidebar({
 
 		if (hasAnyPermission(["access_users"])) {
 			items.push({
-				title: "Users",
+				title: t('navigation.users'),
 				url: "/users",
 				icon: Users,
 				isActive: location.pathname === "/users",
@@ -191,7 +193,7 @@ export function AppSidebar({
 
 		if (hasAnyPermission(["access_settings"])) {
 			items.push({
-				title: "Settings",
+				title: t('navigation.settings'),
 				url: "/settings",
 				icon: Settings,
 				isActive: location.pathname === "/settings",
@@ -200,7 +202,7 @@ export function AppSidebar({
 
 		// Billing - always show for SaaS tenants
 		items.push({
-			title: "Billing & Subscription",
+			title: t('navigation.billingSubscription'),
 			url: "/billing",
 			icon: CreditCard,
 			isActive: location.pathname.startsWith("/billing"),
@@ -215,7 +217,7 @@ export function AppSidebar({
 
 		if (hasAnyPermission(["access_bookings"])) {
 			projects.push({
-				name: "New Reservation",
+				name: t('navigation.newReservation'),
 				url: "/reservations/new",
 				icon: PlusCircle,
 			});
@@ -223,7 +225,7 @@ export function AppSidebar({
 
 		if (hasAnyPermission(["access_income"])) {
 			projects.push({
-				name: "New Payment",
+				name: t('navigation.newPayment'),
 				url: "/payments/new",
 				icon: DollarSign,
 			});
@@ -231,7 +233,7 @@ export function AppSidebar({
 
 		if (hasAnyPermission(["access_expenses"])) {
 			projects.push({
-				name: "Add Expense",
+				name: t('navigation.addExpense'),
 				url: "/expense",
 				icon: MinusCircle,
 			});
@@ -240,7 +242,7 @@ export function AppSidebar({
 		// Phone verification quick action - show for all users
 		if (profile && !profile.is_phone_verified) {
 			projects.push({
-				name: "Verify Phone",
+				name: t('navigation.verifyPhone'),
 				url: "/settings?tab=profile",
 				icon: Phone,
 			});
