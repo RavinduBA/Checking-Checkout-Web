@@ -169,15 +169,6 @@ export function AppSidebar({
 	const getProjectItems = () => {
 		const projects = [];
 
-		if (hasAnyPermission(["access_bookings"])) {
-			projects.push({
-				name: t("navigation.newReservation"),
-				url: "/reservations/new",
-				icon: PlusCircle,
-				isActive: location.pathname === "/reservations/new",
-			});
-		}
-
 		if (hasAnyPermission(["access_expenses"])) {
 			projects.push({
 				name: t("navigation.addExpense"),

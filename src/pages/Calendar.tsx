@@ -28,6 +28,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { NewReservationDialog } from "@/components/NewReservationDialog";
 import { SectionLoader } from "@/components/ui/loading-spinner";
 import {
 	Select,
@@ -107,6 +108,7 @@ export default function Calendar() {
 		useState<ExternalBooking | null>(null);
 	const [showBookingDialog, setShowBookingDialog] = useState(false);
 	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+	const [isNewReservationDialogOpen, setIsNewReservationDialogOpen] = useState(false);
 
 	const { selectedLocation } = useLocationContext();
 	const locale = i18n.language || "en";
@@ -686,11 +688,7 @@ export default function Calendar() {
 														) : (
 															<div
 																className="text-center py-3 text-muted-foreground cursor-pointer hover:bg-muted/50 rounded border-2 border-dashed"
-																onClick={() =>
-																	navigate(
-																		`/reservations/new?room=${room.id}&date=${currentDate.toISOString().split("T")[0]}`,
-																	)
-																}
+																onClick={() => setIsNewReservationDialogOpen(true)}
 															>
 																<Plus className="size-5 mx-auto mb-1" />
 																<p className="text-xs">
@@ -1014,11 +1012,7 @@ export default function Calendar() {
 																		!externalReservation && (
 																			<div
 																				className="h-full hover:bg-muted/50 cursor-pointer rounded"
-																				onClick={() =>
-																					navigate(
-																						`/reservations/new?room=${room.id}&date=${date.toISOString().split("T")[0]}`,
-																					)
-																				}
+																				onClick={() => setIsNewReservationDialogOpen(true)}
 																			/>
 																		)}
 																</div>
@@ -1402,6 +1396,16 @@ export default function Calendar() {
 						)}
 					</DialogContent>
 				</Dialog>
+
+				{/* New Reservation Dialog */}
+				<NewReservationDialog
+					isOpen={isNewReservationDialogOpen}
+					onClose={() => setIsNewReservationDialogOpen(false)}
+					onReservationCreated={() => {
+						setIsNewReservationDialogOpen(false);
+						refetch(); // Refresh calendar data
+					}}
+				/>
 			</div>
 		</div>
 	);

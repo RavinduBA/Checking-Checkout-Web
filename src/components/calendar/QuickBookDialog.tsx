@@ -1,5 +1,4 @@
 import { format } from "date-fns";
-import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -8,6 +7,7 @@ type Room = Database["public"]["Tables"]["rooms"]["Row"];
 interface QuickBookDialogProps {
 	isOpen: boolean;
 	onClose: () => void;
+	onBook?: () => void;
 	selectedRoom: Room | null;
 	selectedDate: Date | null;
 }
@@ -15,18 +15,17 @@ interface QuickBookDialogProps {
 export function QuickBookDialog({
 	isOpen,
 	onClose,
+	onBook,
 	selectedRoom,
 	selectedDate,
 }: QuickBookDialogProps) {
-	const navigate = useNavigate();
-
 	if (!isOpen || !selectedRoom || !selectedDate) return null;
 
 	const handleBookRoom = () => {
-		const checkInDate = format(selectedDate, "yyyy-MM-dd");
-		navigate(
-			`/reservations/new?room=${selectedRoom.id}&checkIn=${checkInDate}`,
-		);
+		if (onBook) {
+			onBook();
+		}
+		onClose();
 	};
 
 	return (

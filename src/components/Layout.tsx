@@ -43,8 +43,6 @@ export function Layout() {
 				return "Calendar";
 			case "/reservations":
 				return "Reservations";
-			case "/reservations/new":
-				return "New Reservation";
 			case "/reservations/compact":
 				return "Quick Booking";
 			case "/income":

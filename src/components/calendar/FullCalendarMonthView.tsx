@@ -30,6 +30,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { NewReservationDialog } from "@/components/NewReservationDialog";
 
 type Room = Database["public"]["Tables"]["rooms"]["Row"];
 type Reservation = Database["public"]["Tables"]["reservations"]["Row"] & {
@@ -66,6 +67,7 @@ export function FullCalendarMonthView({
 	const { tenant } = useTenant();
 	const [viewMoreDate, setViewMoreDate] = useState<Date | null>(null);
 	const [viewMoreReservations, setViewMoreReservations] = useState<Reservation[]>([]);
+	const [isNewReservationDialogOpen, setIsNewReservationDialogOpen] = useState(false);
 
 	// Get calendar dates (full weeks)
 	const monthStart = startOfMonth(currentDate);
@@ -388,7 +390,7 @@ export function FullCalendarMonthView({
 										)}
 										onClick={() => {
 											if (isCurrentMonth && dayReservations.length === 0 && rooms.length > 0) {
-												navigate(`/reservations/new?date=${format(date, "yyyy-MM-dd")}`);
+												setIsNewReservationDialogOpen(true);
 											}
 										}}
 									>
@@ -409,7 +411,7 @@ export function FullCalendarMonthView({
 													className="h-6 w-6 p-0 md:opacity-0 hover:opacity-100 transition-opacity"
 													onClick={(e) => {
 														e.stopPropagation();
-														navigate(`/reservations/new?date=${format(date, "yyyy-MM-dd")}`);
+														setIsNewReservationDialogOpen(true);
 													}}
 												>
 													<Plus className="h-3 w-3" />
@@ -567,6 +569,16 @@ export function FullCalendarMonthView({
 					</div>
 				</DialogContent>
 			</Dialog>
+
+			{/* New Reservation Dialog */}
+			<NewReservationDialog
+				isOpen={isNewReservationDialogOpen}
+				onClose={() => setIsNewReservationDialogOpen(false)}
+				onReservationCreated={() => {
+					setIsNewReservationDialogOpen(false);
+					// Refresh reservations handled by React Query
+				}}
+			/>
 		</Card>
 	);
 }

@@ -32,8 +32,6 @@ import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
 import PaymentForm from "./pages/PaymentForm";
 import ReservationDetails from "./pages/ReservationDetails";
-import ReservationForm from "./pages/ReservationForm";
-import ReservationFormCompact from "./pages/ReservationFormCompact";
 import Reservations from "./pages/Reservations";
 import ResetPassword from "./pages/ResetPassword";
 import RoomManagement from "./pages/RoomManagement";
@@ -245,40 +243,6 @@ const App = () => (
 										element={
 											<PermissionRoute permission={["access_bookings"]}>
 												<Reservations />
-											</PermissionRoute>
-										}
-									/>
-								</Route>
-								<Route
-									path="/reservations/new"
-									element={
-										<ProtectedRoute>
-											<Layout />
-										</ProtectedRoute>
-									}
-								>
-									<Route
-										index
-										element={
-											<PermissionRoute permission={["access_bookings"]}>
-												<ReservationForm />
-											</PermissionRoute>
-										}
-									/>
-								</Route>
-								<Route
-									path="/reservations/edit/:id"
-									element={
-										<ProtectedRoute>
-											<Layout />
-										</ProtectedRoute>
-									}
-								>
-									<Route
-										index
-										element={
-											<PermissionRoute permission={["access_bookings"]}>
-												<ReservationFormCompact />
 											</PermissionRoute>
 										}
 									/>

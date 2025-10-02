@@ -24,6 +24,7 @@ import { useNavigate } from "react-router";
 import { EnhancedCalendarSkeleton } from "@/components/EnhancedCalendarSkeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { NewReservationDialog } from "@/components/NewReservationDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SectionLoader } from "@/components/ui/loading-spinner";
 import {
@@ -60,6 +61,7 @@ export default function EnhancedCalendar() {
 	const [isQuickBookDialogOpen, setIsQuickBookDialogOpen] = useState(false);
 	const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 	const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+	const [isNewReservationDialogOpen, setIsNewReservationDialogOpen] = useState(false);
 
 	useEffect(() => {
 		fetchData();
@@ -255,7 +257,7 @@ export default function EnhancedCalendar() {
 
 				<div className="flex items-center gap-2">
 					<Button
-						onClick={() => navigate("/reservations/new")}
+						onClick={() => setIsNewReservationDialogOpen(true)}
 						className="gap-2"
 					>
 						<Plus className="size-4" />
@@ -560,7 +562,7 @@ export default function EnhancedCalendar() {
 								No reservations for the selected location and time period.
 							</p>
 							<Button
-								onClick={() => navigate("/reservations/new")}
+								onClick={() => setIsNewReservationDialogOpen(true)}
 								className="gap-2"
 							>
 								<Plus className="size-4" />
@@ -707,10 +709,8 @@ export default function EnhancedCalendar() {
 							</Button>
 							<Button
 								onClick={() => {
-									const checkInDate = format(selectedDate, "yyyy-MM-dd");
-									navigate(
-										`/reservations/new?room=${selectedRoom.id}&checkIn=${checkInDate}`,
-									);
+									setIsQuickBookDialogOpen(false);
+							setIsNewReservationDialogOpen(true);
 								}}
 								className="flex-1"
 							>
@@ -720,6 +720,16 @@ export default function EnhancedCalendar() {
 					</div>
 				</div>
 			)}
+
+			{/* New Reservation Dialog */}
+			<NewReservationDialog
+				isOpen={isNewReservationDialogOpen}
+				onClose={() => setIsNewReservationDialogOpen(false)}
+				onReservationCreated={() => {
+					setIsNewReservationDialogOpen(false);
+					fetchData(); // Refresh reservations
+				}}
+			/>
 		</div>
 	);
 }

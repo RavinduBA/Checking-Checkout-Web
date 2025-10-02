@@ -7,6 +7,7 @@ import {
 	FullCalendarMonthView,
 	QuickBookDialog,
 } from "@/components/calendar";
+import { NewReservationDialog } from "@/components/NewReservationDialog";
 import { PermissionRoute } from "@/components/PermissionRoute";
 import { Input } from "@/components/ui/input";
 import {
@@ -37,6 +38,7 @@ export default function EnhancedCalendar() {
 	const [selectedBooking, setSelectedBooking] = useState<Reservation | null>(null);
 	const [isQuickBookDialogOpen, setIsQuickBookDialogOpen] = useState(false);
 	const [isBookingDetailsOpen, setIsBookingDetailsOpen] = useState(false);
+	const [isNewReservationDialogOpen, setIsNewReservationDialogOpen] = useState(false);
 
 	// Status color helpers
 	const getStatusColor = (status: string) => {
@@ -151,6 +153,7 @@ export default function EnhancedCalendar() {
 				<QuickBookDialog
 					isOpen={isQuickBookDialogOpen}
 					onClose={closeQuickBookDialog}
+					onBook={() => setIsNewReservationDialogOpen(true)}
 					selectedRoom={selectedRoom}
 					selectedDate={selectedDate}
 				/>
@@ -162,6 +165,15 @@ export default function EnhancedCalendar() {
 					getStatusColor={getStatusColor}
 					getStatusBorderColor={getStatusBorderColor}
 					getCurrencySymbol={getCurrencySymbol}
+				/>
+
+				<NewReservationDialog
+					isOpen={isNewReservationDialogOpen}
+					onClose={() => setIsNewReservationDialogOpen(false)}
+					onReservationCreated={() => {
+						setIsNewReservationDialogOpen(false);
+						// Refresh handled by React Query
+					}}
 				/>
 			</div>
 		</PermissionRoute>
