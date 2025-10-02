@@ -1,5 +1,5 @@
 import { format, addDays } from "date-fns";
-import { Calendar, MapPin, User, Users, Save, X } from "lucide-react";
+import { Calendar, Save, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { CurrencySelector } from "@/components/CurrencySelector";
 import { PricingDisplay } from "@/components/PricingDisplay";
@@ -260,7 +260,7 @@ export function NewReservationDialog({
 					</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-6 overflow-y-auto">
+				<form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto">
 					{/* Room Selection */}
 					<div className="space-y-2">
 						<Label htmlFor="room">Room *</Label>
@@ -284,10 +284,6 @@ export function NewReservationDialog({
 
 					{/* Guest Information */}
 					<div className="space-y-4">
-						<div className="flex items-center gap-2">
-							<h3 className="text-lg font-semibold">Guest Information</h3>
-						</div>
-
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div className="md:col-span-2 space-y-2">
 								<Label htmlFor="guest_name">Guest Name *</Label>
@@ -406,9 +402,9 @@ export function NewReservationDialog({
 					</div>
 
 					{/* Stay Details */}
-					<div className="space-y-4">
+					<div className="space-y-2">
 						<div className="flex items-center gap-2">
-							<h3 className="text-lg font-semibold">Stay Details</h3>
+							<h3 className="text-sm font-semibold">Stay Details</h3>
 						</div>
 
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -435,6 +431,7 @@ export function NewReservationDialog({
 							}}
 							minDate={new Date()}
 							showNights={true}
+							roomId={formData.room_id || undefined}
 						/>
 
 						{fieldPreferences?.show_special_requests !== false && (

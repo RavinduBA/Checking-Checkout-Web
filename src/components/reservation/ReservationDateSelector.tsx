@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { format, addDays, isBefore, isAfter, isToday } from "date-fns";
 import { Calendar as CalendarIcon, ArrowRight } from "lucide-react";
+import { useRoomAvailability } from "@/hooks/useRoomAvailability";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +22,8 @@ interface ReservationDateSelectorProps {
 	minDate?: Date;
 	maxDate?: Date;
 	showNights?: boolean;
+	roomId?: string; // Room ID to check availability for
+	excludeReservationId?: string; // Exclude this reservation when checking (for editing)
 }
 
 export function ReservationDateSelector({
@@ -32,7 +35,14 @@ export function ReservationDateSelector({
 	minDate = new Date(),
 	maxDate,
 	showNights = true,
+	roomId,
+	excludeReservationId,
 }: ReservationDateSelectorProps) {
+	// Check room availability
+	const { isDateAvailable, isLoading: availabilityLoading } = useRoomAvailability({
+		roomId,
+		excludeReservationId,
+	});
 	const [checkIn, setCheckIn] = useState<Date | undefined>(
 		checkInDate ? new Date(checkInDate) : undefined
 	);
@@ -104,6 +114,12 @@ export function ReservationDateSelector({
 	const isCheckInDisabled = (date: Date) => {
 		if (minDate && isBefore(date, minDate)) return true;
 		if (maxDate && isAfter(date, maxDate)) return true;
+		
+		// Check room availability if roomId is provided
+		if (roomId && !availabilityLoading) {
+			return !isDateAvailable(date, roomId);
+		}
+		
 		return false;
 	};
 
@@ -111,6 +127,21 @@ export function ReservationDateSelector({
 		if (minDate && isBefore(date, minDate)) return true;
 		if (maxDate && isAfter(date, maxDate)) return true;
 		if (checkIn && (isBefore(date, checkIn) || format(date, "yyyy-MM-dd") === format(checkIn, "yyyy-MM-dd"))) return true;
+		
+		// Check room availability if roomId is provided
+		if (roomId && !availabilityLoading && checkIn) {
+			// For check-out, we need to check all dates from check-in to check-out (exclusive of check-out)
+			const currentDate = new Date(checkIn);
+			currentDate.setDate(currentDate.getDate() + 1); // Start from day after check-in
+			
+			while (isBefore(currentDate, date)) {
+				if (!isDateAvailable(currentDate, roomId)) {
+					return true; // Disable if any date in range is unavailable
+				}
+				currentDate.setDate(currentDate.getDate() + 1);
+			}
+		}
+		
 		return false;
 	};
 
@@ -123,13 +154,7 @@ export function ReservationDateSelector({
 
 	return (
 		<Card className={cn("w-full", className)}>
-			<CardHeader className="pb-4">
-				<CardTitle className="flex items-center gap-2 text-lg">
-					<CalendarIcon className="h-5 w-5" />
-					Check-in & Check-out Dates
-				</CardTitle>
-			</CardHeader>
-			<CardContent className="space-y-4">
+			<CardContent className="space-y-4 py-4">
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					{/* Check-in Date */}
 					<div className="space-y-2">

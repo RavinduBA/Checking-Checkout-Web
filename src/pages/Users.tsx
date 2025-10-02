@@ -414,7 +414,7 @@ export default function Users() {
 	return (
 		<div className="w-full pb-20 sm:pb-8 px-4 sm:px-6 mx-auto space-y-6 animate-fade-in ">
 			{/* Header */}
-			<div className="flex justify-between items-center">
+			<div className="flex justify-between items-center pt-8">
 				<h1 className="text-2xl font-bold">Users</h1>
 				{hasPermission("access_users") && (
 					<Button onClick={() => setShowInviteDialog(true)}>
