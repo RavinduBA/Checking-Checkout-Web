@@ -162,6 +162,7 @@ export function ReservationDateSelector({
 						<Popover open={isCheckInOpen} onOpenChange={setIsCheckInOpen}>
 							<PopoverTrigger asChild>
 								<Button
+									type="button"
 									variant="outline"
 									className={cn(
 										"w-full justify-start text-left font-normal",
@@ -191,6 +192,7 @@ export function ReservationDateSelector({
 						<Popover open={isCheckOutOpen} onOpenChange={setIsCheckOutOpen}>
 							<PopoverTrigger asChild>
 								<Button
+									type="button"
 									variant="outline"
 									className={cn(
 										"w-full justify-start text-left font-normal",
@@ -250,6 +252,7 @@ export function ReservationDateSelector({
 				{/* Quick Selectors */}
 				<div className="flex gap-2">
 					<Button
+						type="button"
 						variant="outline"
 						size="sm"
 						onClick={() => {
@@ -264,6 +267,7 @@ export function ReservationDateSelector({
 						Today - Tomorrow
 					</Button>
 					<Button
+						type="button"
 						variant="outline"
 						size="sm"
 						onClick={() => {
@@ -278,6 +282,7 @@ export function ReservationDateSelector({
 						1 Week
 					</Button>
 					<Button
+						type="button"
 						variant="outline"
 						size="sm"
 						onClick={() => {

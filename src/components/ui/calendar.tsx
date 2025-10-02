@@ -152,6 +152,22 @@ function Calendar({
 						<ChevronDownIcon className={cn("size-4", className)} {...props} />
 					);
 				},
+				MonthsDropdown: ({ ...props }) => {
+					return <select {...props} />;
+				},
+				YearsDropdown: ({ ...props }) => {
+					return <select {...props} />;
+				},
+				PreviousMonthButton: ({ className, ...props }) => {
+					return (
+						<button type="button" className={className} {...props} />
+					);
+				},
+				NextMonthButton: ({ className, ...props }) => {
+					return (
+						<button type="button" className={className} {...props} />
+					);
+				},
 				DayButton: CalendarDayButton,
 				WeekNumber: ({ children, ...props }) => {
 					return (
@@ -185,6 +201,7 @@ function CalendarDayButton({
 	return (
 		<Button
 			ref={ref}
+			type="button"
 			variant="ghost"
 			size="icon"
 			data-day={day.date.toLocaleDateString()}
