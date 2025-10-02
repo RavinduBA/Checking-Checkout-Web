@@ -1,5 +1,39 @@
-{
-  "dashboard": {
+{  "dashboard": {
+       "account": "Compte"
+    },
+    "upcomingBookings": {
+      "title": "Réservations à Venir",
+      "viewAll": "Voir Tout",
+      "to": "à",
+      "noBookings": "Aucune réservation à venir"
+    }
+  },
+  "navigation": {   "welcome": "Bon retour !",
+      "subtitle": "Tableau de Bord de Gestion Hôtelière",
+      "addIncome": "Ajouter un Revenu",
+      "addExpense": "Ajouter une Dépense",
+      "monthFilter": "Filtre de Mois"
+    },
+    "summaryCards": {
+      "todayIncome": "Revenus d'Aujourd'hui",
+      "monthlyIncome": "Revenus Mensuels",
+      "todayExpenses": "Dépenses d'Aujourd'hui",
+      "monthlyExpenses": "Dépenses Mensuelles",
+      "weeklyProfit": "Bénéfice Hebdomadaire",
+      "monthlyProfit": "Bénéfice Mensuel",
+      "margin": "marge"
+    },
+    "accountBalances": {
+      "title": "Soldes de Compte",
+      "account": "Compte"
+    },
+    "upcomingBookings": {
+      "title": "Réservations à Venir",
+      "viewAll": "Voir Tout",
+      "to": "à",
+      "noBookings": "Aucune réservation à venir"
+    }
+  },oard": {
     "header": {
       "welcome": "Bon retour !",
       "subtitle": "Tableau de Bord de Gestion Hôtelière",

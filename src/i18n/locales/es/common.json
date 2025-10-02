@@ -1,11 +1,29 @@
-{
-  "dashboard": {
+{  "dashboard": {
     "header": {
-      "welcome": "¡Bienvenido de vuelta!",
+      "welcome": "¡Bienvenido de nuevo!",
       "subtitle": "Panel de Gestión Hotelera",
-      "addIncome": "Agregar Ingresos",
-      "addExpense": "Agregar Gastos",
+      "addIncome": "Agregar Ingreso",
+      "addExpense": "Agregar Gasto",
       "monthFilter": "Filtro de Mes"
+    },
+    "summaryCards": {
+      "todayIncome": "Ingresos de Hoy",
+      "monthlyIncome": "Ingresos Mensuales",
+      "todayExpenses": "Gastos de Hoy",
+      "monthlyExpenses": "Gastos Mensuales",
+      "weeklyProfit": "Beneficio Semanal",
+      "monthlyProfit": "Beneficio Mensual",
+      "margin": "margen"
+    },
+    "accountBalances": {
+      "title": "Saldos de Cuenta",
+      "account": "Cuenta"
+    },
+    "upcomingBookings": {
+      "title": "Reservas Próximas",
+      "viewAll": "Ver Todo",
+      "to": "a",
+      "noBookings": "No hay reservas próximas"
     }
   },
   "navigation": {

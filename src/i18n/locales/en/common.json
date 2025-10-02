@@ -6,6 +6,25 @@
       "addIncome": "Add Income",
       "addExpense": "Add Expense",
       "monthFilter": "Month Filter"
+    },
+    "summaryCards": {
+      "todayIncome": "Today's Income",
+      "monthlyIncome": "Monthly Income",
+      "todayExpenses": "Today's Expenses",
+      "monthlyExpenses": "Monthly Expenses",
+      "weeklyProfit": "Weekly Profit",
+      "monthlyProfit": "Monthly Profit",
+      "margin": "margin"
+    },
+    "accountBalances": {
+      "title": "Account Balances",
+      "account": "Account"
+    },
+    "upcomingBookings": {
+      "title": "Upcoming Bookings",
+      "viewAll": "View All",
+      "to": "to",
+      "noBookings": "No upcoming bookings"
     }
   },
   "navigation": {

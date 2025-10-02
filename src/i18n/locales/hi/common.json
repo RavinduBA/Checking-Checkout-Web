@@ -1,5 +1,39 @@
-{
-  "dashboard": {
+{  "dashboard": {
+       "account": "खाता"
+    },
+    "upcomingBookings": {
+      "title": "आगामी बुकिंग",
+      "viewAll": "सभी देखें",
+      "to": "से",
+      "noBookings": "कोई आगामी बुकिंग नहीं"
+    }
+  },
+  "navigation": {   "welcome": "वापसी पर स्वागत है!",
+      "subtitle": "होटल प्रबंधन डैशबोर्ड",
+      "addIncome": "आय जोड़ें",
+      "addExpense": "व्यय जोड़ें",
+      "monthFilter": "महीना फ़िल्टर"
+    },
+    "summaryCards": {
+      "todayIncome": "आज की आय",
+      "monthlyIncome": "मासिक आय",
+      "todayExpenses": "आज के व्यय",
+      "monthlyExpenses": "मासिक व्यय",
+      "weeklyProfit": "साप्ताहिक लाभ",
+      "monthlyProfit": "मासिक लाभ",
+      "margin": "मार्जिन"
+    },
+    "accountBalances": {
+      "title": "खाता शेष",
+      "account": "खाता"
+    },
+    "upcomingBookings": {
+      "title": "आगामी बुकिंग",
+      "viewAll": "सभी देखें",
+      "to": "से",
+      "noBookings": "कोई आगामी बुकिंग नहीं"
+    }
+  },oard": {
     "header": {
       "welcome": "वापस स्वागत है!",
       "subtitle": "होटल प्रबंधन डैशबोर्ड",

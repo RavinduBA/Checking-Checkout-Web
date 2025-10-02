@@ -1,5 +1,39 @@
-{
-  "dashboard": {
+{  "dashboard": {
+       "account": "Conta"
+    },
+    "upcomingBookings": {
+      "title": "Reservas Próximas",
+      "viewAll": "Ver Tudo",
+      "to": "até",
+      "noBookings": "Nenhuma reserva próxima"
+    }
+  },
+  "navigation": {   "welcome": "Bem-vindo de volta!",
+      "subtitle": "Painel de Gestão Hoteleira",
+      "addIncome": "Adicionar Receita",
+      "addExpense": "Adicionar Despesa",
+      "monthFilter": "Filtro de Mês"
+    },
+    "summaryCards": {
+      "todayIncome": "Receita de Hoje",
+      "monthlyIncome": "Receita Mensal",
+      "todayExpenses": "Despesas de Hoje",
+      "monthlyExpenses": "Despesas Mensais",
+      "weeklyProfit": "Lucro Semanal",
+      "monthlyProfit": "Lucro Mensal",
+      "margin": "margem"
+    },
+    "accountBalances": {
+      "title": "Saldos de Conta",
+      "account": "Conta"
+    },
+    "upcomingBookings": {
+      "title": "Reservas Próximas",
+      "viewAll": "Ver Tudo",
+      "to": "até",
+      "noBookings": "Nenhuma reserva próxima"
+    }
+  },oard": {
     "header": {
       "welcome": "Bem-vindo de volta!",
       "subtitle": "Painel de Gestão Hoteleira",

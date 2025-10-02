@@ -1,5 +1,39 @@
-{
-  "dashboard": {
+{  "dashboard": {
+       "account": "Konto"
+    },
+    "upcomingBookings": {
+      "title": "Bevorstehende Buchungen",
+      "viewAll": "Alle anzeigen",
+      "to": "bis",
+      "noBookings": "Keine bevorstehenden Buchungen"
+    }
+  },
+  "navigation": {   "welcome": "Willkommen zurück!",
+      "subtitle": "Hotel-Management-Dashboard",
+      "addIncome": "Einnahmen hinzufügen",
+      "addExpense": "Ausgaben hinzufügen",
+      "monthFilter": "Monatsfilter"
+    },
+    "summaryCards": {
+      "todayIncome": "Heutige Einnahmen",
+      "monthlyIncome": "Monatliche Einnahmen",
+      "todayExpenses": "Heutige Ausgaben",
+      "monthlyExpenses": "Monatliche Ausgaben",
+      "weeklyProfit": "Wöchentlicher Gewinn",
+      "monthlyProfit": "Monatlicher Gewinn",
+      "margin": "Marge"
+    },
+    "accountBalances": {
+      "title": "Kontostände",
+      "account": "Konto"
+    },
+    "upcomingBookings": {
+      "title": "Bevorstehende Buchungen",
+      "viewAll": "Alle anzeigen",
+      "to": "bis",
+      "noBookings": "Keine bevorstehenden Buchungen"
+    }
+  },oard": {
     "header": {
       "welcome": "Willkommen zurück!",
       "subtitle": "Hotel-Management-Dashboard",

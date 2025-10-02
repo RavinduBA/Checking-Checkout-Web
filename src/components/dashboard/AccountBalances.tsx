@@ -1,5 +1,6 @@
 import { DollarSign } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
@@ -27,6 +28,7 @@ export function AccountBalances({ selectedLocation }: AccountBalancesProps) {
 	const [loading, setLoading] = useState(true);
 	const [accountBalances, setAccountBalances] = useState<AccountBalance[]>([]);
 	const { tenant } = useAuth();
+	const { t } = useTranslation();
 
 	const fetchAccountBalances = useCallback(async () => {
 		if (!tenant?.id) {
@@ -158,7 +160,7 @@ export function AccountBalances({ selectedLocation }: AccountBalancesProps) {
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
 					<DollarSign className="size-5 text-primary" />
-					Account Balances
+					{t('dashboard.accountBalances.title')}
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="space-y-3 lg:space-y-4">
@@ -172,7 +174,7 @@ export function AccountBalances({ selectedLocation }: AccountBalancesProps) {
 								{account.name}
 							</p>
 							<p className="text-sm text-muted-foreground">
-								{account.currency} Account
+								{account.currency} {t('dashboard.accountBalances.account')}
 							</p>
 						</div>
 						<div className="text-right ml-4">

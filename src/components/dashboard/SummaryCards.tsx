@@ -1,5 +1,6 @@
 import { ArrowDownCircle, ArrowUpCircle, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +26,7 @@ export function SummaryCards({
 	const [weeklyIncome, setWeeklyIncome] = useState(0);
 	const [weeklyExpenses, setWeeklyExpenses] = useState(0);
 	const { tenant } = useAuth();
+	const { t } = useTranslation();
 
 	useEffect(() => {
 		const fetchSummaryData = async () => {
@@ -179,7 +181,7 @@ export function SummaryCards({
 			<Card className="bg-card border">
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<CardTitle className="text-sm font-medium text-muted-foreground">
-						{selectedMonth ? "Monthly Income" : "Today's Income"}
+						{selectedMonth ? t('dashboard.summaryCards.monthlyIncome') : t('dashboard.summaryCards.todayIncome')}
 					</CardTitle>
 					<ArrowUpCircle className="size-4 text-success" />
 				</CardHeader>
@@ -194,7 +196,7 @@ export function SummaryCards({
 			<Card className="bg-card border">
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<CardTitle className="text-sm font-medium text-muted-foreground">
-						{selectedMonth ? "Monthly Expenses" : "Today's Expenses"}
+						{selectedMonth ? t('dashboard.summaryCards.monthlyExpenses') : t('dashboard.summaryCards.todayExpenses')}
 					</CardTitle>
 					<ArrowDownCircle className="size-4 text-destructive" />
 				</CardHeader>
@@ -210,7 +212,7 @@ export function SummaryCards({
 			<Card className="bg-card border">
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<CardTitle className="text-sm font-medium text-muted-foreground">
-						{selectedMonth ? "Monthly Profit" : "Weekly Profit"}
+						{selectedMonth ? t('dashboard.summaryCards.monthlyProfit') : t('dashboard.summaryCards.weeklyProfit')}
 					</CardTitle>
 					<TrendingUp className="size-4 text-primary" />
 				</CardHeader>
@@ -219,7 +221,7 @@ export function SummaryCards({
 						Rs. {profit.toLocaleString()}
 					</div>
 					<p className="text-xs text-muted-foreground">
-						{profitPercentage}% margin
+						{profitPercentage}% {t('dashboard.summaryCards.margin')}
 					</p>
 				</CardContent>
 			</Card>

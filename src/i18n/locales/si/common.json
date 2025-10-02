@@ -1,5 +1,39 @@
-{
-  "dashboard": {
+{  "dashboard": {
+       "account": "ගිණුම"
+    },
+    "upcomingBookings": {
+      "title": "ඉදිරියේදී පැමිණෙන වෙන්කරවීම්",
+      "viewAll": "සියල්ල බලන්න",
+      "to": "සිට",
+      "noBookings": "ඉදිරියේදී පැමිණෙන වෙන්කරවීම් නොමැත"
+    }
+  },
+  "navigation": {   "welcome": "නැවත සාදරයෙන් පිළිගනිමු!",
+      "subtitle": "හෝටල් කළමනාකරණ පුවරුව",
+      "addIncome": "ආදායම එක් කරන්න",
+      "addExpense": "වියදම එක් කරන්න",
+      "monthFilter": "මාස පෙරීම"
+    },
+    "summaryCards": {
+      "todayIncome": "අද ආදායම",
+      "monthlyIncome": "මාසික ආදායම",
+      "todayExpenses": "අද වියදම්",
+      "monthlyExpenses": "මාසික වියදම්",
+      "weeklyProfit": "සතිපතා ලාභය",
+      "monthlyProfit": "මාසික ලාභය",
+      "margin": "ආන්තිකය"
+    },
+    "accountBalances": {
+      "title": "ගිණුම් ශේෂය",
+      "account": "ගිණුම"
+    },
+    "upcomingBookings": {
+      "title": "ඉදිරියේදී පැමිණෙන වෙන්කරවීම්",
+      "viewAll": "සියල්ල බලන්න",
+      "to": "සිට",
+      "noBookings": "ඉදිරියේදී පැමිණෙන වෙන්කරවීම් නොමැත"
+    }
+  },oard": {
     "header": {
       "welcome": "නැවත සාදරයෙන් පිළිගනිමු!",
       "subtitle": "හෝටල් කළමනාකරණ පුවරුව",
