@@ -174,14 +174,7 @@ export function AppSidebar({
 				name: t('navigation.newReservation'),
 				url: "/reservations/new",
 				icon: PlusCircle,
-			});
-		}
-
-		if (hasAnyPermission(["access_income"])) {
-			projects.push({
-				name: t('navigation.newPayment'),
-				url: "/payments/new",
-				icon: DollarSign,
+				isActive: location.pathname === "/reservations/new",
 			});
 		}
 
@@ -190,6 +183,7 @@ export function AppSidebar({
 				name: t('navigation.addExpense'),
 				url: "/expense",
 				icon: MinusCircle,
+				isActive: location.pathname === "/expense",
 			});
 		}
 
@@ -199,6 +193,7 @@ export function AppSidebar({
 				name: t('navigation.verifyPhone'),
 				url: "/settings?tab=profile",
 				icon: Phone,
+				isActive: location.pathname === "/settings" && window.location.search.includes("tab=profile"),
 			});
 		}
 
