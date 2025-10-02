@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
+import { ReservationDateSelector } from "@/components/reservation";
 import { useLocationContext } from "@/context/LocationContext";
 import { useToast } from "@/hooks/use-toast";
 import { useFormFieldPreferences } from "@/hooks/useFormFieldPreferences";
@@ -248,7 +249,7 @@ export function NewReservationDialog({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="max-w-4xl sm:max-w-6xl max-h-[90vh] overflow-y-auto">
+			<DialogContent className="max-w-4xl sm:max-w-6xl md:max-w-8xl max-h-[90vh] sm:min-h-[95vh] overflow-y-auto">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<Calendar className="h-5 w-5" />
@@ -422,25 +423,19 @@ export function NewReservationDialog({
 									/>
 								</div>
 							)}
-
-							<div className="space-y-2">
-								<Label>Check-in Date *</Label>
-								<DatePicker
-									value={formData.check_in_date}
-									onChange={(value) => handleInputChange("check_in_date", value)}
-									min={format(new Date(), "yyyy-MM-dd")}
-								/>
-							</div>
-
-							<div className="space-y-2">
-								<Label>Check-out Date *</Label>
-								<DatePicker
-									value={formData.check_out_date}
-									onChange={(value) => handleInputChange("check_out_date", value)}
-									min={formData.check_in_date ? format(addDays(new Date(formData.check_in_date), 1), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd")}
-								/>
-							</div>
 						</div>
+
+						{/* Date Selection using ReservationDateSelector */}
+						<ReservationDateSelector
+							checkInDate={formData.check_in_date}
+							checkOutDate={formData.check_out_date}
+							onDatesChange={(checkIn, checkOut) => {
+								handleInputChange("check_in_date", checkIn);
+								handleInputChange("check_out_date", checkOut);
+							}}
+							minDate={new Date()}
+							showNights={true}
+						/>
 
 						{fieldPreferences?.show_special_requests !== false && (
 							<div className="space-y-2">
