@@ -22,6 +22,13 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { Plus, Calendar as CalendarIcon } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useState } from "react";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 
 type Room = Database["public"]["Tables"]["rooms"]["Row"];
 type Reservation = Database["public"]["Tables"]["reservations"]["Row"] & {
@@ -55,6 +62,8 @@ export function FullCalendarMonthView({
 	const navigate = useNavigate();
 	const { selectedLocation } = useLocationContext();
 	const { tenant } = useTenant();
+	const [viewMoreDate, setViewMoreDate] = useState<Date | null>(null);
+	const [viewMoreReservations, setViewMoreReservations] = useState<Reservation[]>([]);
 
 	// Get calendar dates (full weeks)
 	const monthStart = startOfMonth(currentDate);
@@ -227,7 +236,7 @@ export function FullCalendarMonthView({
 				let lane = 0;
 				const segmentEnd = startIndex + spanDays - 1;
 				
-				while (lane < 5) { // Max 5 lanes
+				while (lane < 2) { // Max 2 lanes
 					let isLaneAvailable = true;
 					
 					for (let i = startIndex; i <= segmentEnd; i++) {
@@ -269,6 +278,22 @@ export function FullCalendarMonthView({
 	};
 
 	const reservationSegments = getReservationSegments();
+
+	// Get all reservations for a specific date (for view more functionality)
+	const getReservationsForDate = (date: Date) => {
+		return filteredReservations.filter((reservation) => {
+			const checkIn = parseISO(reservation.check_in_date);
+			const checkOut = parseISO(reservation.check_out_date);
+			return date >= checkIn && date < checkOut;
+		});
+	};
+
+	// Handle view more click
+	const handleViewMore = (date: Date) => {
+		const dayReservations = getReservationsForDate(date);
+		setViewMoreDate(date);
+		setViewMoreReservations(dayReservations);
+	};
 
 	const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -332,18 +357,20 @@ export function FullCalendarMonthView({
 							{calendarDates.map((date, index) => {
 								const isCurrentMonth = isSameMonth(date, currentDate);
 								const isDateToday = isToday(date);
+								const dayReservations = getReservationsForDate(date);
+								const hasMoreThanTwo = dayReservations.length > 2;
 
 								return (
 									<div
 										key={date.toString()}
 										className={cn(
-											"min-h-[140px] p-2 border rounded-md transition-colors cursor-pointer relative",
+											"min-h-[120px] p-2 border rounded-md transition-colors cursor-pointer relative",
 											"hover:bg-muted/50",
 											!isCurrentMonth && "bg-muted/20 text-muted-foreground",
 											isDateToday && "border-primary"
 										)}
 										onClick={() => {
-											if (isCurrentMonth && rooms.length > 0) {
+											if (isCurrentMonth && dayReservations.length === 0 && rooms.length > 0) {
 												navigate(`/reservations/new?date=${format(date, "yyyy-MM-dd")}`);
 											}
 										}}
@@ -358,7 +385,7 @@ export function FullCalendarMonthView({
 											>
 												{format(date, "d")}
 											</span>
-											{isCurrentMonth && rooms.length > 0 && (
+											{isCurrentMonth && dayReservations.length === 0 && rooms.length > 0 && (
 												<Button
 													variant="ghost"
 													size="sm"
@@ -371,6 +398,19 @@ export function FullCalendarMonthView({
 													<Plus className="h-3 w-3" />
 												</Button>
 											)}
+											{isCurrentMonth && hasMoreThanTwo && (
+												<Button
+													variant="ghost"
+													size="sm"
+													className="h-6 w-6 p-0 bg-muted/50 hover:bg-muted transition-colors"
+													onClick={(e) => {
+														e.stopPropagation();
+														handleViewMore(date);
+													}}
+												>
+													<span className="text-xs font-bold">+{dayReservations.length - 2}</span>
+												</Button>
+											)}
 										</div>
 									</div>
 								);
@@ -379,7 +419,7 @@ export function FullCalendarMonthView({
 
 						{/* Reservation bars overlay */}
 						<div className="absolute inset-0 pointer-events-none">
-							{reservationSegments.map((segment, segmentIndex) => {
+							{reservationSegments.filter((segment) => segment.lane < 2).map((segment, segmentIndex) => {
 								const { reservation, startIndex, spanDays, isStart, isEnd, lane } = segment;
 								
 								// Calculate position
@@ -391,19 +431,18 @@ export function FullCalendarMonthView({
 										key={`${reservation.id}-${segmentIndex}`}
 										className={cn(
 											"absolute pointer-events-auto cursor-pointer transition-colors",
-											"text-white text-xs font-medium",
+											"text-white text-xs font-medium flex items-center",
 											getStatusColor(reservation.status),
-											"rounded-md px-2 py-1 truncate shadow-sm",
+											"rounded-md px-2 truncate shadow-sm h-12",
 											!isStart && "rounded-l-none",
 											!isEnd && "rounded-r-none"
 										)}
 										style={{
-											top: `${row * 141 + 40 + (lane * 20)}px`, // 141px per row (140px + 1px gap), 40px offset for date, 20px per lane
-											left: `calc(${col * (100/7)}% + ${col * 0.25}rem)`,
-											width: `calc(${spanDays * (100/7)}% - ${Math.max(0, spanDays - 1) * 0.25}rem)`,
-											height: '18px',
-											zIndex: 10,
-											maxWidth: `calc(${(7-col) * (100/7)}% - ${Math.max(0, (7-col) - 1) * 0.25}rem)` // Prevent overflow beyond week
+											top: `${row * 121 + 36 + (lane * 54)}px`, // 121px per row (120px + 1px gap), 36px offset for date, 54px per lane (h-12 + 6px spacing)
+											left: `calc(${col * (100/7)}% + ${col > 0 ? '0.125rem' : '0px'})`,
+											width: `calc(${spanDays * (100/7)}% - ${spanDays > 1 ? '0.125rem' : '0px'})`,
+											zIndex: 10 + lane,
+											maxWidth: `calc(${(7-col) * (100/7)}% - 0.125rem)` // Prevent overflow beyond week
 										}}
 										onClick={(e) => {
 											e.stopPropagation();
@@ -456,6 +495,53 @@ export function FullCalendarMonthView({
 					</div>
 				</div>
 			</CardContent>
+			
+			{/* View More Dialog */}
+			<Dialog open={viewMoreDate !== null} onOpenChange={() => setViewMoreDate(null)}>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>
+							Reservations for {viewMoreDate && format(viewMoreDate, "MMMM d, yyyy")}
+						</DialogTitle>
+					</DialogHeader>
+					<div className="space-y-3 max-h-96 overflow-y-auto">
+						{viewMoreReservations.map((reservation) => (
+							<div
+								key={reservation.id}
+								className={cn(
+									"p-3 rounded-lg cursor-pointer transition-colors border-l-4",
+									"hover:bg-muted/50"
+								)}
+								style={{
+									borderLeftColor: getStatusBorderColor(reservation.status)
+								}}
+								onClick={() => {
+									onBookingClick(reservation);
+									setViewMoreDate(null);
+								}}
+							>
+								<div className="flex justify-between items-start mb-2">
+									<div className="font-medium">{reservation.guest_name}</div>
+									<Badge
+										variant="outline"
+										className="text-xs"
+										style={{ color: getStatusBorderColor(reservation.status) }}
+									>
+										{reservation.status}
+									</Badge>
+								</div>
+								<div className="text-sm text-muted-foreground space-y-1">
+									<div>Room: {reservation.rooms?.room_number} - {reservation.rooms?.room_type}</div>
+									<div>#{reservation.reservation_number}</div>
+									<div>
+										{format(parseISO(reservation.check_in_date), "MMM dd")} - {format(parseISO(reservation.check_out_date), "MMM dd, yyyy")}
+									</div>
+								</div>
+							</div>
+						))}
+					</div>
+				</DialogContent>
+			</Dialog>
 		</Card>
 	);
 }
