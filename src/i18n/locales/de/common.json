@@ -1,14 +1,7 @@
-{  "dashboard": {
-       "account": "Konto"
-    },
-    "upcomingBookings": {
-      "title": "Bevorstehende Buchungen",
-      "viewAll": "Alle anzeigen",
-      "to": "bis",
-      "noBookings": "Keine bevorstehenden Buchungen"
-    }
-  },
-  "navigation": {   "welcome": "Willkommen zurück!",
+{
+  "dashboard": {
+    "header": {
+      "welcome": "Willkommen zurück!",
       "subtitle": "Hotel-Management-Dashboard",
       "addIncome": "Einnahmen hinzufügen",
       "addExpense": "Ausgaben hinzufügen",
@@ -32,14 +25,6 @@
       "viewAll": "Alle anzeigen",
       "to": "bis",
       "noBookings": "Keine bevorstehenden Buchungen"
-    }
-  },oard": {
-    "header": {
-      "welcome": "Willkommen zurück!",
-      "subtitle": "Hotel-Management-Dashboard",
-      "addIncome": "Einnahmen Hinzufügen",
-      "addExpense": "Ausgaben Hinzufügen",
-      "monthFilter": "Monatsfilter"
     }
   },
   "navigation": {
