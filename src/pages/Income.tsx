@@ -60,6 +60,7 @@ const Income = () => {
 		useState<Reservation | null>(null);
 	const [incomeHistory, setIncomeHistory] = useState<Income[]>([]);
 	const [incomeTypes, setIncomeTypes] = useState<IncomeType[]>([]);
+	const [reservationIncomeMap, setReservationIncomeMap] = useState<Record<string, boolean>>({});
 	const [incomeForm, setIncomeForm] = useState({
 		amount: 0,
 		note: "",
@@ -97,12 +98,35 @@ const Income = () => {
 		}
 	}, [profile?.tenant_id]);
 
+	const fetchReservationIncomeMapping = useCallback(async () => {
+		try {
+			const { data, error } = await supabase
+				.from("income")
+				.select("booking_id")
+				.eq("tenant_id", profile?.tenant_id)
+				.not("booking_id", "is", null);
+			if (error) throw error;
+			
+			// Create a map of reservation IDs that have income records
+			const incomeMap: Record<string, boolean> = {};
+			data?.forEach((income) => {
+				if (income.booking_id) {
+					incomeMap[income.booking_id] = true;
+				}
+			});
+			setReservationIncomeMap(incomeMap);
+		} catch (error) {
+			console.error("Error fetching reservation income mapping:", error);
+		}
+	}, [profile?.tenant_id]);
+
 	useEffect(() => {
 		if (profile?.tenant_id) {
 			fetchIncomeHistory();
 			fetchIncomeTypes();
+			fetchReservationIncomeMapping();
 		}
-	}, [profile?.tenant_id, fetchIncomeHistory, fetchIncomeTypes]);
+	}, [profile?.tenant_id, fetchIncomeHistory, fetchIncomeTypes, fetchReservationIncomeMapping]);
 
 	const handleIncomeSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -155,6 +179,7 @@ const Income = () => {
 			setIsIncomeDialogOpen(false);
 			resetIncomeForm();
 			fetchIncomeHistory();
+			fetchReservationIncomeMapping(); // Refresh the income mapping
 			refetch();
 		} catch (error) {
 			console.error("Income error:", error);
@@ -193,6 +218,28 @@ const Income = () => {
 				{status.charAt(0).toUpperCase() + status.slice(1)}
 			</Badge>
 		);
+	};
+
+	const isAddIncomeDisabled = (reservation: Reservation) => {
+		// Disable if status is confirmed (payment completed)
+		if (reservation.status === "confirmed") {
+			return true;
+		}
+		// Disable if income already exists for this reservation
+		if (reservationIncomeMap[reservation.id]) {
+			return true;
+		}
+		return false;
+	};
+
+	const getDisabledReason = (reservation: Reservation) => {
+		if (reservation.status === "confirmed") {
+			return "Income cannot be added - reservation is confirmed (payment completed)";
+		}
+		if (reservationIncomeMap[reservation.id]) {
+			return "Income already recorded for this reservation";
+		}
+		return "";
 	};
 
 	if (!hasAnyPermission(["access_income"])) {
@@ -260,6 +307,8 @@ const Income = () => {
 											<Button
 												variant="outline"
 												size="sm"
+												disabled={isAddIncomeDisabled(reservation)}
+												title={getDisabledReason(reservation)}
 												onClick={() => {
 													setSelectedReservation(reservation);
 													setIncomeForm({
