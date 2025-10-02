@@ -129,6 +129,36 @@ export function NewReservationDialog({
 		setFormData((prev) => ({ ...prev, [field]: value }));
 	};
 
+	// Handle room selection and auto-populate room rate from base_price
+	const handleRoomChange = (roomId: string) => {
+		const selectedRoom = rooms.find((room) => room.id === roomId);
+		if (selectedRoom) {
+			setFormData((prev) => ({
+				...prev,
+				room_id: roomId,
+				room_rate: selectedRoom.base_price || 0,
+			}));
+		} else {
+			setFormData((prev) => ({ ...prev, room_id: roomId }));
+		}
+	};
+
+	// Get currency symbol helper
+	const getCurrencySymbol = (currency: string) => {
+		switch (currency) {
+			case "USD":
+				return "$";
+			case "EUR":
+				return "€";
+			case "GBP":
+				return "£";
+			case "LKR":
+				return "Rs.";
+			default:
+				return "";
+		}
+	};
+
 	const generateReservationNumber = async (): Promise<string> => {
 		try {
 			const { data, error } = await supabase.rpc("generate_reservation_number", {
@@ -261,28 +291,26 @@ export function NewReservationDialog({
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto">
-					{/* Room Selection */}
-					<div className="space-y-2">
-						<Label htmlFor="room">Room *</Label>
-						<Select
-							value={formData.room_id}
-							onValueChange={(value) => handleInputChange("room_id", value)}
-							required
-						>
-							<SelectTrigger>
-								<SelectValue placeholder="Select room" />
-							</SelectTrigger>
-							<SelectContent>
-								{rooms.map((room) => (
-									<SelectItem key={room.id} value={room.id}>
-										{room.room_number} - {room.room_type}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-
-					{/* Guest Information */}
+				{/* Room Selection */}
+				<div className="space-y-2">
+					<Label htmlFor="room">Room *</Label>
+					<Select
+						value={formData.room_id}
+						onValueChange={handleRoomChange}
+						required
+					>
+						<SelectTrigger>
+							<SelectValue placeholder="Select room" />
+						</SelectTrigger>
+						<SelectContent>
+							{rooms.map((room) => (
+								<SelectItem key={room.id} value={room.id}>
+									{room.room_number} - {room.room_type} ({getCurrencySymbol(room.currency || "LKR")}{room.base_price})
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>					{/* Guest Information */}
 					<div className="space-y-4">
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div className="md:col-span-2 space-y-2">
