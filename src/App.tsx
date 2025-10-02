@@ -197,40 +197,6 @@ const App = () => (
 									/>
 								</Route>
 								<Route
-									path="/booking/new"
-									element={
-										<ProtectedRoute>
-											<Layout />
-										</ProtectedRoute>
-									}
-								>
-									<Route
-										index
-										element={
-											<PermissionRoute permission={["access_bookings"]}>
-												<BookingForm />
-											</PermissionRoute>
-										}
-									/>
-								</Route>
-								<Route
-									path="/booking/edit/:id"
-									element={
-										<ProtectedRoute>
-											<Layout />
-										</ProtectedRoute>
-									}
-								>
-									<Route
-										index
-										element={
-											<PermissionRoute permission={["access_bookings"]}>
-												<BookingForm />
-											</PermissionRoute>
-										}
-									/>
-								</Route>
-								<Route
 									path="/reservations"
 									element={
 										<ProtectedRoute>
