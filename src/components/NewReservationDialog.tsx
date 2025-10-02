@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useLocationContext } from "@/context/LocationContext";
 import { useToast } from "@/hooks/use-toast";
+import { useFormFieldPreferences } from "@/hooks/useFormFieldPreferences";
 import { useProfile } from "@/hooks/useProfile";
 import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +49,7 @@ export function NewReservationDialog({
 	const { profile } = useProfile();
 	const { tenant } = useTenant();
 	const { selectedLocation } = useLocationContext();
+	const { preferences: fieldPreferences } = useFormFieldPreferences();
 
 	const [rooms, setRooms] = useState<Room[]>([]);
 	const [loading, setLoading] = useState(false);
@@ -58,6 +60,10 @@ export function NewReservationDialog({
 		guest_name: "",
 		guest_email: "",
 		guest_phone: "",
+		guest_address: "",
+		guest_nationality: "",
+		guest_passport_number: "",
+		guest_id_number: "",
 		adults: 1,
 		children: 0,
 		check_in_date: new Date(),
@@ -66,6 +72,7 @@ export function NewReservationDialog({
 		total_amount: 0,
 		advance_amount: 0,
 		currency: "LKR" as "LKR" | "USD" | "EUR" | "GBP",
+		arrival_time: "",
 		special_requests: "",
 	});
 
@@ -166,6 +173,10 @@ export function NewReservationDialog({
 				guest_name: formData.guest_name,
 				guest_email: formData.guest_email || null,
 				guest_phone: formData.guest_phone || null,
+				guest_address: formData.guest_address || null,
+				guest_nationality: formData.guest_nationality || null,
+				guest_passport_number: formData.guest_passport_number || null,
+				guest_id_number: formData.guest_id_number || null,
 				adults: formData.adults,
 				children: formData.children,
 				check_in_date: format(formData.check_in_date, "yyyy-MM-dd"),
@@ -178,6 +189,7 @@ export function NewReservationDialog({
 				balance_amount: formData.total_amount - formData.advance_amount,
 				currency: formData.currency,
 				status: "tentative" as const,
+				arrival_time: formData.arrival_time || null,
 				special_requests: formData.special_requests || null,
 				booking_source: "direct",
 				created_by: profile.id,
@@ -201,6 +213,10 @@ export function NewReservationDialog({
 				guest_name: "",
 				guest_email: "",
 				guest_phone: "",
+				guest_address: "",
+				guest_nationality: "",
+				guest_passport_number: "",
+				guest_id_number: "",
 				adults: 1,
 				children: 0,
 				check_in_date: new Date(),
@@ -209,6 +225,7 @@ export function NewReservationDialog({
 				total_amount: 0,
 				advance_amount: 0,
 				currency: "LKR",
+				arrival_time: "",
 				special_requests: "",
 			});
 
@@ -240,7 +257,7 @@ export function NewReservationDialog({
 					</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-6">
+				<form onSubmit={handleSubmit} className="space-y-6 overflow-y-auto">
 					{/* Room Selection */}
 					<div className="space-y-2">
 						<Label htmlFor="room">Room *</Label>
@@ -270,7 +287,7 @@ export function NewReservationDialog({
 						</div>
 
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-							<div className="space-y-2">
+							<div className="md:col-span-2 space-y-2">
 								<Label htmlFor="guest_name">Guest Name *</Label>
 								<Input
 									id="guest_name"
@@ -281,25 +298,108 @@ export function NewReservationDialog({
 								/>
 							</div>
 
-							<div className="space-y-2">
-								<Label htmlFor="guest_email">Email</Label>
-								<Input
-									id="guest_email"
-									type="email"
-									value={formData.guest_email}
-									onChange={(e) => handleInputChange("guest_email", e.target.value)}
-									placeholder="Enter email address"
-								/>
+							{fieldPreferences?.show_guest_email !== false && (
+								<div className="space-y-2">
+									<Label htmlFor="guest_email">Email</Label>
+									<Input
+										id="guest_email"
+										type="email"
+										value={formData.guest_email}
+										onChange={(e) => handleInputChange("guest_email", e.target.value)}
+										placeholder="Enter email address"
+									/>
+								</div>
+							)}
+
+							{fieldPreferences?.show_guest_phone !== false && (
+								<div className="space-y-2">
+									<Label htmlFor="guest_phone">Phone</Label>
+									<PhoneInput
+										defaultCountry="LK"
+										international
+										value={formData.guest_phone}
+										onChange={(value) => handleInputChange("guest_phone", value || "")}
+										placeholder="Enter phone number"
+									/>
+								</div>
+							)}
+
+							{fieldPreferences?.show_guest_nationality !== false && (
+								<div className="space-y-2">
+									<Label htmlFor="guest_nationality">Nationality</Label>
+									<Input
+										id="guest_nationality"
+										value={formData.guest_nationality}
+										onChange={(e) => handleInputChange("guest_nationality", e.target.value)}
+										placeholder="Enter nationality"
+									/>
+								</div>
+							)}
+
+							{fieldPreferences?.show_guest_passport_number !== false && (
+								<div className="space-y-2">
+									<Label htmlFor="guest_passport_number">Passport Number</Label>
+									<Input
+										id="guest_passport_number"
+										value={formData.guest_passport_number}
+										onChange={(e) => handleInputChange("guest_passport_number", e.target.value)}
+										placeholder="Enter passport number"
+									/>
+								</div>
+							)}
+
+							{fieldPreferences?.show_guest_id_number === true && (
+								<div className="space-y-2">
+									<Label htmlFor="guest_id_number">ID Number</Label>
+									<Input
+										id="guest_id_number"
+										value={formData.guest_id_number}
+										onChange={(e) => handleInputChange("guest_id_number", e.target.value)}
+										placeholder="Enter ID number"
+									/>
+								</div>
+							)}
+
+							<div className="grid grid-cols-2 gap-4">
+								{fieldPreferences?.show_adults !== false && (
+									<div className="space-y-2">
+										<Label htmlFor="adults">Adults *</Label>
+										<Input
+											id="adults"
+											type="number"
+											min="1"
+											value={formData.adults}
+											onChange={(e) => handleInputChange("adults", Number(e.target.value))}
+											required
+										/>
+									</div>
+								)}
+								{fieldPreferences?.show_children !== false && (
+									<div className="space-y-2">
+										<Label htmlFor="children">Children</Label>
+										<Input
+											id="children"
+											type="number"
+											min="0"
+											value={formData.children}
+											onChange={(e) => handleInputChange("children", Number(e.target.value))}
+										/>
+									</div>
+								)}
 							</div>
 
-							<div className="space-y-2">
-								<Label htmlFor="guest_phone">Phone</Label>
-								<PhoneInput
-									value={formData.guest_phone}
-									onChange={(value) => handleInputChange("guest_phone", value)}
-									placeholder="Enter phone number"
-								/>
-							</div>
+							{fieldPreferences?.show_guest_address !== false && (
+								<div className="md:col-span-2 space-y-2">
+									<Label htmlFor="guest_address">Address</Label>
+									<Textarea
+										id="guest_address"
+										value={formData.guest_address}
+										onChange={(e) => handleInputChange("guest_address", e.target.value)}
+										placeholder="Enter address"
+										rows={3}
+									/>
+								</div>
+							)}
 						</div>
 					</div>
 
@@ -310,31 +410,18 @@ export function NewReservationDialog({
 							<h3 className="text-lg font-semibold">Stay Details</h3>
 						</div>
 
-						<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-							<div className="space-y-2">
-								<Label htmlFor="adults" className="flex items-center gap-2">
-									<Users className="h-4 w-4" />
-									Adults
-								</Label>
-								<Input
-									id="adults"
-									type="number"
-									min="1"
-									value={formData.adults}
-									onChange={(e) => handleInputChange("adults", Number(e.target.value))}
-								/>
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="children">Children</Label>
-								<Input
-									id="children"
-									type="number"
-									min="0"
-									value={formData.children}
-									onChange={(e) => handleInputChange("children", Number(e.target.value))}
-								/>
-							</div>
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+							{fieldPreferences?.show_arrival_time !== false && (
+								<div className="space-y-2">
+									<Label htmlFor="arrival_time">Arrival Time</Label>
+									<Input
+										id="arrival_time"
+										type="time"
+										value={formData.arrival_time}
+										onChange={(e) => handleInputChange("arrival_time", e.target.value)}
+									/>
+								</div>
+							)}
 
 							<div className="space-y-2">
 								<Label>Check-in Date *</Label>
@@ -353,15 +440,17 @@ export function NewReservationDialog({
 							</div>
 						</div>
 
-						<div className="space-y-2">
-							<Label htmlFor="special_requests">Special Requests</Label>
-							<Textarea
-								id="special_requests"
-								value={formData.special_requests}
-								onChange={(e) => handleInputChange("special_requests", e.target.value)}
-								placeholder="Any special requests or notes"
-							/>
-						</div>
+						{fieldPreferences?.show_special_requests !== false && (
+							<div className="space-y-2">
+								<Label htmlFor="special_requests">Special Requests</Label>
+								<Textarea
+									id="special_requests"
+									value={formData.special_requests}
+									onChange={(e) => handleInputChange("special_requests", e.target.value)}
+									placeholder="Any special requests or notes"
+								/>
+							</div>
+						)}
 					</div>
 
 					{/* Pricing */}
@@ -389,17 +478,19 @@ export function NewReservationDialog({
 								/>
 							</div>
 
-							<div className="space-y-2">
-								<Label htmlFor="advance_amount">Advance Amount</Label>
-								<Input
-									id="advance_amount"
-									type="number"
-									step="0.01"
-									value={formData.advance_amount}
-									onChange={(e) => handleInputChange("advance_amount", Number(e.target.value))}
-									placeholder="Enter advance amount"
-								/>
-							</div>
+							{fieldPreferences?.show_advance_amount !== false && (
+								<div className="space-y-2">
+									<Label htmlFor="advance_amount">Advance Amount</Label>
+									<Input
+										id="advance_amount"
+										type="number"
+										step="0.01"
+										value={formData.advance_amount}
+										onChange={(e) => handleInputChange("advance_amount", Number(e.target.value))}
+										placeholder="Enter advance amount"
+									/>
+								</div>
+							)}
 						</div>
 
 						{formData.room_rate > 0 && (
@@ -416,12 +507,12 @@ export function NewReservationDialog({
 
 
 					{/* Action Buttons */}
-					<div className="flex justify-end gap-3 pt-4 border-t">
+					<div className="flex px-4 fixed bottom-0 right-0 w-full bg-secondary-foreground items-center justify-end gap-3 py-4 border-t">
 						<Button type="button" variant="outline" onClick={onClose}>
 							<X className="h-4 w-4 mr-2" />
 							Cancel
 						</Button>
-						<Button type="submit" disabled={submitting}>
+						<Button className="border" type="submit" disabled={submitting}>
 							<Save className="h-4 w-4 mr-2" />
 							{submitting ? "Creating..." : "Create Reservation"}
 						</Button>
