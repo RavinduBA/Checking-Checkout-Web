@@ -72,7 +72,7 @@ export function NewReservationDialog({
 		room_rate: 0,
 		total_amount: 0,
 		advance_amount: 0,
-		currency: "LKR" as "LKR" | "USD" | "EUR" | "GBP",
+		currency: "LKR" as string,
 		arrival_time: "",
 		special_requests: "",
 	});
@@ -129,14 +129,75 @@ export function NewReservationDialog({
 		setFormData((prev) => ({ ...prev, [field]: value }));
 	};
 
-	// Handle room selection and auto-populate room rate from base_price
-	const handleRoomChange = (roomId: string) => {
+	// Handle currency change and recalculate room rate if room is selected
+	const handleCurrencyChange = async (newCurrency: string) => {
+		const selectedRoom = rooms.find((room) => room.id === formData.room_id);
+		
+		if (selectedRoom) {
+			const roomCurrency = selectedRoom.currency || 'LKR';
+			let newRoomRate = selectedRoom.base_price || 0;
+			
+			// Convert room price to new currency if they differ
+			if (roomCurrency !== newCurrency) {
+				try {
+					newRoomRate = await convertCurrency(
+						selectedRoom.base_price || 0,
+						roomCurrency,
+						newCurrency
+					);
+				} catch (error) {
+					console.error("Error converting currency:", error);
+					toast({
+						title: "Currency Conversion Warning",
+						description: `Could not convert from ${roomCurrency} to ${newCurrency}. Using original price.`,
+						variant: "default",
+					});
+					newRoomRate = selectedRoom.base_price || 0;
+				}
+			}
+			
+			setFormData((prev) => ({
+				...prev,
+				currency: newCurrency,
+				room_rate: Math.round(newRoomRate * 100) / 100,
+			}));
+		} else {
+			// No room selected, just change currency
+			setFormData((prev) => ({ ...prev, currency: newCurrency }));
+		}
+	};
+
+	// Handle room selection and auto-populate room rate from base_price with currency conversion
+	const handleRoomChange = async (roomId: string) => {
 		const selectedRoom = rooms.find((room) => room.id === roomId);
 		if (selectedRoom) {
+			// Check if room currency differs from selected currency
+			const roomCurrency = selectedRoom.currency || 'LKR';
+			let roomRate = selectedRoom.base_price || 0;
+			
+			// Convert room price to selected currency if they differ
+			if (roomCurrency !== formData.currency) {
+				try {
+					roomRate = await convertCurrency(
+						selectedRoom.base_price || 0,
+						roomCurrency,
+						formData.currency
+					);
+				} catch (error) {
+					console.error("Error converting currency:", error);
+					toast({
+						title: "Currency Conversion Warning",
+						description: `Could not convert from ${roomCurrency} to ${formData.currency}. Using original price.`,
+						variant: "default",
+					});
+					roomRate = selectedRoom.base_price || 0;
+				}
+			}
+			
 			setFormData((prev) => ({
 				...prev,
 				room_id: roomId,
-				room_rate: selectedRoom.base_price || 0,
+				room_rate: Math.round(roomRate * 100) / 100, // Round to 2 decimal places
 			}));
 		} else {
 			setFormData((prev) => ({ ...prev, room_id: roomId }));
@@ -220,7 +281,7 @@ export function NewReservationDialog({
 				advance_amount: formData.advance_amount,
 				paid_amount: formData.advance_amount,
 				balance_amount: formData.total_amount - formData.advance_amount,
-				currency: formData.currency,
+				currency: formData.currency as any, // Allow dynamic currency from DB
 				status: "tentative" as const,
 				arrival_time: formData.arrival_time || null,
 				special_requests: formData.special_requests || null,
@@ -484,7 +545,7 @@ export function NewReservationDialog({
 								<Label htmlFor="currency">Currency</Label>
 								<CurrencySelector
 									currency={formData.currency}
-									onCurrencyChange={(value) => handleInputChange("currency", value)}
+									onCurrencyChange={handleCurrencyChange}
 								/>
 							</div>
 
