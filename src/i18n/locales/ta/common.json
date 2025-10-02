@@ -155,6 +155,68 @@
       "active": "சக்திவான வழிகாட்டிகள்",
       "inactive": "சக்தியற்ற வழிகாட்டிகள்",
       "licenses": "உரிம நிர்வாகம்",
+  "calendar": {
+    "title": "முன்பதிவு நாட்காட்டி",
+    "subtitle": "வெளிப்புற முன்பதிவுகளுடன் அறை அடிப்படையிலான நாட்காட்டி பார்வை",
+    "viewMode": {
+      "timeline": "காலவரிசை",
+      "list": "பட்டியல்",
+      "label": "பயன்முறை: {{mode}}"
+    },
+    "timeline": {
+      "title": "நாட்காட்டி காலவரிசை",
+      "weekOverview": "வாரக் கண்ணோட்டம்"
+    },
+    "roomInfo": {
+      "roomVilla": "அறை / இல்லம்",
+      "typeLocation": "வகை & இடம்",
+      "external": "வெளிப்புறம்"
+    },
+    "booking": {
+      "addBooking": "முன்பதிவை சேர்க்கவும்",
+      "guestsLabel": "விருந்தினர்கள்",
+      "guestsCount": "{{count}} விருந்தினர்கள்",
+      "bookingDetails": "முன்பதிவு விவரங்கள் #{{id}}",
+      "guestInformation": "விருந்தினர் தகவல்",
+      "guestName": "விருந்தினர் பெயர்",
+      "email": "மின்னஞ்சல்",
+      "phone": "தொலைபேசி",
+      "adultsLabel": "{{count}} பெரியவர்கள்",
+      "childrenLabel": "{{count}} குழந்தைகள்",
+      "notAvailable": "கிடைக்காது",
+      "unknownGuest": "அறியப்படாத விருந்தினர்"
+    },
+    "stay": {
+      "stayInformation": "தங்கும் தகவல்",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "nights": "இரவுகள்",
+      "bookingDate": "முன்பதிவு தேதி"
+    },
+    "property": {
+      "propertyInformation": "சொத்து தகவல்",
+      "location": "இடம்",
+      "room": "அறை",
+      "unknownLocation": "அறியப்படாத இடம்",
+      "unknownRoom": "அறியப்படாத அறை"
+    },
+    "payment": {
+      "paymentInformation": "கொடுப்பனவு தகவல்",
+      "basePrice": "அடிப்படை விலை",
+      "hostFee": "உரிமையாளர் கட்டணம்",
+      "expectedPayout": "எதிர்பார்க்கப்படும் பணம்",
+      "totalAmount": "மொத்த தொகை",
+      "cancelPolicy": "ரத்து கொள்கை நெகிழ்வானது"
+    },
+    "legend": {
+      "statusLabel": "நிலை",
+      "internalConfirmed": "உள் - உறுதி செய்யப்பட்டது",
+      "internalTentative": "உள் - இடைக்கால",
+      "externalConfirmed": "வெளி - உறுதி செய்யப்பட்டது",
+      "externalNew": "வெளி - புதியது",
+      "cancelled": "ரத்து செய்யப்பட்டது"
+    }
+  },
       "performance": "செயல்திறன்"
     },
     "agents": {

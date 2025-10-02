@@ -26,6 +26,68 @@
       "noBookings": "No hay reservas próximas"
     }
   },
+  "calendar": {
+    "title": "Calendario de Reservas",
+    "subtitle": "Vista de calendario por habitación con reservas externas",
+    "viewMode": {
+      "timeline": "Cronograma",
+      "list": "Lista",
+      "label": "Modo: {{mode}}"
+    },
+    "timeline": {
+      "title": "Cronograma del Calendario",
+      "weekOverview": "Resumen Semanal"
+    },
+    "roomInfo": {
+      "roomVilla": "Habitación / Villa",
+      "typeLocation": "Tipo y Ubicación",
+      "external": "Externo"
+    },
+    "booking": {
+      "addBooking": "Agregar reserva",
+      "guestsLabel": "Huéspedes",
+      "guestsCount": "{{count}} huéspedes",
+      "bookingDetails": "Detalles de la reserva #{{id}}",
+      "guestInformation": "Información del huésped",
+      "guestName": "Nombre del huésped",
+      "email": "Correo electrónico",
+      "phone": "Teléfono",
+      "adultsLabel": "{{count}} adultos",
+      "childrenLabel": "{{count}} niños",
+      "notAvailable": "No disponible",
+      "unknownGuest": "Huésped desconocido"
+    },
+    "stay": {
+      "stayInformation": "Información de la estadía",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "nights": "Noches",
+      "bookingDate": "Fecha de reserva"
+    },
+    "property": {
+      "propertyInformation": "Información de la propiedad",
+      "location": "Ubicación",
+      "room": "Habitación",
+      "unknownLocation": "Ubicación desconocida",
+      "unknownRoom": "Habitación desconocida"
+    },
+    "payment": {
+      "paymentInformation": "Información de pago",
+      "basePrice": "Precio base",
+      "hostFee": "Tarifa del anfitrión",
+      "expectedPayout": "Pago esperado",
+      "totalAmount": "Monto total",
+      "cancelPolicy": "Política de cancelación flexible"
+    },
+    "legend": {
+      "statusLabel": "Estado",
+      "internalConfirmed": "Interno - Confirmado",
+      "internalTentative": "Interno - Tentativo",
+      "externalConfirmed": "Externo - Confirmado",
+      "externalNew": "Externo - Nuevo",
+      "cancelled": "Cancelado"
+    }
+  },
   "navigation": {
     "dashboard": "Panel",
     "calendar": "Calendario",

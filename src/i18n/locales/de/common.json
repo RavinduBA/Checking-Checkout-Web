@@ -27,6 +27,68 @@
       "noBookings": "Keine bevorstehenden Buchungen"
     }
   },
+  "calendar": {
+    "title": "Reservierungskalender",
+    "subtitle": "Zimmerbasierte Kalenderansicht mit externen Buchungen",
+    "viewMode": {
+      "timeline": "Zeitleiste",
+      "list": "Liste",
+      "label": "Modus: {{mode}}"
+    },
+    "timeline": {
+      "title": "Kalender-Zeitleiste",
+      "weekOverview": "Wochenübersicht"
+    },
+    "roomInfo": {
+      "roomVilla": "Zimmer / Villa",
+      "typeLocation": "Typ & Standort",
+      "external": "Extern"
+    },
+    "booking": {
+      "addBooking": "Buchung hinzufügen",
+      "guestsLabel": "Gäste",
+      "guestsCount": "{{count}} Gäste",
+      "bookingDetails": "Buchungsdetails #{{id}}",
+      "guestInformation": "Gästeinformationen",
+      "guestName": "Name des Gastes",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "adultsLabel": "{{count}} Erwachsene",
+      "childrenLabel": "{{count}} Kinder",
+      "notAvailable": "Nicht verfügbar",
+      "unknownGuest": "Unbekannter Gast"
+    },
+    "stay": {
+      "stayInformation": "Aufenthaltsinformationen",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "nights": "Nächte",
+      "bookingDate": "Buchungsdatum"
+    },
+    "property": {
+      "propertyInformation": "Objektinformationen",
+      "location": "Standort",
+      "room": "Zimmer",
+      "unknownLocation": "Unbekannter Standort",
+      "unknownRoom": "Unbekanntes Zimmer"
+    },
+    "payment": {
+      "paymentInformation": "Zahlungsinformationen",
+      "basePrice": "Grundpreis",
+      "hostFee": "Gastgebergebühr",
+      "expectedPayout": "Erwartete Auszahlung",
+      "totalAmount": "Gesamtbetrag",
+      "cancelPolicy": "Flexible Stornierungsrichtlinie"
+    },
+    "legend": {
+      "statusLabel": "Status",
+      "internalConfirmed": "Intern - Bestätigt",
+      "internalTentative": "Intern - Vorläufig",
+      "externalConfirmed": "Extern - Bestätigt",
+      "externalNew": "Extern - Neu",
+      "cancelled": "Storniert"
+    }
+  },
   "navigation": {
     "dashboard": "Dashboard",
     "calendar": "Kalender",

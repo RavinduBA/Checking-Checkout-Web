@@ -27,6 +27,68 @@
       "noBookings": "Aucune réservation à venir"
     }
   },
+  "calendar": {
+    "title": "Calendrier des réservations",
+    "subtitle": "Vue du calendrier par chambre avec réservations externes",
+    "viewMode": {
+      "timeline": "Chronologie",
+      "list": "Liste",
+      "label": "Mode : {{mode}}"
+    },
+    "timeline": {
+      "title": "Chronologie du calendrier",
+      "weekOverview": "Aperçu hebdomadaire"
+    },
+    "roomInfo": {
+      "roomVilla": "Chambre / Villa",
+      "typeLocation": "Type et emplacement",
+      "external": "Externe"
+    },
+    "booking": {
+      "addBooking": "Ajouter une réservation",
+      "guestsLabel": "Invités",
+      "guestsCount": "{{count}} voyageurs",
+      "bookingDetails": "Détails de la réservation n°{{id}}",
+      "guestInformation": "Informations sur le client",
+      "guestName": "Nom du client",
+      "email": "Email",
+      "phone": "Téléphone",
+      "adultsLabel": "{{count}} adultes",
+      "childrenLabel": "{{count}} enfants",
+      "notAvailable": "Non disponible",
+      "unknownGuest": "Client inconnu"
+    },
+    "stay": {
+      "stayInformation": "Informations sur le séjour",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "nights": "Nuits",
+      "bookingDate": "Date de réservation"
+    },
+    "property": {
+      "propertyInformation": "Informations sur la propriété",
+      "location": "Emplacement",
+      "room": "Chambre",
+      "unknownLocation": "Emplacement inconnu",
+      "unknownRoom": "Chambre inconnue"
+    },
+    "payment": {
+      "paymentInformation": "Informations de paiement",
+      "basePrice": "Prix de base",
+      "hostFee": "Frais d'hôte",
+      "expectedPayout": "Paiement attendu",
+      "totalAmount": "Montant total",
+      "cancelPolicy": "Politique d'annulation flexible"
+    },
+    "legend": {
+      "statusLabel": "Statut",
+      "internalConfirmed": "Interne - Confirmé",
+      "internalTentative": "Interne - Provisoire",
+      "externalConfirmed": "Externe - Confirmé",
+      "externalNew": "Externe - Nouveau",
+      "cancelled": "Annulé"
+    }
+  },
   "navigation": {
     "dashboard": "Tableau de Bord",
     "calendar": "Calendrier",

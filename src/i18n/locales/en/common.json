@@ -27,6 +27,68 @@
       "noBookings": "No upcoming bookings"
     }
   },
+  "calendar": {
+    "title": "Reservation Calendar",
+    "subtitle": "Room-based calendar view with external bookings",
+    "viewMode": {
+      "timeline": "Timeline",
+      "list": "List",
+      "label": "Mode: {{mode}}"
+    },
+    "timeline": {
+      "title": "Calendar Timeline",
+      "weekOverview": "Week Overview"
+    },
+    "roomInfo": {
+      "roomVilla": "Room / Villa",
+      "typeLocation": "Type & Location",
+      "external": "External"
+    },
+    "booking": {
+      "addBooking": "Add booking",
+      "guestsLabel": "Guests",
+      "guestsCount": "{{count}} guests",
+      "bookingDetails": "Booking Details #{{id}}",
+      "guestInformation": "Guest Information",
+      "guestName": "Guest Name",
+      "email": "Email",
+      "phone": "Phone",
+      "adultsLabel": "{{count}} adults",
+      "childrenLabel": "{{count}} children",
+      "notAvailable": "Not available",
+      "unknownGuest": "Unknown Guest"
+    },
+    "stay": {
+      "stayInformation": "Stay Information",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "nights": "Nights",
+      "bookingDate": "Booking Date"
+    },
+    "property": {
+      "propertyInformation": "Property Information",
+      "location": "Location",
+      "room": "Room",
+      "unknownLocation": "Unknown Location",
+      "unknownRoom": "Unknown Room"
+    },
+    "payment": {
+      "paymentInformation": "Payment Information",
+      "basePrice": "Base Price",
+      "hostFee": "Host Fee",
+      "expectedPayout": "Expected Payout",
+      "totalAmount": "Total Amount",
+      "cancelPolicy": "Cancel policy flexible"
+    },
+    "legend": {
+      "statusLabel": "Status",
+      "internalConfirmed": "Internal - Confirmed",
+      "internalTentative": "Internal - Tentative",
+      "externalConfirmed": "External - Confirmed",
+      "externalNew": "External - New",
+      "cancelled": "Cancelled"
+    }
+  },
   "navigation": {
     "dashboard": "Dashboard",
     "calendar": "Calendar",

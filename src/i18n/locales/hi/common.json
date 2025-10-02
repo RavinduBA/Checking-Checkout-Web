@@ -27,6 +27,68 @@
       "noBookings": "कोई आगामी बुकिंग नहीं"
     }
   },
+  "calendar": {
+    "title": "आरक्षण कैलेंडर",
+    "subtitle": "बाहरी बुकिंग के साथ कमरे आधारित कैलेंडर दृश्य",
+    "viewMode": {
+      "timeline": "समयरेखा",
+      "list": "सूची",
+      "label": "मोड: {{mode}}"
+    },
+    "timeline": {
+      "title": "कैलेंडर समयरेखा",
+      "weekOverview": "साप्ताहिक अवलोकन"
+    },
+    "roomInfo": {
+      "roomVilla": "कमरा / विला",
+      "typeLocation": "प्रकार और स्थान",
+      "external": "बाह्य"
+    },
+    "booking": {
+      "addBooking": "बुकिंग जोड़ें",
+      "guestsLabel": "अतिथि",
+      "guestsCount": "{{count}} अतिथि",
+      "bookingDetails": "बुकिंग विवरण #{{id}}",
+      "guestInformation": "अतिथि जानकारी",
+      "guestName": "अतिथि का नाम",
+      "email": "ईमेल",
+      "phone": "फ़ोन",
+      "adultsLabel": "{{count}} वयस्क",
+      "childrenLabel": "{{count}} बच्चे",
+      "notAvailable": "उपलब्ध नहीं",
+      "unknownGuest": "अज्ञात अतिथि"
+    },
+    "stay": {
+      "stayInformation": "ठहरने की जानकारी",
+      "checkIn": "चेक-इन",
+      "checkOut": "चेक-आउट",
+      "nights": "रातें",
+      "bookingDate": "बुकिंग तिथि"
+    },
+    "property": {
+      "propertyInformation": "संपत्ति जानकारी",
+      "location": "स्थान",
+      "room": "कमरा",
+      "unknownLocation": "अज्ञात स्थान",
+      "unknownRoom": "अज्ञात कमरा"
+    },
+    "payment": {
+      "paymentInformation": "भुगतान जानकारी",
+      "basePrice": "मूल्य",
+      "hostFee": "मेज़बान शुल्क",
+      "expectedPayout": "अपेक्षित भुगतान",
+      "totalAmount": "कुल राशि",
+      "cancelPolicy": "रद्द करने की नीति लचीली है"
+    },
+    "legend": {
+      "statusLabel": "स्थिति",
+      "internalConfirmed": "आंतरिक - पुष्टि",
+      "internalTentative": "आंतरिक - अस्थायी",
+      "externalConfirmed": "बाह्य - पुष्टि",
+      "externalNew": "बाह्य - नया",
+      "cancelled": "रद्द"
+    }
+  },
   "navigation": {
     "dashboard": "डैशबोर्ड",
     "calendar": "कैलेंडर",

@@ -27,6 +27,68 @@
       "noBookings": "ඉදිරියේදී පැමිණෙන වෙන්කරවීම් නොමැත"
     }
   },
+  "calendar": {
+    "title": "වෙන්කිරීම් දින දර්ශනය",
+    "subtitle": "බාහිර වෙන්කිරීම් සමඟ කාමර මූලික දින දර්ශන දසුන",
+    "viewMode": {
+      "timeline": "කාලරේඛාව",
+      "list": "ලැයිස්තුව",
+      "label": "ප්‍රකාරය: {{mode}}"
+    },
+    "timeline": {
+      "title": "දින දර්ශන කාලරේඛාව",
+      "weekOverview": "සතියේ සමාලෝචනය"
+    },
+    "roomInfo": {
+      "roomVilla": "කාමරය / වಿಲ್ಲාව",
+      "typeLocation": "වර්ගය සහ ස්ථානය",
+      "external": "බාහිර"
+    },
+    "booking": {
+      "addBooking": "වෙන්කිරීමක් එක් කරන්න",
+      "guestsLabel": "අමුත්තන්",
+      "guestsCount": "{{count}} අමුත්තන්",
+      "bookingDetails": "වෙන්කිරීම් විස්තරය #{{id}}",
+      "guestInformation": "ආගන්තුක තොරතුරු",
+      "guestName": "ආගන්තුක නම",
+      "email": "විද්‍යුත් තැපෑල",
+      "phone": "දුරකථනය",
+      "adultsLabel": "{{count}} වැඩිහිටියන්",
+      "childrenLabel": "{{count}} ළමුන්",
+      "notAvailable": "ලබා නොමැත",
+      "unknownGuest": "හඳුනා නොගත් අමුත්තෙකු"
+    },
+    "stay": {
+      "stayInformation": "නවාතැන් තොරතුරු",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "nights": "රාත්‍රි",
+      "bookingDate": "වෙන්කිරීම් දිනය"
+    },
+    "property": {
+      "propertyInformation": "දේපල තොරතුරු",
+      "location": "ස්ථානය",
+      "room": "කාමරය",
+      "unknownLocation": "නොදන්නා ස්ථානය",
+      "unknownRoom": "නොදන්නා කාමරය"
+    },
+    "payment": {
+      "paymentInformation": "ගෙවීම් තොරතුරු",
+      "basePrice": "මූලික මිල",
+      "hostFee": "සත්කාරක ගාස්තුව",
+      "expectedPayout": "අපේක්ෂිත ගෙවීම",
+      "totalAmount": "මුළු මුදල",
+      "cancelPolicy": "අවලංගු ප්‍රතිපත්තිය ලච්චිළි"
+    },
+    "legend": {
+      "statusLabel": "තත්වය",
+      "internalConfirmed": "අභ්‍යන්තර - තහවුරු කළ",
+      "internalTentative": "අභ්‍යන්තර - අස්ථිර",
+      "externalConfirmed": "බාහිර - තහවුරු කළ",
+      "externalNew": "බාහිර - නව",
+      "cancelled": "අවලංගු කළ"
+    }
+  },
   "navigation": {
     "dashboard": "පුවරුව",
     "calendar": "දින දර්ශනය",
