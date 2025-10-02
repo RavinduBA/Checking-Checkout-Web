@@ -20,7 +20,6 @@ import Auth from "./pages/Auth";
 import BillingError from "./pages/BillingError";
 import BillingSubscription from "./pages/BillingSubscription";
 import BillingSuccess from "./pages/BillingSuccess";
-import BookingForm from "./pages/BookingForm";
 import Dashboard from "./pages/Dashboard";
 import EnhancedCalendar from "./pages/EnhancedCalendar";
 import Expense from "./pages/Expense";
@@ -34,7 +33,6 @@ import PaymentForm from "./pages/PaymentForm";
 import ReservationDetails from "./pages/ReservationDetails";
 import Reservations from "./pages/Reservations";
 import ResetPassword from "./pages/ResetPassword";
-import RoomManagement from "./pages/RoomManagement";
 import Settings from "./pages/Settings";
 import Users from "./pages/Users";
 
