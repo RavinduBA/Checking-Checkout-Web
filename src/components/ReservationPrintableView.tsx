@@ -822,6 +822,9 @@ const PrintableReservation = React.forwardRef<
 
 PrintableReservation.displayName = "PrintableReservation";
 
+// Export PrintableReservation so it can be used by other components
+export { PrintableReservation };
+
 export const ReservationPrintableView: React.FC<
 	ReservationPrintableViewProps
 > = ({ reservation }) => {

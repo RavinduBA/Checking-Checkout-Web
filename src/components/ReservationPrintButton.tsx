@@ -1,6 +1,6 @@
 import { Printer } from "lucide-react";
 import React from "react";
-import { ReservationPrintableView } from "@/components/ReservationPrintableView";
+import { PrintableReservation } from "@/components/ReservationPrintableView";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -238,9 +238,7 @@ export const ReservationPrintButton: React.FC<ReservationPrintButtonProps> = ({
 
 			{/* Hidden printable component - using print-only styles instead of display:none */}
 			<div style={{ display: "none" }}>
-				<div ref={printRef}>
-					<ReservationPrintableView reservation={printableReservation} />
-				</div>
+				<PrintableReservation ref={printRef} reservation={printableReservation} />
 			</div>
 		</>
 	);

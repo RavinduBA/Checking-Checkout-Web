@@ -7,6 +7,7 @@ import {
 	X,
 	BedDouble,
 	DollarSign,
+	Printer,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -149,6 +150,30 @@ export function ViewReservationDialog({
 		return symbols[currency] || currency;
 	};
 
+	const handlePrint = () => {
+		// Add print styles to make dialog content visible when printing
+		const printStyles = `
+			<style>
+				@media print {
+					/* Hide dialog overlay and make content visible */
+					body * { visibility: hidden; }
+					.print-content, .print-content * { visibility: visible; }
+					.print-content { position: absolute; left: 0; top: 0; width: 100%; }
+					.no-print { display: none !important; }
+					/* Override dialog styles for printing */
+					[role="dialog"] { position: static !important; max-width: 100% !important; }
+					.overflow-y-auto { overflow: visible !important; }
+					@page { margin: 0.5in; size: A4; }
+				}
+			</style>
+		`;
+
+		const head = document.head.innerHTML;
+		document.head.innerHTML = head + printStyles;
+
+		window.print();
+	};
+
 	if (loading) {
 		return (
 			<Dialog open={isOpen} onOpenChange={onClose}>
@@ -175,18 +200,19 @@ export function ViewReservationDialog({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2 text-xl">
-						<Calendar className="size-5" />
-						Reservation Details
-					</DialogTitle>
-					<DialogDescription>
-						Reservation #{reservation.reservation_number}
-					</DialogDescription>
-				</DialogHeader>
+			<DialogContent className="max-w-2xl w-full sm:max-w-5xl md:max-w-8xl max-h-[90vh] md:max-h-[95vh] overflow-y-auto">
+				<div className="print-content">
+					<DialogHeader>
+						<DialogTitle className="flex items-center gap-2 text-xl">
+							<Calendar className="size-5" />
+							Reservation Details
+						</DialogTitle>
+						<DialogDescription>
+							Reservation #{reservation.reservation_number}
+						</DialogDescription>
+					</DialogHeader>
 
-				<div className="space-y-6">
+					<div className="space-y-6">
 					{/* Status and Location */}
 					<div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b">
 						<div className="flex items-center gap-3">
@@ -515,14 +541,19 @@ export function ViewReservationDialog({
 						</Card>
 					)}
 
-					{/* Action Buttons */}
-					<div className="flex justify-end gap-3 pt-4 border-t">
-						<Button variant="outline" onClick={onClose}>
-							<X className="size-4 mr-2" />
-							Close
-						</Button>
-					</div>
+				{/* Action Buttons */}
+				<div className="flex justify-end gap-3 pt-2 border-t no-print">
+					<Button variant="outline" onClick={handlePrint}>
+						<Printer className="size-4 mr-2" />
+						Print
+					</Button>
+					<Button variant="outline" onClick={onClose}>
+						<X className="size-4 mr-2" />
+						Close
+					</Button>
 				</div>
+				</div>
+			</div>
 			</DialogContent>
 		</Dialog>
 	);
