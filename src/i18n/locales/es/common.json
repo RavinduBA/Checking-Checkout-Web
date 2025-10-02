@@ -1,0 +1,85 @@
+{
+  "dashboard": {
+    "header": {
+      "welcome": "¡Bienvenido de vuelta!",
+      "subtitle": "Panel de Gestión Hotelera",
+      "addIncome": "Agregar Ingresos",
+      "addExpense": "Agregar Gastos",
+      "monthFilter": "Filtro de Mes"
+    }
+  },
+  "navigation": {
+    "dashboard": "Panel",
+    "calendar": "Calendario",
+    "reservations": "Reservas",
+    "income": "Ingresos",
+    "expense": "Gastos",
+    "reports": "Informes",
+    "settings": "Configuración",
+    "users": "Usuarios",
+    "masterFiles": "Archivos Maestros"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "add": "Agregar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "import": "Importar",
+    "yes": "Sí",
+    "no": "No",
+    "ok": "OK",
+    "close": "Cerrar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "submit": "Enviar",
+    "reset": "Restablecer",
+    "clear": "Limpiar",
+    "all": "Todos",
+    "none": "Ninguno",
+    "select": "Seleccionar",
+    "deselect": "Deseleccionar"
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "logout": "Cerrar Sesión",
+    "signup": "Registrarse",
+    "forgotPassword": "Olvidé mi Contraseña",
+    "resetPassword": "Restablecer Contraseña",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar Contraseña",
+    "rememberMe": "Recordarme"
+  },
+  "theme": {
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema",
+    "toggleTheme": "Cambiar tema"
+  },
+  "language": {
+    "selectLanguage": "Seleccionar Idioma",
+    "english": "Inglés",
+    "spanish": "Español",
+    "french": "Francés",
+    "german": "Alemán",
+    "portuguese": "Portugués"
+  },
+  "profile": {
+    "myProfile": "Mi Perfil",
+    "settings": "Configuración",
+    "billing": "Facturación y Suscripción",
+    "manageUsers": "Gestionar Usuarios",
+    "masterFiles": "Archivos Maestros",
+    "bookingChannels": "Canales de Reserva"
+  },
+  "fullscreen": {
+    "enter": "Pantalla completa",
+    "exit": "Salir de pantalla completa"
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "dashboard": {
+    "header": {
+      "welcome": "Bon retour !",
+      "subtitle": "Tableau de Bord de Gestion Hôtelière",
+      "addIncome": "Ajouter Revenus",
+      "addExpense": "Ajouter Dépenses",
+      "monthFilter": "Filtre par Mois"
+    }
+  },
+  "navigation": {
+    "dashboard": "Tableau de Bord",
+    "calendar": "Calendrier",
+    "reservations": "Réservations",
+    "income": "Revenus",
+    "expense": "Dépenses",
+    "reports": "Rapports",
+    "settings": "Paramètres",
+    "users": "Utilisateurs",
+    "masterFiles": "Fichiers Maîtres"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "add": "Ajouter",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "export": "Exporter",
+    "import": "Importer",
+    "yes": "Oui",
+    "no": "Non",
+    "ok": "OK",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "submit": "Soumettre",
+    "reset": "Réinitialiser",
+    "clear": "Effacer",
+    "all": "Tous",
+    "none": "Aucun",
+    "select": "Sélectionner",
+    "deselect": "Désélectionner"
+  },
+  "auth": {
+    "login": "Se Connecter",
+    "logout": "Se Déconnecter",
+    "signup": "S'inscrire",
+    "forgotPassword": "Mot de Passe Oublié",
+    "resetPassword": "Réinitialiser le Mot de Passe",
+    "email": "Email",
+    "password": "Mot de Passe",
+    "confirmPassword": "Confirmer le Mot de Passe",
+    "rememberMe": "Se Souvenir de Moi"
+  },
+  "theme": {
+    "light": "Clair",
+    "dark": "Sombre",
+    "system": "Système",
+    "toggleTheme": "Changer de thème"
+  },
+  "language": {
+    "selectLanguage": "Sélectionner la Langue",
+    "english": "Anglais",
+    "spanish": "Espagnol",
+    "french": "Français",
+    "german": "Allemand",
+    "portuguese": "Portugais"
+  },
+  "profile": {
+    "myProfile": "Mon Profil",
+    "settings": "Paramètres",
+    "billing": "Facturation et Abonnement",
+    "manageUsers": "Gérer les Utilisateurs",
+    "masterFiles": "Fichiers Maîtres",
+    "bookingChannels": "Canaux de Réservation"
+  },
+  "fullscreen": {
+    "enter": "Plein écran",
+    "exit": "Quitter le plein écran"
+  }
+}

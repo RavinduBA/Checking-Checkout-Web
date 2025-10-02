@@ -1,0 +1,85 @@
+{
+  "dashboard": {
+    "header": {
+      "welcome": "Bem-vindo de volta!",
+      "subtitle": "Painel de Gestão Hoteleira",
+      "addIncome": "Adicionar Receitas",
+      "addExpense": "Adicionar Despesas",
+      "monthFilter": "Filtro por Mês"
+    }
+  },
+  "navigation": {
+    "dashboard": "Painel",
+    "calendar": "Calendário",
+    "reservations": "Reservas",
+    "income": "Receitas",
+    "expense": "Despesas",
+    "reports": "Relatórios",
+    "settings": "Configurações",
+    "users": "Usuários",
+    "masterFiles": "Arquivos Mestres"
+  },
+  "common": {
+    "loading": "Carregando...",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "add": "Adicionar",
+    "search": "Pesquisar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "import": "Importar",
+    "yes": "Sim",
+    "no": "Não",
+    "ok": "OK",
+    "close": "Fechar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "previous": "Anterior",
+    "submit": "Enviar",
+    "reset": "Redefinir",
+    "clear": "Limpar",
+    "all": "Todos",
+    "none": "Nenhum",
+    "select": "Selecionar",
+    "deselect": "Desmarcar"
+  },
+  "auth": {
+    "login": "Entrar",
+    "logout": "Sair",
+    "signup": "Cadastrar",
+    "forgotPassword": "Esqueci a Senha",
+    "resetPassword": "Redefinir Senha",
+    "email": "E-mail",
+    "password": "Senha",
+    "confirmPassword": "Confirmar Senha",
+    "rememberMe": "Lembrar de Mim"
+  },
+  "theme": {
+    "light": "Claro",
+    "dark": "Escuro",
+    "system": "Sistema",
+    "toggleTheme": "Alternar tema"
+  },
+  "language": {
+    "selectLanguage": "Selecionar Idioma",
+    "english": "Inglês",
+    "spanish": "Espanhol",
+    "french": "Francês",
+    "german": "Alemão",
+    "portuguese": "Português"
+  },
+  "profile": {
+    "myProfile": "Meu Perfil",
+    "settings": "Configurações",
+    "billing": "Faturamento e Assinatura",
+    "manageUsers": "Gerenciar Usuários",
+    "masterFiles": "Arquivos Mestres",
+    "bookingChannels": "Canais de Reserva"
+  },
+  "fullscreen": {
+    "enter": "Tela cheia",
+    "exit": "Sair da tela cheia"
+  }
+}

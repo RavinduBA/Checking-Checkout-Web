@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import {
   DropdownMenu,
@@ -17,44 +18,36 @@ type Props = {
   align?: 'start' | 'center' | 'end'
 }
 
+const languages = [
+  { code: "en", name: "English", flag: "🇺🇸" },
+  { code: "es", name: "Español", flag: "🇪🇸" },
+  { code: "fr", name: "Français", flag: "🇫🇷" },
+  { code: "de", name: "Deutsch", flag: "🇩🇪" },
+  { code: "pt", name: "Português", flag: "🇵🇹" },
+];
+
 const LanguageDropdown = ({ defaultOpen, align, trigger }: Props) => {
-  const [language, setLanguage] = useState('english')
+  const { i18n, t } = useTranslation();
+
+  const changeLanguage = (languageCode: string) => {
+    i18n.changeLanguage(languageCode);
+  };
 
   return (
     <DropdownMenu defaultOpen={defaultOpen}>
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
       <DropdownMenuContent className='w-50' align={align || 'end'}>
-        <DropdownMenuRadioGroup value={language} onValueChange={setLanguage}>
-          <DropdownMenuRadioItem
-            value='english'
-            className='data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground pl-2 text-base [&>span]:hidden'
-          >
-            English
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem
-            value='german'
-            className='data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground pl-2 text-base [&>span]:hidden'
-          >
-            Deutsch
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem
-            value='spanish'
-            className='data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground pl-2 text-base [&>span]:hidden'
-          >
-            Española
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem
-            value='portuguese'
-            className='data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground pl-2 text-base [&>span]:hidden'
-          >
-            Português
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem
-            value='korean'
-            className='data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground pl-2 text-base [&>span]:hidden'
-          >
-            한국인
-          </DropdownMenuRadioItem>
+        <DropdownMenuRadioGroup value={i18n.language} onValueChange={changeLanguage}>
+          {languages.map((language) => (
+            <DropdownMenuRadioItem
+              key={language.code}
+              value={language.code}
+              className='data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground pl-2 text-base [&>span]:hidden'
+            >
+              <span className="mr-2">{language.flag}</span>
+              {language.name}
+            </DropdownMenuRadioItem>
+          ))}
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>

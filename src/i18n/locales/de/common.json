@@ -1,0 +1,85 @@
+{
+  "dashboard": {
+    "header": {
+      "welcome": "Willkommen zurück!",
+      "subtitle": "Hotel-Management-Dashboard",
+      "addIncome": "Einnahmen Hinzufügen",
+      "addExpense": "Ausgaben Hinzufügen",
+      "monthFilter": "Monatsfilter"
+    }
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "calendar": "Kalender",
+    "reservations": "Reservierungen",
+    "income": "Einnahmen",
+    "expense": "Ausgaben",
+    "reports": "Berichte",
+    "settings": "Einstellungen",
+    "users": "Benutzer",
+    "masterFiles": "Masterdateien"
+  },
+  "common": {
+    "loading": "Laden...",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "add": "Hinzufügen",
+    "search": "Suchen",
+    "filter": "Filtern",
+    "export": "Exportieren",
+    "import": "Importieren",
+    "yes": "Ja",
+    "no": "Nein",
+    "ok": "OK",
+    "close": "Schließen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "previous": "Vorherige",
+    "submit": "Absenden",
+    "reset": "Zurücksetzen",
+    "clear": "Löschen",
+    "all": "Alle",
+    "none": "Keine",
+    "select": "Auswählen",
+    "deselect": "Abwählen"
+  },
+  "auth": {
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "signup": "Registrieren",
+    "forgotPassword": "Passwort Vergessen",
+    "resetPassword": "Passwort Zurücksetzen",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "confirmPassword": "Passwort Bestätigen",
+    "rememberMe": "Angemeldet Bleiben"
+  },
+  "theme": {
+    "light": "Hell",
+    "dark": "Dunkel",
+    "system": "System",
+    "toggleTheme": "Thema wechseln"
+  },
+  "language": {
+    "selectLanguage": "Sprache Auswählen",
+    "english": "Englisch",
+    "spanish": "Spanisch",
+    "french": "Französisch",
+    "german": "Deutsch",
+    "portuguese": "Portugiesisch"
+  },
+  "profile": {
+    "myProfile": "Mein Profil",
+    "settings": "Einstellungen",
+    "billing": "Abrechnung und Abonnement",
+    "manageUsers": "Benutzer Verwalten",
+    "masterFiles": "Masterdateien",
+    "bookingChannels": "Buchungskanäle"
+  },
+  "fullscreen": {
+    "enter": "Vollbild",
+    "exit": "Vollbild verlassen"
+  }
+}

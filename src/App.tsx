@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import { LocationProvider } from "@/context/LocationContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import "./i18n";
 import BookingChannelsIntegration from "@/pages/BookingChannelsIntegration";
 import Reports from "@/pages/Reports";
 import { AuthRedirect } from "./components/AuthRedirect";

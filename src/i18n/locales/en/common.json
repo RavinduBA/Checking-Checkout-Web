@@ -1,0 +1,85 @@
+{
+  "dashboard": {
+    "header": {
+      "welcome": "Welcome back!",
+      "subtitle": "Hotel Management Dashboard",
+      "addIncome": "Add Income",
+      "addExpense": "Add Expense",
+      "monthFilter": "Month Filter"
+    }
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "calendar": "Calendar",
+    "reservations": "Reservations",
+    "income": "Income",
+    "expense": "Expense",
+    "reports": "Reports",
+    "settings": "Settings",
+    "users": "Users",
+    "masterFiles": "Master Files"
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "reset": "Reset",
+    "clear": "Clear",
+    "all": "All",
+    "none": "None",
+    "select": "Select",
+    "deselect": "Deselect"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "signup": "Sign Up",
+    "forgotPassword": "Forgot Password",
+    "resetPassword": "Reset Password",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "rememberMe": "Remember Me"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "toggleTheme": "Toggle theme"
+  },
+  "language": {
+    "selectLanguage": "Select Language",
+    "english": "English",
+    "spanish": "Spanish",
+    "french": "French",
+    "german": "German",
+    "portuguese": "Portuguese"
+  },
+  "profile": {
+    "myProfile": "My Profile",
+    "settings": "Settings",
+    "billing": "Billing & Subscription",
+    "manageUsers": "Manage Users",
+    "masterFiles": "Master Files",
+    "bookingChannels": "Booking Channels"
+  },
+  "fullscreen": {
+    "enter": "Enter fullscreen",
+    "exit": "Exit fullscreen"
+  }
+}

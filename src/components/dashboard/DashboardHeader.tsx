@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +32,7 @@ export function DashboardHeader({
 	const [loading, setLoading] = useState(true);
 	const [locations, setLocations] = useState<Location[]>([]);
 	const { tenant } = useAuth();
+	const { t } = useTranslation();
 
 	// Location selection is now handled by sidebar
 	useEffect(() => {
@@ -77,10 +79,10 @@ export function DashboardHeader({
 			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 				<div>
 					<h1 className="text-xl lg:text-2xl font-bold text-foreground">
-						Welcome back!
+						{t('dashboard.header.welcome')}
 					</h1>
 					<p className="text-sm lg:text-base text-muted-foreground">
-						Hotel Management Dashboard
+						{t('dashboard.header.subtitle')}
 					</p>
 				</div>
 				<div className="flex flex-col sm:flex-row gap-2">
@@ -93,7 +95,7 @@ export function DashboardHeader({
 						>
 							<Link to="/reservations">
 								<Plus className="size-4" />
-								Add Income
+								{t('dashboard.header.addIncome')}
 							</Link>
 						</Button>
 					)}
@@ -106,7 +108,7 @@ export function DashboardHeader({
 						>
 							<Link to="/expense">
 								<Plus className="size-4" />
-								Add Expense
+								{t('dashboard.header.addExpense')}
 							</Link>
 						</Button>
 					)}
@@ -117,7 +119,7 @@ export function DashboardHeader({
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 				{/* Location selector removed - now handled by sidebar */}
 				<div className="space-y-1">
-					<Label className="text-xs">Month Filter</Label>
+					<Label className="text-xs">{t('dashboard.header.monthFilter')}</Label>
 					<Input
 						type="month"
 						value={selectedMonth}
