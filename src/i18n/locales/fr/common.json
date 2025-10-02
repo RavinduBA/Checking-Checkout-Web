@@ -111,5 +111,48 @@
   "fullscreen": {
     "enter": "Plein écran",
     "exit": "Quitter le plein écran"
+  },
+  "masterFiles": {
+    "title": "Fichiers Maîtres",
+    "subtitle": "Gérer toutes les configurations de l'hôtel",
+    "locations": {
+      "title": "Emplacements d'Hôtel",
+      "description": "Gérer les emplacements d'hôtel",
+      "active": "Emplacements Actifs",
+      "inactive": "Emplacements Inactifs",
+      "add": "Ajouter un Emplacement"
+    },
+    "rooms": {
+      "title": "Gestion des Chambres",
+      "description": "Gérer les chambres d'hôtel",
+      "all": "Toutes les Chambres",
+      "types": "Types de Chambres",
+      "pricing": "Tarification des Chambres",
+      "amenities": "Équipements"
+    },
+    "guides": {
+      "title": "Guides Touristiques",
+      "description": "Gérer les guides touristiques",
+      "active": "Guides Actifs",
+      "inactive": "Guides Inactifs",
+      "licenses": "Gestion des Licences",
+      "performance": "Performance"
+    },
+    "agents": {
+      "title": "Agents de Voyage",
+      "description": "Gérer les agents de voyage",
+      "active": "Agents Actifs",
+      "agencies": "Agences de Voyage",
+      "contracts": "Contrats",
+      "performance": "Performance"
+    },
+    "commissions": {
+      "title": "Paramètres de Commission",
+      "description": "Gérer les structures de commission",
+      "rates": "Taux de Commission",
+      "policies": "Politiques de Paiement",
+      "tracking": "Suivi des Commissions",
+      "reports": "Rapports de Commissions"
+    }
   }
 }

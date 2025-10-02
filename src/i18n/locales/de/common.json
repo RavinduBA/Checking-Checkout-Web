@@ -111,5 +111,48 @@
   "fullscreen": {
     "enter": "Vollbild",
     "exit": "Vollbild verlassen"
+  },
+  "masterFiles": {
+    "title": "Masterdateien",
+    "subtitle": "Alle Hotelkonfigurationen verwalten",
+    "locations": {
+      "title": "Hotelstandorte",
+      "description": "Hotelstandorte verwalten",
+      "active": "Aktive Standorte",
+      "inactive": "Inaktive Standorte",
+      "add": "Standort hinzufügen"
+    },
+    "rooms": {
+      "title": "Zimmerverwaltung",
+      "description": "Hotelzimmer verwalten",
+      "all": "Alle Zimmer",
+      "types": "Zimmertypen",
+      "pricing": "Zimmerpreise",
+      "amenities": "Ausstattung"
+    },
+    "guides": {
+      "title": "Reiseführer",
+      "description": "Reiseführer verwalten",
+      "active": "Aktive Führer",
+      "inactive": "Inaktive Führer",
+      "licenses": "Lizenzverwaltung",
+      "performance": "Leistung"
+    },
+    "agents": {
+      "title": "Reisebüros",
+      "description": "Reisebüros verwalten",
+      "active": "Aktive Agenten",
+      "agencies": "Reisebüros",
+      "contracts": "Verträge",
+      "performance": "Leistung"
+    },
+    "commissions": {
+      "title": "Provisionseinstellungen",
+      "description": "Provisionsstrukturen verwalten",
+      "rates": "Provisionssätze",
+      "policies": "Zahlungsrichtlinien",
+      "tracking": "Provisionsverfolgung",
+      "reports": "Provisionsberichte"
+    }
   }
 }

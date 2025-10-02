@@ -111,5 +111,48 @@
   "fullscreen": {
     "enter": "Tela cheia",
     "exit": "Sair da tela cheia"
+  },
+  "masterFiles": {
+    "title": "Arquivos Mestres",
+    "subtitle": "Gerenciar todas as configurações do hotel",
+    "locations": {
+      "title": "Localizações do Hotel",
+      "description": "Gerenciar localizações do hotel",
+      "active": "Localizações Ativas",
+      "inactive": "Localizações Inativas",
+      "add": "Adicionar Localização"
+    },
+    "rooms": {
+      "title": "Gerenciamento de Quartos",
+      "description": "Gerenciar quartos do hotel",
+      "all": "Todos os Quartos",
+      "types": "Tipos de Quartos",
+      "pricing": "Preços dos Quartos",
+      "amenities": "Comodidades"
+    },
+    "guides": {
+      "title": "Guias Turísticos",
+      "description": "Gerenciar guias turísticos",
+      "active": "Guias Ativos",
+      "inactive": "Guias Inativos",
+      "licenses": "Gerenciamento de Licenças",
+      "performance": "Desempenho"
+    },
+    "agents": {
+      "title": "Agentes de Viagem",
+      "description": "Gerenciar agentes de viagem",
+      "active": "Agentes Ativos",
+      "agencies": "Agências de Viagem",
+      "contracts": "Contratos",
+      "performance": "Desempenho"
+    },
+    "commissions": {
+      "title": "Configurações de Comissão",
+      "description": "Gerenciar estruturas de comissão",
+      "rates": "Taxas de Comissão",
+      "policies": "Políticas de Pagamento",
+      "tracking": "Rastreamento de Comissões",
+      "reports": "Relatórios de Comissões"
+    }
   }
 }

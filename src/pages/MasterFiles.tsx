@@ -10,114 +10,57 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams } from "react-router";
+import { useTranslation } from "react-i18next";
 import AgentsTab from "@/components/master-files/AgentsTab";
+import CommissionsTab from "@/components/master-files/CommissionsTab";
 import GuidesTab from "@/components/master-files/GuidesTab";
 import LocationsTab from "@/components/master-files/LocationsTab";
 import RoomsTab from "@/components/master-files/RoomsTab";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
-const masterFilesTabs = [
-	{
-		id: "locations",
-		name: "Hotel Locations",
-		icon: MapPin,
-		description: "Manage hotel locations",
-		subItems: [
-			{
-				id: "active",
-				name: "Active Locations",
-				description: "Currently operational locations",
-			},
-			{
-				id: "inactive",
-				name: "Inactive Locations",
-				description: "Temporarily closed locations",
-			},
-			{
-				id: "add",
-				name: "Add Location",
-				description: "Create new hotel location",
-			},
-		],
-	},
-	{
-		id: "rooms",
-		name: "Room Management",
-		icon: Bed,
-		description: "Manage hotel rooms",
-		subItems: [
-			{ id: "all", name: "All Rooms", description: "View all hotel rooms" },
-			{
-				id: "types",
-				name: "Room Types",
-				description: "Manage room categories",
-			},
-			{ id: "pricing", name: "Room Pricing", description: "Set room rates" },
-			{
-				id: "amenities",
-				name: "Amenities",
-				description: "Room features & facilities",
-			},
-		],
-	},
-	{
-		id: "guides",
-		name: "Tour Guides",
-		icon: UserCheck,
-		description: "Manage tour guides",
-		subItems: [
-			{
-				id: "active",
-				name: "Active Guides",
-				description: "Currently available guides",
-			},
-			{
-				id: "inactive",
-				name: "Inactive Guides",
-				description: "Temporarily unavailable",
-			},
-			{
-				id: "licenses",
-				name: "License Management",
-				description: "Guide license tracking",
-			},
-			{
-				id: "performance",
-				name: "Performance",
-				description: "Guide ratings & reviews",
-			},
-		],
-	},
-	{
-		id: "agents",
-		name: "Travel Agents",
-		icon: Users,
-		description: "Manage travel agents",
-		subItems: [
-			{
-				id: "active",
-				name: "Active Agents",
-				description: "Current agent partners",
-			},
-			{
-				id: "agencies",
-				name: "Travel Agencies",
-				description: "Agency partnerships",
-			},
-			{ id: "contracts", name: "Contracts", description: "Agent agreements" },
-			{
-				id: "performance",
-				name: "Performance",
-				description: "Agent booking statistics",
-			},
-		],
-	},
-];
-
 export default function MasterFiles() {
-	const [searchParams] = useSearchParams();
+	const [searchParams, setSearchParams] = useSearchParams();
 	const activeTab = searchParams.get("tab") || "locations";
+	const { t } = useTranslation();
+
+	const masterFilesTabs = [
+		{
+			id: "locations",
+			name: t("masterFiles.locations.title"),
+			icon: MapPin,
+			description: t("masterFiles.locations.description"),
+		},
+		{
+			id: "rooms",
+			name: t("masterFiles.rooms.title"),
+			icon: Bed,
+			description: t("masterFiles.rooms.description"),
+		},
+		{
+			id: "guides",
+			name: t("masterFiles.guides.title"),
+			icon: UserCheck,
+			description: t("masterFiles.guides.description"),
+		},
+		{
+			id: "agents",
+			name: t("masterFiles.agents.title"),
+			icon: Users,
+			description: t("masterFiles.agents.description"),
+		},
+		{
+			id: "commissions",
+			name: t("masterFiles.commissions.title"),
+			icon: Percent,
+			description: t("masterFiles.commissions.description"),
+		},
+	];
+
+	const handleTabChange = (value: string) => {
+		setSearchParams({ tab: value });
+	};
 
 	const renderTabContent = () => {
 		switch (activeTab) {
@@ -129,6 +72,8 @@ export default function MasterFiles() {
 				return <GuidesTab />;
 			case "agents":
 				return <AgentsTab />;
+			case "commissions":
+				return <CommissionsTab />;
 			default:
 				return <LocationsTab />;
 		}
@@ -137,7 +82,40 @@ export default function MasterFiles() {
 	return (
 		<div className="p-6">
 			<Card className="h-full">
-				<CardContent className="p-6">{renderTabContent()}</CardContent>
+				<CardHeader>
+					<CardTitle className="text-2xl font-bold flex items-center gap-3">
+						<Building2 className="size-7 text-primary" />
+						{t("masterFiles.title")}
+					</CardTitle>
+					<p className="text-muted-foreground">{t("masterFiles.subtitle")}</p>
+				</CardHeader>
+				<CardContent className="p-6">
+					<Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+						<TabsList className="grid w-full grid-cols-2 md:grid-cols-5 gap-2 h-auto p-1">
+							{masterFilesTabs.map((tab) => {
+								const Icon = tab.icon;
+								return (
+									<TabsTrigger
+										key={tab.id}
+										value={tab.id}
+										className="flex items-center gap-2 p-3 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+									>
+										<Icon className="size-4" />
+										<span className="hidden sm:inline font-medium">{tab.name}</span>
+									</TabsTrigger>
+								);
+							})}
+						</TabsList>
+
+						<div className="grid gap-6">
+							{masterFilesTabs.map((tab) => (
+								<TabsContent key={tab.id} value={tab.id} className="mt-0">
+									{renderTabContent()}
+								</TabsContent>
+							))}
+						</div>
+					</Tabs>
+				</CardContent>
 			</Card>
 		</div>
 	);

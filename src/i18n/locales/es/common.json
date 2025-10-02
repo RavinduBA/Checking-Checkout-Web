@@ -111,5 +111,48 @@
   "fullscreen": {
     "enter": "Pantalla completa",
     "exit": "Salir de pantalla completa"
+  },
+  "masterFiles": {
+    "title": "Archivos Maestros",
+    "subtitle": "Gestionar todas las configuraciones del hotel",
+    "locations": {
+      "title": "Ubicaciones del Hotel",
+      "description": "Gestionar ubicaciones del hotel",
+      "active": "Ubicaciones Activas",
+      "inactive": "Ubicaciones Inactivas",
+      "add": "Agregar Ubicación"
+    },
+    "rooms": {
+      "title": "Gestión de Habitaciones",
+      "description": "Gestionar habitaciones del hotel",
+      "all": "Todas las Habitaciones",
+      "types": "Tipos de Habitación",
+      "pricing": "Precios de Habitación",
+      "amenities": "Amenidades"
+    },
+    "guides": {
+      "title": "Guías Turísticos",
+      "description": "Gestionar guías turísticos",
+      "active": "Guías Activos",
+      "inactive": "Guías Inactivos",
+      "licenses": "Gestión de Licencias",
+      "performance": "Rendimiento"
+    },
+    "agents": {
+      "title": "Agentes de Viaje",
+      "description": "Gestionar agentes de viaje",
+      "active": "Agentes Activos",
+      "agencies": "Agencias de Viaje",
+      "contracts": "Contratos",
+      "performance": "Rendimiento"
+    },
+    "commissions": {
+      "title": "Configuración de Comisiones",
+      "description": "Gestionar estructuras de comisión",
+      "rates": "Tarifas de Comisión",
+      "policies": "Políticas de Pago",
+      "tracking": "Seguimiento de Comisiones",
+      "reports": "Informes de Comisiones"
+    }
   }
 }

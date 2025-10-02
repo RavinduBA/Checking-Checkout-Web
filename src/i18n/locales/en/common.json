@@ -111,5 +111,48 @@
   "fullscreen": {
     "enter": "Enter fullscreen",
     "exit": "Exit fullscreen"
+  },
+  "masterFiles": {
+    "title": "Master Files",
+    "subtitle": "Manage all hotel configurations",
+    "locations": {
+      "title": "Hotel Locations",
+      "description": "Manage hotel locations",
+      "active": "Active Locations",
+      "inactive": "Inactive Locations",
+      "add": "Add Location"
+    },
+    "rooms": {
+      "title": "Room Management",
+      "description": "Manage hotel rooms",
+      "all": "All Rooms",
+      "types": "Room Types",
+      "pricing": "Room Pricing",
+      "amenities": "Amenities"
+    },
+    "guides": {
+      "title": "Tour Guides",
+      "description": "Manage tour guides",
+      "active": "Active Guides",
+      "inactive": "Inactive Guides",
+      "licenses": "License Management",
+      "performance": "Performance"
+    },
+    "agents": {
+      "title": "Travel Agents",
+      "description": "Manage travel agents",
+      "active": "Active Agents",
+      "agencies": "Travel Agencies",
+      "contracts": "Contracts",
+      "performance": "Performance"
+    },
+    "commissions": {
+      "title": "Commission Settings",
+      "description": "Manage commission structures",
+      "rates": "Commission Rates",
+      "policies": "Payment Policies",
+      "tracking": "Commission Tracking",
+      "reports": "Commission Reports"
+    }
   }
 }
