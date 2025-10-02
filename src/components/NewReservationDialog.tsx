@@ -282,7 +282,6 @@ export function NewReservationDialog({
 					{/* Guest Information */}
 					<div className="space-y-4">
 						<div className="flex items-center gap-2">
-							<User className="h-4 w-4" />
 							<h3 className="text-lg font-semibold">Guest Information</h3>
 						</div>
 
@@ -406,7 +405,6 @@ export function NewReservationDialog({
 					{/* Stay Details */}
 					<div className="space-y-4">
 						<div className="flex items-center gap-2">
-							<Calendar className="h-4 w-4" />
 							<h3 className="text-lg font-semibold">Stay Details</h3>
 						</div>
 
@@ -428,6 +426,7 @@ export function NewReservationDialog({
 								<DatePicker
 									value={format(formData.check_in_date, "yyyy-MM-dd")}
 									onChange={(value) => handleInputChange("check_in_date", new Date(value))}
+									min={format(new Date(), "yyyy-MM-dd")}
 								/>
 							</div>
 
@@ -436,6 +435,7 @@ export function NewReservationDialog({
 								<DatePicker
 									value={format(formData.check_out_date, "yyyy-MM-dd")}
 									onChange={(value) => handleInputChange("check_out_date", new Date(value))}
+									min={format(addDays(formData.check_in_date, 1), "yyyy-MM-dd")}
 								/>
 							</div>
 						</div>
@@ -507,7 +507,7 @@ export function NewReservationDialog({
 
 
 					{/* Action Buttons */}
-					<div className="flex px-4 fixed bottom-0 right-0 w-full bg-secondary-foreground items-center justify-end gap-3 py-4 border-t">
+					<div className="flex w-full items-center justify-end gap-3 py-4 border-t">
 						<Button type="button" variant="outline" onClick={onClose}>
 							<X className="h-4 w-4 mr-2" />
 							Cancel
