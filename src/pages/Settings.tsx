@@ -13,8 +13,8 @@ import {
 	XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import { PhoneVerification } from "@/components/PhoneVerification";
 import {
 	AlertDialog,
@@ -541,7 +541,7 @@ export default function Settings() {
 
 			toast({
 				title: "Success",
-				description: phoneChanged 
+				description: phoneChanged
 					? "Profile updated successfully. Please verify your new phone number."
 					: "Profile updated successfully",
 			});
@@ -686,40 +686,40 @@ export default function Settings() {
 			<Tabs defaultValue="profile" className="w-full">
 				<TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-1 h-auto p-1">
 					<TabsTrigger value="profile" className="text-xs sm:text-sm px-2 py-2">
-						{t('settings.profile')}
+						{t("settings.profile")}
 					</TabsTrigger>
 					<TabsTrigger
 						value="locations"
 						className="text-xs sm:text-sm px-2 py-2"
 					>
-						{t('settings.locations')}
+						{t("settings.locations")}
 					</TabsTrigger>
 					<TabsTrigger
 						value="form-fields"
 						className="text-xs sm:text-sm px-2 py-2"
 					>
-						{t('settings.formFields')}
+						{t("settings.formFields")}
 					</TabsTrigger>
 					<TabsTrigger
 						value="expenses"
 						className="text-xs sm:text-sm px-2 py-2"
 					>
-						{t('settings.expenses')}
+						{t("settings.expenses")}
 					</TabsTrigger>
 					<TabsTrigger value="income" className="text-xs sm:text-sm px-2 py-2">
-						{t('settings.income')}
+						{t("settings.income")}
 					</TabsTrigger>
 					<TabsTrigger
 						value="currency"
 						className="text-xs sm:text-sm px-2 py-2"
 					>
-						{t('settings.currency')}
+						{t("settings.currency")}
 					</TabsTrigger>
 					<TabsTrigger
 						value="bookings"
 						className="text-xs sm:text-sm px-2 py-2"
 					>
-						{t('settings.bookings')}
+						{t("settings.bookings")}
 					</TabsTrigger>
 				</TabsList>
 
@@ -728,7 +728,7 @@ export default function Settings() {
 						<CardHeader>
 							<CardTitle className="flex items-center gap-2">
 								<User className="h-5 w-5" />
-								{t('settings.profileSettings')}
+								{t("settings.profileSettings")}
 							</CardTitle>
 						</CardHeader>
 						<CardContent>
@@ -760,7 +760,10 @@ export default function Settings() {
 										/>
 									</div>
 									<div>
-										<Label htmlFor="profilePhone" className="flex items-center gap-2">
+										<Label
+											htmlFor="profilePhone"
+											className="flex items-center gap-2"
+										>
 											Phone
 											{profile?.phone && (
 												<div className="flex items-center gap-1">
@@ -785,7 +788,10 @@ export default function Settings() {
 													defaultCountry="LK"
 													international
 													onChange={(value) =>
-														setProfileForm((prev) => ({ ...prev, phone: value }))
+														setProfileForm((prev) => ({
+															...prev,
+															phone: value,
+														}))
 													}
 													disabled={!isEditingProfile}
 													placeholder="Enter your phone number"
@@ -848,7 +854,8 @@ export default function Settings() {
 												Phone Verification Required
 											</h3>
 											<p className="text-sm text-orange-700">
-												Please verify your phone number to enable SMS notifications and enhanced security.
+												Please verify your phone number to enable SMS
+												notifications and enhanced security.
 											</p>
 										</div>
 										<Button

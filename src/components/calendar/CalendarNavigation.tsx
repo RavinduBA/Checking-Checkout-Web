@@ -1,0 +1,44 @@
+import { addMonths, format, subMonths } from "date-fns";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+interface CalendarNavigationProps {
+	currentDate: Date;
+	onDateChange: (date: Date) => void;
+}
+
+export function CalendarNavigation({
+	currentDate,
+	onDateChange,
+}: CalendarNavigationProps) {
+	const goToPrevMonth = () => {
+		onDateChange(subMonths(currentDate, 1));
+	};
+
+	const goToNextMonth = () => {
+		onDateChange(addMonths(currentDate, 1));
+	};
+
+	const goToToday = () => {
+		onDateChange(new Date());
+	};
+
+	return (
+		<div className="flex items-center justify-between mb-4">
+			<div className="flex items-center gap-2">
+				<Button variant="outline" size="sm" onClick={goToPrevMonth}>
+					<ChevronLeft className="size-4" />
+				</Button>
+				<h2 className="text-xl font-semibold min-w-[200px] text-center">
+					{format(currentDate, "MMMM yyyy")}
+				</h2>
+				<Button variant="outline" size="sm" onClick={goToNextMonth}>
+					<ChevronRight className="size-4" />
+				</Button>
+			</div>
+			<Button variant="outline" size="sm" onClick={goToToday}>
+				Today
+			</Button>
+		</div>
+	);
+}

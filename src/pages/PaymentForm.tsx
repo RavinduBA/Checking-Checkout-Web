@@ -59,22 +59,25 @@ export default function PaymentForm() {
 		reference_number: "",
 	});
 
-	const fetchLocation = useCallback(async (locationId: string) => {
-		if (!tenant?.id) return;
-		
-		try {
-			const { data } = await supabase
-				.from("locations")
-				.select("id, name, phone, email")
-				.eq("id", locationId)
-				.eq("tenant_id", tenant.id)
-				.single();
+	const fetchLocation = useCallback(
+		async (locationId: string) => {
+			if (!tenant?.id) return;
 
-			setLocation(data);
-		} catch (error) {
-			console.error("Failed to fetch location:", error);
-		}
-	}, [tenant?.id]);
+			try {
+				const { data } = await supabase
+					.from("locations")
+					.select("id, name, phone, email")
+					.eq("id", locationId)
+					.eq("tenant_id", tenant.id)
+					.single();
+
+				setLocation(data);
+			} catch (error) {
+				console.error("Failed to fetch location:", error);
+			}
+		},
+		[tenant?.id],
+	);
 
 	const fetchReservationAndAccounts = useCallback(async () => {
 		if (!tenant?.id) {

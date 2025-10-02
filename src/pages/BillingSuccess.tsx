@@ -216,10 +216,7 @@ export default function BillingSuccess() {
 										You will be redirected in {redirectCountdown} seconds
 									</p>
 								</div>
-								<Button
-									className="w-full"
-									onClick={() => navigate("/billing")}
-								>
+								<Button className="w-full" onClick={() => navigate("/billing")}>
 									Go to Billing Now
 									<ArrowRight className="size-4 ml-2" />
 								</Button>

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { BookingChannelsSkeleton } from "@/components/BookingChannelsSkeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,7 +34,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BookingChannelsSkeleton } from "@/components/BookingChannelsSkeleton";
 import {
 	Table,
 	TableBody,
@@ -556,7 +556,7 @@ export default function BookingChannelsIntegration() {
 	}
 
 	return (
-		<div className="space-y-6 px-4 sm:px-6">
+		<div className="space-y-6 px-4 sm:px-6 pt-8">
 			{/* Header */}
 			<div className="flex items-center gap-2">
 				<Button

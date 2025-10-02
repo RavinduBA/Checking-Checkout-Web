@@ -181,7 +181,9 @@ export function SummaryCards({
 			<Card className="bg-card border">
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<CardTitle className="text-sm font-medium text-muted-foreground">
-						{selectedMonth ? t('dashboard.summaryCards.monthlyIncome') : t('dashboard.summaryCards.todayIncome')}
+						{selectedMonth
+							? t("dashboard.summaryCards.monthlyIncome")
+							: t("dashboard.summaryCards.todayIncome")}
 					</CardTitle>
 					<ArrowUpCircle className="size-4 text-success" />
 				</CardHeader>
@@ -196,7 +198,9 @@ export function SummaryCards({
 			<Card className="bg-card border">
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<CardTitle className="text-sm font-medium text-muted-foreground">
-						{selectedMonth ? t('dashboard.summaryCards.monthlyExpenses') : t('dashboard.summaryCards.todayExpenses')}
+						{selectedMonth
+							? t("dashboard.summaryCards.monthlyExpenses")
+							: t("dashboard.summaryCards.todayExpenses")}
 					</CardTitle>
 					<ArrowDownCircle className="size-4 text-destructive" />
 				</CardHeader>
@@ -212,7 +216,9 @@ export function SummaryCards({
 			<Card className="bg-card border">
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<CardTitle className="text-sm font-medium text-muted-foreground">
-						{selectedMonth ? t('dashboard.summaryCards.monthlyProfit') : t('dashboard.summaryCards.weeklyProfit')}
+						{selectedMonth
+							? t("dashboard.summaryCards.monthlyProfit")
+							: t("dashboard.summaryCards.weeklyProfit")}
 					</CardTitle>
 					<TrendingUp className="size-4 text-primary" />
 				</CardHeader>
@@ -221,7 +227,7 @@ export function SummaryCards({
 						Rs. {profit.toLocaleString()}
 					</div>
 					<p className="text-xs text-muted-foreground">
-						{profitPercentage}% {t('dashboard.summaryCards.margin')}
+						{profitPercentage}% {t("dashboard.summaryCards.margin")}
 					</p>
 				</CardContent>
 			</Card>

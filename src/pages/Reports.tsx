@@ -35,7 +35,6 @@ export default function Reports() {
 
 	return (
 		<div className="max-w-full pb-20 w-full mx-auto p-2 lg:p-6 space-y-4 animate-fade-in">
-
 			{/* Reports Content */}
 			<Card className="bg-card border">
 				<CardHeader className="pb-3">
@@ -330,7 +329,10 @@ export function DetailedBalanceSheetSkeleton() {
 				<CardContent>
 					<div className="space-y-2 max-h-96 overflow-y-auto">
 						{Array.from({ length: 8 }).map((_, i) => (
-							<div key={i} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-lg">
+							<div
+								key={i}
+								className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-lg"
+							>
 								<div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
 									<Skeleton className="h-6 w-16 rounded-full" />
 									<div>
@@ -382,7 +384,7 @@ export function DetailedBalanceSheetSkeleton() {
 										</div>
 									))}
 								</div>
-								
+
 								{/* Expandable Transaction Section Skeleton */}
 								<div className="mt-4">
 									<div className="flex items-center gap-2 mb-2">
@@ -391,7 +393,10 @@ export function DetailedBalanceSheetSkeleton() {
 									</div>
 									<div className="space-y-2">
 										{Array.from({ length: 3 }).map((_, k) => (
-											<div key={k} className="flex items-center justify-between p-2 border rounded">
+											<div
+												key={k}
+												className="flex items-center justify-between p-2 border rounded"
+											>
 												<div className="flex items-center gap-2">
 													<Skeleton className="h-4 w-4" />
 													<div>
@@ -452,7 +457,10 @@ export function CommissionReportsSkeleton() {
 						</div>
 						{/* Table Rows */}
 						{Array.from({ length: 10 }).map((_, i) => (
-							<div key={i} className="grid grid-cols-5 gap-4 py-3 border-b last:border-b-0">
+							<div
+								key={i}
+								className="grid grid-cols-5 gap-4 py-3 border-b last:border-b-0"
+							>
 								<Skeleton className="h-4 w-20" />
 								<Skeleton className="h-4 w-24" />
 								<Skeleton className="h-4 w-16" />

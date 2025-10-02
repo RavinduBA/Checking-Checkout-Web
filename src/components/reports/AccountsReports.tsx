@@ -18,7 +18,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionLoader } from "@/components/ui/loading-spinner";
-import { DetailedBalanceSheetSkeleton } from "@/pages/Reports";
 import {
 	Select,
 	SelectContent,
@@ -37,6 +36,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DetailedBalanceSheetSkeleton } from "@/pages/Reports";
 import { formatCurrency } from "@/utils/currency";
 
 type Account = {

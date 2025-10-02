@@ -1,7 +1,7 @@
 import { Calendar, Eye } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,13 +80,13 @@ export function UpcomingBookings({
 			<CardHeader className="flex flex-row items-center justify-between">
 				<CardTitle className="flex items-center gap-2">
 					<Calendar className="size-5 text-primary" />
-					{t('dashboard.upcomingBookings.title')}
+					{t("dashboard.upcomingBookings.title")}
 				</CardTitle>
 				{hasCalendarPermission && (
 					<Button asChild variant="outline" size="sm">
 						<Link to="/calendar">
 							<Eye className="size-4" />
-							{t('dashboard.upcomingBookings.viewAll')}
+							{t("dashboard.upcomingBookings.viewAll")}
 						</Link>
 					</Button>
 				)}
@@ -105,7 +105,8 @@ export function UpcomingBookings({
 											{booking.guest_name}
 										</p>
 										<p className="text-sm text-muted-foreground">
-											{new Date(booking.check_in).toLocaleDateString()} {t('dashboard.upcomingBookings.to')}{" "}
+											{new Date(booking.check_in).toLocaleDateString()}{" "}
+											{t("dashboard.upcomingBookings.to")}{" "}
 											{new Date(booking.check_out).toLocaleDateString()}
 										</p>
 										<p className="text-xs text-muted-foreground">
@@ -136,7 +137,9 @@ export function UpcomingBookings({
 					))
 				) : (
 					<div className="text-center py-6 lg:py-8">
-						<p className="text-muted-foreground">{t('dashboard.upcomingBookings.noBookings')}</p>
+						<p className="text-muted-foreground">
+							{t("dashboard.upcomingBookings.noBookings")}
+						</p>
 					</div>
 				)}
 			</CardContent>

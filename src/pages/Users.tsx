@@ -36,11 +36,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useLocationContext } from "@/context/LocationContext";
+import { toast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UserPermissions {
 	[key: string]: boolean;
@@ -259,7 +259,7 @@ export default function Users() {
 			await fetchData();
 		} catch (error: any) {
 			console.error("Error inviting member:", error);
-			
+
 			let errorMessage = "Failed to send invitation";
 			if (error.message) {
 				if (error.message.includes("already has access")) {
@@ -436,7 +436,9 @@ export default function Users() {
 								<TableHead className="hidden sm:table-cell">Email</TableHead>
 								<TableHead>Role</TableHead>
 								<TableHead>Status</TableHead>
-								<TableHead className="hidden md:table-cell">Last Active</TableHead>
+								<TableHead className="hidden md:table-cell">
+									Last Active
+								</TableHead>
 								<TableHead>Actions</TableHead>
 							</TableRow>
 						</TableHeader>
@@ -533,7 +535,7 @@ export default function Users() {
 										{user.is_tenant_admin ? "Admin" : "User"}
 									</Badge>
 								</div>
-								
+
 								{Object.keys(user.permissions).length > 0 ? (
 									Object.entries(user.permissions).map(([location, perms]) => (
 										<div key={location} className="mb-4">
@@ -542,7 +544,10 @@ export default function Users() {
 											</h5>
 											<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
 												{permissionTypes.map((permType) => (
-													<div key={permType.key} className="flex items-center gap-2">
+													<div
+														key={permType.key}
+														className="flex items-center gap-2"
+													>
 														<Checkbox
 															checked={!!perms[permType.key]}
 															disabled
@@ -766,10 +771,7 @@ export default function Users() {
 											}))
 										}
 									/>
-									<Label
-										htmlFor="access_rooms"
-										className="text-sm font-normal"
-									>
+									<Label htmlFor="access_rooms" className="text-sm font-normal">
 										Rooms
 									</Label>
 								</div>
@@ -820,10 +822,7 @@ export default function Users() {
 											}))
 										}
 									/>
-									<Label
-										htmlFor="access_users"
-										className="text-sm font-normal"
-									>
+									<Label htmlFor="access_users" className="text-sm font-normal">
 										Users
 									</Label>
 								</div>
@@ -871,8 +870,8 @@ export default function Users() {
 					<DialogHeader>
 						<DialogTitle>Edit User Permissions</DialogTitle>
 						<DialogDescription>
-							Modify user details and configure their permissions for
-							different locations and application features.
+							Modify user details and configure their permissions for different
+							locations and application features.
 						</DialogDescription>
 					</DialogHeader>
 					{editingUser && (

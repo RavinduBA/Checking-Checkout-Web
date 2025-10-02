@@ -439,10 +439,11 @@ export default function Accounts() {
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">
-							Rs. {Object.entries(accountBalances)
+							Rs.{" "}
+							{Object.entries(accountBalances)
 								.filter(([accountId]) => {
-									const account = accounts.find(a => a.id === accountId);
-									return account?.currency === 'LKR';
+									const account = accounts.find((a) => a.id === accountId);
+									return account?.currency === "LKR";
 								})
 								.reduce((sum, [, balance]) => sum + balance, 0)
 								.toLocaleString()}
@@ -457,10 +458,11 @@ export default function Accounts() {
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">
-							$ {Object.entries(accountBalances)
+							${" "}
+							{Object.entries(accountBalances)
 								.filter(([accountId]) => {
-									const account = accounts.find(a => a.id === accountId);
-									return account?.currency === 'USD';
+									const account = accounts.find((a) => a.id === accountId);
+									return account?.currency === "USD";
 								})
 								.reduce((sum, [, balance]) => sum + balance, 0)
 								.toLocaleString()}
@@ -491,7 +493,9 @@ export default function Accounts() {
 								</CardHeader>
 								<CardContent className="space-y-2">
 									<div className="flex justify-between items-center">
-										<span className="text-sm text-muted-foreground">Balance</span>
+										<span className="text-sm text-muted-foreground">
+											Balance
+										</span>
 										<div className="text-lg font-bold">
 											{account.currency === "LKR" ? "Rs." : "$"}
 											{(accountBalances[account.id] || 0).toLocaleString()}
@@ -537,128 +541,157 @@ export default function Accounts() {
 			{/* Add Account Dialog */}
 			<Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
 				<DialogContent>
-						<DialogHeader>
-							<DialogTitle>
-								{editingAccount ? "Edit Account" : "Add New Account"}
-							</DialogTitle>
-						</DialogHeader>
-						<form onSubmit={handleSubmit} className="space-y-4">
-							<div>
-								<Label htmlFor="name">Account Name</Label>
-								<Input
-									id="name"
-									value={formData.name}
-									onChange={(e) =>
-										setFormData({ ...formData, name: e.target.value })
-									}
-									required
-								/>
+					<DialogHeader>
+						<DialogTitle>
+							{editingAccount ? "Edit Account" : "Add New Account"}
+						</DialogTitle>
+					</DialogHeader>
+					<form onSubmit={handleSubmit} className="space-y-4">
+						<div>
+							<Label htmlFor="name">Account Name</Label>
+							<Input
+								id="name"
+								value={formData.name}
+								onChange={(e) =>
+									setFormData({ ...formData, name: e.target.value })
+								}
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor="currency">Currency</Label>
+							<Select
+								value={formData.currency}
+								onValueChange={(value: "LKR" | "USD") =>
+									setFormData({ ...formData, currency: value })
+								}
+							>
+								<SelectTrigger>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="LKR">LKR</SelectItem>
+									<SelectItem value="USD">USD</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+						<div>
+							<Label htmlFor="initial_balance">Initial Balance</Label>
+							<Input
+								id="initial_balance"
+								type="number"
+								step="0.01"
+								value={formData.initial_balance}
+								onChange={(e) =>
+									setFormData({
+										...formData,
+										initial_balance: parseFloat(e.target.value) || 0,
+									})
+								}
+							/>
+						</div>
+						<div>
+							<Label htmlFor="location_access">Location Access</Label>
+							<div className="space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
+								{locations.map((location) => (
+									<div
+										key={location.id}
+										className="flex items-center space-x-2"
+									>
+										<input
+											type="checkbox"
+											id={location.id}
+											checked={formData.location_access.includes(location.id)}
+											onChange={(e) => {
+												if (e.target.checked) {
+													setFormData({
+														...formData,
+														location_access: [
+															...formData.location_access,
+															location.id,
+														],
+													});
+												} else {
+													setFormData({
+														...formData,
+														location_access: formData.location_access.filter(
+															(id) => id !== location.id,
+														),
+													});
+												}
+											}}
+										/>
+										<Label htmlFor={location.id} className="text-sm">
+											{location.name}
+										</Label>
+									</div>
+								))}
 							</div>
-							<div>
-								<Label htmlFor="currency">Currency</Label>
-								<Select
-									value={formData.currency}
-									onValueChange={(value: "LKR" | "USD") =>
-										setFormData({ ...formData, currency: value })
-									}
-								>
-									<SelectTrigger>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="LKR">LKR</SelectItem>
-										<SelectItem value="USD">USD</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-							<div>
-								<Label htmlFor="initial_balance">Initial Balance</Label>
-								<Input
-									id="initial_balance"
-									type="number"
-									step="0.01"
-									value={formData.initial_balance}
-									onChange={(e) =>
-										setFormData({
-											...formData,
-											initial_balance: parseFloat(e.target.value) || 0,
-										})
-									}
-								/>
-							</div>
-							<div>
-								<Label htmlFor="location_access">Location Access</Label>
-								<div className="space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
-									{locations.map((location) => (
-										<div
-											key={location.id}
-											className="flex items-center space-x-2"
-										>
-											<input
-												type="checkbox"
-												id={location.id}
-												checked={formData.location_access.includes(location.id)}
-												onChange={(e) => {
-													if (e.target.checked) {
-														setFormData({
-															...formData,
-															location_access: [
-																...formData.location_access,
-																location.id,
-															],
-														});
-													} else {
-														setFormData({
-															...formData,
-															location_access: formData.location_access.filter(
-																(id) => id !== location.id,
-															),
-														});
-													}
-												}}
-											/>
-											<Label htmlFor={location.id} className="text-sm">
-												{location.name}
-											</Label>
-										</div>
-									))}
-								</div>
-							</div>
-							<div className="flex gap-2">
-								<Button type="submit" disabled={isSubmitting}>
-									{isSubmitting
-										? editingAccount
-											? "Updating..."
-											: "Adding..."
-										: editingAccount
-											? "Update Account"
-											: "Add Account"}
-								</Button>
-								<Button type="button" variant="outline" onClick={resetForm}>
-									Cancel
-								</Button>
-							</div>
-						</form>
-					</DialogContent>
-				</Dialog>
+						</div>
+						<div className="flex gap-2">
+							<Button type="submit" disabled={isSubmitting}>
+								{isSubmitting
+									? editingAccount
+										? "Updating..."
+										: "Adding..."
+									: editingAccount
+										? "Update Account"
+										: "Add Account"}
+							</Button>
+							<Button type="button" variant="outline" onClick={resetForm}>
+								Cancel
+							</Button>
+						</div>
+					</form>
+				</DialogContent>
+			</Dialog>
 
-				<Dialog open={showTransferDialog} onOpenChange={setShowTransferDialog}>
-					<DialogContent>
-						<DialogHeader>
-							<DialogTitle>Transfer Money Between Accounts</DialogTitle>
-						</DialogHeader>
-						<form onSubmit={handleTransfer} className="space-y-4">
-							<div>
-								<Label htmlFor="fromAccount">From Account</Label>
-								<Select
-									value={transferData.fromAccountId}
-									onValueChange={handleFromAccountChange}
-								>
-									<SelectTrigger>
-										<SelectValue placeholder="Select source account" />
-									</SelectTrigger>
-									<SelectContent>
-										{accounts.map((account) => (
+			<Dialog open={showTransferDialog} onOpenChange={setShowTransferDialog}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Transfer Money Between Accounts</DialogTitle>
+					</DialogHeader>
+					<form onSubmit={handleTransfer} className="space-y-4">
+						<div>
+							<Label htmlFor="fromAccount">From Account</Label>
+							<Select
+								value={transferData.fromAccountId}
+								onValueChange={handleFromAccountChange}
+							>
+								<SelectTrigger>
+									<SelectValue placeholder="Select source account" />
+								</SelectTrigger>
+								<SelectContent>
+									{accounts.map((account) => (
+										<SelectItem key={account.id} value={account.id}>
+											<div className="flex justify-between items-center w-full">
+												<span>
+													{account.name} ({account.currency})
+												</span>
+												<span className="text-muted-foreground ml-2">
+													Balance: {account.currency === "LKR" ? "Rs." : "$"}
+													{(accountBalances[account.id] || 0).toLocaleString()}
+												</span>
+											</div>
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+
+						<div>
+							<Label htmlFor="toAccount">To Account</Label>
+							<Select
+								value={transferData.toAccountId}
+								onValueChange={handleToAccountChange}
+							>
+								<SelectTrigger>
+									<SelectValue placeholder="Select destination account" />
+								</SelectTrigger>
+								<SelectContent>
+									{accounts
+										.filter((acc) => acc.id !== transferData.fromAccountId)
+										.map((account) => (
 											<SelectItem key={account.id} value={account.id}>
 												<div className="flex justify-between items-center w-full">
 													<span>
@@ -673,162 +706,130 @@ export default function Accounts() {
 												</div>
 											</SelectItem>
 										))}
-									</SelectContent>
-								</Select>
-							</div>
+								</SelectContent>
+							</Select>
+						</div>
 
+						<div className="grid grid-cols-2 gap-4">
 							<div>
-								<Label htmlFor="toAccount">To Account</Label>
-								<Select
-									value={transferData.toAccountId}
-									onValueChange={handleToAccountChange}
-								>
-									<SelectTrigger>
-										<SelectValue placeholder="Select destination account" />
-									</SelectTrigger>
-									<SelectContent>
-										{accounts
-											.filter((acc) => acc.id !== transferData.fromAccountId)
-											.map((account) => (
-												<SelectItem key={account.id} value={account.id}>
-													<div className="flex justify-between items-center w-full">
-														<span>
-															{account.name} ({account.currency})
-														</span>
-														<span className="text-muted-foreground ml-2">
-															Balance:{" "}
-															{account.currency === "LKR" ? "Rs." : "$"}
-															{(
-																accountBalances[account.id] || 0
-															).toLocaleString()}
-														</span>
-													</div>
-												</SelectItem>
-											))}
-									</SelectContent>
-								</Select>
-							</div>
-
-							<div className="grid grid-cols-2 gap-4">
-								<div>
-									<Label htmlFor="usdToLkr">USD to LKR Rate</Label>
-									<Input
-										id="usdToLkr"
-										type="number"
-										step="0.01"
-										value={currentExchangeRate.usdToLkr}
-										onChange={(e) =>
-											setCurrentExchangeRate({
-												...currentExchangeRate,
-												usdToLkr: parseFloat(e.target.value) || 300,
-												lkrToUsd: 1 / (parseFloat(e.target.value) || 300),
-											})
-										}
-									/>
-								</div>
-								<div>
-									<Label htmlFor="lkrToUsd">LKR to USD Rate</Label>
-									<Input
-										id="lkrToUsd"
-										type="number"
-										step="0.0001"
-										value={currentExchangeRate.lkrToUsd}
-										onChange={(e) =>
-											setCurrentExchangeRate({
-												...currentExchangeRate,
-												lkrToUsd: parseFloat(e.target.value) || 0.0033,
-												usdToLkr: 1 / (parseFloat(e.target.value) || 0.0033),
-											})
-										}
-									/>
-								</div>
-							</div>
-
-							<div>
-								<Label htmlFor="amount">Amount</Label>
+								<Label htmlFor="usdToLkr">USD to LKR Rate</Label>
 								<Input
-									id="amount"
+									id="usdToLkr"
 									type="number"
 									step="0.01"
-									value={transferData.amount}
+									value={currentExchangeRate.usdToLkr}
 									onChange={(e) =>
-										setTransferData({
-											...transferData,
-											amount: parseFloat(e.target.value) || 0,
+										setCurrentExchangeRate({
+											...currentExchangeRate,
+											usdToLkr: parseFloat(e.target.value) || 300,
+											lkrToUsd: 1 / (parseFloat(e.target.value) || 300),
 										})
 									}
-									required
 								/>
 							</div>
-
-							{(() => {
-								const fromAccount = accounts.find(
-									(acc) => acc.id === transferData.fromAccountId,
-								);
-								const toAccount = accounts.find(
-									(acc) => acc.id === transferData.toAccountId,
-								);
-								return (
-									fromAccount &&
-									toAccount &&
-									fromAccount.currency !== toAccount.currency && (
-										<div>
-											<Label htmlFor="conversionRate">
-												Conversion Rate ({fromAccount.currency} to{" "}
-												{toAccount.currency})
-											</Label>
-											<Input
-												id="conversionRate"
-												type="number"
-												step="0.0001"
-												value={transferData.conversionRate}
-												onChange={(e) =>
-													setTransferData({
-														...transferData,
-														conversionRate: parseFloat(e.target.value) || 1,
-													})
-												}
-												required
-											/>
-											<p className="text-sm text-muted-foreground mt-1">
-												{transferData.amount} {fromAccount.currency} ={" "}
-												{(
-													transferData.amount * transferData.conversionRate
-												).toFixed(2)}{" "}
-												{toAccount.currency}
-											</p>
-										</div>
-									)
-								);
-							})()}
-
 							<div>
-								<Label htmlFor="note">Note (Optional)</Label>
+								<Label htmlFor="lkrToUsd">LKR to USD Rate</Label>
 								<Input
-									id="note"
-									value={transferData.note}
+									id="lkrToUsd"
+									type="number"
+									step="0.0001"
+									value={currentExchangeRate.lkrToUsd}
 									onChange={(e) =>
-										setTransferData({ ...transferData, note: e.target.value })
+										setCurrentExchangeRate({
+											...currentExchangeRate,
+											lkrToUsd: parseFloat(e.target.value) || 0.0033,
+											usdToLkr: 1 / (parseFloat(e.target.value) || 0.0033),
+										})
 									}
-									placeholder="Transfer description..."
 								/>
 							</div>
+						</div>
 
-							<div className="flex gap-2">
-								<Button type="submit" disabled={isTransferring}>
-									{isTransferring ? "Transferring..." : "Complete Transfer"}
-								</Button>
-								<Button
-									type="button"
-									variant="outline"
-									onClick={() => setShowTransferDialog(false)}
-								>
-									Cancel
-								</Button>
-							</div>
-						</form>
-					</DialogContent>
-				</Dialog>
+						<div>
+							<Label htmlFor="amount">Amount</Label>
+							<Input
+								id="amount"
+								type="number"
+								step="0.01"
+								value={transferData.amount}
+								onChange={(e) =>
+									setTransferData({
+										...transferData,
+										amount: parseFloat(e.target.value) || 0,
+									})
+								}
+								required
+							/>
+						</div>
+
+						{(() => {
+							const fromAccount = accounts.find(
+								(acc) => acc.id === transferData.fromAccountId,
+							);
+							const toAccount = accounts.find(
+								(acc) => acc.id === transferData.toAccountId,
+							);
+							return (
+								fromAccount &&
+								toAccount &&
+								fromAccount.currency !== toAccount.currency && (
+									<div>
+										<Label htmlFor="conversionRate">
+											Conversion Rate ({fromAccount.currency} to{" "}
+											{toAccount.currency})
+										</Label>
+										<Input
+											id="conversionRate"
+											type="number"
+											step="0.0001"
+											value={transferData.conversionRate}
+											onChange={(e) =>
+												setTransferData({
+													...transferData,
+													conversionRate: parseFloat(e.target.value) || 1,
+												})
+											}
+											required
+										/>
+										<p className="text-sm text-muted-foreground mt-1">
+											{transferData.amount} {fromAccount.currency} ={" "}
+											{(
+												transferData.amount * transferData.conversionRate
+											).toFixed(2)}{" "}
+											{toAccount.currency}
+										</p>
+									</div>
+								)
+							);
+						})()}
+
+						<div>
+							<Label htmlFor="note">Note (Optional)</Label>
+							<Input
+								id="note"
+								value={transferData.note}
+								onChange={(e) =>
+									setTransferData({ ...transferData, note: e.target.value })
+								}
+								placeholder="Transfer description..."
+							/>
+						</div>
+
+						<div className="flex gap-2">
+							<Button type="submit" disabled={isTransferring}>
+								{isTransferring ? "Transferring..." : "Complete Transfer"}
+							</Button>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => setShowTransferDialog(false)}
+							>
+								Cancel
+							</Button>
+						</div>
+					</form>
+				</DialogContent>
+			</Dialog>
 
 			{/* Transfer Dialog */}
 
@@ -861,53 +862,59 @@ function RecentTransactions({ accounts }: { accounts: Account[] }) {
 
 	const fetchTransactions = useCallback(async () => {
 		try {
-			const [transfersResponse, incomeResponse, expensesResponse] = await Promise.all([
-				supabase
-					.from("account_transfers")
-					.select("*, from_account:accounts!from_account_id(name, currency), to_account:accounts!to_account_id(name, currency)")
-					.order("created_at", { ascending: false })
-					.limit(10),
-				supabase
-					.from("income")
-					.select("*, account:accounts(name, currency)")
-					.not("account_id", "is", null)
-					.order("created_at", { ascending: false })
-					.limit(10),
-				supabase
-					.from("expenses")
-					.select("*, account:accounts(name, currency)")
-					.order("created_at", { ascending: false })
-					.limit(10),
-			]);
+			const [transfersResponse, incomeResponse, expensesResponse] =
+				await Promise.all([
+					supabase
+						.from("account_transfers")
+						.select(
+							"*, from_account:accounts!from_account_id(name, currency), to_account:accounts!to_account_id(name, currency)",
+						)
+						.order("created_at", { ascending: false })
+						.limit(10),
+					supabase
+						.from("income")
+						.select("*, account:accounts(name, currency)")
+						.not("account_id", "is", null)
+						.order("created_at", { ascending: false })
+						.limit(10),
+					supabase
+						.from("expenses")
+						.select("*, account:accounts(name, currency)")
+						.order("created_at", { ascending: false })
+						.limit(10),
+				]);
 
 			// Combine and format all transactions
 			const allTransactions = [
-				...(transfersResponse.data || []).map(transfer => ({
+				...(transfersResponse.data || []).map((transfer) => ({
 					...transfer,
-					type: 'transfer',
+					type: "transfer",
 					display_amount: transfer.amount,
-					currency: transfer.from_account?.currency || 'LKR',
-					description: `Transfer from ${transfer.from_account?.name || 'Unknown'} to ${transfer.to_account?.name || 'Unknown'}`,
+					currency: transfer.from_account?.currency || "LKR",
+					description: `Transfer from ${transfer.from_account?.name || "Unknown"} to ${transfer.to_account?.name || "Unknown"}`,
 				})),
-				...(incomeResponse.data || []).map(income => ({
+				...(incomeResponse.data || []).map((income) => ({
 					...income,
-					type: 'income',
+					type: "income",
 					display_amount: income.amount,
-					currency: income.account?.currency || 'LKR',
-					description: `Income to ${income.account?.name || 'Unknown'}`,
+					currency: income.account?.currency || "LKR",
+					description: `Income to ${income.account?.name || "Unknown"}`,
 				})),
-				...(expensesResponse.data || []).map(expense => ({
+				...(expensesResponse.data || []).map((expense) => ({
 					...expense,
-					type: 'expense',
+					type: "expense",
 					display_amount: expense.amount,
-					currency: expense.account?.currency || 'LKR',
-					description: `Expense from ${expense.account?.name || 'Unknown'}`,
+					currency: expense.account?.currency || "LKR",
+					description: `Expense from ${expense.account?.name || "Unknown"}`,
 				})),
 			];
 
 			// Sort by created_at descending
-			allTransactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-			
+			allTransactions.sort(
+				(a, b) =>
+					new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+			);
+
 			setTransactions(allTransactions.slice(0, 20)); // Show latest 20 transactions
 		} catch (error) {
 			console.error("Error fetching transactions:", error);
@@ -922,11 +929,11 @@ function RecentTransactions({ accounts }: { accounts: Account[] }) {
 
 	const getTransactionIcon = (type: string) => {
 		switch (type) {
-			case 'transfer':
+			case "transfer":
 				return <ArrowRightLeft className="size-4 text-blue-500" />;
-			case 'income':
+			case "income":
 				return <Plus className="size-4 text-green-500" />;
-			case 'expense':
+			case "expense":
 				return <Trash2 className="size-4 text-red-500" />;
 			default:
 				return <ArrowRightLeft className="size-4 text-muted-foreground" />;
@@ -935,14 +942,14 @@ function RecentTransactions({ accounts }: { accounts: Account[] }) {
 
 	const getTransactionColor = (type: string) => {
 		switch (type) {
-			case 'income':
-				return 'text-green-600';
-			case 'expense':
-				return 'text-red-600';
-			case 'transfer':
-				return 'text-blue-600';
+			case "income":
+				return "text-green-600";
+			case "expense":
+				return "text-red-600";
+			case "transfer":
+				return "text-blue-600";
 			default:
-				return 'text-muted-foreground';
+				return "text-muted-foreground";
 		}
 	};
 
@@ -971,7 +978,10 @@ function RecentTransactions({ accounts }: { accounts: Account[] }) {
 			<h3 className="text-lg font-semibold">Recent Transactions</h3>
 			<div className="space-y-3">
 				{transactions.map((transaction) => (
-					<div key={`${transaction.type}-${transaction.id}`} className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+					<div
+						key={`${transaction.type}-${transaction.id}`}
+						className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+					>
 						<div className="flex items-center justify-between mb-2">
 							<div className="flex items-center gap-3">
 								{getTransactionIcon(transaction.type)}
@@ -983,20 +993,29 @@ function RecentTransactions({ accounts }: { accounts: Account[] }) {
 								</div>
 							</div>
 							<div className="text-right">
-								<div className={`font-medium ${getTransactionColor(transaction.type)}`}>
-									{transaction.type === 'expense' ? '-' : '+'}
+								<div
+									className={`font-medium ${getTransactionColor(transaction.type)}`}
+								>
+									{transaction.type === "expense" ? "-" : "+"}
 									{transaction.currency === "LKR" ? "Rs." : "$"}
 									{transaction.display_amount.toLocaleString()}
 								</div>
-								{transaction.type === 'transfer' && transaction.conversion_rate !== 1 && (
-									<div className="text-sm text-muted-foreground">
-										Rate: {transaction.conversion_rate}
-									</div>
-								)}
+								{transaction.type === "transfer" &&
+									transaction.conversion_rate !== 1 && (
+										<div className="text-sm text-muted-foreground">
+											Rate: {transaction.conversion_rate}
+										</div>
+									)}
 							</div>
 						</div>
 						<div className="flex items-center justify-between text-sm text-muted-foreground">
-							<span>{new Date(transaction.created_at).toLocaleDateString()} {new Date(transaction.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+							<span>
+								{new Date(transaction.created_at).toLocaleDateString()}{" "}
+								{new Date(transaction.created_at).toLocaleTimeString([], {
+									hour: "2-digit",
+									minute: "2-digit",
+								})}
+							</span>
 							{(transaction.note || transaction.description_text) && (
 								<span className="truncate ml-4 max-w-48">
 									{transaction.note || transaction.description_text}

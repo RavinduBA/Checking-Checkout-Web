@@ -15,6 +15,7 @@ import {
 	Users,
 } from "lucide-react";
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router";
 import { CalendarSkeleton } from "@/components/CalendarSkeleton";
 import { Badge } from "@/components/ui/badge";
@@ -40,7 +41,6 @@ import { useLocationContext } from "@/context/LocationContext";
 import { useToast } from "@/hooks/use-toast";
 import { useCalendarData } from "@/hooks/useCalendarData";
 import { Tables } from "@/integrations/supabase/types";
-import { useTranslation } from "react-i18next";
 
 type Reservation = Tables<"reservations"> & {
 	locations: Tables<"locations">;
@@ -604,15 +604,21 @@ export default function Calendar() {
 																					t("calendar.booking.unknownGuest")}
 																			</div>
 																			<div className="text-xs text-muted-foreground">
-																				{formatDate(new Date(booking.check_in_date), {
-																					month: "short",
-																					day: "2-digit",
-																				})}{" "}
+																				{formatDate(
+																					new Date(booking.check_in_date),
+																					{
+																						month: "short",
+																						day: "2-digit",
+																					},
+																				)}{" "}
 																				-{" "}
-																				{formatDate(new Date(booking.check_out_date), {
-																					month: "short",
-																					day: "2-digit",
-																				})}
+																				{formatDate(
+																					new Date(booking.check_out_date),
+																					{
+																						month: "short",
+																						day: "2-digit",
+																					},
+																				)}
 																			</div>
 																		</div>
 																		<div className="text-right">
@@ -624,7 +630,8 @@ export default function Calendar() {
 																			</Badge>
 																			<div className="text-xs text-muted-foreground mt-1">
 																				{t("calendar.booking.guestsCount", {
-																					count: booking.adults + booking.children,
+																					count:
+																						booking.adults + booking.children,
 																				})}
 																			</div>
 																		</div>
@@ -642,15 +649,21 @@ export default function Calendar() {
 																					t("calendar.booking.unknownGuest")}
 																			</div>
 																			<div className="text-xs text-muted-foreground">
-																				{formatDate(new Date(booking.check_in), {
-																					month: "short",
-																					day: "2-digit",
-																				})}{" "}
+																				{formatDate(
+																					new Date(booking.check_in),
+																					{
+																						month: "short",
+																						day: "2-digit",
+																					},
+																				)}{" "}
 																				-{" "}
-																				{formatDate(new Date(booking.check_out), {
-																					month: "short",
-																					day: "2-digit",
-																				})}
+																				{formatDate(
+																					new Date(booking.check_out),
+																					{
+																						month: "short",
+																						day: "2-digit",
+																					},
+																				)}
 																			</div>
 																		</div>
 																		<div className="text-right">
@@ -662,7 +675,8 @@ export default function Calendar() {
 																			</Badge>
 																			<div className="text-xs text-muted-foreground mt-1">
 																				{t("calendar.booking.guestsCount", {
-																					count: booking.adults + booking.children,
+																					count:
+																						booking.adults + booking.children,
 																				})}
 																			</div>
 																		</div>
@@ -679,7 +693,9 @@ export default function Calendar() {
 																}
 															>
 																<Plus className="size-5 mx-auto mb-1" />
-																<p className="text-xs">{t("calendar.booking.addBooking")}</p>
+																<p className="text-xs">
+																	{t("calendar.booking.addBooking")}
+																</p>
 															</div>
 														)}
 													</div>
@@ -828,7 +844,9 @@ export default function Calendar() {
 																		className="text-xs"
 																	>
 																		{booking.type === "internal"
-																			? getInternalStatusLabel((booking as any).status)
+																			? getInternalStatusLabel(
+																					(booking as any).status,
+																				)
 																			: (booking as any).source}
 																	</Badge>
 																</div>
@@ -1086,29 +1104,41 @@ export default function Calendar() {
 													</div>
 													<div className="text-sm">
 														{booking.type === "internal"
-															? formatDate(new Date((booking as any).check_in_date), {
-																month: "short",
-																day: "2-digit",
-																year: "numeric",
-															})
-															: formatDate(new Date((booking as any).check_in), {
-																month: "short",
-																day: "2-digit",
-																year: "numeric",
-															})}
+															? formatDate(
+																	new Date((booking as any).check_in_date),
+																	{
+																		month: "short",
+																		day: "2-digit",
+																		year: "numeric",
+																	},
+																)
+															: formatDate(
+																	new Date((booking as any).check_in),
+																	{
+																		month: "short",
+																		day: "2-digit",
+																		year: "numeric",
+																	},
+																)}
 													</div>
 													<div className="text-sm">
 														{booking.type === "internal"
-															? formatDate(new Date((booking as any).check_out_date), {
-																month: "short",
-																day: "2-digit",
-																year: "numeric",
-															})
-															: formatDate(new Date((booking as any).check_out), {
-																month: "short",
-																day: "2-digit",
-																year: "numeric",
-															})}
+															? formatDate(
+																	new Date((booking as any).check_out_date),
+																	{
+																		month: "short",
+																		day: "2-digit",
+																		year: "numeric",
+																	},
+																)
+															: formatDate(
+																	new Date((booking as any).check_out),
+																	{
+																		month: "short",
+																		day: "2-digit",
+																		year: "numeric",
+																	},
+																)}
 													</div>
 													<div>
 														<Badge
@@ -1120,7 +1150,9 @@ export default function Calendar() {
 															className="text-xs"
 														>
 															{booking.type === "internal"
-																? getInternalStatusLabel((booking as any).status)
+																? getInternalStatusLabel(
+																		(booking as any).status,
+																	)
 																: (booking as any).source}
 														</Badge>
 													</div>

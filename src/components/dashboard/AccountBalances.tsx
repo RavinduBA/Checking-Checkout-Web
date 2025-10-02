@@ -160,7 +160,7 @@ export function AccountBalances({ selectedLocation }: AccountBalancesProps) {
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
 					<DollarSign className="size-5 text-primary" />
-					{t('dashboard.accountBalances.title')}
+					{t("dashboard.accountBalances.title")}
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="space-y-3 lg:space-y-4">
@@ -174,7 +174,7 @@ export function AccountBalances({ selectedLocation }: AccountBalancesProps) {
 								{account.name}
 							</p>
 							<p className="text-sm text-muted-foreground">
-								{account.currency} {t('dashboard.accountBalances.account')}
+								{account.currency} {t("dashboard.accountBalances.account")}
 							</p>
 						</div>
 						<div className="text-right ml-4">

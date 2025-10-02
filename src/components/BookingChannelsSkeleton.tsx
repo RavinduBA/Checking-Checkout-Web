@@ -11,7 +11,7 @@ import {
 
 export function BookingChannelsSkeleton() {
 	return (
-		<div className="space-y-6 px-4 sm:px-6">
+		<div className="space-y-6 px-4 sm:px-6 pt-8">
 			{/* Header */}
 			<div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-3">
 				<Skeleton className="h-10 w-36 rounded-md" />

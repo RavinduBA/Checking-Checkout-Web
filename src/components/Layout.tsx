@@ -1,3 +1,4 @@
+import { LanguagesIcon } from "lucide-react";
 import { Outlet, useLocation } from "react-router";
 import { AppSidebar } from "@/components/app-sidebar";
 import {
@@ -18,12 +19,11 @@ import {
 import { useLocationContext } from "@/context/LocationContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import LanguageDropdown from "./dropdown-language";
-import { Button } from "./ui/button";
-import { LanguagesIcon } from "lucide-react";
 import ProfileDropdown from "./dropdown-profile";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import ThemeSwitcher from "./ThemeSwitcher";
 import FullscreenToggle from "./FullscreenToggle";
+import ThemeSwitcher from "./ThemeSwitcher";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Button } from "./ui/button";
 
 export function Layout() {
 	const { selectedLocation, setSelectedLocation, locations, loading } =
@@ -117,8 +117,8 @@ export function Layout() {
 			/>
 			<SidebarInset>
 				{/* Header */}
-				<header className='bg-card sticky w-full top-0 z-50 border-b'>
-					<div className='mx-auto flex w-full items-center justify-between gap-6 px-4 py-2 sm:px-6'>
+				<header className="bg-card sticky w-full top-0 z-10 border-b">
+					<div className="mx-auto flex w-full items-center justify-between gap-6 px-4 py-2 sm:px-6">
 						<div className="flex items-center gap-2 px-0 sm:px-2">
 							<SidebarTrigger className="-ml-1" />
 							<Separator orientation="vertical" className="mr-2 h-4" />
@@ -138,21 +138,21 @@ export function Layout() {
 								</BreadcrumbList>
 							</Breadcrumb>
 						</div>
-						<div className='flex items-center gap-1.5'>
+						<div className="flex items-center gap-1.5">
 							<FullscreenToggle />
 							<ThemeSwitcher />
 							<LanguageDropdown
 								trigger={
-									<Button variant='ghost' size='icon'>
+									<Button variant="ghost" size="icon">
 										<LanguagesIcon />
 									</Button>
 								}
 							/>
 							<ProfileDropdown
 								trigger={
-									<Button variant='ghost' size='icon' className='size-9.5'>
-										<Avatar className='size-9.5 rounded-md'>
-											<AvatarImage src='https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-1.png' />
+									<Button variant="ghost" size="icon" className="size-9.5">
+										<Avatar className="size-9.5 rounded-md">
+											<AvatarImage src="https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-1.png" />
 											<AvatarFallback>JD</AvatarFallback>
 										</Avatar>
 									</Button>

@@ -83,7 +83,7 @@ export const createCheckoutSession = async (params: {
 			headers: {
 				"Content-Type": "application/json",
 				"x-api-key": VITE_CREEM_API_KEY,
-				"accept": "application/json",
+				accept: "application/json",
 			},
 			body: JSON.stringify(requestBody),
 		});

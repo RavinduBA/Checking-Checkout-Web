@@ -20,8 +20,8 @@ import {
 	Wifi,
 } from "lucide-react";
 import * as React from "react";
-import { useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router";
 import { AppSidebarSkeleton } from "@/components/AppSidebarSkeleton";
 import { NavMain } from "@/components/nav-main";
 import { NavProjects } from "@/components/nav-projects";
@@ -85,7 +85,7 @@ export function AppSidebar({
 		// Core features
 		if (hasAnyPermission(["access_dashboard"])) {
 			items.push({
-				title: t('navigation.dashboard'),
+				title: t("navigation.dashboard"),
 				url: "/dashboard",
 				icon: Home,
 				isActive: location.pathname === "/dashboard",
@@ -94,7 +94,7 @@ export function AppSidebar({
 
 		if (hasAnyPermission(["access_calendar"])) {
 			items.push({
-				title: t('navigation.calendar'),
+				title: t("navigation.calendar"),
 				url: "/calendar",
 				icon: Calendar,
 				isActive: location.pathname === "/calendar",
@@ -104,7 +104,7 @@ export function AppSidebar({
 		// Reservations/Bookings
 		if (hasAnyPermission(["access_bookings"])) {
 			items.push({
-				title: t('navigation.reservations'),
+				title: t("navigation.reservations"),
 				url: "/reservations",
 				icon: Building,
 				isActive:
@@ -116,7 +116,7 @@ export function AppSidebar({
 		// Income/Payments
 		if (hasAnyPermission(["access_income"])) {
 			items.push({
-				title: t('navigation.income'),
+				title: t("navigation.income"),
 				url: "/income",
 				icon: DollarSign,
 				isActive: location.pathname === "/income",
@@ -126,7 +126,7 @@ export function AppSidebar({
 		// Expenses
 		if (hasAnyPermission(["access_expenses"])) {
 			items.push({
-				title: t('navigation.expense'),
+				title: t("navigation.expense"),
 				url: "/expense",
 				icon: CreditCard,
 				isActive: location.pathname === "/expense",
@@ -136,7 +136,7 @@ export function AppSidebar({
 		// Accounts
 		if (hasAnyPermission(["access_accounts"])) {
 			items.push({
-				title: t('navigation.accounts'),
+				title: t("navigation.accounts"),
 				url: "/accounts",
 				icon: Building2,
 				isActive: location.pathname === "/accounts",
@@ -145,7 +145,7 @@ export function AppSidebar({
 
 		if (hasAnyPermission(["access_booking_channels"])) {
 			items.push({
-				title: t('navigation.bookingChannels'),
+				title: t("navigation.bookingChannels"),
 				url: "/booking-channels",
 				icon: Wifi,
 				isActive: location.pathname === "/booking-channels",
@@ -155,7 +155,7 @@ export function AppSidebar({
 		// Reports with sub-items
 		if (hasAnyPermission(["access_reports"])) {
 			items.push({
-				title: t('navigation.reports'),
+				title: t("navigation.reports"),
 				url: "/reports?tab=comprehensive",
 				icon: BarChart3,
 				isActive: location.pathname === "/reports",
@@ -171,7 +171,7 @@ export function AppSidebar({
 
 		if (hasAnyPermission(["access_bookings"])) {
 			projects.push({
-				name: t('navigation.newReservation'),
+				name: t("navigation.newReservation"),
 				url: "/reservations/new",
 				icon: PlusCircle,
 				isActive: location.pathname === "/reservations/new",
@@ -180,7 +180,7 @@ export function AppSidebar({
 
 		if (hasAnyPermission(["access_expenses"])) {
 			projects.push({
-				name: t('navigation.addExpense'),
+				name: t("navigation.addExpense"),
 				url: "/expense",
 				icon: MinusCircle,
 				isActive: location.pathname === "/expense",
@@ -190,24 +190,20 @@ export function AppSidebar({
 		// Phone verification quick action - show for all users
 		if (profile && !profile.is_phone_verified) {
 			projects.push({
-				name: t('navigation.verifyPhone'),
+				name: t("navigation.verifyPhone"),
 				url: "/settings?tab=profile",
 				icon: Phone,
-				isActive: location.pathname === "/settings" && window.location.search.includes("tab=profile"),
+				isActive:
+					location.pathname === "/settings" &&
+					window.location.search.includes("tab=profile"),
 			});
 		}
 
 		return projects;
 	};
 
-	const userData = {
-		name: profile?.name || user?.email?.split("@")[0] || "User",
-		email: user?.email || "",
-		avatar: "/placeholder.svg",
-	};
-
 	return (
-		<Sidebar collapsible="icon" {...props}>
+		<Sidebar collapsible="icon" {...props} className="z-20">
 			<SidebarHeader>
 				<LocationSwitcher
 					locations={locations}

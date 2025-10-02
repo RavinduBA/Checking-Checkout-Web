@@ -9,8 +9,8 @@ import {
 	Users,
 } from "lucide-react";
 import { useState } from "react";
-import { useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router";
 import AgentsTab from "@/components/master-files/AgentsTab";
 import CommissionsTab from "@/components/master-files/CommissionsTab";
 import GuidesTab from "@/components/master-files/GuidesTab";
@@ -90,7 +90,11 @@ export default function MasterFiles() {
 					<p className="text-muted-foreground">{t("masterFiles.subtitle")}</p>
 				</CardHeader>
 				<CardContent className="p-6">
-					<Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+					<Tabs
+						value={activeTab}
+						onValueChange={handleTabChange}
+						className="space-y-6"
+					>
 						<TabsList className="grid w-full grid-cols-2 md:grid-cols-5 gap-2 h-auto p-1">
 							{masterFilesTabs.map((tab) => {
 								const Icon = tab.icon;
@@ -101,7 +105,9 @@ export default function MasterFiles() {
 										className="flex items-center gap-2 p-3 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
 									>
 										<Icon className="size-4" />
-										<span className="hidden sm:inline font-medium">{tab.name}</span>
+										<span className="hidden sm:inline font-medium">
+											{tab.name}
+										</span>
 									</TabsTrigger>
 								);
 							})}
