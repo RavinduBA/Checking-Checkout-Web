@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { NewReservationDialog } from "@/components/NewReservationDialog";
 import { OTPVerification } from "@/components/OTPVerification";
 import { ReservationEditDialog } from "@/components/ReservationEditDialog";
 import { ReservationPrintButton } from "@/components/ReservationPrintButton";
@@ -158,6 +159,7 @@ export const ReservationsList = () => {
 	const [editingReservation, setEditingReservation] =
 		useState<Reservation | null>(null);
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+	const [isNewReservationDialogOpen, setIsNewReservationDialogOpen] = useState(false);
 
 	const fetchData = useCallback(async () => {
 		try {
@@ -473,7 +475,7 @@ export const ReservationsList = () => {
 							<SelectItem value="cancelled">Cancelled</SelectItem>
 						</SelectContent>
 					</Select>
-					<Button onClick={() => navigate("/reservations/new")}>
+					<Button onClick={() => setIsNewReservationDialogOpen(true)}>
 						<Calendar className="size-4 mr-2" />
 						New Reservation
 					</Button>
@@ -821,6 +823,15 @@ export const ReservationsList = () => {
 					fetchData();
 					setIsEditDialogOpen(false);
 					setEditingReservation(null);
+				}}
+			/>
+
+			<NewReservationDialog
+				isOpen={isNewReservationDialogOpen}
+				onClose={() => setIsNewReservationDialogOpen(false)}
+				onReservationCreated={() => {
+					fetchData();
+					setIsNewReservationDialogOpen(false);
 				}}
 			/>
 		</div>
