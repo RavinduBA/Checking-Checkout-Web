@@ -15,6 +15,9 @@ const languages = [
   { code: "fr", name: "Français", flag: "🇫🇷" },
   { code: "de", name: "Deutsch", flag: "🇩🇪" },
   { code: "pt", name: "Português", flag: "🇵🇹" },
+  { code: "si", name: "සිංහල", flag: "🇱🇰" },
+  { code: "ta", name: "தமிழ்", flag: "🇮🇳" },
+  { code: "hi", name: "हिंदी", flag: "🇮🇳" },
 ];
 
 export function LanguageSwitcher() {
@@ -44,11 +47,11 @@ export function LanguageSwitcher() {
           <DropdownMenuItem
             key={language.code}
             onClick={() => changeLanguage(language.code)}
-            className={`flex items-center gap-2 ${
+            className={`flex items-center text-sm gap-2 ${
               currentLanguage.code === language.code ? "bg-accent" : ""
             }`}
           >
-            <span className="text-base">{language.flag}</span>
+            <span className="text-sm">{language.flag}</span>
             <span>{language.name}</span>
             {currentLanguage.code === language.code && (
               <div className="ml-auto h-2 w-2 bg-primary rounded-full" />

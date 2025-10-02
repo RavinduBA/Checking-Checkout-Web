@@ -8,6 +8,9 @@ import es from './locales/es/common.json'
 import fr from './locales/fr/common.json'
 import de from './locales/de/common.json'
 import pt from './locales/pt/common.json'
+import si from './locales/si/common.json'
+import ta from './locales/ta/common.json'
+import hi from './locales/hi/common.json'
 
 // Define supported languages
 export const supportedLanguages = [
@@ -16,6 +19,9 @@ export const supportedLanguages = [
   { code: 'fr', name: 'French', nativeName: 'Français' },
   { code: 'de', name: 'German', nativeName: 'Deutsch' },
   { code: 'pt', name: 'Portuguese', nativeName: 'Português' },
+  { code: 'si', name: 'Sinhala', nativeName: 'සිංහල' },
+  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்' },
+  { code: 'hi', name: 'Hindi', nativeName: 'हिंदी' },
 ]
 
 const resources = {
@@ -33,6 +39,15 @@ const resources = {
   },
   pt: {
     common: pt,
+  },
+  si: {
+    common: si,
+  },
+  ta: {
+    common: ta,
+  },
+  hi: {
+    common: hi,
   },
 }
 

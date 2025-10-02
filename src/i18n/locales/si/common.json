@@ -1,0 +1,88 @@
+{
+  "dashboard": {
+    "header": {
+      "welcome": "නැවත සාදරයෙන් පිළිගනිමු!",
+      "subtitle": "හෝටල් කළමනාකරණ පුවරුව",
+      "addIncome": "ආදායම් එක් කරන්න",
+      "addExpense": "වියදම් එක් කරන්න",
+      "monthFilter": "මාස ෆිල්ටරය"
+    }
+  },
+  "navigation": {
+    "dashboard": "පුවරුව",
+    "calendar": "දින දර්ශනය",
+    "reservations": "වෙන්කිරීම්",
+    "income": "ආදායම්",
+    "expense": "වියදම්",
+    "reports": "වාර්තා",
+    "settings": "සැකසුම්",
+    "users": "පරිශීලකයින්",
+    "masterFiles": "ප්‍රධාන ගොනු"
+  },
+  "common": {
+    "loading": "පූරණය වෙමින්...",
+    "save": "සුරකින්න",
+    "cancel": "අවලංගු කරන්න",
+    "delete": "මකන්න",
+    "edit": "සංස්කරණය",
+    "add": "එක් කරන්න",
+    "search": "සොයන්න",
+    "filter": "පෙරහන",
+    "export": "නිර්යාත",
+    "import": "ආයාත",
+    "yes": "ඔව්",
+    "no": "නැත",
+    "ok": "හරි",
+    "close": "වසන්න",
+    "back": "ආපසු",
+    "next": "ඊළඟ",
+    "previous": "පෙර",
+    "submit": "ඉදිරිපත් කරන්න",
+    "reset": "නැවත සැකසීම",
+    "clear": "හිස් කරන්න",
+    "all": "සියල්ල",
+    "none": "කිසිවක් නැත",
+    "select": "තෝරන්න",
+    "deselect": "තේරීම ඉවත් කරන්න"
+  },
+  "auth": {
+    "login": "පිවිසෙන්න",
+    "logout": "ඉවත් වන්න",
+    "signup": "ලියාපදිංචි වන්න",
+    "forgotPassword": "මුරපදය අමතකයි",
+    "resetPassword": "මුරපදය නැවත සකසන්න",
+    "email": "විද්‍යුත් තැපෑල",
+    "password": "මුරපදය",
+    "confirmPassword": "මුරපදය තහවුරු කරන්න",
+    "rememberMe": "මතක තබාගන්න"
+  },
+  "theme": {
+    "light": "ආලෝකය",
+    "dark": "අඳුරු",
+    "system": "පද්ධතිය",
+    "toggleTheme": "තේමාව මාරු කරන්න"
+  },
+  "language": {
+    "selectLanguage": "භාෂාව තෝරන්න",
+    "english": "ඉංග්‍රීසි",
+    "spanish": "ස්පාඤ්ඤ",
+    "french": "ප්‍රංශ",
+    "german": "ජර්මන්",
+    "portuguese": "පෘතුගීසි",
+    "sinhala": "සිංහල",
+    "tamil": "දමිළ",
+    "hindi": "හින්දි"
+  },
+  "profile": {
+    "myProfile": "මගේ පැතිකඩ",
+    "settings": "සැකසුම්",
+    "billing": "ගිණුම් කිරීම සහ දායකත්වය",
+    "manageUsers": "පරිශීලකයින් කළමනාකරණය",
+    "masterFiles": "ප්‍රධාන ගොනු",
+    "bookingChannels": "වෙන්කිරීම් නාලිකා"
+  },
+  "fullscreen": {
+    "enter": "සම්පූර්ණ තිරය",
+    "exit": "සම්පූර්ණ තිරයෙන් ඉවත් වන්න"
+  }
+}
