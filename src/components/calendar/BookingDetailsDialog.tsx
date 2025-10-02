@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { format, parseISO } from "date-fns";
+import { useTranslation } from "react-i18next";
 import {
 	Dialog,
 	DialogContent,
@@ -47,6 +48,7 @@ export function BookingDetailsDialog({
 	getCurrencySymbol,
 }: BookingDetailsDialogProps) {
 	const navigate = useNavigate();
+	const { t } = useTranslation("common");
 
 	if (!reservation) return null;
 
@@ -75,7 +77,7 @@ export function BookingDetailsDialog({
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<User className="h-5 w-5" />
-						Booking Details
+						{t("calendar.bookingDialog.title")}
 					</DialogTitle>
 				</DialogHeader>
 
@@ -122,42 +124,42 @@ export function BookingDetailsDialog({
 					<div className="space-y-3">
 						<div className="flex items-center gap-2 font-medium">
 							<Calendar className="h-4 w-4" />
-							Stay Details
+							{t("calendar.bookingDialog.stayDetails")}
 						</div>
 						
 						<div className="grid grid-cols-2 gap-4 text-sm">
 							<div>
-								<div className="text-muted-foreground">Check-in</div>
+								<div className="text-muted-foreground">{t("calendar.bookingDialog.checkIn")}</div>
 								<div className="font-medium">{format(checkInDate, "MMM dd, yyyy")}</div>
 							</div>
 							<div>
-								<div className="text-muted-foreground">Check-out</div>
+								<div className="text-muted-foreground">{t("calendar.bookingDialog.checkOut")}</div>
 								<div className="font-medium">{format(checkOutDate, "MMM dd, yyyy")}</div>
 							</div>
 						</div>
 
 						<div className="grid grid-cols-2 gap-4 text-sm">
 							<div>
-								<div className="text-muted-foreground">Room</div>
+								<div className="text-muted-foreground">{t("calendar.bookingDialog.room")}</div>
 								<div className="font-medium">
 									{reservation.rooms?.room_number} - {reservation.rooms?.room_type}
 								</div>
 							</div>
 							<div>
-								<div className="text-muted-foreground">Nights</div>
-								<div className="font-medium">{nights} night{nights !== 1 ? 's' : ''}</div>
+								<div className="text-muted-foreground">{t("calendar.bookingDialog.nights", { count: nights })}</div>
+								<div className="font-medium">{nights} {t("calendar.bookingDialog.nights", { count: nights })}</div>
 							</div>
 						</div>
 
 						{reservation.adults && (
 							<div className="grid grid-cols-2 gap-4 text-sm">
 								<div>
-									<div className="text-muted-foreground">Adults</div>
+									<div className="text-muted-foreground">{t("calendar.bookingDialog.adults")}</div>
 									<div className="font-medium">{reservation.adults}</div>
 								</div>
 								{reservation.children && (
 									<div>
-										<div className="text-muted-foreground">Children</div>
+										<div className="text-muted-foreground">{t("calendar.bookingDialog.children")}</div>
 										<div className="font-medium">{reservation.children}</div>
 									</div>
 								)}
@@ -171,18 +173,18 @@ export function BookingDetailsDialog({
 					<div className="space-y-3">
 						<div className="flex items-center gap-2 font-medium">
 							<DollarSign className="h-4 w-4" />
-							Financial Details
+							{t("calendar.bookingDialog.financialDetails")}
 						</div>
 						
 						<div className="grid grid-cols-2 gap-4 text-sm">
 							<div>
-								<div className="text-muted-foreground">Total Amount</div>
+								<div className="text-muted-foreground">{t("calendar.bookingDialog.totalAmount")}</div>
 								<div className="font-medium">
 									{getCurrencySymbol(reservation.currency || 'USD')} {reservation.total_amount?.toFixed(2) || '0.00'}
 								</div>
 							</div>
 							<div>
-								<div className="text-muted-foreground">Paid Amount</div>
+								<div className="text-muted-foreground">{t("calendar.bookingDialog.paidAmount")}</div>
 								<div className="font-medium">
 									{getCurrencySymbol(reservation.currency || 'USD')} {reservation.paid_amount?.toFixed(2) || '0.00'}
 								</div>
@@ -191,7 +193,7 @@ export function BookingDetailsDialog({
 
 						{reservation.total_amount && reservation.paid_amount && (
 							<div className="text-sm">
-								<div className="text-muted-foreground">Balance</div>
+								<div className="text-muted-foreground">{t("calendar.bookingDialog.balance")}</div>
 								<div className={`font-medium ${
 									reservation.total_amount - reservation.paid_amount > 0 
 										? 'text-red-600' 
@@ -213,7 +215,7 @@ export function BookingDetailsDialog({
 							variant="outline"
 						>
 							<Edit className="h-4 w-4 mr-2" />
-							View Details
+							{t("calendar.bookingDialog.viewDetails")}
 						</Button>
 
 						{(reservation.status === "tentative" || reservation.status === "pending") && (
@@ -222,7 +224,7 @@ export function BookingDetailsDialog({
 								className="flex-1"
 							>
 								<CreditCard className="h-4 w-4 mr-2" />
-								Payment
+								{t("calendar.bookingDialog.payment")}
 							</Button>
 						)}
 					</div>

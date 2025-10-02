@@ -87,6 +87,46 @@
       "externalConfirmed": "बाह्य - पुष्टि",
       "externalNew": "बाह्य - नया",
       "cancelled": "रद्द"
+    },
+    "navigation": {
+      "today": "आज",
+      "previousMonth": "पिछला महीना",
+      "nextMonth": "अगला महीना"
+    },
+    "search": {
+      "placeholder": "आरक्षण खोजें...",
+      "filterByStatus": "स्थिति के द्वारा फिल्टर करें",
+      "allStatuses": "सभी स्थितियां"
+    },
+    "status": {
+      "confirmed": "पुष्टि",
+      "tentative": "अस्थायी",
+      "pending": "प्रतीक्षारत",
+      "checked_in": "चेक-इन",
+      "checked_out": "चेक-आउट",
+      "cancelled": "रद्द"
+    },
+    "viewMore": {
+      "moreCount": "+{{count}} और",
+      "dialogTitle": "{{date}} के लिए आरक्षण"
+    },
+    "bookingDialog": {
+      "title": "बुकिंग विवरण",
+      "guestInfo": "अतिथि जानकारी",
+      "stayDetails": "ठहरने का विवरण",
+      "financialDetails": "वित्तीय विवरण",
+      "checkIn": "चेक-इन",
+      "checkOut": "चेक-आउट",
+      "room": "कमरा",
+      "nights": "{{count}} रात",
+      "nights_other": "{{count}} रातें",
+      "adults": "वयस्क",
+      "children": "बच्चे",
+      "totalAmount": "कुल राशि",
+      "paidAmount": "भुगतान की गई राशि",
+      "balance": "शेष राशि",
+      "viewDetails": "विवरण देखें",
+      "payment": "भुगतान"
     }
   },
   "navigation": {

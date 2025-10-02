@@ -87,6 +87,46 @@
       "externalConfirmed": "බාහිර - තහවුරු කළ",
       "externalNew": "බාහිර - නව",
       "cancelled": "අවලංගු කළ"
+    },
+    "navigation": {
+      "today": "අද",
+      "previousMonth": "පෙර මාසය",
+      "nextMonth": "ඊළඟ මාසය"
+    },
+    "search": {
+      "placeholder": "රිගෙය් ශොධනන්න...",
+      "filterByStatus": "තත්වය අනුව සිංකරණය",
+      "allStatuses": "සියළු තත්වය"
+    },
+    "status": {
+      "confirmed": "තහවුරු කළ",
+      "tentative": "අස්ථිර",
+      "pending": "ප්‍රතීක්ෂාවක",
+      "checked_in": "චෙක්-ඉන්",
+      "checked_out": "චෙක්-ආउට්",
+      "cancelled": "අවලංගු කළ"
+    },
+    "viewMore": {
+      "moreCount": "+{{count}} වෙත",
+      "dialogTitle": "{{date}} දිනයට රිගෙය්"
+    },
+    "bookingDialog": {
+      "title": "රිගෙය් විස්තර",
+      "guestInfo": "අතිථි තොරතුරු",
+      "stayDetails": "වසන් විස්තර",
+      "financialDetails": "මුදල් විස්තර",
+      "checkIn": "චෙක්-ඉන්",
+      "checkOut": "චෙක්-ආउට්",
+      "room": "කාමරය",
+      "nights": "රාත්‍රි {{count}}",
+      "nights_other": "රාත්‍රි {{count}}",
+      "adults": "පිරිසිදු",
+      "children": "දරුවන්",
+      "totalAmount": "මුළු මුදල",
+      "paidAmount": "ගෙවූ මුදල",
+      "balance": "ශේෂම",
+      "viewDetails": "විස්තර බලන්න",
+      "payment": "ගෙවීම"
     }
   },
   "navigation": {

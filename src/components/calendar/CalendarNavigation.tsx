@@ -1,5 +1,6 @@
 import { addMonths, format, subMonths } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 
 interface CalendarNavigationProps {
@@ -11,6 +12,8 @@ export function CalendarNavigation({
 	currentDate,
 	onDateChange,
 }: CalendarNavigationProps) {
+	const { t } = useTranslation("common");
+
 	const goToPrevMonth = () => {
 		onDateChange(subMonths(currentDate, 1));
 	};
@@ -26,18 +29,28 @@ export function CalendarNavigation({
 	return (
 		<div className="flex items-center justify-between mb-4">
 			<div className="flex items-center gap-2">
-				<Button variant="outline" size="sm" onClick={goToPrevMonth}>
+				<Button 
+					variant="outline" 
+					size="sm" 
+					onClick={goToPrevMonth}
+					title={t("calendar.navigation.previousMonth")}
+				>
 					<ChevronLeft className="size-4" />
 				</Button>
 				<h2 className="text-xl font-semibold min-w-[200px] text-center">
 					{format(currentDate, "MMMM yyyy")}
 				</h2>
-				<Button variant="outline" size="sm" onClick={goToNextMonth}>
+				<Button 
+					variant="outline" 
+					size="sm" 
+					onClick={goToNextMonth}
+					title={t("calendar.navigation.nextMonth")}
+				>
 					<ChevronRight className="size-4" />
 				</Button>
 			</div>
 			<Button variant="outline" size="sm" onClick={goToToday}>
-				Today
+				{t("calendar.navigation.today")}
 			</Button>
 		</div>
 	);

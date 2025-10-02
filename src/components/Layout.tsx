@@ -126,7 +126,7 @@ export function Layout() {
 								<BreadcrumbList>
 									<BreadcrumbItem className="hidden md:block">
 										<BreadcrumbLink href="/dashboard">
-											<span className="text-black">CheckingCheckout</span>
+											<span className="text-black">Home</span>
 										</BreadcrumbLink>
 									</BreadcrumbItem>
 									<BreadcrumbSeparator className="hidden md:block" />

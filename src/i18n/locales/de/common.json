@@ -87,6 +87,46 @@
       "externalConfirmed": "Extern - Bestätigt",
       "externalNew": "Extern - Neu",
       "cancelled": "Storniert"
+    },
+    "navigation": {
+      "today": "Heute",
+      "previousMonth": "Vorheriger Monat",
+      "nextMonth": "Nächster Monat"
+    },
+    "search": {
+      "placeholder": "Reservierungen suchen...",
+      "filterByStatus": "Nach Status filtern",
+      "allStatuses": "Alle Status"
+    },
+    "status": {
+      "confirmed": "Bestätigt",
+      "tentative": "Vorläufig",
+      "pending": "Ausstehend",
+      "checked_in": "Eingecheckt",
+      "checked_out": "Ausgecheckt",
+      "cancelled": "Storniert"
+    },
+    "viewMore": {
+      "moreCount": "+{{count}} mehr",
+      "dialogTitle": "Reservierungen für {{date}}"
+    },
+    "bookingDialog": {
+      "title": "Buchungsdetails",
+      "guestInfo": "Gastinformationen",
+      "stayDetails": "Aufenthaltsdetails",
+      "financialDetails": "Finanzielle Details",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "room": "Zimmer",
+      "nights": "{{count}} Nacht",
+      "nights_other": "{{count}} Nächte",
+      "adults": "Erwachsene",
+      "children": "Kinder",
+      "totalAmount": "Gesamtbetrag",
+      "paidAmount": "Bezahlter Betrag",
+      "balance": "Saldo",
+      "viewDetails": "Details anzeigen",
+      "payment": "Zahlung"
     }
   },
   "navigation": {

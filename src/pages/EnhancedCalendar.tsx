@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import {
 	BookingDetailsDialog,
 	CalendarNavigation,
@@ -27,6 +28,7 @@ type Reservation = Database["public"]["Tables"]["reservations"]["Row"] & {
 
 export default function EnhancedCalendar() {
 	const navigate = useNavigate();
+	const { t } = useTranslation("common");
 	const [currentDate, setCurrentDate] = useState(new Date());
 	const [searchTerm, setSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState("all");
@@ -107,7 +109,7 @@ export default function EnhancedCalendar() {
 					<div className="relative flex-1 max-w-sm">
 						<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground size-4" />
 						<Input
-							placeholder="Search reservations..."
+							placeholder={t("calendar.search.placeholder")}
 							value={searchTerm}
 							onChange={(e) => setSearchTerm(e.target.value)}
 							className="pl-10"
@@ -115,16 +117,16 @@ export default function EnhancedCalendar() {
 					</div>
 					<Select value={statusFilter} onValueChange={setStatusFilter}>
 						<SelectTrigger className="w-full sm:w-48">
-							<SelectValue placeholder="Filter by status" />
+							<SelectValue placeholder={t("calendar.search.filterByStatus")} />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="all">All Statuses</SelectItem>
-							<SelectItem value="confirmed">Confirmed</SelectItem>
-							<SelectItem value="tentative">Tentative</SelectItem>
-							<SelectItem value="pending">Pending</SelectItem>
-							<SelectItem value="checked_in">Checked In</SelectItem>
-							<SelectItem value="checked_out">Checked Out</SelectItem>
-							<SelectItem value="cancelled">Cancelled</SelectItem>
+							<SelectItem value="all">{t("calendar.search.allStatuses")}</SelectItem>
+							<SelectItem value="confirmed">{t("calendar.status.confirmed")}</SelectItem>
+							<SelectItem value="tentative">{t("calendar.status.tentative")}</SelectItem>
+							<SelectItem value="pending">{t("calendar.status.pending")}</SelectItem>
+							<SelectItem value="checked_in">{t("calendar.status.checked_in")}</SelectItem>
+							<SelectItem value="checked_out">{t("calendar.status.checked_out")}</SelectItem>
+							<SelectItem value="cancelled">{t("calendar.status.cancelled")}</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>

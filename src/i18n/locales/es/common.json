@@ -86,6 +86,46 @@
       "externalConfirmed": "Externo - Confirmado",
       "externalNew": "Externo - Nuevo",
       "cancelled": "Cancelado"
+    },
+    "navigation": {
+      "today": "Hoy",
+      "previousMonth": "Mes anterior",
+      "nextMonth": "Mes siguiente"
+    },
+    "search": {
+      "placeholder": "Buscar reservas...",
+      "filterByStatus": "Filtrar por estado",
+      "allStatuses": "Todos los estados"
+    },
+    "status": {
+      "confirmed": "Confirmado",
+      "tentative": "Tentativo",
+      "pending": "Pendiente",
+      "checked_in": "Registrado",
+      "checked_out": "Salida",
+      "cancelled": "Cancelado"
+    },
+    "viewMore": {
+      "moreCount": "+{{count}} más",
+      "dialogTitle": "Reservas para {{date}}"
+    },
+    "bookingDialog": {
+      "title": "Detalles de la reserva",
+      "guestInfo": "Información del huésped",
+      "stayDetails": "Detalles de la estadía",
+      "financialDetails": "Detalles financieros",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "room": "Habitación",
+      "nights": "{{count}} noche",
+      "nights_other": "{{count}} noches",
+      "adults": "Adultos",
+      "children": "Niños",
+      "totalAmount": "Monto total",
+      "paidAmount": "Monto pagado",
+      "balance": "Saldo",
+      "viewDetails": "Ver detalles",
+      "payment": "Pago"
     }
   },
   "navigation": {

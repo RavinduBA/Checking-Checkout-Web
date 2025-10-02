@@ -11,6 +11,7 @@ import {
 	startOfWeek,
 	endOfWeek,
 } from "date-fns";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -60,6 +61,7 @@ export function FullCalendarMonthView({
 	getCurrencySymbol,
 }: FullCalendarMonthViewProps) {
 	const navigate = useNavigate();
+	const { t } = useTranslation("common");
 	const { selectedLocation } = useLocationContext();
 	const { tenant } = useTenant();
 	const [viewMoreDate, setViewMoreDate] = useState<Date | null>(null);
@@ -427,7 +429,7 @@ export function FullCalendarMonthView({
 														handleViewMore(date);
 													}}
 												>
-													+{dayReservations.length - 2} more
+													{t("calendar.viewMore.moreCount", { count: dayReservations.length - 2 })}
 												</div>
 											)}
 										</div>
@@ -524,7 +526,7 @@ export function FullCalendarMonthView({
 				<DialogContent className="max-w-md">
 					<DialogHeader>
 						<DialogTitle>
-							Reservations for {viewMoreDate && format(viewMoreDate, "MMMM d, yyyy")}
+							{viewMoreDate && t("calendar.viewMore.dialogTitle", { date: format(viewMoreDate, "MMMM d, yyyy") })}
 						</DialogTitle>
 					</DialogHeader>
 					<div className="space-y-3 max-h-96 overflow-y-auto">

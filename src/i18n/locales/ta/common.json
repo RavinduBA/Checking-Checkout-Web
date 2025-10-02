@@ -215,6 +215,46 @@
       "externalConfirmed": "வெளி - உறுதி செய்யப்பட்டது",
       "externalNew": "வெளி - புதியது",
       "cancelled": "ரத்து செய்யப்பட்டது"
+    },
+    "navigation": {
+      "today": "இன்று",
+      "previousMonth": "கடந்த மாதம்",
+      "nextMonth": "அடுத்த மாதம்"
+    },
+    "search": {
+      "placeholder": "முன்பதிவுகள் தேடவும்...",
+      "filterByStatus": "நிலையால் வடிகட்டவும்",
+      "allStatuses": "அனைத்து நிலைகளும்"
+    },
+    "status": {
+      "confirmed": "உறுதி செய்யப்பட்டது",
+      "tentative": "இடைக்கால",
+      "pending": "காத்திருக்கும்",
+      "checked_in": "Check-in செய்யப்பட்டது",
+      "checked_out": "Check-out செய்யப்பட்டது",
+      "cancelled": "ரத்து செய்யப்பட்டது"
+    },
+    "viewMore": {
+      "moreCount": "+{{count}} கூடுதலாக",
+      "dialogTitle": "{{date}} க்கான முன்பதிவுகள்"
+    },
+    "bookingDialog": {
+      "title": "முன்பதிவு விவரங்கள்",
+      "guestInfo": "விருந்தினர் தகவல்",
+      "stayDetails": "தங்கும் விவரங்கள்",
+      "financialDetails": "நிதி விவரங்கள்",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "room": "அறை",
+      "nights": "{{count}} இரவு",
+      "nights_other": "{{count}} இரவுகள்",
+      "adults": "பெரியவர்கள்",
+      "children": "குழந்தைகள்",
+      "totalAmount": "மொத்த தொகை",
+      "paidAmount": "தரப்பட்ட தொகை",
+      "balance": "மிச்சம்",
+      "viewDetails": "விவரங்களை பார்க்கவும்",
+      "payment": "கொடுப்பனவு"
     }
   },
       "performance": "செயல்திறன்"

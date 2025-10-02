@@ -87,6 +87,46 @@
       "externalConfirmed": "External - Confirmed",
       "externalNew": "External - New",
       "cancelled": "Cancelled"
+    },
+    "navigation": {
+      "today": "Today",
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month"
+    },
+    "search": {
+      "placeholder": "Search reservations...",
+      "filterByStatus": "Filter by status",
+      "allStatuses": "All Statuses"
+    },
+    "status": {
+      "confirmed": "Confirmed",
+      "tentative": "Tentative",
+      "pending": "Pending",
+      "checked_in": "Checked In",
+      "checked_out": "Checked Out",
+      "cancelled": "Cancelled"
+    },
+    "viewMore": {
+      "moreCount": "+{{count}} more",
+      "dialogTitle": "Reservations for {{date}}"
+    },
+    "bookingDialog": {
+      "title": "Booking Details",
+      "guestInfo": "Guest Information",
+      "stayDetails": "Stay Details",
+      "financialDetails": "Financial Details",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "room": "Room",
+      "nights": "{{count}} night",
+      "nights_other": "{{count}} nights",
+      "adults": "Adults",
+      "children": "Children",
+      "totalAmount": "Total Amount",
+      "paidAmount": "Paid Amount",
+      "balance": "Balance",
+      "viewDetails": "View Details",
+      "payment": "Payment"
     }
   },
   "navigation": {
