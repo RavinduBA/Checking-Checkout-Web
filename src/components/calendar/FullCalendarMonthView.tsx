@@ -400,17 +400,19 @@ export function FullCalendarMonthView({
 											)}
 											{isCurrentMonth && hasMoreThanTwo && (
 												<div
-													className="absolute bottom-0 right-2 h-8 px-2 bg-muted/70 hover:bg-muted/90 transition-colors cursor-pointer rounded-md flex items-center justify-center"
+													className="absolute pointer-events-auto cursor-pointer h-8 bg-muted/80 hover:bg-muted transition-colors rounded-md flex items-center justify-center text-xs font-bold text-foreground shadow-sm"
 													style={{
-														bottom: '8px', // Position at bottom of cell with some padding
-														zIndex: 20
+														top: `${36 + (2 * 36)}px`, // Position as 3rd line: 36px offset + (2 lanes * 36px spacing)
+														left: '0.25rem',
+														width: 'calc(100% - 0.5rem)',
+														zIndex: 15
 													}}
 													onClick={(e) => {
 														e.stopPropagation();
 														handleViewMore(date);
 													}}
 												>
-													<span className="text-xs font-bold text-foreground">+{dayReservations.length - 2}</span>
+													+{dayReservations.length - 2} more
 												</div>
 											)}
 										</div>
@@ -435,12 +437,14 @@ export function FullCalendarMonthView({
 											"absolute pointer-events-auto cursor-pointer transition-colors",
 											"text-white text-xs font-medium flex items-center",
 											getStatusColor(reservation.status),
-											"rounded-md px-2 truncate shadow-sm h-8",
+											"rounded-md truncate shadow-sm h-8",
+											isStart && "pl-2", // Add left padding only for start segments
+											isEnd && "pr-2", // Add right padding only for end segments
 											!isStart && "rounded-l-none",
 											!isEnd && "rounded-r-none"
 										)}
 										style={{
-											top: `${row * 121 + 36 + (lane * 54)}px`, // 121px per row (120px + 1px gap), 36px offset for date, 54px per lane (h-12 + 6px spacing)
+											top: `${row * 121 + 36 + (lane * 36)}px`, // Reduced spacing: 36px per lane instead of 54px
 											left: `calc(${col * (100/7)}% + ${col > 0 ? '0.125rem' : '0px'})`,
 											width: `calc(${spanDays * (100/7)}% - ${spanDays > 1 ? '0.125rem' : '0px'})`,
 											zIndex: 10 + lane,
