@@ -399,17 +399,19 @@ export function FullCalendarMonthView({
 												</Button>
 											)}
 											{isCurrentMonth && hasMoreThanTwo && (
-												<Button
-													variant="ghost"
-													size="sm"
-													className="h-6 w-6 p-0 bg-muted/50 hover:bg-muted transition-colors"
+												<div
+													className="absolute bottom-0 right-2 h-8 px-2 bg-muted/70 hover:bg-muted/90 transition-colors cursor-pointer rounded-md flex items-center justify-center"
+													style={{
+														bottom: '8px', // Position at bottom of cell with some padding
+														zIndex: 20
+													}}
 													onClick={(e) => {
 														e.stopPropagation();
 														handleViewMore(date);
 													}}
 												>
-													<span className="text-xs font-bold">+{dayReservations.length - 2}</span>
-												</Button>
+													<span className="text-xs font-bold text-foreground">+{dayReservations.length - 2}</span>
+												</div>
 											)}
 										</div>
 									</div>
@@ -433,7 +435,7 @@ export function FullCalendarMonthView({
 											"absolute pointer-events-auto cursor-pointer transition-colors",
 											"text-white text-xs font-medium flex items-center",
 											getStatusColor(reservation.status),
-											"rounded-md px-2 truncate shadow-sm h-12",
+											"rounded-md px-2 truncate shadow-sm h-8",
 											!isStart && "rounded-l-none",
 											!isEnd && "rounded-r-none"
 										)}
