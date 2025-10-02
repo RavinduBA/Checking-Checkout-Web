@@ -162,32 +162,6 @@ export function AppSidebar({
 			});
 		}
 
-		if (hasAnyPermission(["access_users"])) {
-			items.push({
-				title: t('navigation.users'),
-				url: "/users",
-				icon: Users,
-				isActive: location.pathname === "/users",
-			});
-		}
-
-		if (hasAnyPermission(["access_settings"])) {
-			items.push({
-				title: t('navigation.settings'),
-				url: "/settings",
-				icon: Settings,
-				isActive: location.pathname === "/settings",
-			});
-		}
-
-		// Billing - always show for SaaS tenants
-		items.push({
-			title: t('navigation.billingSubscription'),
-			url: "/billing",
-			icon: CreditCard,
-			isActive: location.pathname.startsWith("/billing"),
-		});
-
 		return items;
 	};
 

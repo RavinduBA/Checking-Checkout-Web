@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { ArrowLeft, CreditCard, Save } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { CurrencySelector } from "@/components/CurrencySelector";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,10 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/context/AuthContext";
+import { useLocationContext } from "@/context/LocationContext";
 import { useToast } from "@/hooks/use-toast";
+import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { convertCurrency } from "@/utils/currency";
@@ -31,6 +34,9 @@ export default function PaymentForm() {
 	const navigate = useNavigate();
 	const { toast } = useToast();
 	const [searchParams] = useSearchParams();
+	const { user } = useAuth();
+	const { tenant } = useTenant();
+	const { selectedLocation } = useLocationContext();
 
 	const reservationId = searchParams.get("reservation");
 	const initialAmount = parseFloat(searchParams.get("amount") || "0");
@@ -53,33 +59,33 @@ export default function PaymentForm() {
 		reference_number: "",
 	});
 
-	useEffect(() => {
-		if (reservationId) {
-			fetchReservationAndAccounts();
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [reservationId]);
-
-	useEffect(() => {
-		// Filter accounts based on selected currency
-		setFormData((prev) => ({ ...prev, account_id: "" }));
-	}, []);
-
-	const fetchLocation = async (locationId: string) => {
+	const fetchLocation = useCallback(async (locationId: string) => {
+		if (!tenant?.id) return;
+		
 		try {
 			const { data } = await supabase
 				.from("locations")
 				.select("id, name, phone, email")
 				.eq("id", locationId)
+				.eq("tenant_id", tenant.id)
 				.single();
 
 			setLocation(data);
 		} catch (error) {
 			console.error("Failed to fetch location:", error);
 		}
-	};
+	}, [tenant?.id]);
 
-	const fetchReservationAndAccounts = async () => {
+	const fetchReservationAndAccounts = useCallback(async () => {
+		if (!tenant?.id) {
+			toast({
+				title: "Error",
+				description: "Tenant information not available",
+				variant: "destructive",
+			});
+			return;
+		}
+
 		setLoading(true);
 		try {
 			const [reservationRes, accountsRes, incomeRes] = await Promise.all([
@@ -91,12 +97,18 @@ export default function PaymentForm() {
             rooms (*)
           `)
 					.eq("id", reservationId)
+					.eq("tenant_id", tenant.id)
 					.single(),
-				supabase.from("accounts").select("*").order("name"),
+				supabase
+					.from("accounts")
+					.select("*")
+					.eq("tenant_id", tenant.id)
+					.order("name"),
 				supabase
 					.from("income")
 					.select("*, income_types(type_name), accounts(name)")
 					.eq("booking_id", reservationId)
+					.eq("tenant_id", tenant.id)
 					.order("created_at", { ascending: false }),
 			]);
 
@@ -151,7 +163,18 @@ export default function PaymentForm() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [tenant?.id, reservationId, initialCurrency, toast, fetchLocation]);
+
+	useEffect(() => {
+		if (reservationId && tenant?.id) {
+			fetchReservationAndAccounts();
+		}
+	}, [reservationId, tenant?.id, fetchReservationAndAccounts]);
+
+	useEffect(() => {
+		// Filter accounts based on selected currency
+		setFormData((prev) => ({ ...prev, account_id: "" }));
+	}, []);
 
 	const handleCurrencyChange = async (newCurrency: string) => {
 		if (!reservation) return;
@@ -213,6 +236,7 @@ export default function PaymentForm() {
 				reference_number: formData.reference_number || null,
 				payment_number: paymentNumber,
 				currency: formData.currency,
+				created_by: user?.id,
 			};
 
 			const { error: paymentError } = await supabase
@@ -234,6 +258,7 @@ export default function PaymentForm() {
 				note: formData.notes || null,
 				currency: formData.currency,
 				booking_id: null, // Remove booking_id since we're dealing with reservations
+				tenant_id: tenant?.id,
 			};
 
 			const { error: incomeError } = await supabase
@@ -263,7 +288,8 @@ export default function PaymentForm() {
 					balance_amount: newBalanceAmount,
 					status: newBalanceAmount <= 0 ? "confirmed" : reservation.status,
 				})
-				.eq("id", reservationId);
+				.eq("id", reservationId)
+				.eq("tenant_id", tenant?.id);
 
 			// Update pending income records to reflect the payment
 			// This ensures that pending services/charges are marked as paid
@@ -273,7 +299,8 @@ export default function PaymentForm() {
 					payment_method: formData.payment_method,
 				})
 				.eq("booking_id", reservationId)
-				.eq("payment_method", "pending");
+				.eq("payment_method", "pending")
+				.eq("tenant_id", tenant?.id);
 
 			if (updateIncomeError) {
 				console.error(
