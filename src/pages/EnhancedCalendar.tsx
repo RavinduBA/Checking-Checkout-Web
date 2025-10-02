@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import {
+	BookingDetailsDialog,
 	CalendarNavigation,
 	FullCalendarMonthView,
 	QuickBookDialog,
 } from "@/components/calendar";
 import { PermissionRoute } from "@/components/PermissionRoute";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -32,7 +32,9 @@ export default function EnhancedCalendar() {
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 	const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+	const [selectedBooking, setSelectedBooking] = useState<Reservation | null>(null);
 	const [isQuickBookDialogOpen, setIsQuickBookDialogOpen] = useState(false);
+	const [isBookingDetailsOpen, setIsBookingDetailsOpen] = useState(false);
 
 	// Status color helpers
 	const getStatusColor = (status: string) => {
@@ -75,11 +77,13 @@ export default function EnhancedCalendar() {
 
 	// Event handlers
 	const handleBookingClick = (booking: Reservation) => {
-		if (booking.status === "tentative" || booking.status === "pending") {
-			navigate(`/payments/new?reservation=${booking.id}`);
-		} else {
-			navigate(`/reservations/${booking.id}`);
-		}
+		setSelectedBooking(booking);
+		setIsBookingDetailsOpen(true);
+	};
+
+	const closeBookingDetailsDialog = () => {
+		setIsBookingDetailsOpen(false);
+		setSelectedBooking(null);
 	};
 
 	const handleQuickBook = (room: Room, date: Date) => {
@@ -97,27 +101,9 @@ export default function EnhancedCalendar() {
 	return (
 		<PermissionRoute permission={["access_calendar"]}>
 			<div className="space-y-6">
-				{/* Header */}
-				<div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-					<div>
-						<h1 className="text-2xl font-bold">Calendar</h1>
-						<p className="text-sm text-muted-foreground">
-							Monthly calendar view with reservation details
-						</p>
-					</div>
-					<div className="flex items-center gap-2">
-						<Button
-							onClick={() => navigate("/reservations/new")}
-							className="gap-2"
-						>
-							<Plus className="size-4" />
-							New Reservation
-						</Button>
-					</div>
-				</div>
 
 				{/* Filters */}
-				<div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+				<div className="flex pt-3 flex-col sm:flex-row gap-4 items-start sm:items-center">
 					<div className="relative flex-1 max-w-sm">
 						<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground size-4" />
 						<Input
@@ -165,6 +151,15 @@ export default function EnhancedCalendar() {
 					onClose={closeQuickBookDialog}
 					selectedRoom={selectedRoom}
 					selectedDate={selectedDate}
+				/>
+
+				<BookingDetailsDialog
+					reservation={selectedBooking}
+					isOpen={isBookingDetailsOpen}
+					onClose={closeBookingDetailsDialog}
+					getStatusColor={getStatusColor}
+					getStatusBorderColor={getStatusBorderColor}
+					getCurrencySymbol={getCurrencySymbol}
 				/>
 			</div>
 		</PermissionRoute>

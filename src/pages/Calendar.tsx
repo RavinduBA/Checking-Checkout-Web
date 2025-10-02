@@ -1191,7 +1191,7 @@ export default function Calendar() {
 
 				{/* Booking Details Dialog */}
 				<Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
-					<DialogContent className="max-w-lg mx-auto max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+					<DialogContent className="max-w-lg mx-auto max-h-[80vh] overflow-y-auto sm:max-w-2xl">
 						<DialogHeader>
 							<DialogTitle className="flex items-center gap-2">
 								<Eye className="size-5" />

@@ -289,7 +289,7 @@ export function FullCalendarMonthView({
 		};
 		
 		const color = baseColors[status as keyof typeof baseColors] || '#6b7280';
-		return `repeating-linear-gradient(45deg, ${color}20 0, ${color}20 1px, transparent 0, transparent 50%)`;
+		return `repeating-linear-gradient(45deg, ${color}60 0, ${color}60 1px, transparent 0, transparent 50%)`;
 	};
 
 	const reservationSegments = getReservationSegments();
@@ -404,7 +404,7 @@ export function FullCalendarMonthView({
 												<Button
 													variant="ghost"
 													size="sm"
-													className="h-6 w-6 p-0 opacity-50 md:opacity-0 hover:opacity-100 transition-opacity"
+													className="h-6 w-6 p-0 md:opacity-0 hover:opacity-100 transition-opacity"
 													onClick={(e) => {
 														e.stopPropagation();
 														navigate(`/reservations/new?date=${format(date, "yyyy-MM-dd")}`);
@@ -415,9 +415,9 @@ export function FullCalendarMonthView({
 											)}
 											{isCurrentMonth && hasMoreThanTwo && (
 												<div
-													className="absolute pointer-events-auto cursor-pointer h-6 bg-muted/80 hover:bg-muted transition-colors rounded-md flex items-center justify-center text-xs font-bold text-foreground shadow-sm"
+													className="absolute border pointer-events-auto cursor-pointer h-6 bg-muted/80 hover:bg-muted transition-colors rounded-md flex items-center justify-center text-xs font-bold text-foreground shadow-sm"
 													style={{
-														top: `${36 + (2 * 34)}px`, // Position as 3rd line with adjusted spacing: 36px offset + (2 lanes * 34px spacing)
+														top: `${22 + (2 * 34)}px`, // Position as 3rd line with adjusted spacing: 36px offset + (2 lanes * 34px spacing)
 														left: '0.5rem', // More padding from calendar edge
 														width: 'calc(100% - 1rem)', // Adjust width for increased padding
 														zIndex: 15
@@ -450,7 +450,7 @@ export function FullCalendarMonthView({
 										key={`${reservation.id}-${segmentIndex}`}
 										className={cn(
 											"absolute pointer-events-auto cursor-pointer transition-colors",
-											"text-xs text-black font-medium flex items-center",
+											"text-xs border text-black font-medium flex items-center",
 											getStatusColor(reservation.status),
 											"rounded-md truncate shadow-sm h-6", // Reduced from h-8 to h-6
 											"bg-[size:6px_6px] bg-fixed",

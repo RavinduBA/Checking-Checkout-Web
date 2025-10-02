@@ -1,4 +1,5 @@
 export { BookingCard } from "./BookingCard";
+export { BookingDetailsDialog } from "./BookingDetailsDialog";
 export { CalendarHeader } from "./CalendarHeader";
 export { CalendarLegend } from "./CalendarLegend";
 export { CalendarNavigation } from "./CalendarNavigation";
