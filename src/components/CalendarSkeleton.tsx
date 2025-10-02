@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function CalendarSkeleton() {
 	return (
-		<div className="p-6 space-y-6">
+		<div className="p-6 space-y-6 pt-8 animate-fade-in w-full px-2">
 			{/* Header */}
 			<div className="flex justify-between items-center">
 				<div className="space-y-2">

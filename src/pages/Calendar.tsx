@@ -17,7 +17,7 @@ import {
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router";
-import { CalendarSkeleton } from "@/components/CalendarSkeleton";
+import { CalendarSkeleton } from "@/components/calendar/CalendarSkeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

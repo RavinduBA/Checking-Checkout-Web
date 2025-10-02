@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function EnhancedCalendarSkeleton() {
 	return (
-		<div className="p-2 sm:p-4 space-y-4 pb-20">
+		<div className="p-2 sm:p-4 space-y-4 pb-20 pt-8 animate-fade-in w-full">
 			{/* Header */}
 			<div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
 				<div className="space-y-2">
