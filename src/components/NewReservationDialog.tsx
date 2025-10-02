@@ -31,10 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { convertCurrency } from "@/utils/currency";
 
-type Location = Tables<"locations">;
 type Room = Tables<"rooms">;
-type Guide = Tables<"guides">;
-type Agent = Tables<"agents">;
 
 interface NewReservationDialogProps {
 	isOpen: boolean;
@@ -50,23 +47,17 @@ export function NewReservationDialog({
 	const { toast } = useToast();
 	const { profile } = useProfile();
 	const { tenant } = useTenant();
-	const { locations: availableLocations } = useLocationContext();
+	const { selectedLocation } = useLocationContext();
 
 	const [rooms, setRooms] = useState<Room[]>([]);
-	const [guides, setGuides] = useState<Guide[]>([]);
-	const [agents, setAgents] = useState<Agent[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 
 	const [formData, setFormData] = useState({
-		location_id: "",
 		room_id: "",
 		guest_name: "",
 		guest_email: "",
 		guest_phone: "",
-		guest_address: "",
-		guest_id_number: "",
-		guest_nationality: "",
 		adults: 1,
 		children: 0,
 		check_in_date: new Date(),
@@ -76,12 +67,6 @@ export function NewReservationDialog({
 		advance_amount: 0,
 		currency: "LKR" as "LKR" | "USD" | "EUR" | "GBP",
 		special_requests: "",
-		arrival_time: "",
-		guide_id: "",
-		agent_id: "",
-		guide_commission: 0,
-		agent_commission: 0,
-		booking_source: "direct",
 	});
 
 	// Calculate nights when dates change
@@ -96,15 +81,15 @@ export function NewReservationDialog({
 		setFormData((prev) => ({ ...prev, total_amount: total }));
 	}, [formData.room_rate, nights]);
 
-	// Fetch rooms when location changes
+	// Fetch rooms for selected location
 	const fetchRooms = useCallback(async () => {
-		if (!formData.location_id || !tenant?.id) return;
+		if (!selectedLocation || !tenant?.id) return;
 
 		try {
 			const { data, error } = await supabase
 				.from("rooms")
 				.select("*")
-				.eq("location_id", formData.location_id)
+				.eq("location_id", selectedLocation)
 				.eq("tenant_id", tenant.id)
 				.eq("is_active", true)
 				.order("room_number");
@@ -119,47 +104,16 @@ export function NewReservationDialog({
 				variant: "destructive",
 			});
 		}
-	}, [formData.location_id, tenant?.id, toast]);
+	}, [selectedLocation, tenant?.id, toast]);
 
-	// Fetch guides and agents
-	const fetchGuidesAndAgents = useCallback(async () => {
-		if (!tenant?.id) return;
-
-		try {
-			const [guidesResponse, agentsResponse] = await Promise.all([
-				supabase
-					.from("guides")
-					.select("*")
-					.eq("tenant_id", tenant.id)
-					.eq("is_active", true)
-					.order("name"),
-				supabase
-					.from("agents")
-					.select("*")
-					.eq("tenant_id", tenant.id)
-					.eq("is_active", true)
-					.order("name"),
-			]);
-
-			if (guidesResponse.error) throw guidesResponse.error;
-			if (agentsResponse.error) throw agentsResponse.error;
-
-			setGuides(guidesResponse.data || []);
-			setAgents(agentsResponse.data || []);
-		} catch (error) {
-			console.error("Error fetching guides and agents:", error);
-		}
-	}, [tenant?.id]);
-
+	// Fetch rooms when dialog opens
 	useEffect(() => {
-		if (isOpen && tenant?.id) {
-			fetchGuidesAndAgents();
+		if (isOpen) {
+			fetchRooms();
 		}
-	}, [isOpen, tenant?.id, fetchGuidesAndAgents]);
+	}, [isOpen, fetchRooms]);
 
-	useEffect(() => {
-		fetchRooms();
-	}, [fetchRooms]);
+
 
 	const handleInputChange = (field: string, value: any) => {
 		setFormData((prev) => ({ ...prev, [field]: value }));
@@ -191,7 +145,7 @@ export function NewReservationDialog({
 			return;
 		}
 
-		if (!formData.location_id || !formData.room_id || !formData.guest_name) {
+		if (!selectedLocation || !formData.room_id || !formData.guest_name) {
 			toast({
 				title: "Error",
 				description: "Please fill in all required fields",
@@ -207,14 +161,11 @@ export function NewReservationDialog({
 			
 			const reservationData = {
 				reservation_number: reservationNumber,
-				location_id: formData.location_id,
+				location_id: selectedLocation,
 				room_id: formData.room_id,
 				guest_name: formData.guest_name,
 				guest_email: formData.guest_email || null,
 				guest_phone: formData.guest_phone || null,
-				guest_address: formData.guest_address || null,
-				guest_id_number: formData.guest_id_number || null,
-				guest_nationality: formData.guest_nationality || null,
 				adults: formData.adults,
 				children: formData.children,
 				check_in_date: format(formData.check_in_date, "yyyy-MM-dd"),
@@ -228,12 +179,7 @@ export function NewReservationDialog({
 				currency: formData.currency,
 				status: "tentative" as const,
 				special_requests: formData.special_requests || null,
-				arrival_time: formData.arrival_time || null,
-				guide_id: formData.guide_id || null,
-				agent_id: formData.agent_id || null,
-				guide_commission: formData.guide_commission || 0,
-				agent_commission: formData.agent_commission || 0,
-				booking_source: formData.booking_source,
+				booking_source: "direct",
 				created_by: profile.id,
 				tenant_id: tenant.id,
 			};
@@ -251,14 +197,10 @@ export function NewReservationDialog({
 
 			// Reset form and close dialog
 			setFormData({
-				location_id: "",
 				room_id: "",
 				guest_name: "",
 				guest_email: "",
 				guest_phone: "",
-				guest_address: "",
-				guest_id_number: "",
-				guest_nationality: "",
 				adults: 1,
 				children: 0,
 				check_in_date: new Date(),
@@ -268,12 +210,6 @@ export function NewReservationDialog({
 				advance_amount: 0,
 				currency: "LKR",
 				special_requests: "",
-				arrival_time: "",
-				guide_id: "",
-				agent_id: "",
-				guide_commission: 0,
-				agent_commission: 0,
-				booking_source: "direct",
 			});
 
 			onReservationCreated();
@@ -293,7 +229,7 @@ export function NewReservationDialog({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+			<DialogContent className="max-w-4xl sm:max-w-6xl max-h-[90vh] overflow-y-auto">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<Calendar className="h-5 w-5" />
@@ -305,51 +241,25 @@ export function NewReservationDialog({
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-6">
-					{/* Location and Room Selection */}
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<div className="space-y-2">
-							<Label htmlFor="location" className="flex items-center gap-2">
-								<MapPin className="h-4 w-4" />
-								Location *
-							</Label>
-							<Select
-								value={formData.location_id}
-								onValueChange={(value) => handleInputChange("location_id", value)}
-								required
-							>
-								<SelectTrigger>
-									<SelectValue placeholder="Select location" />
-								</SelectTrigger>
-								<SelectContent>
-									{availableLocations.map((location) => (
-										<SelectItem key={location.id} value={location.id}>
-											{location.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-
-						<div className="space-y-2">
-							<Label htmlFor="room">Room *</Label>
-							<Select
-								value={formData.room_id}
-								onValueChange={(value) => handleInputChange("room_id", value)}
-								required
-								disabled={!formData.location_id}
-							>
-								<SelectTrigger>
-									<SelectValue placeholder="Select room" />
-								</SelectTrigger>
-								<SelectContent>
-									{rooms.map((room) => (
-										<SelectItem key={room.id} value={room.id}>
-											{room.room_number} - {room.room_type}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
+					{/* Room Selection */}
+					<div className="space-y-2">
+						<Label htmlFor="room">Room *</Label>
+						<Select
+							value={formData.room_id}
+							onValueChange={(value) => handleInputChange("room_id", value)}
+							required
+						>
+							<SelectTrigger>
+								<SelectValue placeholder="Select room" />
+							</SelectTrigger>
+							<SelectContent>
+								{rooms.map((room) => (
+									<SelectItem key={room.id} value={room.id}>
+										{room.room_number} - {room.room_type}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 					</div>
 
 					{/* Guest Information */}
@@ -388,36 +298,6 @@ export function NewReservationDialog({
 									value={formData.guest_phone}
 									onChange={(value) => handleInputChange("guest_phone", value)}
 									placeholder="Enter phone number"
-								/>
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="guest_nationality">Nationality</Label>
-								<Input
-									id="guest_nationality"
-									value={formData.guest_nationality}
-									onChange={(e) => handleInputChange("guest_nationality", e.target.value)}
-									placeholder="Enter nationality"
-								/>
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="guest_id_number">ID Number</Label>
-								<Input
-									id="guest_id_number"
-									value={formData.guest_id_number}
-									onChange={(e) => handleInputChange("guest_id_number", e.target.value)}
-									placeholder="Enter ID/Passport number"
-								/>
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="guest_address">Address</Label>
-								<Input
-									id="guest_address"
-									value={formData.guest_address}
-									onChange={(e) => handleInputChange("guest_address", e.target.value)}
-									placeholder="Enter address"
 								/>
 							</div>
 						</div>
@@ -473,26 +353,14 @@ export function NewReservationDialog({
 							</div>
 						</div>
 
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-							<div className="space-y-2">
-								<Label htmlFor="arrival_time">Arrival Time</Label>
-								<Input
-									id="arrival_time"
-									type="time"
-									value={formData.arrival_time}
-									onChange={(e) => handleInputChange("arrival_time", e.target.value)}
-								/>
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="special_requests">Special Requests</Label>
-								<Textarea
-									id="special_requests"
-									value={formData.special_requests}
-									onChange={(e) => handleInputChange("special_requests", e.target.value)}
-									placeholder="Any special requests or notes"
-								/>
-							</div>
+						<div className="space-y-2">
+							<Label htmlFor="special_requests">Special Requests</Label>
+							<Textarea
+								id="special_requests"
+								value={formData.special_requests}
+								onChange={(e) => handleInputChange("special_requests", e.target.value)}
+								placeholder="Any special requests or notes"
+							/>
 						</div>
 					</div>
 
@@ -545,46 +413,7 @@ export function NewReservationDialog({
 						)}
 					</div>
 
-					{/* Guide and Agent */}
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<div className="space-y-2">
-							<Label htmlFor="guide">Tour Guide</Label>
-							<Select
-								value={formData.guide_id}
-								onValueChange={(value) => handleInputChange("guide_id", value)}
-							>
-								<SelectTrigger>
-									<SelectValue placeholder="Select guide (optional)" />
-								</SelectTrigger>
-								<SelectContent>
-									{guides.map((guide) => (
-										<SelectItem key={guide.id} value={guide.id}>
-											{guide.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
 
-						<div className="space-y-2">
-							<Label htmlFor="agent">Travel Agent</Label>
-							<Select
-								value={formData.agent_id}
-								onValueChange={(value) => handleInputChange("agent_id", value)}
-							>
-								<SelectTrigger>
-									<SelectValue placeholder="Select agent (optional)" />
-								</SelectTrigger>
-								<SelectContent>
-									{agents.map((agent) => (
-										<SelectItem key={agent.id} value={agent.id}>
-											{agent.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-					</div>
 
 					{/* Action Buttons */}
 					<div className="flex justify-end gap-3 pt-4 border-t">
