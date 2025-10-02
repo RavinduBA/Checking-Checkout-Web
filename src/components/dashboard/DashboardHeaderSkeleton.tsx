@@ -20,7 +20,7 @@ export function DashboardHeaderSkeleton({
 						Welcome back!
 					</h1>
 					<p className="text-sm lg:text-base text-muted-foreground">
-						Financial Management Dashboard
+						Hotel Management Dashboard
 					</p>
 				</div>
 				<div className="flex flex-col sm:flex-row gap-2">

@@ -72,8 +72,8 @@ const ProfileDropdown = ({ trigger, defaultOpen, align = 'end' }: Props) => {
             <span className='ring-transparent absolute right-0 bottom-0 block size-2 rounded-full bg-green-600' />
           </div>
           <div className='flex flex-1 flex-col items-start'>
-            <span className='text-foreground text-lg font-semibold'>{userName}</span>
-            <span className='text-muted-foreground text-base'>{userEmail}</span>
+            <span className='text-foreground text-sm font-semibold'>{userName}</span>
+            <span className='text-muted-foreground text-sm'>{userEmail}</span>
           </div>
         </DropdownMenuLabel>
 
@@ -81,7 +81,7 @@ const ProfileDropdown = ({ trigger, defaultOpen, align = 'end' }: Props) => {
 
         <DropdownMenuGroup>
           <DropdownMenuItem 
-            className='px-4 py-2.5 text-base cursor-pointer'
+            className='px-4 py-2.5 text-sm cursor-pointer'
             onClick={() => handleNavigation('/settings')}
           >
             <UserIcon className='text-foreground size-5' />
@@ -89,7 +89,7 @@ const ProfileDropdown = ({ trigger, defaultOpen, align = 'end' }: Props) => {
           </DropdownMenuItem>
           {(hasPermission('access_settings') || isTenantOwner) && (
             <DropdownMenuItem 
-              className='px-4 py-2.5 text-base cursor-pointer'
+              className='px-4 py-2.5 text-sm cursor-pointer'
               onClick={() => handleNavigation('/settings')}
             >
               <SettingsIcon className='text-foreground size-5' />
@@ -98,7 +98,7 @@ const ProfileDropdown = ({ trigger, defaultOpen, align = 'end' }: Props) => {
           )}
           {(hasPermission('access_settings') || isTenantOwner) && (
             <DropdownMenuItem 
-              className='px-4 py-2.5 text-base cursor-pointer'
+              className='px-4 py-2.5 text-sm cursor-pointer'
               onClick={() => handleNavigation('/billing')}
             >
               <CreditCardIcon className='text-foreground size-5' />
@@ -112,7 +112,7 @@ const ProfileDropdown = ({ trigger, defaultOpen, align = 'end' }: Props) => {
         <DropdownMenuGroup>
           {(hasPermission('access_users') || isTenantOwner) && (
             <DropdownMenuItem 
-              className='px-4 py-2.5 text-base cursor-pointer'
+              className='px-4 py-2.5 text-sm cursor-pointer'
               onClick={() => handleNavigation('/users')}
             >
               <UsersIcon className='text-foreground size-5' />
@@ -121,7 +121,7 @@ const ProfileDropdown = ({ trigger, defaultOpen, align = 'end' }: Props) => {
           )}
           {(hasPermission('access_master_files') || isTenantOwner) && (
             <DropdownMenuItem 
-              className='px-4 py-2.5 text-base cursor-pointer'
+              className='px-4 py-2.5 text-sm cursor-pointer'
               onClick={() => handleNavigation('/master-files')}
             >
               <SquarePenIcon className='text-foreground size-5' />
@@ -130,7 +130,7 @@ const ProfileDropdown = ({ trigger, defaultOpen, align = 'end' }: Props) => {
           )}
           {(hasPermission('access_booking_channels') || isTenantOwner) && (
             <DropdownMenuItem 
-              className='px-4 py-2.5 text-base cursor-pointer'
+              className='px-4 py-2.5 text-sm cursor-pointer'
               onClick={() => handleNavigation('/booking-channels')}
             >
               <CirclePlusIcon className='text-foreground size-5' />
@@ -142,7 +142,7 @@ const ProfileDropdown = ({ trigger, defaultOpen, align = 'end' }: Props) => {
         <DropdownMenuSeparator />
 
         <DropdownMenuItem 
-          className='px-4 py-2.5 text-base text-destructive focus:text-destructive cursor-pointer'
+          className='px-4 py-2.5 text-sm text-destructive focus:text-destructive cursor-pointer'
           onClick={handleSignOut}
         >
           <LogOutIcon className='size-5' />

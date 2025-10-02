@@ -4,13 +4,6 @@ import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -87,7 +80,7 @@ export function DashboardHeader({
 						Welcome back!
 					</h1>
 					<p className="text-sm lg:text-base text-muted-foreground">
-						Financial Management Dashboard
+						Hotel Management Dashboard
 					</p>
 				</div>
 				<div className="flex flex-col sm:flex-row gap-2">

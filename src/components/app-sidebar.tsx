@@ -275,9 +275,6 @@ export function AppSidebar({
 					</>
 				)}
 			</SidebarContent>
-			<SidebarFooter>
-				<NavUser user={userData} />
-			</SidebarFooter>
 			<SidebarRail />
 		</Sidebar>
 	);

@@ -23,6 +23,7 @@ import { LanguagesIcon } from "lucide-react";
 import ProfileDropdown from "./dropdown-profile";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import ThemeSwitcher from "./ThemeSwitcher";
+import FullscreenToggle from "./FullscreenToggle";
 
 export function Layout() {
 	const { selectedLocation, setSelectedLocation, locations, loading } =
@@ -138,6 +139,7 @@ export function Layout() {
 							</Breadcrumb>
 						</div>
 						<div className='flex items-center gap-1.5'>
+							<FullscreenToggle />
 							<ThemeSwitcher />
 							<LanguageDropdown
 								trigger={

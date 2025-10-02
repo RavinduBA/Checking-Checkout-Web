@@ -15,7 +15,6 @@ import { Layout } from "./components/Layout";
 import { SmartRedirect } from "./components/SmartRedirect";
 import AccessDenied from "./pages/AccessDenied";
 import Accounts from "./pages/Accounts";
-import ApplicationShellDemo from "./pages/ApplicationShellDemo";
 import Auth from "./pages/Auth";
 import BillingError from "./pages/BillingError";
 import BillingSubscription from "./pages/BillingSubscription";
@@ -76,7 +75,6 @@ const App = () => (
 								}
 							/>
 							<Route path="/access-denied" element={<AccessDenied />} />
-							<Route path="/demo" element={<ApplicationShellDemo />} />
 							<Route
 								path="/dashboard"
 								element={
