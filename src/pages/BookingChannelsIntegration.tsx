@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SectionLoader } from "@/components/ui/loading-spinner";
+import { BookingChannelsSkeleton } from "@/components/BookingChannelsSkeleton";
 import {
 	Table,
 	TableBody,
@@ -552,11 +552,7 @@ export default function BookingChannelsIntegration() {
 				.filter((booking) => booking.mappedLocation?.id === selectedLocation);
 
 	if (loading) {
-		return (
-			<div className="space-y-6">
-				<SectionLoader className="h-64" />
-			</div>
-		);
+		return <BookingChannelsSkeleton />;
 	}
 
 	return (
