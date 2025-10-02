@@ -1,14 +1,7 @@
-{  "dashboard": {
-       "account": "Compte"
-    },
-    "upcomingBookings": {
-      "title": "Réservations à Venir",
-      "viewAll": "Voir Tout",
-      "to": "à",
-      "noBookings": "Aucune réservation à venir"
-    }
-  },
-  "navigation": {   "welcome": "Bon retour !",
+{
+  "dashboard": {
+    "header": {
+      "welcome": "Bon retour !",
       "subtitle": "Tableau de Bord de Gestion Hôtelière",
       "addIncome": "Ajouter un Revenu",
       "addExpense": "Ajouter une Dépense",
@@ -32,14 +25,6 @@
       "viewAll": "Voir Tout",
       "to": "à",
       "noBookings": "Aucune réservation à venir"
-    }
-  },oard": {
-    "header": {
-      "welcome": "Bon retour !",
-      "subtitle": "Tableau de Bord de Gestion Hôtelière",
-      "addIncome": "Ajouter Revenus",
-      "addExpense": "Ajouter Dépenses",
-      "monthFilter": "Filtre par Mois"
     }
   },
   "navigation": {

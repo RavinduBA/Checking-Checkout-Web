@@ -1,14 +1,7 @@
-{  "dashboard": {
-       "account": "Conta"
-    },
-    "upcomingBookings": {
-      "title": "Reservas Próximas",
-      "viewAll": "Ver Tudo",
-      "to": "até",
-      "noBookings": "Nenhuma reserva próxima"
-    }
-  },
-  "navigation": {   "welcome": "Bem-vindo de volta!",
+{
+  "dashboard": {
+    "header": {
+      "welcome": "Bem-vindo de volta!",
       "subtitle": "Painel de Gestão Hoteleira",
       "addIncome": "Adicionar Receita",
       "addExpense": "Adicionar Despesa",
@@ -32,14 +25,6 @@
       "viewAll": "Ver Tudo",
       "to": "até",
       "noBookings": "Nenhuma reserva próxima"
-    }
-  },oard": {
-    "header": {
-      "welcome": "Bem-vindo de volta!",
-      "subtitle": "Painel de Gestão Hoteleira",
-      "addIncome": "Adicionar Receitas",
-      "addExpense": "Adicionar Despesas",
-      "monthFilter": "Filtro por Mês"
     }
   },
   "navigation": {

@@ -1,14 +1,7 @@
-{  "dashboard": {
-       "account": "खाता"
-    },
-    "upcomingBookings": {
-      "title": "आगामी बुकिंग",
-      "viewAll": "सभी देखें",
-      "to": "से",
-      "noBookings": "कोई आगामी बुकिंग नहीं"
-    }
-  },
-  "navigation": {   "welcome": "वापसी पर स्वागत है!",
+{
+  "dashboard": {
+    "header": {
+      "welcome": "वापसी पर स्वागत है!",
       "subtitle": "होटल प्रबंधन डैशबोर्ड",
       "addIncome": "आय जोड़ें",
       "addExpense": "व्यय जोड़ें",
@@ -32,14 +25,6 @@
       "viewAll": "सभी देखें",
       "to": "से",
       "noBookings": "कोई आगामी बुकिंग नहीं"
-    }
-  },oard": {
-    "header": {
-      "welcome": "वापस स्वागत है!",
-      "subtitle": "होटल प्रबंधन डैशबोर्ड",
-      "addIncome": "आय जोड़ें",
-      "addExpense": "व्यय जोड़ें",
-      "monthFilter": "महीना फिल्टर"
     }
   },
   "navigation": {
