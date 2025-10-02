@@ -38,19 +38,19 @@ export default function EnhancedCalendar() {
 	const getStatusColor = (status: string) => {
 		switch (status) {
 			case "confirmed":
-				return "bg-green-500 hover:bg-green-600";
+				return "text-green-500 hover:text-green-600";
 			case "tentative":
-				return "bg-yellow-500 hover:bg-yellow-600";
+				return "text-yellow-500 hover:text-yellow-600";
 			case "pending":
-				return "bg-blue-500 hover:bg-blue-600";
+				return "text-blue-500 hover:text-blue-600";
 			case "checked_in":
-				return "bg-purple-500 hover:bg-purple-600";
+				return "text-purple-500 hover:text-purple-600";
 			case "checked_out":
-				return "bg-gray-500 hover:bg-gray-600";
+				return "text-gray-500 hover:text-gray-600";
 			case "cancelled":
-				return "bg-red-500 hover:bg-red-600";
+				return "text-red-500 hover:text-red-600";
 			default:
-				return "bg-gray-500 hover:bg-gray-600";
+				return "text-gray-500 hover:text-gray-600";
 		}
 	};
 

@@ -277,6 +277,21 @@ export function FullCalendarMonthView({
 		return segments;
 	};
 
+	// Get status-based background colors for striped pattern
+	const getStatusStripedBackground = (status: string) => {
+		const baseColors = {
+			confirmed: '#10b981', // green
+			tentative: '#f59e0b', // yellow
+			pending: '#3b82f6', // blue
+			checked_in: '#8b5cf6', // purple
+			checked_out: '#6b7280', // gray
+			cancelled: '#ef4444', // red
+		};
+		
+		const color = baseColors[status as keyof typeof baseColors] || '#6b7280';
+		return `repeating-linear-gradient(45deg, ${color}20 0, ${color}20 1px, transparent 0, transparent 50%)`;
+	};
+
 	const reservationSegments = getReservationSegments();
 
 	// Get all reservations for a specific date (for view more functionality)
@@ -435,12 +450,12 @@ export function FullCalendarMonthView({
 										key={`${reservation.id}-${segmentIndex}`}
 										className={cn(
 											"absolute pointer-events-auto cursor-pointer transition-colors",
-											"text-white text-xs font-medium flex items-center",
+											"text-xs text-black font-medium flex items-center",
 											getStatusColor(reservation.status),
 											"rounded-md truncate shadow-sm h-6", // Reduced from h-8 to h-6
-											"bg-[repeating-linear-gradient(45deg,_#e1e1e1_0,_#e1e1e1_1px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed",
-											isStart && "ml-2 pl-2", // Add left margin and padding for start segments
-											isEnd && "mr-2 pr-2", // Add right margin and padding for end segments
+											"bg-[size:6px_6px] bg-fixed",
+											isStart && "pl-2", // Add left margin and padding for start segments
+											isEnd && "pr-2", // Add right margin and padding for end segments
 											!isStart && "rounded-l-none",
 											!isEnd && "rounded-r-none"
 										)}
@@ -449,7 +464,8 @@ export function FullCalendarMonthView({
 											left: `calc(${col * (100/7)}% + ${col > 0 ? '0.125rem' : '0px'})`,
 											width: `calc(${spanDays * (100/7)}% - ${spanDays > 1 ? '0.125rem' : '0px'})`,
 											zIndex: 10 + lane,
-											maxWidth: `calc(${(7-col) * (100/7)}% - 0.125rem)` // Prevent overflow beyond week
+											maxWidth: `calc(${(7-col) * (100/7)}% - 0.125rem)`, // Prevent overflow beyond week
+											backgroundImage: getStatusStripedBackground(reservation.status)
 										}}
 										onClick={(e) => {
 											e.stopPropagation();
