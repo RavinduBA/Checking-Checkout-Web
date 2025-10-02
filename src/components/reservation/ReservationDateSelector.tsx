@@ -155,6 +155,20 @@ export function ReservationDateSelector({
 	return (
 		<Card className={cn("w-full", className)}>
 			<CardContent className="space-y-4 py-4">
+				{/* Availability Legend - Only show when room is selected */}
+				{roomId && !availabilityLoading && (
+					<div className="flex items-center justify-center gap-4 p-2 bg-muted/50 rounded-md text-xs">
+						<div className="flex items-center gap-1.5">
+							<div className="w-3 h-3 rounded-full bg-green-500" />
+							<span className="text-muted-foreground">Available</span>
+						</div>
+						<div className="flex items-center gap-1.5">
+							<div className="w-3 h-3 rounded-full bg-red-500" />
+							<span className="text-muted-foreground">Reserved</span>
+						</div>
+					</div>
+				)}
+
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					{/* Check-in Date */}
 					<div className="space-y-2">
@@ -180,6 +194,24 @@ export function ReservationDateSelector({
 									selected={checkIn}
 									onSelect={handleCheckInSelect}
 									disabled={isCheckInDisabled}
+									modifiers={{
+										available: (date) => {
+											if (!roomId || availabilityLoading) return false;
+											if (minDate && isBefore(date, minDate)) return false;
+											if (maxDate && isAfter(date, maxDate)) return false;
+											return isDateAvailable(date, roomId);
+										},
+										unavailable: (date) => {
+											if (!roomId || availabilityLoading) return false;
+											if (minDate && isBefore(date, minDate)) return false;
+											if (maxDate && isAfter(date, maxDate)) return false;
+											return !isDateAvailable(date, roomId);
+										},
+									}}
+									modifiersClassNames={{
+										available: "bg-green-100 text-green-900 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-100 dark:hover:bg-green-900/50",
+										unavailable: "bg-red-100 text-red-900 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-100 dark:hover:bg-red-900/50 line-through",
+									}}
 									initialFocus
 								/>
 							</PopoverContent>
@@ -210,6 +242,48 @@ export function ReservationDateSelector({
 									selected={checkOut}
 									onSelect={handleCheckOutSelect}
 									disabled={isCheckOutDisabled}
+									modifiers={{
+										available: (date) => {
+											if (!roomId || availabilityLoading || !checkIn) return false;
+											if (minDate && isBefore(date, minDate)) return false;
+											if (maxDate && isAfter(date, maxDate)) return false;
+											if (isBefore(date, checkIn) || format(date, "yyyy-MM-dd") === format(checkIn, "yyyy-MM-dd")) return false;
+											
+											// Check if all dates in the range are available
+											const currentDate = new Date(checkIn);
+											currentDate.setDate(currentDate.getDate() + 1);
+											
+											while (isBefore(currentDate, date)) {
+												if (!isDateAvailable(currentDate, roomId)) {
+													return false;
+												}
+												currentDate.setDate(currentDate.getDate() + 1);
+											}
+											return true;
+										},
+										unavailable: (date) => {
+											if (!roomId || availabilityLoading || !checkIn) return false;
+											if (minDate && isBefore(date, minDate)) return false;
+											if (maxDate && isAfter(date, maxDate)) return false;
+											if (isBefore(date, checkIn) || format(date, "yyyy-MM-dd") === format(checkIn, "yyyy-MM-dd")) return false;
+											
+											// Check if any date in the range is unavailable
+											const currentDate = new Date(checkIn);
+											currentDate.setDate(currentDate.getDate() + 1);
+											
+											while (isBefore(currentDate, date)) {
+												if (!isDateAvailable(currentDate, roomId)) {
+													return true;
+												}
+												currentDate.setDate(currentDate.getDate() + 1);
+											}
+											return false;
+										},
+									}}
+									modifiersClassNames={{
+										available: "bg-green-100 text-green-900 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-100 dark:hover:bg-green-900/50",
+										unavailable: "bg-red-100 text-red-900 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-100 dark:hover:bg-red-900/50 line-through",
+									}}
 									initialFocus
 								/>
 							</PopoverContent>
