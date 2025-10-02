@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { PhoneVerification } from "@/components/PhoneVerification";
 import {
 	AlertDialog,
@@ -75,6 +76,7 @@ type Location = {
 export default function Settings() {
 	const navigate = useNavigate();
 	const { toast } = useToast();
+	const { t } = useTranslation();
 	const {
 		profile,
 		loading: profileLoading,
@@ -645,40 +647,40 @@ export default function Settings() {
 			<Tabs defaultValue="profile" className="w-full">
 				<TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-1 h-auto p-1">
 					<TabsTrigger value="profile" className="text-xs sm:text-sm px-2 py-2">
-						Profile
+						{t('settings.profile')}
 					</TabsTrigger>
 					<TabsTrigger
 						value="locations"
 						className="text-xs sm:text-sm px-2 py-2"
 					>
-						Locations
+						{t('settings.locations')}
 					</TabsTrigger>
 					<TabsTrigger
 						value="form-fields"
 						className="text-xs sm:text-sm px-2 py-2"
 					>
-						Form Fields
+						{t('settings.formFields')}
 					</TabsTrigger>
 					<TabsTrigger
 						value="expenses"
 						className="text-xs sm:text-sm px-2 py-2"
 					>
-						Expense Categories
+						{t('settings.expenses')}
 					</TabsTrigger>
 					<TabsTrigger value="income" className="text-xs sm:text-sm px-2 py-2">
-						Income Types
+						{t('settings.income')}
 					</TabsTrigger>
 					<TabsTrigger
 						value="currency"
 						className="text-xs sm:text-sm px-2 py-2"
 					>
-						Currency Settings
+						{t('settings.currency')}
 					</TabsTrigger>
 					<TabsTrigger
 						value="bookings"
 						className="text-xs sm:text-sm px-2 py-2"
 					>
-						Booking Management
+						{t('settings.bookings')}
 					</TabsTrigger>
 				</TabsList>
 
@@ -687,7 +689,7 @@ export default function Settings() {
 						<CardHeader>
 							<CardTitle className="flex items-center gap-2">
 								<User className="h-5 w-5" />
-								Profile Settings
+								{t('settings.profileSettings')}
 							</CardTitle>
 						</CardHeader>
 						<CardContent>

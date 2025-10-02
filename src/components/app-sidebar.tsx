@@ -152,26 +152,6 @@ export function AppSidebar({
 			});
 		}
 
-		// Master Files with sub-items
-		if (hasAnyPermission(["access_master_files"])) {
-			items.push({
-				title: t('navigation.masterFiles'),
-				url: "/master-files",
-				icon: FolderOpen,
-				isActive: location.pathname === "/master-files",
-				items: [
-					{ title: t('navigation.hotelLocations'), url: "/master-files?tab=locations" },
-					{ title: t('navigation.rooms'), url: "/master-files?tab=rooms" },
-					{ title: t('navigation.tourGuides'), url: "/master-files?tab=guides" },
-					{ title: t('navigation.travelAgents'), url: "/master-files?tab=agents" },
-					{
-						title: t('navigation.commissionSettings'),
-						url: "/master-files?tab=commissions",
-					},
-				],
-			});
-		}
-
 		// Reports with sub-items
 		if (hasAnyPermission(["access_reports"])) {
 			items.push({

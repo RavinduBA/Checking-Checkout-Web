@@ -85,6 +85,21 @@
     "tamil": "Tamil",
     "hindi": "Hindi"
   },
+  "settings": {
+    "profile": "Profile",
+    "locations": "Locations",
+    "formFields": "Form Fields",
+    "expenses": "Expense Categories",
+    "income": "Income Types",
+    "currency": "Currency Settings",
+    "bookings": "Booking Management",
+    "profileSettings": "Profile Settings",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
   "profile": {
     "myProfile": "My Profile",
     "settings": "Settings",

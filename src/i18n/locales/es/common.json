@@ -85,6 +85,21 @@
     "tamil": "Tamil",
     "hindi": "Hindi"
   },
+  "settings": {
+    "profile": "Perfil",
+    "locations": "Ubicaciones",
+    "formFields": "Campos de Formulario",
+    "expenses": "Categorías de Gastos",
+    "income": "Tipos de Ingresos",
+    "currency": "Configuración de Moneda",
+    "bookings": "Gestión de Reservas",
+    "profileSettings": "Configuración de Perfil",
+    "name": "Nombre",
+    "email": "Correo Electrónico",
+    "phone": "Teléfono",
+    "save": "Guardar",
+    "cancel": "Cancelar"
+  },
   "profile": {
     "myProfile": "Mi Perfil",
     "settings": "Configuración",

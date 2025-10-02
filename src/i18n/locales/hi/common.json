@@ -85,6 +85,21 @@
     "tamil": "तमिल",
     "hindi": "हिंदी"
   },
+  "settings": {
+    "profile": "प्रोफ़ाइल",
+    "locations": "स्थान",
+    "formFields": "फॉर्म फील्ड",
+    "expenses": "व्यय श्रेणियां",
+    "income": "आय प्रकार",
+    "currency": "मुद्रा सेटिंग्स",
+    "bookings": "बुकिंग प्रबंधन",
+    "profileSettings": "प्रोफ़ाइल सेटिंग्स",
+    "name": "नाम",
+    "email": "ईमेल",
+    "phone": "फोन",
+    "save": "सेव करें",
+    "cancel": "रद्द करें"
+  },
   "profile": {
     "myProfile": "मेरी प्रोफ़ाइल",
     "settings": "सेटिंग्स",

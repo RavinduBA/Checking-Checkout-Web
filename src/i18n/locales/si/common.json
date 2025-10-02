@@ -85,6 +85,21 @@
     "tamil": "දමිළ",
     "hindi": "හින්දි"
   },
+  "settings": {
+    "profile": "පිරිස්",
+    "locations": "ස්ථාන",
+    "formFields": "ෆොරම් යෙදීම්",
+    "expenses": "වියදම් වර්ග",
+    "income": "ආදායම් ප්‍රකාර",
+    "currency": "ශ්‍රී මුදල් සැකසුම්",
+    "bookings": "වෙන්කිරීම් කළමනාකරණය",
+    "profileSettings": "පිරිස් සැකසුම්",
+    "name": "නම",
+    "email": "විද්‍යුත් තැපැල",
+    "phone": "දුරකථනය",
+    "save": "සුරකින්න",
+    "cancel": "අවලංගු කරන්න"
+  },
   "profile": {
     "myProfile": "මගේ පැතිකඩ",
     "settings": "සැකසුම්",
