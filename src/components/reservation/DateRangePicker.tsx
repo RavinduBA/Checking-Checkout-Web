@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format, addDays, isBefore, isToday, isAfter } from "date-fns";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -252,10 +252,6 @@ export function DateRangePicker({
 						},
 					}}
 					className="w-full"
-					components={{
-						IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
-						IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
-					}}
 				/>
 			</CardContent>
 		</Card>
