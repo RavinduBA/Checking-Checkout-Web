@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import { LocationProvider } from "@/context/LocationContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import BookingChannelsIntegration from "@/pages/BookingChannelsIntegration";
 import Reports from "@/pages/Reports";
 import { AuthRedirect } from "./components/AuthRedirect";
@@ -43,11 +44,12 @@ const queryClient = new QueryClient();
 
 const App = () => (
 	<QueryClientProvider client={queryClient}>
-		<TooltipProvider>
-			<AuthProvider>
-				<LocationProvider>
-					<Toaster />
-					<Sonner />
+		<ThemeProvider defaultTheme="system" storageKey="checkingcheckout-theme">
+			<TooltipProvider>
+				<AuthProvider>
+					<LocationProvider>
+						<Toaster />
+						<Sonner />
 					<BrowserRouter>
 						<Routes>
 							<Route path="/" element={<AuthRedirect />} />
@@ -413,7 +415,8 @@ const App = () => (
 				</LocationProvider>
 			</AuthProvider>
 		</TooltipProvider>
-	</QueryClientProvider>
+	</ThemeProvider>
+</QueryClientProvider>
 );
 
 export default App;

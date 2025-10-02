@@ -48,28 +48,53 @@ All colors MUST be HSL.
 		--radius: 0.5rem;
 
 		--sidebar-background: 0 0% 98%;
-
 		--sidebar-foreground: 240 5.3% 26.1%;
-
 		--sidebar-primary: 240 5.9% 10%;
-
 		--sidebar-primary-foreground: 0 0% 98%;
-
 		--sidebar-accent: 240 4.8% 95.9%;
 		--sidebar-accent-foreground: 240 5.9% 10%;
 		--sidebar-border: 220 13% 91%;
 		--sidebar-ring: 217.2 91.2% 59.8%;
 	}
-  .dark {
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
+
+	.dark {
+		/* Dark mode villa-inspired color palette */
+		--background: hsl(0, 0%, 8%);
+		--foreground: hsl(0, 0%, 96%);
+		--card: hsl(0, 0%, 10%);
+		--card-foreground: hsl(0, 0%, 96%);
+		--popover: hsl(0, 0%, 10%);
+		--popover-foreground: hsl(0, 0%, 96%);
+		--primary: hsl(0, 0%, 91%);
+		--primary-foreground: hsl(0, 0%, 2%);
+		--secondary: hsl(0, 0%, 14%);
+		--secondary-foreground: hsl(0, 0%, 91%);
+		--muted: hsl(0, 0%, 14%);
+		--muted-foreground: oklch(0.556 0 0);
+		--accent: hsl(0, 0%, 14%);
+		--accent-foreground: oklch(0.795 0 0);
+		--destructive: hsl(357, 100%, 55%);
+		--destructive-foreground: hsl(0, 0%, 100%);
+		--border: hsl(0, 0%, 20%);
+		--input: hsl(0, 0%, 20%);
+		--ring: hsl(0, 0%, 37%);
+
+		/* Dark mode success and financial colors */
+		--success: hsl(142, 76%, 46%);
+		--success-foreground: hsl(0 0% 2%);
+		--warning: hsl(45 93% 57%);
+		--warning-foreground: hsl(25 25% 5%);
+
+		/* Dark mode sidebar */
+		--sidebar-background: 240 5.9% 10%;
+		--sidebar-foreground: 240 4.8% 95.9%;
+		--sidebar-primary: 224.3 76.3% 48%;
+		--sidebar-primary-foreground: 0 0% 100%;
+		--sidebar-accent: 240 3.7% 15.9%;
+		--sidebar-accent-foreground: 240 4.8% 95.9%;
+		--sidebar-border: 240 3.7% 15.9%;
+		--sidebar-ring: 217.2 91.2% 59.8%;
+	}
 }
 
 @layer base {

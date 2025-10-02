@@ -17,6 +17,12 @@ import {
 } from "@/components/ui/sidebar";
 import { useLocationContext } from "@/context/LocationContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+import LanguageDropdown from "./dropdown-language";
+import { Button } from "./ui/button";
+import { LanguagesIcon } from "lucide-react";
+import ProfileDropdown from "./dropdown-profile";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import ThemeSwitcher from "./ThemeSwitcher";
 
 export function Layout() {
 	const { selectedLocation, setSelectedLocation, locations, loading } =
@@ -110,25 +116,47 @@ export function Layout() {
 			/>
 			<SidebarInset>
 				{/* Header */}
-				<header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-					<div className="flex items-center gap-2 px-4">
-						<SidebarTrigger className="-ml-1" />
-						<Separator orientation="vertical" className="mr-2 h-4" />
-						<Breadcrumb>
-							<BreadcrumbList>
-								<BreadcrumbItem className="hidden md:block">
-									<BreadcrumbLink href="/dashboard">
-										<span className="text-black">CheckingCheckout</span>
-									</BreadcrumbLink>
-								</BreadcrumbItem>
-								<BreadcrumbSeparator className="hidden md:block" />
-								<BreadcrumbItem>
-									<BreadcrumbPage className="text-black text-md font-normal">
-										{getPageTitle()}
-									</BreadcrumbPage>
-								</BreadcrumbItem>
-							</BreadcrumbList>
-						</Breadcrumb>
+				<header className='bg-card sticky w-full top-0 z-50 border-b'>
+					<div className='mx-auto flex w-full items-center justify-between gap-6 px-4 py-2 sm:px-6'>
+						<div className="flex items-center gap-2 px-0 sm:px-2">
+							<SidebarTrigger className="-ml-1" />
+							<Separator orientation="vertical" className="mr-2 h-4" />
+							<Breadcrumb>
+								<BreadcrumbList>
+									<BreadcrumbItem className="hidden md:block">
+										<BreadcrumbLink href="/dashboard">
+											<span className="text-black">CheckingCheckout</span>
+										</BreadcrumbLink>
+									</BreadcrumbItem>
+									<BreadcrumbSeparator className="hidden md:block" />
+									<BreadcrumbItem>
+										<BreadcrumbPage className="text-black text-md font-normal">
+											{getPageTitle()}
+										</BreadcrumbPage>
+									</BreadcrumbItem>
+								</BreadcrumbList>
+							</Breadcrumb>
+						</div>
+						<div className='flex items-center gap-1.5'>
+							<ThemeSwitcher />
+							<LanguageDropdown
+								trigger={
+									<Button variant='ghost' size='icon'>
+										<LanguagesIcon />
+									</Button>
+								}
+							/>
+							<ProfileDropdown
+								trigger={
+									<Button variant='ghost' size='icon' className='size-9.5'>
+										<Avatar className='size-9.5 rounded-md'>
+											<AvatarImage src='https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-1.png' />
+											<AvatarFallback>JD</AvatarFallback>
+										</Avatar>
+									</Button>
+								}
+							/>
+						</div>
 					</div>
 				</header>
 

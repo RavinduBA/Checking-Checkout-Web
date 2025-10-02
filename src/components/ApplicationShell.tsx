@@ -45,8 +45,9 @@ import {
   SidebarTrigger
 } from '@/components/ui/sidebar'
 
-import LanguageDropdown from '@/components/shadcn-studio/blocks/dropdown-language'
-import ProfileDropdown from '@/components/shadcn-studio/blocks/dropdown-profile'
+import LanguageDropdown from './dropdown-language'
+import ProfileDropdown from './dropdown-profile'
+import ThemeSwitcher from './ThemeSwitcher'
 
 const ApplicationShell = () => {
   return (
@@ -213,6 +214,7 @@ const ApplicationShell = () => {
                 </Breadcrumb>
               </div>
               <div className='flex items-center gap-1.5'>
+                <ThemeSwitcher />
                 <LanguageDropdown
                   trigger={
                     <Button variant='ghost' size='icon'>
