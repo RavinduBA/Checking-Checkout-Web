@@ -15,6 +15,7 @@ import { OTPVerification } from "@/components/OTPVerification";
 import { ReservationEditDialog } from "@/components/ReservationEditDialog";
 import { ReservationPrintButton } from "@/components/ReservationPrintButton";
 import { ReservationsListSkeleton } from "@/components/ReservationsListSkeleton";
+import { ViewReservationDialog } from "@/components/ViewReservationDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -160,6 +161,8 @@ export const ReservationsList = () => {
 		useState<Reservation | null>(null);
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 	const [isNewReservationDialogOpen, setIsNewReservationDialogOpen] = useState(false);
+	const [viewingReservationId, setViewingReservationId] = useState<string | null>(null);
+	const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
 	const fetchData = useCallback(async () => {
 		try {
@@ -586,9 +589,10 @@ export const ReservationsList = () => {
 														<Button
 															variant="ghost"
 															size="icon"
-															onClick={() =>
-																navigate(`/reservations/${reservation.id}`)
-															}
+															onClick={() => {
+																setViewingReservationId(reservation.id);
+																setIsViewDialogOpen(true);
+															}}
 														>
 															<Eye className="size-4" />
 														</Button>
@@ -717,9 +721,10 @@ export const ReservationsList = () => {
 											variant="outline"
 											size="sm"
 											className="flex-1"
-											onClick={() =>
-												navigate(`/reservations/${reservation.id}`)
-											}
+											onClick={() => {
+												setViewingReservationId(reservation.id);
+												setIsViewDialogOpen(true);
+											}}
 										>
 											<Eye className="size-4 mr-1" />
 											View
@@ -833,6 +838,15 @@ export const ReservationsList = () => {
 					fetchData();
 					setIsNewReservationDialogOpen(false);
 				}}
+			/>
+
+			<ViewReservationDialog
+				isOpen={isViewDialogOpen}
+				onClose={() => {
+					setIsViewDialogOpen(false);
+					setViewingReservationId(null);
+				}}
+				reservationId={viewingReservationId || ""}
 			/>
 		</div>
 	);
