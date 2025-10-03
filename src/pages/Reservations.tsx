@@ -14,7 +14,7 @@ import { ViewReservationDialog } from "@/components/ViewReservationDialog";
 import { useLocationContext } from "@/context/LocationContext";
 import { useReservationsData } from "@/hooks/useReservationsData";
 
-export const Reservations = () => {
+export default function Reservations() {
 	const { locations } = useLocationContext();
 	const { refetch } = useReservationsData();
 	const navigate = useNavigate();
@@ -177,4 +177,4 @@ export const Reservations = () => {
 			/>
 		</div>
 	);
-};
+}
