@@ -432,5 +432,86 @@
       },
       "noRecords": "No expense records yet. Add your first expense above!"
     }
+  },
+  "accounts": {
+    "title": "Accounts",
+    "errorLoading": "Error loading accounts",
+    "buttons": {
+      "addAccount": "Add Account",
+      "transferMoney": "Transfer Money",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete Account",
+      "edit": "Edit"
+    },
+    "tabs": {
+      "accounts": "Accounts",
+      "transactions": "Recent Transactions"
+    },
+    "summary": {
+      "totalAccounts": "Total Accounts",
+      "totalBalanceLKR": "Total Balance (LKR)",
+      "totalBalanceUSD": "Total Balance (USD)"
+    },
+    "form": {
+      "addAccount": "Add Account",
+      "editAccount": "Edit Account",
+      "accountName": "Account Name",
+      "accountNamePlaceholder": "Enter account name",
+      "currency": "Currency",
+      "initialBalance": "Initial Balance",
+      "locationAccess": "Location Access",
+      "locationAccessDescription": "Select locations this account can be used for",
+      "validation": {
+        "nameRequired": "Account name is required",
+        "balanceInvalid": "Initial balance must be 0 or greater"
+      },
+      "messages": {
+        "createSuccess": "Account created successfully",
+        "updateSuccess": "Account updated successfully",
+        "deleteSuccess": "Account deleted successfully",
+        "createError": "Failed to create account",
+        "updateError": "Failed to update account",
+        "deleteError": "Failed to delete account"
+      }
+    },
+    "transfer": {
+      "title": "Transfer Money",
+      "fromAccount": "From Account",
+      "toAccount": "To Account",
+      "amount": "Amount",
+      "conversionRate": "Conversion Rate",
+      "note": "Note (Optional)",
+      "notePlaceholder": "Add a note for this transfer...",
+      "validation": {
+        "fromAccountRequired": "Please select source account",
+        "toAccountRequired": "Please select destination account",
+        "sameAccount": "Source and destination accounts cannot be the same",
+        "amountRequired": "Amount is required",
+        "amountInvalid": "Amount must be greater than 0",
+        "insufficientBalance": "Insufficient balance in source account"
+      },
+      "messages": {
+        "success": "Transfer completed successfully",
+        "error": "Failed to complete transfer"
+      }
+    },
+    "card": {
+      "balance": "Balance",
+      "currency": "Currency",
+      "locations": "Locations"
+    },
+    "transactions": {
+      "title": "Recent Transactions",
+      "type": "Type",
+      "amount": "Amount",
+      "account": "Account",
+      "date": "Date",
+      "note": "Note",
+      "transfer": "Transfer",
+      "income": "Income",
+      "expense": "Expense",
+      "noTransactions": "No recent transactions found"
+    }
   }
 }

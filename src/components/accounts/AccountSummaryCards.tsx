@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -8,6 +9,7 @@ interface AccountSummaryCardsProps {
 }
 
 export function AccountSummaryCards({ accounts }: AccountSummaryCardsProps) {
+	const { t } = useTranslation("common");
 	// For now, we'll just use initial_balance since we need to implement 
 	// proper balance calculation with income/expenses/transfers
 	const totalLKRBalance = accounts
@@ -23,7 +25,7 @@ export function AccountSummaryCards({ accounts }: AccountSummaryCardsProps) {
 			<Card>
 				<CardHeader className="pb-2">
 					<CardTitle className="text-sm font-medium text-muted-foreground">
-						Total Accounts
+						{t("accounts.summary.totalAccounts")}
 					</CardTitle>
 				</CardHeader>
 				<CardContent>
@@ -33,7 +35,7 @@ export function AccountSummaryCards({ accounts }: AccountSummaryCardsProps) {
 			<Card>
 				<CardHeader className="pb-2">
 					<CardTitle className="text-sm font-medium text-muted-foreground">
-						Total Balance (LKR)
+						{t("accounts.summary.totalBalanceLKR")}
 					</CardTitle>
 				</CardHeader>
 				<CardContent>
@@ -45,7 +47,7 @@ export function AccountSummaryCards({ accounts }: AccountSummaryCardsProps) {
 			<Card>
 				<CardHeader className="pb-2">
 					<CardTitle className="text-sm font-medium text-muted-foreground">
-						Total Balance (USD)
+						{t("accounts.summary.totalBalanceUSD")}
 					</CardTitle>
 				</CardHeader>
 				<CardContent>

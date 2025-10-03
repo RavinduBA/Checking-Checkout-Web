@@ -1,5 +1,6 @@
 import { ArrowRightLeft, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -10,6 +11,7 @@ interface RecentTransactionsProps {
 }
 
 export function RecentTransactions({ accounts }: RecentTransactionsProps) {
+	const { t } = useTranslation("common");
 	const [transactions, setTransactions] = useState<any[]>([]);
 	const [loading, setLoading] = useState(true);
 
@@ -44,7 +46,7 @@ export function RecentTransactions({ accounts }: RecentTransactionsProps) {
 					type: "transfer",
 					display_amount: transfer.amount,
 					currency: transfer.from_account?.currency || "LKR",
-					description: `Transfer from ${transfer.from_account?.name || "Unknown"} to ${transfer.to_account?.name || "Unknown"}`,
+					description: `${t("accounts.transactions.transfer")} from ${transfer.from_account?.name || "Unknown"} to ${transfer.to_account?.name || "Unknown"}`,
 				})),
 				...(incomeResponse.data || []).map((income) => ({
 					...income,
@@ -74,7 +76,7 @@ export function RecentTransactions({ accounts }: RecentTransactionsProps) {
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	}, [t]);
 
 	useEffect(() => {
 		fetchTransactions();
@@ -109,7 +111,7 @@ export function RecentTransactions({ accounts }: RecentTransactionsProps) {
 	if (loading) {
 		return (
 			<div className="space-y-4">
-				<h3 className="text-lg font-semibold">Recent Transactions</h3>
+				<h3 className="text-lg font-semibold">{t("accounts.transactions.title")}</h3>
 				<RecentTransactionsSkeleton />
 			</div>
 		);
@@ -118,9 +120,9 @@ export function RecentTransactions({ accounts }: RecentTransactionsProps) {
 	if (transactions.length === 0) {
 		return (
 			<div className="space-y-4">
-				<h3 className="text-lg font-semibold">Recent Transactions</h3>
+				<h3 className="text-lg font-semibold">{t("accounts.transactions.title")}</h3>
 				<div className="text-center py-8">
-					<p className="text-muted-foreground">No recent transactions found</p>
+					<p className="text-muted-foreground">{t("accounts.transactions.noTransactions")}</p>
 				</div>
 			</div>
 		);
@@ -128,7 +130,7 @@ export function RecentTransactions({ accounts }: RecentTransactionsProps) {
 
 	return (
 		<div className="space-y-4">
-			<h3 className="text-lg font-semibold">Recent Transactions</h3>
+			<h3 className="text-lg font-semibold">{t("accounts.transactions.title")}</h3>
 			<div className="space-y-3">
 				{transactions.map((transaction) => (
 					<div
@@ -141,7 +143,7 @@ export function RecentTransactions({ accounts }: RecentTransactionsProps) {
 								<div>
 									<div className="font-medium">{transaction.description}</div>
 									<div className="text-sm text-muted-foreground capitalize">
-										{transaction.type}
+										{t(`accounts.transactions.${transaction.type}`)}
 									</div>
 								</div>
 							</div>

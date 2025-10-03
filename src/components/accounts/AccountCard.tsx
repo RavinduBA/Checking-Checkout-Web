@@ -1,4 +1,5 @@
 import { Edit, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tables } from "@/integrations/supabase/types";
@@ -18,6 +19,7 @@ export function AccountCard({
 	onEdit,
 	onDelete,
 }: AccountCardProps) {
+	const { t } = useTranslation("common");
 	return (
 		<Card>
 			<CardHeader className="pb-2">
@@ -30,7 +32,7 @@ export function AccountCard({
 			</CardHeader>
 			<CardContent className="space-y-2">
 				<div className="flex justify-between items-center">
-					<span className="text-sm text-muted-foreground">Balance</span>
+					<span className="text-sm text-muted-foreground">{t("accounts.card.balance")}</span>
 					<div className="text-lg font-bold">
 						{account.currency === "LKR" ? "Rs." : "$"}
 						{balance.toLocaleString()}

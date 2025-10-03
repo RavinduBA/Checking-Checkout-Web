@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { AccountsSkeleton } from "@/components/AccountsSkeleton";
 import {
 	AccountForm,
@@ -19,6 +20,7 @@ import { Tables } from "@/integrations/supabase/types";
 type Account = Tables<"accounts">;
 
 export default function Accounts() {
+	const { t } = useTranslation("common");
 	const { toast } = useToast();
 	const { tenant } = useTenant();
 	const queryClient = useQueryClient();
@@ -72,16 +74,16 @@ export default function Accounts() {
 		setShowAddDialog(false);
 		setEditingAccount(null);
 		toast({
-			title: "Success",
-			description: "Account saved successfully",
+			title: t("common.success"),
+			description: t("accounts.form.messages.createSuccess"),
 		});
 	};
 
 	const handleAccountDeleted = (accountId: string) => {
 		queryClient.invalidateQueries({ queryKey: ["accounts"] });
 		toast({
-			title: "Success",
-			description: "Account deleted successfully",
+			title: t("common.success"),
+			description: t("accounts.form.messages.deleteSuccess"),
 		});
 	};
 
@@ -89,8 +91,8 @@ export default function Accounts() {
 		queryClient.invalidateQueries({ queryKey: ["accounts"] });
 		setShowTransferDialog(false);
 		toast({
-			title: "Success",
-			description: "Transfer completed successfully",
+			title: t("common.success"),
+			description: t("accounts.transfer.messages.success"),
 		});
 	};
 
@@ -108,7 +110,7 @@ export default function Accounts() {
 			<div className="container mx-auto p-6">
 				<div className="text-center py-8">
 					<p className="text-destructive">
-						Error loading accounts: {error.message}
+						{t("accounts.errorLoading")}: {error.message}
 					</p>
 				</div>
 			</div>
@@ -118,18 +120,18 @@ export default function Accounts() {
 	return (
 		<div className="container mx-auto p-6 space-y-6">
 			<div className="flex justify-between items-center">
-				<h1 className="text-3xl font-bold">Accounts</h1>
+				<h1 className="text-3xl font-bold">{t("accounts.title")}</h1>
 				<div className="flex gap-2">
 					<Button
 						onClick={() => setShowTransferDialog(true)}
 						variant="outline"
 						disabled={accounts.length < 2}
 					>
-						Transfer Money
+						{t("accounts.buttons.transferMoney")}
 					</Button>
 					<Button onClick={() => setShowAddDialog(true)}>
 						<Plus className="size-4 mr-2" />
-						Add Account
+						{t("accounts.buttons.addAccount")}
 					</Button>
 				</div>
 			</div>
@@ -138,8 +140,8 @@ export default function Accounts() {
 
 			<Tabs defaultValue="accounts" className="space-y-4">
 				<TabsList>
-					<TabsTrigger value="accounts">Accounts</TabsTrigger>
-					<TabsTrigger value="transactions">Recent Transactions</TabsTrigger>
+					<TabsTrigger value="accounts">{t("accounts.tabs.accounts")}</TabsTrigger>
+					<TabsTrigger value="transactions">{t("accounts.tabs.transactions")}</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="accounts" className="space-y-4">

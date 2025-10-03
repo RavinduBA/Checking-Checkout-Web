@@ -431,5 +431,86 @@
       },
       "noRecords": "Aún no hay registros de gastos. ¡Agrega tu primer gasto arriba!"
     }
+  },
+  "accounts": {
+    "title": "Cuentas",
+    "errorLoading": "Error al cargar cuentas",
+    "buttons": {
+      "addAccount": "Agregar Cuenta",
+      "transferMoney": "Transferir Dinero",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "delete": "Eliminar Cuenta",
+      "edit": "Editar"
+    },
+    "tabs": {
+      "accounts": "Cuentas",
+      "transactions": "Transacciones Recientes"
+    },
+    "summary": {
+      "totalAccounts": "Total de Cuentas",
+      "totalBalanceLKR": "Saldo Total (LKR)",
+      "totalBalanceUSD": "Saldo Total (USD)"
+    },
+    "form": {
+      "addAccount": "Agregar Cuenta",
+      "editAccount": "Editar Cuenta",
+      "accountName": "Nombre de la Cuenta",
+      "accountNamePlaceholder": "Ingrese el nombre de la cuenta",
+      "currency": "Moneda",
+      "initialBalance": "Saldo Inicial",
+      "locationAccess": "Acceso a Ubicaciones",
+      "locationAccessDescription": "Seleccione ubicaciones donde se puede usar esta cuenta",
+      "validation": {
+        "nameRequired": "El nombre de la cuenta es obligatorio",
+        "balanceInvalid": "El saldo inicial debe ser 0 o mayor"
+      },
+      "messages": {
+        "createSuccess": "Cuenta creada exitosamente",
+        "updateSuccess": "Cuenta actualizada exitosamente",
+        "deleteSuccess": "Cuenta eliminada exitosamente",
+        "createError": "Error al crear la cuenta",
+        "updateError": "Error al actualizar la cuenta",
+        "deleteError": "Error al eliminar la cuenta"
+      }
+    },
+    "transfer": {
+      "title": "Transferir Dinero",
+      "fromAccount": "Desde Cuenta",
+      "toAccount": "Hacia Cuenta",
+      "amount": "Cantidad",
+      "conversionRate": "Tasa de Conversión",
+      "note": "Nota (Opcional)",
+      "notePlaceholder": "Agregar una nota para esta transferencia...",
+      "validation": {
+        "fromAccountRequired": "Por favor seleccione la cuenta de origen",
+        "toAccountRequired": "Por favor seleccione la cuenta de destino",
+        "sameAccount": "Las cuentas de origen y destino no pueden ser las mismas",
+        "amountRequired": "La cantidad es obligatoria",
+        "amountInvalid": "La cantidad debe ser mayor que 0",
+        "insufficientBalance": "Saldo insuficiente en la cuenta de origen"
+      },
+      "messages": {
+        "success": "Transferencia completada exitosamente",
+        "error": "Error al completar la transferencia"
+      }
+    },
+    "card": {
+      "balance": "Saldo",
+      "currency": "Moneda",
+      "locations": "Ubicaciones"
+    },
+    "transactions": {
+      "title": "Transacciones Recientes",
+      "type": "Tipo",
+      "amount": "Cantidad",
+      "account": "Cuenta",
+      "date": "Fecha",
+      "note": "Nota",
+      "transfer": "Transferencia",
+      "income": "Ingreso",
+      "expense": "Gasto",
+      "noTransactions": "No se encontraron transacciones recientes"
+    }
   }
 }

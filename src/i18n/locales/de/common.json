@@ -432,5 +432,86 @@
       },
       "noRecords": "Noch keine Ausgabeneinträge. Fügen Sie Ihre erste Ausgabe oben hinzu!"
     }
+  },
+  "accounts": {
+    "title": "Konten",
+    "errorLoading": "Fehler beim Laden der Konten",
+    "buttons": {
+      "addAccount": "Konto hinzufügen",
+      "transferMoney": "Geld überweisen",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "delete": "Konto löschen",
+      "edit": "Bearbeiten"
+    },
+    "tabs": {
+      "accounts": "Konten",
+      "transactions": "Letzte Transaktionen"
+    },
+    "summary": {
+      "totalAccounts": "Konten insgesamt",
+      "totalBalanceLKR": "Gesamtsaldo (LKR)",
+      "totalBalanceUSD": "Gesamtsaldo (USD)"
+    },
+    "form": {
+      "addAccount": "Konto hinzufügen",
+      "editAccount": "Konto bearbeiten",
+      "accountName": "Kontoname",
+      "accountNamePlaceholder": "Kontoname eingeben",
+      "currency": "Währung",
+      "initialBalance": "Anfangssaldo",
+      "locationAccess": "Standortzugang",
+      "locationAccessDescription": "Wählen Sie Standorte aus, für die dieses Konto verwendet werden kann",
+      "validation": {
+        "nameRequired": "Kontoname ist erforderlich",
+        "balanceInvalid": "Anfangssaldo muss 0 oder größer sein"
+      },
+      "messages": {
+        "createSuccess": "Konto erfolgreich erstellt",
+        "updateSuccess": "Konto erfolgreich aktualisiert",
+        "deleteSuccess": "Konto erfolgreich gelöscht",
+        "createError": "Fehler beim Erstellen des Kontos",
+        "updateError": "Fehler beim Aktualisieren des Kontos",
+        "deleteError": "Fehler beim Löschen des Kontos"
+      }
+    },
+    "transfer": {
+      "title": "Geld überweisen",
+      "fromAccount": "Von Konto",
+      "toAccount": "Zu Konto",
+      "amount": "Betrag",
+      "conversionRate": "Umrechnungskurs",
+      "note": "Notiz (Optional)",
+      "notePlaceholder": "Notiz für diese Überweisung hinzufügen...",
+      "validation": {
+        "fromAccountRequired": "Bitte Quellkonto auswählen",
+        "toAccountRequired": "Bitte Zielkonto auswählen",
+        "sameAccount": "Quell- und Zielkonto können nicht identisch sein",
+        "amountRequired": "Betrag ist erforderlich",
+        "amountInvalid": "Betrag muss größer als 0 sein",
+        "insufficientBalance": "Unzureichender Saldo im Quellkonto"
+      },
+      "messages": {
+        "success": "Überweisung erfolgreich abgeschlossen",
+        "error": "Fehler beim Abschließen der Überweisung"
+      }
+    },
+    "card": {
+      "balance": "Saldo",
+      "currency": "Währung",
+      "locations": "Standorte"
+    },
+    "transactions": {
+      "title": "Letzte Transaktionen",
+      "type": "Typ",
+      "amount": "Betrag",
+      "account": "Konto",
+      "date": "Datum",
+      "note": "Notiz",
+      "transfer": "Überweisung",
+      "income": "Einkommen",
+      "expense": "Ausgabe",
+      "noTransactions": "Keine aktuellen Transaktionen gefunden"
+    }
   }
 }
