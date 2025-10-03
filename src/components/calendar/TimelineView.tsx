@@ -206,7 +206,7 @@ export function TimelineView({
 	return (
 		<div className="border rounded-lg overflow-hidden">
 			{/* Calendar Header */}
-			<div className="bg-white border-b sticky top-0 z-20">
+			<div className="border-b sticky top-0 z-20">
 				<div className="flex">
 					<div className="w-32 sm:w-48 p-2 sm:p-4 bg-gray-50 border-r border-gray-200 font-medium">
 						Room

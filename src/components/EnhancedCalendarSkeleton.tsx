@@ -32,7 +32,7 @@ export function EnhancedCalendarSkeleton() {
 			</div>
 
 			{/* Timeline View */}
-			<div className="bg-white rounded-lg border overflow-hidden">
+			<div className="bg-background rounded-lg border overflow-hidden">
 				<div className="overflow-x-auto">
 					<div className="min-w-full">
 						{/* Calendar Header */}

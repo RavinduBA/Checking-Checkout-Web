@@ -152,6 +152,38 @@
     "addExpense": "වියදමක් එක් කරන්න",
     "verifyPhone": "දුරකථනය තහවුරු කරන්න"
   },
+  "breadcrumb": {
+    "home": "මුල් පිටුව"
+  },
+  "pageTitle": {
+    "dashboard": "පුවරුව",
+    "calendar": "දින දර්ශනය",
+    "reservations": "වෙන්කිරීම්",
+    "quickBooking": "ඉක්මන් වෙන්කිරීම්",
+    "income": "වෙන්කිරීම් සහ ගෙවීම්",
+    "expense": "වියදමක් එක් කරන්න",
+    "accounts": "ගිණුම්",
+    "paymentForm": "ගෙවීම් පෝරමය",
+    "reports": "මූල්‍ය වාර්තා",
+    "comprehensiveReports": "සම්පූර්ණ වාර්තා",
+    "accountReports": "ගිණුම් වාර්තා",
+    "commissionReports": "කොමිස් වාර්තා",
+    "balanceSheet": "ශේෂ පත්‍රය",
+    "enhancedFinancialReports": "වැඩිදියුණු කළ මූල්‍ය වාර්තා",
+    "financialReports": "වාර්තා සහ විශ්ලේෂණ",
+    "users": "පරිශීලක කළමනාකරණය",
+    "settings": "සැකසුම්",
+    "masterFiles": "ප්‍රධාන ගොනු",
+    "masterFilesLocations": "ප්‍රධාන ගොනු - ස්ථාන",
+    "masterFilesRooms": "ප්‍රධාන ගොනු - කාමර",
+    "masterFilesGuides": "ප්‍රධාන ගොනු - මග පෙන්වන්නන්",
+    "masterFilesAgents": "ප්‍රධාන ගොනු - නියෝජිතයන්",
+    "masterFilesCommissions": "ප්‍රධාන ගොනු - කොමිස්",
+    "roomManagement": "කාමර කළමනාකරණය",
+    "bookingChannels": "වෙන්කිරීම් නාලිකා",
+    "reservationDetails": "වෙන්කිරීම් විස්තර",
+    "hotelManagement": "හෝටල් කළමනාකරණය"
+  },
   "common": {
     "loading": "පූරණය වෙමින්...",
     "save": "සුරකින්න",

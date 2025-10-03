@@ -152,6 +152,38 @@
     "addExpense": "Ajouter Dépense",
     "verifyPhone": "Vérifier Téléphone"
   },
+  "breadcrumb": {
+    "home": "Accueil"
+  },
+  "pageTitle": {
+    "dashboard": "Tableau de Bord",
+    "calendar": "Calendrier",
+    "reservations": "Réservations",
+    "quickBooking": "Réservation Rapide",
+    "income": "Réservations et Paiements",
+    "expense": "Ajouter Dépense",
+    "accounts": "Comptes",
+    "paymentForm": "Formulaire de Paiement",
+    "reports": "Rapports Financiers",
+    "comprehensiveReports": "Rapports Complets",
+    "accountReports": "Rapports de Comptes",
+    "commissionReports": "Rapports de Commission",
+    "balanceSheet": "Bilan",
+    "enhancedFinancialReports": "Rapports Financiers Améliorés",
+    "financialReports": "Rapports et Analyses",
+    "users": "Gestion des Utilisateurs",
+    "settings": "Paramètres",
+    "masterFiles": "Fichiers Maîtres",
+    "masterFilesLocations": "Fichiers Maîtres - Emplacements",
+    "masterFilesRooms": "Fichiers Maîtres - Chambres",
+    "masterFilesGuides": "Fichiers Maîtres - Guides",
+    "masterFilesAgents": "Fichiers Maîtres - Agents",
+    "masterFilesCommissions": "Fichiers Maîtres - Commissions",
+    "roomManagement": "Gestion des Chambres",
+    "bookingChannels": "Canaux de Réservation",
+    "reservationDetails": "Détails de Réservation",
+    "hotelManagement": "Gestion Hôtelière"
+  },
   "common": {
     "loading": "Chargement...",
     "save": "Enregistrer",

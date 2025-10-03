@@ -159,7 +159,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 	if (loading) {
 		return (
 			<div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
-				<div className="flex flex-col flex-grow bg-card border-r border-border items-center justify-center">
+				<div className="flex flex-col grow bg-card border-r border-border items-center justify-center">
 					<InlineLoader />
 				</div>
 			</div>
@@ -172,7 +172,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 		<>
 			{/* Desktop Sidebar */}
 			<div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
-				<div className="flex flex-col flex-grow bg-card border-r border-border">
+				<div className="flex flex-col grow bg-card border-r border-border">
 					{/* Logo */}
 					<div className="flex items-center gap-3 mb-4">
 						<img

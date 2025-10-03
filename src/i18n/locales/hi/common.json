@@ -152,6 +152,38 @@
     "addExpense": "व्यय जोड़ें",
     "verifyPhone": "फोन सत्यापित करें"
   },
+  "breadcrumb": {
+    "home": "होम"
+  },
+  "pageTitle": {
+    "dashboard": "डैशबोर्ड",
+    "calendar": "कैलेंडर",
+    "reservations": "आरक्षण",
+    "quickBooking": "त्वरित बुकिंग",
+    "income": "आरक्षण और भुगतान",
+    "expense": "व्यय जोड़ें",
+    "accounts": "खाते",
+    "paymentForm": "भुगतान फॉर्म",
+    "reports": "वित्तीय रिपोर्ट",
+    "comprehensiveReports": "व्यापक रिपोर्ट",
+    "accountReports": "खाता रिपोर्ट",
+    "commissionReports": "कमीशन रिपोर्ट",
+    "balanceSheet": "बैलेंस शीट",
+    "enhancedFinancialReports": "बेहतर वित्तीय रिपोर्ट",
+    "financialReports": "रिपोर्ट और विश्लेषण",
+    "users": "उपयोगकर्ता प्रबंधन",
+    "settings": "सेटिंग्स",
+    "masterFiles": "मास्टर फाइलें",
+    "masterFilesLocations": "मास्टर फाइलें - स्थान",
+    "masterFilesRooms": "मास्टर फाइलें - कमरे",
+    "masterFilesGuides": "मास्टर फाइलें - गाइड",
+    "masterFilesAgents": "मास्टर फाइलें - एजेंट",
+    "masterFilesCommissions": "मास्टर फाइलें - कमीशन",
+    "roomManagement": "कमरा प्रबंधन",
+    "bookingChannels": "बुकिंग चैनल",
+    "reservationDetails": "आरक्षण विवरण",
+    "hotelManagement": "होटल प्रबंधन"
+  },
   "common": {
     "loading": "लोड हो रहा है...",
     "save": "सेव करें",

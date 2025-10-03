@@ -152,6 +152,38 @@
     "addExpense": "Add Expense",
     "verifyPhone": "Verify Phone"
   },
+  "breadcrumb": {
+    "home": "Home"
+  },
+  "pageTitle": {
+    "dashboard": "Dashboard",
+    "calendar": "Calendar",
+    "reservations": "Reservations",
+    "quickBooking": "Quick Booking",
+    "income": "Reservations & Payments",
+    "expense": "Add Expense",
+    "accounts": "Accounts",
+    "paymentForm": "Payment Form",
+    "reports": "Financial Reports",
+    "comprehensiveReports": "Comprehensive Reports",
+    "accountReports": "Account Reports", 
+    "commissionReports": "Commission Reports",
+    "balanceSheet": "Balance Sheet",
+    "enhancedFinancialReports": "Enhanced Financial Reports",
+    "financialReports": "Reports & Analytics",
+    "users": "User Management",
+    "settings": "Settings",
+    "masterFiles": "Master Files",
+    "masterFilesLocations": "Master Files - Locations",
+    "masterFilesRooms": "Master Files - Rooms",
+    "masterFilesGuides": "Master Files - Guides",
+    "masterFilesAgents": "Master Files - Agents",
+    "masterFilesCommissions": "Master Files - Commissions",
+    "roomManagement": "Room Management",
+    "bookingChannels": "Booking Channels",
+    "reservationDetails": "Reservation Details",
+    "hotelManagement": "Hotel Management"
+  },
   "common": {
     "loading": "Loading...",
     "save": "Save",

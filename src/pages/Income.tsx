@@ -205,9 +205,9 @@ const Income = () => {
 	const getStatusBadge = (status: string) => {
 		const variants: Record<
 			string,
-			"default" | "secondary" | "destructive" | "outline"
+			"default" | "secondary" | "destructive" | "outline-solid"
 		> = {
-			tentative: "outline",
+			tentative: "outline-solid",
 			confirmed: "default",
 			checked_in: "secondary",
 			checked_out: "destructive",

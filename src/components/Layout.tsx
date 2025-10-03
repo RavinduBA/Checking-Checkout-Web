@@ -1,5 +1,6 @@
 import { LanguagesIcon } from "lucide-react";
 import { Outlet, useLocation } from "react-router";
+import { useTranslation } from "react-i18next";
 import { AppSidebar } from "@/components/app-sidebar";
 import {
 	Breadcrumb,
@@ -30,6 +31,7 @@ export function Layout() {
 		useLocationContext();
 	const isMobile = useIsMobile();
 	const location = useLocation();
+	const { t } = useTranslation();
 
 	// Get page title based on current route
 	const getPageTitle = () => {
@@ -38,70 +40,70 @@ export function Layout() {
 
 		switch (path) {
 			case "/dashboard":
-				return "Dashboard";
+				return t("pageTitle.dashboard");
 			case "/calendar":
-				return "Calendar";
+				return t("pageTitle.calendar");
 			case "/reservations":
-				return "Reservations";
+				return t("pageTitle.reservations");
 			case "/reservations/compact":
-				return "Quick Booking";
+				return t("pageTitle.quickBooking");
 			case "/income":
-				return "Reservations & Payments";
+				return t("pageTitle.income");
 			case "/expense":
-				return "Add Expense";
+				return t("pageTitle.expense");
 			case "/accounts":
-				return "Accounts";
+				return t("pageTitle.accounts");
 			case "/payments/new":
-				return "Payment Form";
+				return t("pageTitle.paymentForm");
 			case "/reports": {
 				const tab = searchParams.get("tab");
 				switch (tab) {
 					case "comprehensive":
-						return "Comprehensive Reports";
+						return t("pageTitle.comprehensiveReports");
 					case "accounts":
-						return "Account Reports";
+						return t("pageTitle.accountReports");
 					case "commission":
-						return "Commission Reports";
+						return t("pageTitle.commissionReports");
 					case "balance":
-						return "Balance Sheet";
+						return t("pageTitle.balanceSheet");
 					case "enhanced":
-						return "Enhanced Financial Reports";
+						return t("pageTitle.enhancedFinancialReports");
 					default:
-						return "Financial Reports";
+						return t("pageTitle.reports");
 				}
 			}
 			case "/financial-reports":
-				return "Reports & Analytics";
+				return t("pageTitle.financialReports");
 			case "/users":
-				return "User Management";
+				return t("pageTitle.users");
 			case "/settings":
-				return "Settings";
+				return t("pageTitle.settings");
 			case "/master-files": {
 				const masterTab = searchParams.get("tab");
 				switch (masterTab) {
 					case "locations":
-						return "Master Files - Locations";
+						return t("pageTitle.masterFilesLocations");
 					case "rooms":
-						return "Master Files - Rooms";
+						return t("pageTitle.masterFilesRooms");
 					case "guides":
-						return "Master Files - Guides";
+						return t("pageTitle.masterFilesGuides");
 					case "agents":
-						return "Master Files - Agents";
+						return t("pageTitle.masterFilesAgents");
 					case "commissions":
-						return "Master Files - Commissions";
+						return t("pageTitle.masterFilesCommissions");
 					default:
-						return "Master Files";
+						return t("pageTitle.masterFiles");
 				}
 			}
 			case "/room-management":
-				return "Room Management";
+				return t("pageTitle.roomManagement");
 			case "/booking-channels":
-				return "Booking Channels";
+				return t("pageTitle.bookingChannels");
 			default:
 				if (path.startsWith("/reservations/")) {
-					return "Reservation Details";
+					return t("pageTitle.reservationDetails");
 				}
-				return "Hotel Management";
+				return t("pageTitle.hotelManagement");
 		}
 	};
 
@@ -124,7 +126,7 @@ export function Layout() {
 								<BreadcrumbList>
 									<BreadcrumbItem className="hidden md:block">
 										<BreadcrumbLink href="/dashboard">
-											<span className="text-black">Home</span>
+											<span className="text-black">{t("breadcrumb.home")}</span>
 										</BreadcrumbLink>
 									</BreadcrumbItem>
 									<BreadcrumbSeparator className="hidden md:block" />

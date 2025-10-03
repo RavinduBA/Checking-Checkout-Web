@@ -152,6 +152,38 @@
     "addExpense": "Ausgabe Hinzufügen",
     "verifyPhone": "Telefon Verifizieren"
   },
+  "breadcrumb": {
+    "home": "Startseite"
+  },
+  "pageTitle": {
+    "dashboard": "Dashboard",
+    "calendar": "Kalender",
+    "reservations": "Reservierungen",
+    "quickBooking": "Schnelle Buchung",
+    "income": "Reservierungen und Zahlungen",
+    "expense": "Ausgabe Hinzufügen",
+    "accounts": "Konten",
+    "paymentForm": "Zahlungsformular",
+    "reports": "Finanzberichte",
+    "comprehensiveReports": "Umfassende Berichte",
+    "accountReports": "Kontoberichte",
+    "commissionReports": "Provisionsberichte",
+    "balanceSheet": "Bilanz",
+    "enhancedFinancialReports": "Erweiterte Finanzberichte",
+    "financialReports": "Berichte und Analysen",
+    "users": "Benutzerverwaltung",
+    "settings": "Einstellungen",
+    "masterFiles": "Masterdateien",
+    "masterFilesLocations": "Masterdateien - Standorte",
+    "masterFilesRooms": "Masterdateien - Zimmer",
+    "masterFilesGuides": "Masterdateien - Reiseführer",
+    "masterFilesAgents": "Masterdateien - Agenten",
+    "masterFilesCommissions": "Masterdateien - Provisionen",
+    "roomManagement": "Zimmerverwaltung",
+    "bookingChannels": "Buchungskanäle",
+    "reservationDetails": "Reservierungsdetails",
+    "hotelManagement": "Hotelverwaltung"
+  },
   "common": {
     "loading": "Laden...",
     "save": "Speichern",

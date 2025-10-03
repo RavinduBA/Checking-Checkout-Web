@@ -151,10 +151,10 @@ export default function ResetPassword() {
 				<div className="relative flex-1 hidden items-center justify-center h-screen bg-gray-900 lg:flex">
 					<div className="relative z-10 w-full max-w-md">
 						<div className=" mt-16 space-y-3">
-							<h3 className="text-white text-3xl font-bold">
+							<h3 className="text-foreground text-3xl font-bold">
 								Secure Password Reset
 							</h3>
-							<p className="text-gray-300">
+							<p className="text-muted-foreground">
 								We're verifying your reset link to ensure your account security.
 							</p>
 						</div>
@@ -169,7 +169,7 @@ export default function ResetPassword() {
 					></div>
 				</div>
 				<div className="flex-1 flex items-center justify-center h-screen">
-					<div className="w-full max-w-md space-y-8 px-4 bg-white text-gray-600 sm:px-0">
+					<div className="w-full max-w-md space-y-8 px-4 sm:px-0">
 						<div className="">
 							<div className="mt-5 space-y-2 text-center">
 								<div className="flex items-center justify-center">
@@ -215,7 +215,7 @@ export default function ResetPassword() {
 					></div>
 				</div>
 				<div className="flex-1 flex items-center justify-center h-screen">
-					<div className="w-full max-w-md space-y-8 px-4 bg-white text-gray-600 sm:px-0">
+					<div className="w-full max-w-md space-y-8 px-4 text-gray-600 sm:px-0">
 						<div className="">
 							<div className="mt-5 space-y-2 text-center">
 								<div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-green-100">
@@ -243,7 +243,7 @@ export default function ResetPassword() {
 		<div className="min-h-screen flex items-center justify-center bg-background overflow-hidden">
 			<div className="relative flex-1 hidden items-center justify-center h-screen bg-[url('/images/white-hotel-front-view.jpg')] bg-cover lg:flex"></div>
 			<div className="flex-1 flex items-center justify-center h-screen">
-				<div className="w-full max-w-md space-y-8 px-4 bg-white text-gray-600 sm:px-0">
+				<div className="w-full max-w-md space-y-8 px-4 text-gray-600 sm:px-0">
 					<div className="">
 						<div className="mt-5 space-y-2">
 							<div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-blue-100">

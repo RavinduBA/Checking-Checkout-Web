@@ -162,7 +162,7 @@ export default function Auth() {
 				className="hidden h-screen flex-1 overflow-hidden lg:flex"
 				aria-label="Product showcase"
 			>
-				<div className="flex size-full items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600 p-16 dark:from-blue-600 dark:to-blue-500">
+				<div className="flex size-full items-center justify-center bg-linear-to-br from-blue-400 to-blue-600 p-16 dark:from-blue-600 dark:to-blue-500">
 					<div>
 						<h2 className="max-w-lg text-2xl font-semibold leading-9 text-white dark:text-white">
 							Welcome to Checking &amp; Checkout

@@ -419,7 +419,7 @@ export function FullCalendarMonthView({
 											)}
 											{isCurrentMonth && hasMoreThanTwo && (
 												<div
-													className="absolute border pointer-events-auto cursor-pointer h-6 bg-muted/80 hover:bg-muted transition-colors rounded-md flex items-center justify-center text-xs font-bold text-foreground shadow-sm"
+													className="absolute border pointer-events-auto cursor-pointer h-6 bg-muted/80 hover:bg-muted transition-colors rounded-md flex items-center justify-center text-xs font-bold text-foreground shadow-xs"
 													style={{
 														top: `${22 + (2 * 34)}px`, // Position as 3rd line with adjusted spacing: 36px offset + (2 lanes * 34px spacing)
 														left: '0.5rem', // More padding from calendar edge
@@ -456,8 +456,8 @@ export function FullCalendarMonthView({
 											"absolute pointer-events-auto cursor-pointer transition-colors",
 											"text-xs border text-black font-medium flex items-center",
 											getStatusColor(reservation.status),
-											"rounded-md truncate shadow-sm h-6", // Reduced from h-8 to h-6
-											"bg-[size:6px_6px] bg-fixed",
+											"rounded-md truncate shadow-xs h-6", // Reduced from h-8 to h-6
+											"bg-size-[6px_6px] bg-fixed",
 											isStart && "pl-2", // Add left margin and padding for start segments
 											isEnd && "pr-2", // Add right margin and padding for end segments
 											!isStart && "rounded-l-none",

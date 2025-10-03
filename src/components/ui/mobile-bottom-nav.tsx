@@ -1,17 +1,19 @@
 import { BarChart3, Building2, Calendar, Home, Plus } from "lucide-react";
 import { Link, useLocation } from "react-router";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-	{ name: "Home", href: "/dashboard", icon: Home },
-	{ name: "Reservations", href: "/reservations", icon: Plus },
-	{ name: "Calendar", href: "/calendar", icon: Calendar },
-	{ name: "Reports", href: "/reports", icon: BarChart3 },
-	{ name: "Accounts", href: "/accounts", icon: Building2 },
-];
 
 export function MobileBottomNav() {
 	const location = useLocation();
+	const { t } = useTranslation();
+
+	const navItems = [
+		{ name: t("pageTitle.dashboard"), href: "/dashboard", icon: Home },
+		{ name: t("pageTitle.reservations"), href: "/reservations", icon: Plus },
+		{ name: t("pageTitle.calendar"), href: "/calendar", icon: Calendar },
+		{ name: t("pageTitle.reports"), href: "/reports", icon: BarChart3 },
+		{ name: t("pageTitle.accounts"), href: "/accounts", icon: Building2 },
+	];
 
 	return (
 		<div className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border lg:hidden">

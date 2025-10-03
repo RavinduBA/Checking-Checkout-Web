@@ -95,7 +95,7 @@ export const SignatureCapture = ({
 					</div>
 				) : (
 					<div className="space-y-4">
-						<div className="border rounded-lg p-4 bg-white">
+						<div className="border rounded-lg p-4 bg-background">
 							<img
 								src={signature}
 								alt="Guest Signature"

@@ -152,6 +152,38 @@
     "addExpense": "Adicionar Despesa",
     "verifyPhone": "Verificar Telefone"
   },
+  "breadcrumb": {
+    "home": "Início"
+  },
+  "pageTitle": {
+    "dashboard": "Painel",
+    "calendar": "Calendário",
+    "reservations": "Reservas",
+    "quickBooking": "Reserva Rápida",
+    "income": "Reservas e Pagamentos",
+    "expense": "Adicionar Despesa",
+    "accounts": "Contas",
+    "paymentForm": "Formulário de Pagamento",
+    "reports": "Relatórios Financeiros",
+    "comprehensiveReports": "Relatórios Abrangentes",
+    "accountReports": "Relatórios de Contas",
+    "commissionReports": "Relatórios de Comissão",
+    "balanceSheet": "Balanço Patrimonial",
+    "enhancedFinancialReports": "Relatórios Financeiros Aprimorados",
+    "financialReports": "Relatórios e Análises",
+    "users": "Gerenciamento de Usuários",
+    "settings": "Configurações",
+    "masterFiles": "Arquivos Mestres",
+    "masterFilesLocations": "Arquivos Mestres - Localizações",
+    "masterFilesRooms": "Arquivos Mestres - Quartos",
+    "masterFilesGuides": "Arquivos Mestres - Guias",
+    "masterFilesAgents": "Arquivos Mestres - Agentes",
+    "masterFilesCommissions": "Arquivos Mestres - Comissões",
+    "roomManagement": "Gerenciamento de Quartos",
+    "bookingChannels": "Canais de Reserva",
+    "reservationDetails": "Detalhes da Reserva",
+    "hotelManagement": "Gestão Hoteleira"
+  },
   "common": {
     "loading": "Carregando...",
     "save": "Salvar",

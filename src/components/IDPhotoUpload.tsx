@@ -355,7 +355,7 @@ export const IDPhotoUpload = ({
 										key={index}
 										className="relative group border rounded-lg overflow-hidden bg-muted/20"
 									>
-										<div className="aspect-[3/2] relative">
+										<div className="aspect-3/2 relative">
 											<SignedImage
 												filePath={photo.filePath}
 												alt={`${getIDTypeLabel(photo.type)} ${index + 1}`}

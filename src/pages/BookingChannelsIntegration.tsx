@@ -683,7 +683,7 @@ export default function BookingChannelsIntegration() {
 										<Button
 											key={location.id}
 											variant={
-												selectedLocation === location.id ? "default" : "outline"
+												selectedLocation === location.id ? "default" : "outline-solid"
 											}
 											size="sm"
 											disabled
