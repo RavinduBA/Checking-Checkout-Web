@@ -17,11 +17,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
 type Account = Tables<"accounts">;
-type Balance = Tables<"account_balances">;
-
-interface AccountWithBalance extends Account {
-	balances: Balance[];
-}
 
 export default function Accounts() {
 	const { toast } = useToast();
@@ -32,7 +27,7 @@ export default function Accounts() {
 	const [showTransferDialog, setShowTransferDialog] = useState(false);
 	const [editingAccount, setEditingAccount] = useState<Account | null>(null);
 
-	// Fetch accounts with balances
+	// Fetch accounts
 	const {
 		data: accounts = [],
 		isLoading,
@@ -44,15 +39,12 @@ export default function Accounts() {
 
 			const { data, error } = await supabase
 				.from("accounts")
-				.select(`
-					*,
-					balances:account_balances(*)
-				`)
+				.select("*")
 				.eq("tenant_id", tenant.id)
 				.order("created_at", { ascending: false });
 
 			if (error) throw error;
-			return data as AccountWithBalance[];
+			return data;
 		},
 		enabled: !!tenant?.id,
 	});

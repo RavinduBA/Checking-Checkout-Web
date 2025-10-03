@@ -21,16 +21,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
 type Account = Tables<"accounts">;
-type Balance = Tables<"account_balances">;
-
-interface AccountWithBalance extends Account {
-	balances: Balance[];
-}
 
 interface AccountTransferFormProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	accounts: AccountWithBalance[];
+	accounts: Account[];
 	onTransferCompleted: () => void;
 }
 
@@ -43,12 +38,9 @@ export function AccountTransferForm({
 	const { toast } = useToast();
 	const [isTransferring, setIsTransferring] = useState(false);
 
-	// Calculate account balance from balances property
-	const calculateAccountBalance = (account: AccountWithBalance) => {
-		if (!account.balances || account.balances.length === 0) {
-			return account.initial_balance;
-		}
-		return account.balances[0]?.current_balance || account.initial_balance;
+	// Calculate account balance from initial balance for now
+	const calculateAccountBalance = (account: Account) => {
+		return account.initial_balance;
 	};
 	const [currentExchangeRate, setCurrentExchangeRate] = useState({
 		usdToLkr: 300,
@@ -118,7 +110,7 @@ export function AccountTransferForm({
 				calculateAccountBalance(
 					accounts.find(
 						(acc) => acc.id === transferData.fromAccountId,
-					) as AccountWithBalance,
+					) as Account,
 				) || 0;
 
 			if (transferData.amount > currentBalance) {
