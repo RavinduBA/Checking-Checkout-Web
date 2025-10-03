@@ -13,6 +13,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource-variable/ibm-plex-sans": "^5.2.8",
     "@fontsource-variable/inter": "^5.2.8",
     "@fontsource-variable/montserrat": "^5.2.8",
     "@fontsource/prompt": "^5.2.8",

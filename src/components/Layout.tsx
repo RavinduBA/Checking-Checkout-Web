@@ -22,8 +22,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import LanguageDropdown from "./dropdown-language";
 import ProfileDropdown from "./dropdown-profile";
 import FullscreenToggle from "./FullscreenToggle";
+import ProfileAvatarButton from "./ProfileAvatarButton";
 import ThemeSwitcher from "./ThemeSwitcher";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 
 export function Layout() {
@@ -149,14 +149,7 @@ export function Layout() {
 								}
 							/>
 							<ProfileDropdown
-								trigger={
-									<Button variant="ghost" size="icon" className="size-9.5">
-										<Avatar className="size-9.5 rounded-md">
-											<AvatarImage src="https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-1.png" />
-											<AvatarFallback>JD</AvatarFallback>
-										</Avatar>
-									</Button>
-								}
+								trigger={<ProfileAvatarButton />}
 							/>
 						</div>
 					</div>
