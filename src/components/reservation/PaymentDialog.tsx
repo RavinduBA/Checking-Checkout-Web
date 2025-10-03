@@ -185,7 +185,7 @@ export function PaymentDialog({
 				accountCurrency,
 			);
 
-			// Create payment record
+			// Create payment record (database trigger will automatically update reservation)
 			const { error: paymentError } = await supabase.from("payments").insert({
 				reservation_id: reservation.id,
 				amount: convertedAmount,
@@ -197,24 +197,13 @@ export function PaymentDialog({
 				notes: formData.notes,
 				reference_number: formData.reference_number || null,
 				created_by: user?.id || null,
+				// Add tenant_id for security (will be required soon)
+				tenant_id: tenant.id,
 			});
 
 			if (paymentError) throw paymentError;
 
-			// Update reservation amounts
-			const newPaidAmount = (reservation.paid_amount || 0) + formData.amount;
-			const newBalanceAmount = Math.max(0, reservation.total_amount - newPaidAmount);
-
-			const { error: updateError } = await supabase
-				.from("reservations")
-				.update({
-					paid_amount: newPaidAmount,
-					balance_amount: newBalanceAmount,
-					updated_at: new Date().toISOString(),
-				})
-				.eq("id", reservation.id);
-
-			if (updateError) throw updateError;
+			// No need to manually update reservation - database trigger handles this automatically
 
 			toast({
 				title: "Payment Recorded",

@@ -69,10 +69,10 @@ export function ReservationsDesktopTable({
 
 	const getTotalPayableAmount = (reservation: any): number => {
 		const roomAmount = reservation.total_amount;
-		const expenses = incomeRecords
+		const additionalServices = incomeRecords
 			.filter((inc) => inc.booking_id === reservation.id)
 			.reduce((sum, inc) => sum + Number(inc.amount), 0);
-		return roomAmount + expenses;
+		return roomAmount + additionalServices;
 	};
 
 	// Filter reservations
@@ -109,7 +109,10 @@ export function ReservationsDesktopTable({
 								<TableHead>Check-in</TableHead>
 								<TableHead>Check-out</TableHead>
 								<TableHead>Room Amount</TableHead>
-								<TableHead>Expenses</TableHead>
+								<TableHead>Additional Services</TableHead>
+								<TableHead>Total Payable</TableHead>
+								<TableHead>Paid Amount</TableHead>
+								<TableHead>Balance</TableHead>
 								<TableHead>Status</TableHead>
 								<TableHead>Actions</TableHead>
 							</TableRow>
@@ -140,6 +143,18 @@ export function ReservationsDesktopTable({
 											reservationId={reservation.id}
 											currency={reservation.currency}
 										/>
+									</TableCell>
+									<TableCell>
+										{getCurrencySymbol(reservation.currency)}{" "}
+										{getTotalPayableAmount(reservation).toLocaleString()}
+									</TableCell>
+									<TableCell>
+										{getCurrencySymbol(reservation.currency)}{" "}
+										{(reservation.paid_amount || 0).toLocaleString()}
+									</TableCell>
+									<TableCell>
+										{getCurrencySymbol(reservation.currency)}{" "}
+										{Math.max(0, getTotalPayableAmount(reservation) - (reservation.paid_amount || 0)).toLocaleString()}
 									</TableCell>
 									<TableCell>
 										<Badge className={getStatusColor(reservation.status)}>

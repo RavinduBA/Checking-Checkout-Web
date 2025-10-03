@@ -62,10 +62,10 @@ export function ReservationsMobileCards({
 
 	const getTotalPayableAmount = (reservation: any): number => {
 		const roomAmount = reservation.total_amount;
-		const expenses = incomeRecords
+		const additionalServices = incomeRecords
 			.filter((inc) => inc.booking_id === reservation.id)
 			.reduce((sum, inc) => sum + Number(inc.amount), 0);
-		return roomAmount + expenses;
+		return roomAmount + additionalServices;
 	};
 
 	// Filter reservations
@@ -130,13 +130,13 @@ export function ReservationsMobileCards({
 								</span>
 							</div>
 
-							{/* Expenses display */}
+							{/* Additional Services display */}
 							{(() => {
-								const totalExpenses = incomeRecords
+								const totalAdditionalServices = incomeRecords
 									.filter((inc) => inc.booking_id === reservation.id)
 									.reduce((sum, inc) => sum + Number(inc.amount), 0);
 
-								if (totalExpenses > 0) {
+								if (totalAdditionalServices > 0) {
 									return (
 										<div className="flex items-center gap-2">
 											<DollarSign className="h-3 w-3" />
