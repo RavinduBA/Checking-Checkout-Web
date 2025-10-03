@@ -460,7 +460,7 @@ export default function CommissionReports() {
 															? "secondary"
 															: item.status === "cancelled"
 																? "destructive"
-																: "outline-solid"
+																: "outline"
 												}
 											>
 												{item.status}
@@ -526,7 +526,7 @@ export default function CommissionReports() {
 													? "secondary"
 													: item.status === "cancelled"
 														? "destructive"
-														: "outline-solid"
+														: "outline"
 										}
 									>
 										{item.status}
