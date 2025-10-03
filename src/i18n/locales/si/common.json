@@ -1,30 +1,30 @@
 {
   "dashboard": {
     "header": {
-      "welcome": "Welcome back!",
-      "subtitle": "Hotel Management Dashboard",
-      "addIncome": "Add Income",
-      "addExpense": "Add Expense",
-      "monthFilter": "Month Filter"
+      "welcome": "ආයුබෝවන්!",
+      "subtitle": "හෝටල් කළමනාකරණ පැනලය",
+      "addIncome": "ආදායම එක් කරන්න",
+      "addExpense": "වියදම එක් කරන්න",
+      "monthFilter": "මාස පෙරහන"
     },
     "summaryCards": {
-      "todayIncome": "Today's Income",
-      "monthlyIncome": "Monthly Income",
-      "todayExpenses": "Today's Expenses",
-      "monthlyExpenses": "Monthly Expenses",
-      "weeklyProfit": "Weekly Profit",
-      "monthlyProfit": "Monthly Profit",
-      "margin": "margin"
+      "todayIncome": "අද ආදායම",
+      "monthlyIncome": "මාසික ආදායම",
+      "todayExpenses": "අද වියදම්",
+      "monthlyExpenses": "මාසික වියදම්",
+      "weeklyProfit": "සතිපතා ලාභය",
+      "monthlyProfit": "මාසික ලාභය",
+      "margin": "ආන්තිකය"
     },
     "accountBalances": {
-      "title": "Account Balances",
-      "account": "Account"
+      "title": "ගිණුම් ශේෂ",
+      "account": "ගිණුම"
     },
     "upcomingBookings": {
-      "title": "Upcoming Bookings",
-      "viewAll": "View All",
-      "to": "to",
-      "noBookings": "No upcoming bookings"
+      "title": "එළඹෙන වෙන්කරණ",
+      "viewAll": "සියල්ල බලන්න",
+      "to": "සිට",
+      "noBookings": "එළඹෙන වෙන්කරණ නැත"
     }
   },
   "calendar": {
@@ -156,33 +156,33 @@
     "home": "Home"
   },
   "pageTitle": {
-    "dashboard": "Dashboard",
-    "calendar": "Calendar",
-    "reservations": "Reservations",
-    "quickBooking": "Quick Booking",
-    "income": "Reservations & Payments",
-    "expense": "Add Expense",
-    "accounts": "Accounts",
-    "paymentForm": "Payment Form",
-    "reports": "Financial Reports",
-    "comprehensiveReports": "Comprehensive Reports",
-    "accountReports": "Account Reports", 
-    "commissionReports": "Commission Reports",
-    "balanceSheet": "Balance Sheet",
-    "enhancedFinancialReports": "Enhanced Financial Reports",
-    "financialReports": "Reports & Analytics",
-    "users": "User Management",
-    "settings": "Settings",
-    "masterFiles": "Master Files",
-    "masterFilesLocations": "Master Files - Locations",
-    "masterFilesRooms": "Master Files - Rooms",
-    "masterFilesGuides": "Master Files - Guides",
-    "masterFilesAgents": "Master Files - Agents",
-    "masterFilesCommissions": "Master Files - Commissions",
-    "roomManagement": "Room Management",
-    "bookingChannels": "Booking Channels",
-    "reservationDetails": "Reservation Details",
-    "hotelManagement": "Hotel Management"
+    "dashboard": "පැනලය",
+    "calendar": "දිනදර්ශනය",
+    "reservations": "වෙන්කරණ",
+    "quickBooking": "ඉක්මන් වෙන්කරණය",
+    "income": "වෙන්කරණ සහ ගෙවීම්",
+    "expense": "වියදම එක් කරන්න",
+    "accounts": "ගිණුම්",
+    "paymentForm": "ගෙවීම් පෝරමය",
+    "reports": "මූල්‍ය වාර්තා",
+    "comprehensiveReports": "සවිස්තරාත්මක වාර්තා",
+    "accountReports": "ගිණුම් වාර්තා", 
+    "commissionReports": "කොමිසම් වාර්තා",
+    "balanceSheet": "ශේෂ පත්‍රය",
+    "enhancedFinancialReports": "වැඩිදියුණු කළ මූල්‍ය වාර්තා",
+    "financialReports": "වාර්තා සහ විශ්ලේෂණ",
+    "users": "පරිශීලක කළමනාකරණය",
+    "settings": "සැකසීම්",
+    "masterFiles": "ප්‍රධාන ගොනු",
+    "masterFilesLocations": "ප්‍රධාන ගොනු - ස්ථාන",
+    "masterFilesRooms": "ප්‍රධාන ගොනු - කාමර",
+    "masterFilesGuides": "ප්‍රධාන ගොනු - මගපෙන්වන්නන්",
+    "masterFilesAgents": "ප්‍රධාන ගොනු - නියෝජිතයන්",
+    "masterFilesCommissions": "ප්‍රධාන ගොනු - කොමිසම්",
+    "roomManagement": "කාමර කළමනාකරණය",
+    "bookingChannels": "වෙන්කරණ නාලිකා",
+    "reservationDetails": "වෙන්කරණ විස්තර",
+    "hotelManagement": "හෝටල් කළමනාකරණය"
   },
   "common": {
     "loading": "පූරණය වෙමින්...",
@@ -379,52 +379,52 @@
     }
   },
   "expense": {
-    "title": "Expense Management",
-    "permissionDenied": "You don't have permission to access this page. Please contact your administrator.",
-    "viewAllExpenses": "View All Expenses",
+    "title": "වියදම් කළමනාකරණය",
+    "permissionDenied": "ඔබට මෙම පිටුවට ප්‍රවේශ වීමට අවසර නැත. කරුණාකර ඔබේ පරිපාලකයා හමුවන්න.",
+    "viewAllExpenses": "සියලුම වියදම් බලන්න",
     "form": {
-      "title": "Add New Expense",
+      "title": "නව වියදමක් එක් කරන්න",
       "fields": {
-        "location": "Location",
-        "mainCategory": "Main Category",
-        "subCategory": "Sub Category",
-        "amount": "Amount",
-        "account": "Account",
-        "date": "Date",
-        "note": "Note"
+        "location": "ස්ථානය",
+        "mainCategory": "ප්‍රධාන කාණ්ඩය",
+        "subCategory": "උප කාණ්ඩය",
+        "amount": "මුදල",
+        "account": "ගිණුම",
+        "date": "දිනය",
+        "note": "සටහන"
       },
       "placeholders": {
-        "location": "Select Location",
-        "mainCategory": "Select main category",
-        "subCategory": "Select sub category",
-        "account": "Select account",
-        "note": "Add details about this expense..."
+        "location": "ස්ථානය තෝරන්න",
+        "mainCategory": "ප්‍රධාන කාණ්ඩය තෝරන්න",
+        "subCategory": "උප කාණ්ඩය තෝරන්න",
+        "account": "ගිණුම තෝරන්න",
+        "note": "මෙම වියදම ගැන විස්තර එක් කරන්න..."
       },
       "buttons": {
-        "add": "Add Expense",
-        "adding": "Adding..."
+        "add": "වියදම එක් කරන්න",
+        "adding": "එක් කරමින්..."
       },
       "messages": {
-        "success": "Success",
-        "successDetails": "Expense record added successfully",
-        "successGeneral": "Expense record added successfully",
-        "error": "Error",
-        "errorDetails": "Failed to add expense record"
+        "success": "සාර්ථකයි",
+        "successDetails": "වියදම් වාර්තාව සාර්ථකව එක් කරන ලදි",
+        "successGeneral": "වියදම් වාර්තාව සාර්ථකව එක් කරන ලදි",
+        "error": "දෝෂයක්",
+        "errorDetails": "වියදම් වාර්තාව එක් කිරීමට අසමත් විය"
       }
     },
     "shortcuts": {
-      "title": "Quick Expense Shortcuts"
+      "title": "ඉක්මන් වියදම් කෙටිමං"
     },
     "historyTable": {
-      "title": "Recent Expenses",
+      "title": "මෑත වියදම්",
       "headers": {
-        "date": "Date",
-        "category": "Category",
-        "amount": "Amount",
-        "account": "Account",
-        "note": "Note"
+        "date": "දිනය",
+        "category": "කාණ්ඩය",
+        "amount": "මුදල",
+        "account": "ගිණුම",
+        "note": "සටහන"
       },
-      "noRecords": "No expense records yet. Add your first expense above!"
+      "noRecords": "තවම වියදම් වාර්තා නැත. ඉහත ඔබේ පළමු වියදම එක් කරන්න!"
     }
   },
   "accounts": {
