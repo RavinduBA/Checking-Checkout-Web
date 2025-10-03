@@ -5,13 +5,12 @@ import { useAuth } from "@/context/AuthContext";
 
 interface ProfileAvatarButtonProps {
 	className?: string;
-	onClick?: () => void;
 }
 
-const ProfileAvatarButton: React.FC<ProfileAvatarButtonProps> = ({
-	className,
-	onClick,
-}) => {
+const ProfileAvatarButton = React.forwardRef<
+	HTMLButtonElement,
+	ProfileAvatarButtonProps
+>(({ className, ...props }, ref) => {
 	const { profile, user } = useAuth();
 
 	// Get user data
@@ -39,11 +38,12 @@ const ProfileAvatarButton: React.FC<ProfileAvatarButtonProps> = ({
 
 	return (
 		<Button
+			ref={ref}
 			variant="ghost"
 			size="icon"
 			className={`size-9.5 ${className || ""}`}
-			onClick={onClick}
 			aria-label={`Profile menu for ${userName}`}
+			{...props}
 		>
 			<Avatar className="size-9.5 rounded-md">
 				<AvatarImage 
@@ -57,6 +57,8 @@ const ProfileAvatarButton: React.FC<ProfileAvatarButtonProps> = ({
 			</Avatar>
 		</Button>
 	);
-};
+});
+
+ProfileAvatarButton.displayName = "ProfileAvatarButton";
 
 export default ProfileAvatarButton;
