@@ -383,5 +383,54 @@
         "error": "Échec de l'enregistrement du revenu"
       }
     }
+  },
+  "expense": {
+    "title": "Gestion des Dépenses",
+    "permissionDenied": "Vous n'avez pas la permission d'accéder à cette page. Veuillez contacter votre administrateur.",
+    "viewAllExpenses": "Voir Toutes les Dépenses",
+    "form": {
+      "title": "Ajouter une Nouvelle Dépense",
+      "fields": {
+        "location": "Lieu",
+        "mainCategory": "Catégorie Principale",
+        "subCategory": "Sous-Catégorie",
+        "amount": "Montant",
+        "account": "Compte",
+        "date": "Date",
+        "note": "Note"
+      },
+      "placeholders": {
+        "location": "Sélectionner le lieu",
+        "mainCategory": "Sélectionner la catégorie principale",
+        "subCategory": "Sélectionner la sous-catégorie",
+        "account": "Sélectionner le compte",
+        "note": "Ajouter des détails sur cette dépense..."
+      },
+      "buttons": {
+        "add": "Ajouter la Dépense",
+        "adding": "Ajout en cours..."
+      },
+      "messages": {
+        "success": "Succès",
+        "successDetails": "Enregistrement de dépense ajouté avec succès",
+        "successGeneral": "Enregistrement de dépense ajouté avec succès",
+        "error": "Erreur",
+        "errorDetails": "Échec de l'ajout de l'enregistrement de dépense"
+      }
+    },
+    "shortcuts": {
+      "title": "Raccourcis de Dépenses Rapides"
+    },
+    "historyTable": {
+      "title": "Dépenses Récentes",
+      "headers": {
+        "date": "Date",
+        "category": "Catégorie",
+        "amount": "Montant",
+        "account": "Compte",
+        "note": "Note"
+      },
+      "noRecords": "Aucun enregistrement de dépense pour le moment. Ajoutez votre première dépense ci-dessus!"
+    }
   }
 }

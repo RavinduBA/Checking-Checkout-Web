@@ -383,5 +383,54 @@
         "error": "Fehler beim Erfassen der Einnahme"
       }
     }
+  },
+  "expense": {
+    "title": "Ausgabenverwaltung",
+    "permissionDenied": "Sie haben keine Berechtigung, auf diese Seite zuzugreifen. Bitte wenden Sie sich an Ihren Administrator.",
+    "viewAllExpenses": "Alle Ausgaben anzeigen",
+    "form": {
+      "title": "Neue Ausgabe hinzufügen",
+      "fields": {
+        "location": "Standort",
+        "mainCategory": "Hauptkategorie",
+        "subCategory": "Unterkategorie",
+        "amount": "Betrag",
+        "account": "Konto",
+        "date": "Datum",
+        "note": "Notiz"
+      },
+      "placeholders": {
+        "location": "Standort auswählen",
+        "mainCategory": "Hauptkategorie auswählen",
+        "subCategory": "Unterkategorie auswählen",
+        "account": "Konto auswählen",
+        "note": "Details zu dieser Ausgabe hinzufügen..."
+      },
+      "buttons": {
+        "add": "Ausgabe hinzufügen",
+        "adding": "Wird hinzugefügt..."
+      },
+      "messages": {
+        "success": "Erfolg",
+        "successDetails": "Ausgabeneintrag erfolgreich hinzugefügt",
+        "successGeneral": "Ausgabeneintrag erfolgreich hinzugefügt",
+        "error": "Fehler",
+        "errorDetails": "Fehler beim Hinzufügen des Ausgabeneintrags"
+      }
+    },
+    "shortcuts": {
+      "title": "Schnelle Ausgaben-Verknüpfungen"
+    },
+    "historyTable": {
+      "title": "Aktuelle Ausgaben",
+      "headers": {
+        "date": "Datum",
+        "category": "Kategorie",
+        "amount": "Betrag",
+        "account": "Konto",
+        "note": "Notiz"
+      },
+      "noRecords": "Noch keine Ausgabeneinträge. Fügen Sie Ihre erste Ausgabe oben hinzu!"
+    }
   }
 }

@@ -382,5 +382,54 @@
         "error": "Error al registrar el ingreso"
       }
     }
+  },
+  "expense": {
+    "title": "Gestión de Gastos",
+    "permissionDenied": "No tienes permiso para acceder a esta página. Por favor contacta a tu administrador.",
+    "viewAllExpenses": "Ver Todos los Gastos",
+    "form": {
+      "title": "Agregar Nuevo Gasto",
+      "fields": {
+        "location": "Ubicación",
+        "mainCategory": "Categoría Principal",
+        "subCategory": "Subcategoría",
+        "amount": "Importe",
+        "account": "Cuenta",
+        "date": "Fecha",
+        "note": "Nota"
+      },
+      "placeholders": {
+        "location": "Seleccionar ubicación",
+        "mainCategory": "Seleccionar categoría principal",
+        "subCategory": "Seleccionar subcategoría",
+        "account": "Seleccionar cuenta",
+        "note": "Agregar detalles sobre este gasto..."
+      },
+      "buttons": {
+        "add": "Agregar Gasto",
+        "adding": "Agregando..."
+      },
+      "messages": {
+        "success": "Éxito",
+        "successDetails": "Registro de gasto agregado exitosamente",
+        "successGeneral": "Registro de gasto agregado exitosamente",
+        "error": "Error",
+        "errorDetails": "Error al agregar registro de gasto"
+      }
+    },
+    "shortcuts": {
+      "title": "Atajos Rápidos de Gastos"
+    },
+    "historyTable": {
+      "title": "Gastos Recientes",
+      "headers": {
+        "date": "Fecha",
+        "category": "Categoría",
+        "amount": "Importe",
+        "account": "Cuenta",
+        "note": "Nota"
+      },
+      "noRecords": "Aún no hay registros de gastos. ¡Agrega tu primer gasto arriba!"
+    }
   }
 }

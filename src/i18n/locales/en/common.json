@@ -383,5 +383,54 @@
         "error": "Failed to record income"
       }
     }
+  },
+  "expense": {
+    "title": "Expense Management",
+    "permissionDenied": "You don't have permission to access this page. Please contact your administrator.",
+    "viewAllExpenses": "View All Expenses",
+    "form": {
+      "title": "Add New Expense",
+      "fields": {
+        "location": "Location",
+        "mainCategory": "Main Category",
+        "subCategory": "Sub Category",
+        "amount": "Amount",
+        "account": "Account",
+        "date": "Date",
+        "note": "Note"
+      },
+      "placeholders": {
+        "location": "Select Location",
+        "mainCategory": "Select main category",
+        "subCategory": "Select sub category",
+        "account": "Select account",
+        "note": "Add details about this expense..."
+      },
+      "buttons": {
+        "add": "Add Expense",
+        "adding": "Adding..."
+      },
+      "messages": {
+        "success": "Success",
+        "successDetails": "Expense record added successfully",
+        "successGeneral": "Expense record added successfully",
+        "error": "Error",
+        "errorDetails": "Failed to add expense record"
+      }
+    },
+    "shortcuts": {
+      "title": "Quick Expense Shortcuts"
+    },
+    "historyTable": {
+      "title": "Recent Expenses",
+      "headers": {
+        "date": "Date",
+        "category": "Category",
+        "amount": "Amount",
+        "account": "Account",
+        "note": "Note"
+      },
+      "noRecords": "No expense records yet. Add your first expense above!"
+    }
   }
 }
