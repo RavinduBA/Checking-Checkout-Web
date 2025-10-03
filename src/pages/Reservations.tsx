@@ -10,6 +10,7 @@ import { OTPVerification } from "@/components/OTPVerification";
 import { ReservationEditDialog } from "@/components/ReservationEditDialog";
 import { ReservationsListSkeleton } from "@/components/ReservationsListSkeleton";
 import { TabsContent } from "@/components/ui/tabs";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ViewReservationDialog } from "@/components/ViewReservationDialog";
 import { useAuth } from "@/context/AuthContext";
 import { useLocationContext } from "@/context/LocationContext";
@@ -39,13 +40,7 @@ type ReservationWithJoins = {
 	paid_amount?: number | null;
 	balance_amount?: number | null;
 	currency: "LKR" | "USD" | "EUR" | "GBP";
-	status:
-		| "pending"
-		| "confirmed"
-		| "checked_in"
-		| "checked_out"
-		| "cancelled"
-		| "tentative";
+	status: "pending" | "confirmed" | "checked_in" | "checked_out" | "cancelled" | "tentative";
 	special_requests?: string | null;
 	arrival_time?: string | null;
 	created_by?: string | null;
@@ -107,706 +102,269 @@ type ReservationWithJoins = {
 	} | null;
 };
 
-type Reservation = ReservationWithJoins;
-
-type Payment = Tables<"payments">;
-
 type IncomeRecord = {
 	id: string;
-	booking_id: string;
+	booking_id: string | null;
 	amount: number;
 	payment_method: string;
 	currency: string;
+	created_at: string;
+	date: string;
+	note?: string | null;
 };
 
-export default function Reservations() {
-	const navigate = useNavigate();
+export const Reservations = () => {
+	const { user } = useAuth();
+	const { selectedLocation, locations } = useLocationContext();
 	const { toast } = useToast();
-	const { tenant } = useAuth();
-	const { selectedLocation, setSelectedLocation, locations } =
-		useLocationContext();
+	const navigate = useNavigate();
+
+	// State for data
 	const [reservations, setReservations] = useState<ReservationWithJoins[]>([]);
-	const [payments, setPayments] = useState<Payment[]>([]);
 	const [incomeRecords, setIncomeRecords] = useState<IncomeRecord[]>([]);
 	const [loading, setLoading] = useState(true);
+
+	// State for filters
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState("all");
-	const [editingReservation, setEditingReservation] =
-		useState<Reservation | null>(null);
+	const [activeTab, setActiveTab] = useState("reservations");
+
+	// State for dialogs
+	const [isNewReservationDialogOpen, setIsNewReservationDialogOpen] = useState(false);
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-	const [isNewReservationDialogOpen, setIsNewReservationDialogOpen] =
-		useState(false);
-	const [viewingReservationId, setViewingReservationId] = useState<
-		string | null
-	>(null);
 	const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+	const [viewingReservationId, setViewingReservationId] = useState<string | null>(null);
+	const [editingReservation, setEditingReservation] = useState<ReservationWithJoins | null>(null);
 
+	// State for OTP verification
+	const [showOTPVerification, setShowOTPVerification] = useState(false);
+	const [otpData, setOtpData] = useState<{
+		phoneNumber: string;
+		reservationId: string;
+		amount: number;
+		currency: string;
+	} | null>(null);
+
+	// Fetch data function
 	const fetchData = useCallback(async () => {
+		if (!selectedLocation || !user) return;
+
 		try {
-			// Fetch reservations with location and room data
-			const reservationsQuery = !selectedLocation
-				? supabase
-						.from("reservations")
-						.select(`
-          *,
-          locations (
-            id,
-            name,
-            address,
-            phone,
-            email,
-            property_type,
-            tenant_id,
-            is_active,
-            created_at
-          ),
-          rooms (
-            id,
-            room_number,
-            room_type,
-            bed_type,
-            description,
-            amenities,
-            base_price,
-            max_occupancy,
-            property_type,
-            currency,
-            location_id,
-            tenant_id,
-            is_active,
-            created_at,
-            updated_at
-          ),
-          guides (
-            id,
-            name,
-            phone,
-            email,
-            address,
-            license_number,
-            is_active
-          ),
-          agents (
-            id,
-            name,
-            phone,
-            email,
-            agency_name,
-            is_active
-          )
-        `)
-						.eq("tenant_id", tenant?.id || "")
-						.order("created_at", { ascending: false })
-				: supabase
-						.from("reservations")
-						.select(`
-          *,
-          locations (
-            id,
-            name,
-            address,
-            phone,
-            email,
-            property_type,
-            tenant_id,
-            is_active,
-            created_at
-          ),
-          rooms (
-            id,
-            room_number,
-            room_type,
-            bed_type,
-            description,
-            amenities,
-            base_price,
-            max_occupancy,
-            property_type,
-            currency,
-            location_id,
-            tenant_id,
-            is_active,
-            created_at,
-            updated_at
-          ),
-          guides (
-            id,
-            name,
-            phone,
-            email,
-            address,
-            license_number,
-            is_active
-          ),
-          agents (
-            id,
-            name,
-            phone,
-            email,
-            agency_name,
-            is_active
-          )
-        `)
-						.eq("tenant_id", tenant?.id || "")
-						.eq("location_id", selectedLocation)
-						.order("created_at", { ascending: false });
+			setLoading(true);
 
-			// Fetch payments with location filtering through reservations
-			const paymentsQuery = !selectedLocation
-				? supabase
-						.from("payments")
-						.select(`
-							*,
-							reservations!inner(location_id, tenant_id)
-						`)
-						.eq("reservations.tenant_id", tenant?.id || "")
-						.order("created_at", { ascending: false })
-				: supabase
-						.from("payments")
-						.select(`
-							*,
-							reservations!inner(location_id, tenant_id)
-						`)
-						.eq("reservations.tenant_id", tenant?.id || "")
-						.eq("reservations.location_id", selectedLocation)
-						.order("created_at", { ascending: false });
+			// Fetch reservations
+			const { data: reservationsData, error: reservationsError } = await supabase
+				.from("reservations")
+				.select(`
+					*,
+					locations(id, name, address, phone, email, property_type, tenant_id, is_active, created_at),
+					rooms(id, room_number, room_type, bed_type, description, amenities, base_price, max_occupancy, property_type, currency, location_id, tenant_id, is_active, created_at, updated_at),
+					guides(id, name, phone, email, address, license_number, is_active),
+					agents(id, name, phone, email, agency_name, is_active)
+				`)
+				.eq("location_id", selectedLocation)
+				.order("created_at", { ascending: false });
 
-			// Fetch income records to get pending expenses
-			const incomeQuery = !selectedLocation
-				? supabase
-						.from("income")
-						.select(`
-							id,
-							booking_id,
-							amount,
-							payment_method,
-							currency
-						`)
-						.eq("tenant_id", tenant?.id || "")
-				: supabase
-						.from("income")
-						.select(`
-							id,
-							booking_id,
-							amount,
-							payment_method,
-							currency
-						`)
-						.eq("tenant_id", tenant?.id || "")
-						.eq("location_id", selectedLocation);
+			if (reservationsError) throw reservationsError;
 
-			const [reservationsData, paymentsData, incomeData] = await Promise.all([
-				reservationsQuery,
-				paymentsQuery,
-				incomeQuery,
-			]);
+			// Fetch income records
+			const { data: incomeData, error: incomeError } = await supabase
+				.from("income")
+				.select("id, booking_id, amount, payment_method, currency, created_at, date, note")
+				.eq("location_id", selectedLocation)
+				.order("created_at", { ascending: false });
 
-			setReservations((reservationsData.data as ReservationWithJoins[]) || []);
-			setPayments(paymentsData.data || []);
-			setIncomeRecords(incomeData.data || []);
+			if (incomeError) throw incomeError;
+
+			setReservations(reservationsData || []);
+			setIncomeRecords(incomeData || []);
 		} catch (error) {
 			console.error("Error fetching data:", error);
+			toast({
+				title: "Error",
+				description: "Failed to fetch reservations data",
+				variant: "destructive",
+			});
 		} finally {
 			setLoading(false);
 		}
-	}, [selectedLocation, tenant?.id]);
+	}, [selectedLocation, user, toast]);
 
+	// Effect to fetch data when location changes
 	useEffect(() => {
 		fetchData();
 	}, [fetchData]);
 
-	const getStatusColor = (status: string) => {
-		const colors = {
-			confirmed: "bg-emerald-100 text-emerald-800 border-emerald-200",
-			tentative: "bg-amber-100 text-amber-800 border-amber-200",
-			pending: "bg-orange-100 text-orange-800 border-border",
-			checked_in: "bg-blue-100 text-blue-800 border-blue-200",
-			checked_out: "bg-gray-100 text-gray-800 border-gray-200",
-			cancelled: "bg-red-100 text-red-800 border-red-200",
-		};
-		return (
-			colors[status as keyof typeof colors] ||
-			"bg-gray-100 text-gray-800 border-gray-200"
-		);
-	};
-
-	const getCurrencySymbol = (currency: string) => {
-		const symbols = {
-			LKR: "LKR",
+	// Utility functions
+	const getCurrencySymbol = (currency: string): string => {
+		const symbols: Record<string, string> = {
+			LKR: "Rs.",
 			USD: "$",
 			EUR: "€",
 			GBP: "£",
 		};
-		return symbols[currency as keyof typeof symbols] || currency;
+		return symbols[currency] || currency;
 	};
 
-	const handleOTPVerified = (reservationId: string) => {
-		const reservation = reservations.find((r) => r.id === reservationId);
-		if (reservation) {
-			setEditingReservation(reservation);
-			setIsEditDialogOpen(true);
-		}
-		toast({
-			title: "Verification Successful",
-			description: "You can now edit this reservation.",
-		});
+	const getStatusColor = (status: string): string => {
+		const colors: Record<string, string> = {
+			confirmed: "bg-green-100 text-green-800",
+			pending: "bg-yellow-100 text-yellow-800",
+			cancelled: "bg-red-100 text-red-800",
+			checked_in: "bg-blue-100 text-blue-800",
+			checked_out: "bg-gray-100 text-gray-800",
+			tentative: "bg-orange-100 text-orange-800",
+		};
+		return colors[status] || "bg-gray-100 text-gray-800";
 	};
 
-	const getPendingExpenses = (reservationId: string) => {
-		return incomeRecords
-			.filter(
-				(inc) =>
-					inc.booking_id === reservationId && inc.payment_method === "pending",
-			)
+	const canShowPaymentButton = (reservation: ReservationWithJoins): boolean => {
+		return reservation.status !== "cancelled" && reservation.status !== "checked_out";
+	};
+
+	const getTotalPayableAmount = (reservation: ReservationWithJoins): number => {
+		const roomAmount = reservation.total_amount;
+		const expenses = incomeRecords
+			.filter((inc) => inc.booking_id === reservation.id)
 			.reduce((sum, inc) => sum + Number(inc.amount), 0);
+		return roomAmount + expenses;
 	};
 
-	const getTotalPayableAmount = (reservation: Reservation) => {
-		const roomBalance = reservation.balance_amount || 0;
-		const pendingExpenses = getPendingExpenses(reservation.id);
-
-		// If room is fully paid (balance = 0), only return pending expenses
-		// If room has balance, return room balance + pending expenses
-		return roomBalance + pendingExpenses;
-	};
-
-	const canShowPaymentButton = (reservation: Reservation) => {
-		// Show payment button if there are any amounts to pay
-		const totalPayable = getTotalPayableAmount(reservation);
-		const isPayableStatus = ["tentative", "pending", "confirmed"].includes(
-			reservation.status,
-		);
-
-		return isPayableStatus && totalPayable > 0;
-	};
-
+	// Filter reservations
 	const filteredReservations = reservations.filter((reservation) => {
-		const matchesLocation =
-			!selectedLocation || reservation.location_id === selectedLocation;
 		const matchesSearch =
 			searchQuery === "" ||
-			reservation.guest_name
-				.toLowerCase()
-				.includes(searchQuery.toLowerCase()) ||
-			reservation.reservation_number
-				.toLowerCase()
-				.includes(searchQuery.toLowerCase());
-		const matchesStatus =
-			statusFilter === "all" || reservation.status === statusFilter;
+			reservation.reservation_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+			reservation.guest_name?.toLowerCase().includes(searchQuery.toLowerCase());
 
-		return matchesLocation && matchesSearch && matchesStatus;
+		const matchesStatus = statusFilter === "all" || reservation.status === statusFilter;
+
+		return matchesSearch && matchesStatus;
 	});
 
-	const filteredPayments = payments.filter((payment) => {
-		const matchesSearch =
-			searchQuery === "" ||
-			payment.payment_number?.toLowerCase().includes(searchQuery.toLowerCase());
+	// Event handlers
+	const handleViewReservation = (id: string) => {
+		setViewingReservationId(id);
+		setIsViewDialogOpen(true);
+	};
 
-		return matchesSearch;
-	});
+	const handleEditReservation = (reservation: ReservationWithJoins) => {
+		setEditingReservation(reservation);
+		setIsEditDialogOpen(true);
+	};
+
+	const handlePayment = (reservationId: string, amount: number, currency: string) => {
+		const reservation = reservations.find((r) => r.id === reservationId);
+		if (!reservation?.guest_phone) {
+			navigate(`/payment-form?reservationId=${reservationId}&amount=${amount}&currency=${currency}`);
+			return;
+		}
+
+		setOtpData({
+			phoneNumber: reservation.guest_phone,
+			reservationId,
+			amount,
+			currency,
+		});
+		setShowOTPVerification(true);
+	};
+
+	const handleOTPVerified = () => {
+		if (otpData) {
+			navigate(`/payment-form?reservationId=${otpData.reservationId}&amount=${otpData.amount}&currency=${otpData.currency}`);
+		}
+		setShowOTPVerification(false);
+		setOtpData(null);
+	};
 
 	if (loading) {
 		return <ReservationsListSkeleton />;
 	}
 
 	return (
-		<div className="max-w-full w-full pb-20 sm:pb-0 mx-auto p-4 space-y-6">
-			<div className="flex flex-col gap-4">
-				<h1 className="text-md sm:text-2xl font-bold">
-					Reservations & Payments
-				</h1>
+		<div className="max-w-full w-full pb-20 sm:pb-0">
+			<ReservationsHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
-				{/* Filters */}
-				<div className="flex flex-col lg:flex-row gap-4">
-					{locations.length > 1 && (
-						<Select
-							value={selectedLocation}
-							onValueChange={setSelectedLocation}
-						>
-							<SelectTrigger className="w-full lg:w-48">
-								<SelectValue placeholder="Select location" />
-							</SelectTrigger>
-							<SelectContent className="z-50 bg-background border">
-								{locations.map((location) => (
-									<SelectItem key={location.id} value={location.id}>
-										{location.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					)}{" "}
-					<Input
-						placeholder="Search reservations..."
-						value={searchQuery}
-						onChange={(e) => setSearchQuery(e.target.value)}
-						className="w-full lg:w-64"
-					/>
-					<Select value={statusFilter} onValueChange={setStatusFilter}>
-						<SelectTrigger className="w-full lg:w-48">
-							<SelectValue placeholder="Filter by status" />
-						</SelectTrigger>
-						<SelectContent className="z-50 bg-background border">
-							<SelectItem value="all">All Statuses</SelectItem>
-							<SelectItem value="confirmed">Confirmed</SelectItem>
-							<SelectItem value="tentative">Tentative</SelectItem>
-							<SelectItem value="pending">Pending</SelectItem>
-							<SelectItem value="checked_in">Checked In</SelectItem>
-							<SelectItem value="checked_out">Checked Out</SelectItem>
-							<SelectItem value="cancelled">Cancelled</SelectItem>
-						</SelectContent>
-					</Select>
-					<Button onClick={() => setIsNewReservationDialogOpen(true)}>
-						<Calendar className="size-4 mr-2" />
-						New Reservation
-					</Button>
-				</div>
-			</div>
-
-			<Tabs defaultValue="reservations" className="w-full">
-				<TabsList className="grid w-full grid-cols-2">
-					<TabsTrigger value="reservations">Reservations</TabsTrigger>
-					<TabsTrigger value="payments">Payments</TabsTrigger>
-				</TabsList>
+			<div className="container mx-auto px-6">
+				<ReservationsFilters
+					locations={locations}
+					selectedLocation={selectedLocation}
+					searchQuery={searchQuery}
+					statusFilter={statusFilter}
+					onLocationChange={() => {
+						// Location switching handled by LocationContext
+					}}
+					onSearchChange={setSearchQuery}
+					onStatusFilterChange={setStatusFilter}
+					onNewReservation={() => setIsNewReservationDialogOpen(true)}
+				/>
 
 				<TabsContent value="reservations" className="space-y-4">
-					{/* Desktop Table View */}
-					<div className="hidden lg:block">
-						<Card>
-							<CardHeader>
-								<CardTitle>Reservations</CardTitle>
-							</CardHeader>
-							<CardContent>
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>Reservation #</TableHead>
-											<TableHead>Guest</TableHead>
-											<TableHead>Room</TableHead>
-											<TableHead>Check-in</TableHead>
-											<TableHead>Check-out</TableHead>
-											<TableHead>Room Amount</TableHead>
-											<TableHead>Expenses</TableHead>
-											<TableHead>Status</TableHead>
-											<TableHead>Actions</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{filteredReservations.map((reservation) => (
-											<TableRow key={reservation.id}>
-												<TableCell className="font-medium">
-													{reservation.reservation_number}
-												</TableCell>
-												<TableCell>{reservation.guest_name}</TableCell>
-												<TableCell>
-													{reservation.rooms?.room_number} -{" "}
-													{reservation.rooms?.room_type}
-												</TableCell>
-												<TableCell>
-													{new Date(
-														reservation.check_in_date,
-													).toLocaleDateString()}
-												</TableCell>
-												<TableCell>
-													{new Date(
-														reservation.check_out_date,
-													).toLocaleDateString()}
-												</TableCell>
-												<TableCell>
-													{getCurrencySymbol(reservation.currency)}{" "}
-													{reservation.total_amount.toLocaleString()}
-												</TableCell>
-												<TableCell>
-													{(() => {
-														const pendingExpenses = getPendingExpenses(
-															reservation.id,
-														);
-														const totalExpenses = incomeRecords
-															.filter(
-																(inc) => inc.booking_id === reservation.id,
-															)
-															.reduce(
-																(sum, inc) => sum + Number(inc.amount),
-																0,
-															);
+					<ReservationsMobileCards
+						reservations={filteredReservations}
+						incomeRecords={incomeRecords}
+						onViewReservation={handleViewReservation}
+						onEditReservation={handleEditReservation}
+						onPayment={handlePayment}
+						getStatusColor={getStatusColor}
+						getCurrencySymbol={getCurrencySymbol}
+						canShowPaymentButton={canShowPaymentButton}
+						getTotalPayableAmount={getTotalPayableAmount}
+					/>
 
-														return (
-															<div className="text-sm">
-																{totalExpenses > 0 ? (
-																	<div className="space-y-1">
-																		<div className="font-medium">
-																			{getCurrencySymbol(reservation.currency)}{" "}
-																			{totalExpenses.toLocaleString()}
-																		</div>
-																		{pendingExpenses > 0 && (
-																			<div className="text-yellow-600 text-xs">
-																				Pending:{" "}
-																				{getCurrencySymbol(
-																					reservation.currency,
-																				)}{" "}
-																				{pendingExpenses.toLocaleString()}
-																			</div>
-																		)}
-																	</div>
-																) : (
-																	<span className="text-muted-foreground">
-																		-
-																	</span>
-																)}
-															</div>
-														);
-													})()}
-												</TableCell>
-												<TableCell>
-													<Badge className={getStatusColor(reservation.status)}>
-														{reservation.status}
-													</Badge>
-												</TableCell>
-												<TableCell>
-													<div className="flex gap-1">
-														<Button
-															variant="ghost"
-															size="icon"
-															onClick={() => {
-																setViewingReservationId(reservation.id);
-																setIsViewDialogOpen(true);
-															}}
-														>
-															<Eye className="size-4" />
-														</Button>
-														<ReservationPrintButton
-															reservation={reservation}
-															buttonText=""
-															buttonVariant="ghost"
-															buttonSize="icon"
-															showIcon={true}
-														/>
-														{canShowPaymentButton(reservation) && (
-															<Button
-																variant="ghost"
-																size="icon"
-																onClick={() =>
-																	navigate(
-																		`/payments/new?reservation=${reservation.id}&amount=${getTotalPayableAmount(reservation)}&currency=${reservation.currency}`,
-																	)
-																}
-																className="text-green-600 hover:text-green-700"
-															>
-																<CreditCard className="size-4" />
-															</Button>
-														)}
-														<OTPVerification
-															onVerified={() =>
-																handleOTPVerified(reservation.id)
-															}
-															triggerComponent={
-																<Button variant="ghost" size="icon">
-																	<Edit className="size-4" />
-																</Button>
-															}
-														/>
-													</div>
-												</TableCell>
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-							</CardContent>
-						</Card>
-					</div>
-
-					{/* Mobile Card View */}
-					<div className="lg:hidden grid gap-4">
-						{filteredReservations.map((reservation) => (
-							<Card key={reservation.id} className="w-full">
-								<CardContent className="p-4">
-									<div className="flex justify-between items-start mb-3">
-										<div>
-											<h3 className="font-semibold text-sm">
-												{reservation.reservation_number}
-											</h3>
-											<p className="text-muted-foreground text-xs">
-												{reservation.guest_name}
-											</p>
-										</div>
-										<Badge
-											className={`${getStatusColor(reservation.status)} text-xs`}
-										>
-											{reservation.status}
-										</Badge>
-									</div>
-
-									<div className="space-y-2 text-xs">
-										<div className="flex items-center gap-2">
-											<MapPin className="h-3 w-3" />
-											<span>
-												{reservation.rooms?.room_number} -{" "}
-												{reservation.rooms?.room_type}
-											</span>
-										</div>
-										<div className="flex items-center gap-2">
-											<Calendar className="h-3 w-3" />
-											<span>
-												{new Date(
-													reservation.check_in_date,
-												).toLocaleDateString()}{" "}
-												-{" "}
-												{new Date(
-													reservation.check_out_date,
-												).toLocaleDateString()}
-											</span>
-										</div>
-										<div className="flex items-center gap-2">
-											<DollarSign className="h-3 w-3" />
-											<span>
-												Room: {getCurrencySymbol(reservation.currency)}{" "}
-												{reservation.total_amount.toLocaleString()}
-											</span>
-										</div>
-										{(() => {
-											const pendingExpenses = getPendingExpenses(
-												reservation.id,
-											);
-											const totalExpenses = incomeRecords
-												.filter((inc) => inc.booking_id === reservation.id)
-												.reduce((sum, inc) => sum + Number(inc.amount), 0);
-
-											if (totalExpenses > 0) {
-												return (
-													<div className="flex items-center gap-2">
-														<DollarSign className="h-3 w-3" />
-														<span>
-															Expenses:{" "}
-															{getCurrencySymbol(reservation.currency)}{" "}
-															{totalExpenses.toLocaleString()}
-															{pendingExpenses > 0 && (
-																<span className="text-yellow-600 ml-2">
-																	(Pending:{" "}
-																	{getCurrencySymbol(reservation.currency)}{" "}
-																	{pendingExpenses.toLocaleString()})
-																</span>
-															)}
-														</span>
-													</div>
-												);
-											}
-											return null;
-										})()}
-									</div>
-
-									<div className="flex gap-2 mt-4">
-										<Button
-											variant="outline"
-											size="sm"
-											className="flex-1"
-											onClick={() => {
-												setViewingReservationId(reservation.id);
-												setIsViewDialogOpen(true);
-											}}
-										>
-											<Eye className="size-4 mr-1" />
-											View
-										</Button>
-										<ReservationPrintButton
-											reservation={reservation}
-											buttonText=""
-											buttonVariant="outline"
-											buttonSize="sm"
-											showIcon={true}
-										/>
-										{canShowPaymentButton(reservation) && (
-											<Button
-												variant="outline"
-												size="sm"
-												onClick={() =>
-													navigate(
-														`/payments/new?reservation=${reservation.id}&amount=${getTotalPayableAmount(reservation)}&currency=${reservation.currency}`,
-													)
-												}
-												className="text-green-600 hover:text-green-700"
-											>
-												<CreditCard className="size-4" />
-											</Button>
-										)}
-										<OTPVerification
-											onVerified={() => handleOTPVerified(reservation.id)}
-											triggerComponent={
-												<Button variant="outline" size="sm">
-													<Edit className="size-4" />
-												</Button>
-											}
-										/>
-									</div>
-								</CardContent>
-							</Card>
-						))}
-					</div>
+					<ReservationsDesktopTable
+						reservations={filteredReservations}
+						incomeRecords={incomeRecords}
+						onViewReservation={handleViewReservation}
+						onEditReservation={handleEditReservation}
+						onPayment={handlePayment}
+						getStatusColor={getStatusColor}
+						getCurrencySymbol={getCurrencySymbol}
+						canShowPaymentButton={canShowPaymentButton}
+						getTotalPayableAmount={getTotalPayableAmount}
+					/>
 				</TabsContent>
 
-				<TabsContent value="payments" className="space-y-4">
-					<Card>
-						<CardHeader>
-							<CardTitle>Recent Payments</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<div className="text-sm text-muted-foreground mb-4">
-								{filteredPayments.length} payments found
-							</div>
-							{filteredPayments.length > 0 ? (
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>Payment #</TableHead>
-											<TableHead>Amount</TableHead>
-											<TableHead>Method</TableHead>
-											<TableHead>Date</TableHead>
-											<TableHead>Status</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{filteredPayments.map((payment) => (
-											<TableRow key={payment.id}>
-												<TableCell className="font-medium">
-													{payment.payment_number}
-												</TableCell>
-												<TableCell>
-													{payment.currency} {payment.amount.toLocaleString()}
-												</TableCell>
-												<TableCell>{payment.payment_method}</TableCell>
-												<TableCell>
-													{new Date(payment.created_at).toLocaleDateString()}
-												</TableCell>
-												<TableCell>
-													<Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
-														Completed
-													</Badge>
-												</TableCell>
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-							) : (
-								<div className="text-center py-8 text-muted-foreground">
-									No payments found
-								</div>
-							)}
-						</CardContent>
-					</Card>
-				</TabsContent>
-			</Tabs>
+				<PaymentsTable
+					incomeRecords={incomeRecords}
+					onRefresh={fetchData}
+					getCurrencySymbol={getCurrencySymbol}
+				/>
+			</div>
 
-			<ReservationEditDialog
-				reservation={editingReservation}
-				isOpen={isEditDialogOpen}
-				onClose={() => {
-					setIsEditDialogOpen(false);
-					setEditingReservation(null);
-				}}
-				onUpdate={() => {
-					fetchData();
-					setIsEditDialogOpen(false);
-					setEditingReservation(null);
-				}}
-			/>
+			{/* Dialogs */}
+			{showOTPVerification && otpData && (
+				<Dialog open={showOTPVerification} onOpenChange={(open) => {
+					if (!open) {
+						setShowOTPVerification(false);
+						setOtpData(null);
+					}
+				}}>
+					<DialogContent>
+						<OTPVerification
+							phoneNumber={otpData.phoneNumber}
+							onVerified={handleOTPVerified}
+							triggerComponent={<div />}
+						/>
+					</DialogContent>
+				</Dialog>
+			)}
+
+			{editingReservation && (
+				<ReservationEditDialog
+					isOpen={isEditDialogOpen}
+					reservation={editingReservation}
+					onClose={() => {
+						setIsEditDialogOpen(false);
+						setEditingReservation(null);
+					}}
+					onUpdate={() => {
+						fetchData();
+						setIsEditDialogOpen(false);
+						setEditingReservation(null);
+					}}
+				/>
+			)}
 
 			<NewReservationDialog
 				isOpen={isNewReservationDialogOpen}
