@@ -1,436 +1,511 @@
 {
   "dashboard": {
     "header": {
-      "welcome": "නැවත සාදරයෙන් පිළිගනිමු!",
-      "subtitle": "හෝටල් කළමනාකරණ පුවරුව",
-      "addIncome": "ආදායම එක් කරන්න",
-      "addExpense": "වියදම එක් කරන්න",
-      "monthFilter": "මාස පෙරීම"
+      "welcome": "Welcome back!",
+      "subtitle": "Hotel Management Dashboard",
+      "addIncome": "Add Income",
+      "addExpense": "Add Expense",
+      "monthFilter": "Month Filter"
     },
     "summaryCards": {
-      "todayIncome": "අද ආදායම",
-      "monthlyIncome": "මාසික ආදායම",
-      "todayExpenses": "අද වියදම්",
-      "monthlyExpenses": "මාසික වියදම්",
-      "weeklyProfit": "සතිපතා ලාභය",
-      "monthlyProfit": "මාසික ලාභය",
-      "margin": "ආන්තිකය"
+      "todayIncome": "Today's Income",
+      "monthlyIncome": "Monthly Income",
+      "todayExpenses": "Today's Expenses",
+      "monthlyExpenses": "Monthly Expenses",
+      "weeklyProfit": "Weekly Profit",
+      "monthlyProfit": "Monthly Profit",
+      "margin": "margin"
     },
     "accountBalances": {
-      "title": "ගිණුම් ශේෂය",
-      "account": "ගිණුම"
+      "title": "Account Balances",
+      "account": "Account"
     },
     "upcomingBookings": {
-      "title": "ඉදිරියේදී පැමිණෙන වෙන්කරවීම්",
-      "viewAll": "සියල්ල බලන්න",
-      "to": "සිට",
-      "noBookings": "ඉදිරියේදී පැමිණෙන වෙන්කරවීම් නොමැත"
+      "title": "Upcoming Bookings",
+      "viewAll": "View All",
+      "to": "to",
+      "noBookings": "No upcoming bookings"
     }
   },
   "calendar": {
-    "title": "වෙන්කිරීම් දින දර්ශනය",
-    "subtitle": "බාහිර වෙන්කිරීම් සමඟ කාමර මූලික දින දර්ශන දසුන",
+    "title": "Reservation Calendar",
+    "subtitle": "Room-based calendar view with external bookings",
     "viewMode": {
-      "timeline": "කාලරේඛාව",
-      "list": "ලැයිස්තුව",
-      "label": "ප්‍රකාරය: {{mode}}"
+      "timeline": "Timeline",
+      "list": "List",
+      "label": "Mode: {{mode}}"
     },
     "timeline": {
-      "title": "දින දර්ශන කාලරේඛාව",
-      "weekOverview": "සතියේ සමාලෝචනය"
+      "title": "Calendar Timeline",
+      "weekOverview": "Week Overview"
     },
     "roomInfo": {
-      "roomVilla": "කාමරය / වಿಲ್ಲාව",
-      "typeLocation": "වර්ගය සහ ස්ථානය",
-      "external": "බාහිර"
+      "roomVilla": "Room / Villa",
+      "typeLocation": "Type & Location",
+      "external": "External"
     },
     "booking": {
-      "addBooking": "වෙන්කිරීමක් එක් කරන්න",
-      "guestsLabel": "අමුත්තන්",
-      "guestsCount": "{{count}} අමුත්තන්",
-      "bookingDetails": "වෙන්කිරීම් විස්තරය #{{id}}",
-      "guestInformation": "ආගන්තුක තොරතුරු",
-      "guestName": "ආගන්තුක නම",
-      "email": "විද්‍යුත් තැපෑල",
-      "phone": "දුරකථනය",
-      "adultsLabel": "{{count}} වැඩිහිටියන්",
-      "childrenLabel": "{{count}} ළමුන්",
-      "notAvailable": "ලබා නොමැත",
-      "unknownGuest": "හඳුනා නොගත් අමුත්තෙකු"
+      "addBooking": "Add booking",
+      "guestsLabel": "Guests",
+      "guestsCount": "{{count}} guests",
+      "bookingDetails": "Booking Details #{{id}}",
+      "guestInformation": "Guest Information",
+      "guestName": "Guest Name",
+      "email": "Email",
+      "phone": "Phone",
+      "adultsLabel": "{{count}} adults",
+      "childrenLabel": "{{count}} children",
+      "notAvailable": "Not available",
+      "unknownGuest": "Unknown Guest"
     },
     "stay": {
-      "stayInformation": "නවාතැන් තොරතුරු",
+      "stayInformation": "Stay Information",
       "checkIn": "Check-in",
       "checkOut": "Check-out",
-      "nights": "රාත්‍රි",
-      "bookingDate": "වෙන්කිරීම් දිනය"
+      "nights": "Nights",
+      "bookingDate": "Booking Date"
     },
     "property": {
-      "propertyInformation": "දේපල තොරතුරු",
-      "location": "ස්ථානය",
-      "room": "කාමරය",
-      "unknownLocation": "නොදන්නා ස්ථානය",
-      "unknownRoom": "නොදන්නා කාමරය"
+      "propertyInformation": "Property Information",
+      "location": "Location",
+      "room": "Room",
+      "unknownLocation": "Unknown Location",
+      "unknownRoom": "Unknown Room"
     },
     "payment": {
-      "paymentInformation": "ගෙවීම් තොරතුරු",
-      "basePrice": "මූලික මිල",
-      "hostFee": "සත්කාරක ගාස්තුව",
-      "expectedPayout": "අපේක්ෂිත ගෙවීම",
-      "totalAmount": "මුළු මුදල",
-      "cancelPolicy": "අවලංගු ප්‍රතිපත්තිය ලච්චිළි"
+      "paymentInformation": "Payment Information",
+      "basePrice": "Base Price",
+      "hostFee": "Host Fee",
+      "expectedPayout": "Expected Payout",
+      "totalAmount": "Total Amount",
+      "cancelPolicy": "Cancel policy flexible"
     },
     "legend": {
-      "statusLabel": "තත්වය",
-      "internalConfirmed": "අභ්‍යන්තර - තහවුරු කළ",
-      "internalTentative": "අභ්‍යන්තර - අස්ථිර",
-      "externalConfirmed": "බාහිර - තහවුරු කළ",
-      "externalNew": "බාහිර - නව",
-      "cancelled": "අවලංගු කළ"
+      "statusLabel": "Status",
+      "internalConfirmed": "Internal - Confirmed",
+      "internalTentative": "Internal - Tentative",
+      "externalConfirmed": "External - Confirmed",
+      "externalNew": "External - New",
+      "cancelled": "Cancelled"
     },
     "navigation": {
-      "today": "අද",
-      "previousMonth": "පෙර මාසය",
-      "nextMonth": "ඊළඟ මාසය"
+      "today": "Today",
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month"
     },
     "search": {
-      "placeholder": "රිගෙය් ශොධනන්න...",
-      "filterByStatus": "තත්වය අනුව සිංකරණය",
-      "allStatuses": "සියළු තත්වය"
+      "placeholder": "Search reservations...",
+      "filterByStatus": "Filter by status",
+      "allStatuses": "All Statuses"
     },
     "status": {
-      "confirmed": "තහවුරු කළ",
-      "tentative": "අස්ථිර",
-      "pending": "ප්‍රතීක්ෂාවක",
-      "checked_in": "චෙක්-ඉන්",
-      "checked_out": "චෙක්-ආउට්",
-      "cancelled": "අවලංගු කළ"
+      "confirmed": "Confirmed",
+      "tentative": "Tentative",
+      "pending": "Pending",
+      "checked_in": "Checked In",
+      "checked_out": "Checked Out",
+      "cancelled": "Cancelled"
     },
     "viewMore": {
-      "moreCount": "+{{count}} වෙත",
-      "dialogTitle": "{{date}} දිනයට රිගෙය්"
+      "moreCount": "+{{count}} more",
+      "dialogTitle": "Reservations for {{date}}"
     },
     "bookingDialog": {
-      "title": "රිගෙය් විස්තර",
-      "guestInfo": "අතිථි තොරතුරු",
-      "stayDetails": "වසන් විස්තර",
-      "financialDetails": "මුදල් විස්තර",
-      "checkIn": "චෙක්-ඉන්",
-      "checkOut": "චෙක්-ආउට්",
-      "room": "කාමරය",
-      "nights": "රාත්‍රි {{count}}",
-      "nights_other": "රාත්‍රි {{count}}",
-      "adults": "පිරිසිදු",
-      "children": "දරුවන්",
-      "totalAmount": "මුළු මුදල",
-      "paidAmount": "ගෙවූ මුදල",
-      "balance": "ශේෂම",
-      "viewDetails": "විස්තර බලන්න",
-      "payment": "ගෙවීම"
+      "title": "Booking Details",
+      "guestInfo": "Guest Information",
+      "stayDetails": "Stay Details",
+      "financialDetails": "Financial Details",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "room": "Room",
+      "nights": "{{count}} night",
+      "nights_other": "{{count}} nights",
+      "adults": "Adults",
+      "children": "Children",
+      "totalAmount": "Total Amount",
+      "paidAmount": "Paid Amount",
+      "balance": "Balance",
+      "viewDetails": "View Details",
+      "payment": "Payment"
     }
   },
   "navigation": {
-    "dashboard": "පුවරුව",
-    "calendar": "දින දර්ශනය",
-    "reservations": "වෙන්කිරීම්",
-    "income": "ආදායම්",
+    "dashboard": "පැනලය",
+    "calendar": "දිනදර්ශනය",
+    "reservations": "වෙන්කරණ",
+    "income": "ආදායම",
     "expense": "වියදම්",
     "accounts": "ගිණුම්",
-    "bookingChannels": "වෙන්කිරීම් නාලිකා",
+    "bookingChannels": "වෙන්කරණ නාලිකා",
     "masterFiles": "ප්‍රධාන ගොනු",
     "hotelLocations": "හෝටල් ස්ථාන",
     "rooms": "කාමර",
-    "tourGuides": "සංචාරක මග පෙන්වන්නන්",
+    "tourGuides": "සංචාරක මගපෙන්වන්නන්",
     "travelAgents": "සංචාරක නියෝජිතයන්",
-    "commissionSettings": "කොමිස් සැකසුම්",
+    "commissionSettings": "කොමිසම් සැකසීම්",
     "reports": "වාර්තා",
-    "users": "පරිශීලකයින්",
-    "settings": "සැකසුම්",
-    "billingSubscription": "ගිණුම් කිරීම සහ දායකත්වය",
-    "newReservation": "නව වෙන්කිරීමක්",
-    "newPayment": "නව ගෙවීමක්",
-    "addExpense": "වියදමක් එක් කරන්න",
-    "verifyPhone": "දුරකථනය තහවුරු කරන්න"
+    "users": "පරිශීලකයන්",
+    "settings": "සැකසීම්",
+    "billingSubscription": "ගිණුම් ගැනීම සහ දායකත්වය",
+    "newReservation": "නව වෙන්කරණය",
+    "newPayment": "නව ගෙවීම",
+    "addExpense": "වියදම එකතු කරන්න",
+    "verifyPhone": "දුරකථනය සත්‍යාපනය කරන්න"
   },
   "breadcrumb": {
-    "home": "මුල් පිටුව"
+    "home": "Home"
   },
   "pageTitle": {
-    "dashboard": "පුවරුව",
-    "calendar": "දින දර්ශනය",
-    "reservations": "වෙන්කිරීම්",
-    "quickBooking": "ඉක්මන් වෙන්කිරීම්",
-    "income": "වෙන්කිරීම් සහ ගෙවීම්",
-    "expense": "වියදමක් එක් කරන්න",
-    "accounts": "ගිණුම්",
-    "paymentForm": "ගෙවීම් පෝරමය",
-    "reports": "මූල්‍ය වාර්තා",
-    "comprehensiveReports": "සම්පූර්ණ වාර්තා",
-    "accountReports": "ගිණුම් වාර්තා",
-    "commissionReports": "කොමිස් වාර්තා",
-    "balanceSheet": "ශේෂ පත්‍රය",
-    "enhancedFinancialReports": "වැඩිදියුණු කළ මූල්‍ය වාර්තා",
-    "financialReports": "වාර්තා සහ විශ්ලේෂණ",
-    "users": "පරිශීලක කළමනාකරණය",
-    "settings": "සැකසුම්",
-    "masterFiles": "ප්‍රධාන ගොනු",
-    "masterFilesLocations": "ප්‍රධාන ගොනු - ස්ථාන",
-    "masterFilesRooms": "ප්‍රධාන ගොනු - කාමර",
-    "masterFilesGuides": "ප්‍රධාන ගොනු - මග පෙන්වන්නන්",
-    "masterFilesAgents": "ප්‍රධාන ගොනු - නියෝජිතයන්",
-    "masterFilesCommissions": "ප්‍රධාන ගොනු - කොමිස්",
-    "roomManagement": "කාමර කළමනාකරණය",
-    "bookingChannels": "වෙන්කිරීම් නාලිකා",
-    "reservationDetails": "වෙන්කිරීම් විස්තර",
-    "hotelManagement": "හෝටල් කළමනාකරණය"
+    "dashboard": "Dashboard",
+    "calendar": "Calendar",
+    "reservations": "Reservations",
+    "quickBooking": "Quick Booking",
+    "income": "Reservations & Payments",
+    "expense": "Add Expense",
+    "accounts": "Accounts",
+    "paymentForm": "Payment Form",
+    "reports": "Financial Reports",
+    "comprehensiveReports": "Comprehensive Reports",
+    "accountReports": "Account Reports", 
+    "commissionReports": "Commission Reports",
+    "balanceSheet": "Balance Sheet",
+    "enhancedFinancialReports": "Enhanced Financial Reports",
+    "financialReports": "Reports & Analytics",
+    "users": "User Management",
+    "settings": "Settings",
+    "masterFiles": "Master Files",
+    "masterFilesLocations": "Master Files - Locations",
+    "masterFilesRooms": "Master Files - Rooms",
+    "masterFilesGuides": "Master Files - Guides",
+    "masterFilesAgents": "Master Files - Agents",
+    "masterFilesCommissions": "Master Files - Commissions",
+    "roomManagement": "Room Management",
+    "bookingChannels": "Booking Channels",
+    "reservationDetails": "Reservation Details",
+    "hotelManagement": "Hotel Management"
   },
   "common": {
     "loading": "පූරණය වෙමින්...",
     "save": "සුරකින්න",
     "cancel": "අවලංගු කරන්න",
     "delete": "මකන්න",
-    "edit": "සංස්කරණය",
-    "add": "එක් කරන්න",
+    "edit": "සංස්කරණය කරන්න",
+    "add": "එකතු කරන්න",
     "search": "සොයන්න",
     "filter": "පෙරහන",
-    "export": "නිර්යාත",
-    "import": "ආයාත",
+    "export": "අපනයනය",
+    "import": "ආනයනය",
     "yes": "ඔව්",
     "no": "නැත",
     "ok": "හරි",
     "close": "වසන්න",
     "back": "ආපසු",
     "next": "ඊළඟ",
-    "previous": "පෙර",
-    "submit": "ඉදිරිපත් කරන්න",
-    "reset": "නැවත සැකසීම",
-    "clear": "හිස් කරන්න",
+    "previous": "කලින්",
+    "submit": "යොමු කරන්න",
+    "reset": "යළි සකසන්න",
+    "clear": "පිරිසිදු කරන්න",
     "all": "සියල්ල",
     "none": "කිසිවක් නැත",
     "select": "තෝරන්න",
     "deselect": "තේරීම ඉවත් කරන්න"
   },
   "auth": {
-    "login": "පිවිසෙන්න",
-    "logout": "ඉවත් වන්න",
-    "signup": "ලියාපදිංචි වන්න",
-    "forgotPassword": "මුරපදය අමතකයි",
-    "resetPassword": "මුරපදය නැවත සකසන්න",
-    "email": "විද්‍යුත් තැපෑල",
-    "password": "මුරපදය",
-    "confirmPassword": "මුරපදය තහවුරු කරන්න",
-    "rememberMe": "මතක තබාගන්න"
+    "login": "Login",
+    "logout": "Logout",
+    "signup": "Sign Up",
+    "forgotPassword": "Forgot Password",
+    "resetPassword": "Reset Password",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "rememberMe": "Remember Me"
   },
   "theme": {
-    "light": "ආලෝකය",
-    "dark": "අඳුරු",
-    "system": "පද්ධතිය",
-    "toggleTheme": "තේමාව මාරු කරන්න"
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "toggleTheme": "Toggle theme"
   },
   "language": {
     "selectLanguage": "භාෂාව තෝරන්න",
     "english": "ඉංග්‍රීසි",
-    "spanish": "ස්පාඤ්ඤ",
-    "french": "ප්‍රංශ",
-    "german": "ජර්මන්",
-    "portuguese": "පෘතුගීසි",
-    "sinhala": "සිංහල",
-    "tamil": "දමිළ",
-    "hindi": "හින්දි"
+    "sinhala": "සිංහල"
   },
   "settings": {
-    "profile": "පිරිස්",
-    "locations": "ස්ථාන",
-    "formFields": "ෆොරම් යෙදීම්",
-    "expenses": "වියදම් වර්ග",
-    "income": "ආදායම් ප්‍රකාර",
-    "currency": "ශ්‍රී මුදල් සැකසුම්",
-    "bookings": "වෙන්කිරීම් කළමනාකරණය",
-    "profileSettings": "පිරිස් සැකසුම්",
-    "name": "නම",
-    "email": "විද්‍යුත් තැපැල",
-    "phone": "දුරකථනය",
-    "save": "සුරකින්න",
-    "cancel": "අවලංගු කරන්න"
+    "profile": "Profile",
+    "locations": "Locations",
+    "formFields": "Form Fields",
+    "expenses": "Expense Categories",
+    "income": "Income Types",
+    "currency": "Currency Settings",
+    "bookings": "Booking Management",
+    "profileSettings": "Profile Settings",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "save": "Save",
+    "cancel": "Cancel"
   },
   "profile": {
-    "myProfile": "මගේ පැතිකඩ",
-    "settings": "සැකසුම්",
-    "billing": "ගිණුම් කිරීම සහ දායකත්වය",
-    "manageUsers": "පරිශීලකයින් කළමනාකරණය",
-    "masterFiles": "ප්‍රධාන ගොනු",
-    "bookingChannels": "වෙන්කිරීම් නාලිකා"
+    "myProfile": "My Profile",
+    "settings": "Settings",
+    "billing": "Billing & Subscription",
+    "manageUsers": "Manage Users",
+    "masterFiles": "Master Files",
+    "bookingChannels": "Booking Channels"
   },
   "fullscreen": {
-    "enter": "සම්පූර්ණ තිරය",
-    "exit": "සම්පූර්ණ තිරයෙන් ඉවත් වන්න"
+    "enter": "Enter fullscreen",
+    "exit": "Exit fullscreen"
   },
   "masterFiles": {
-    "title": "ප්‍රධාන ගොනු",
-    "subtitle": "හෝටල් වින්‍යාසයන් කළමනාකරණය",
+    "title": "Master Files",
+    "subtitle": "Manage all hotel configurations",
     "locations": {
-      "title": "හෝටල් ස්ථාන",
-      "description": "හෝටල් ස්ථාන කළමනාකරණය",
-      "active": "ක්‍රියාකාරී ස්ථාන",
-      "inactive": "අක්‍රිය ස්ථාන",
-      "add": "ස්ථානයක් එක් කරන්න"
+      "title": "Hotel Locations",
+      "description": "Manage hotel locations",
+      "active": "Active Locations",
+      "inactive": "Inactive Locations",
+      "add": "Add Location"
     },
     "rooms": {
-      "title": "කාමර කළමනාකරණය",
-      "description": "හෝටල් කාමර කළමනාකරණය",
-      "all": "සියලු කාමර",
-      "types": "කාමර වර්ග",
-      "pricing": "කාමර මිල ගණන්",
-      "amenities": "පහසුකම්"
+      "title": "Room Management",
+      "description": "Manage hotel rooms",
+      "all": "All Rooms",
+      "types": "Room Types",
+      "pricing": "Room Pricing",
+      "amenities": "Amenities"
     },
     "guides": {
-      "title": "සංචාරක මාර්ගෝපදේශකයින්",
-      "description": "සංචාරක මාර්ගෝපදේශකයින් කළමනාකරණය",
-      "active": "ක්‍රියාකාරී මාර්ගෝපදේශකයින්",
-      "inactive": "අක්‍රිය මාර්ගෝපදේශකයින්",
-      "licenses": "බලපත්‍ර කළමනාකරණය",
-      "performance": "කාර්ය සාධනය"
+      "title": "Tour Guides",
+      "description": "Manage tour guides",
+      "active": "Active Guides",
+      "inactive": "Inactive Guides",
+      "licenses": "License Management",
+      "performance": "Performance"
     },
     "agents": {
-      "title": "සංචාරක නියෝජිතයින්",
-      "description": "සංචාරක නියෝජිතයින් කළමනාකරණය",
-      "active": "ක්‍රියාකාරී නියෝජිතයින්",
-      "agencies": "සංචාරක ආයතන",
-      "contracts": "ගිණුම්",
-      "performance": "කාර්ය සාධනය"
+      "title": "Travel Agents",
+      "description": "Manage travel agents",
+      "active": "Active Agents",
+      "agencies": "Travel Agencies",
+      "contracts": "Contracts",
+      "performance": "Performance"
     },
     "commissions": {
-      "title": "කොමිස් සැකසුම්",
-      "description": "කොමිස් ව්‍යුහයන් කළමනාකරණය",
-      "rates": "කොමිස් අනුපාත",
-      "policies": "ගෙවීම් ප්‍රතිපත්ති",
-      "tracking": "කොමිස් ලුහුබැඳීම",
-      "reports": "කොමිස් වාර්තා"
+      "title": "Commission Settings",
+      "description": "Manage commission structures",
+      "rates": "Commission Rates",
+      "policies": "Payment Policies",
+      "tracking": "Commission Tracking",
+      "reports": "Commission Reports"
     }
   },
   "income": {
-    "title": "ආදායම් කළමනාකරණය",
-    "permissionDenied": "ඔබට ආදායම් කළමනාකරණයට ප්‍රවේශ වීමට අවසර නැත.",
+    "title": "Income Management",
+    "permissionDenied": "You don't have permission to access income management.",
     "reservationsTable": {
-      "title": "වෙන්කරණ - ආදායම එකතු කරන්න",
+      "title": "Reservations - Add Income",
       "headers": {
-        "reservationNumber": "වෙන්කරණ #",
-        "guest": "අමුත්තා",
-        "room": "කාමරය",
-        "checkIn": "පැමිණීම",
-        "checkOut": "පිටවීම",
-        "totalAmount": "මුළු ප්‍රමාණය",
-        "status": "තත්ත්වය",
-        "action": "ක්‍රියාව"
+        "reservationNumber": "Reservation #",
+        "guest": "Guest",
+        "room": "Room",
+        "checkIn": "Check-in",
+        "checkOut": "Check-out",
+        "totalAmount": "Total Amount",
+        "status": "Status",
+        "action": "Action"
       },
-      "addIncomeButton": "ආදායම එකතු කරන්න",
+      "addIncomeButton": "Add Income",
       "disabledReasons": {
-        "confirmed": "ආදායම එකතු කළ නොහැක - වෙන්කරණ තහවුරු කර ඇත (ගෙවීම සම්පූර්ණ)",
-        "alreadyRecorded": "මෙම වෙන්කරණ සඳහා ආදායම දැනටමත් වාර්තා කර ඇත"
+        "confirmed": "Income cannot be added - reservation is confirmed (payment completed)",
+        "alreadyRecorded": "Income already recorded for this reservation"
       },
       "statuses": {
-        "tentative": "තාවකාලික",
-        "confirmed": "තහවුරු කළ",
-        "checked_in": "පැමිණි",
-        "checked_out": "ගිය",
-        "cancelled": "අවලංගු කළ"
+        "tentative": "Tentative",
+        "confirmed": "Confirmed",
+        "checked_in": "Checked In",
+        "checked_out": "Checked Out",
+        "cancelled": "Cancelled"
       }
     },
     "historyTable": {
-      "title": "මෑත ආදායම් ඉතිහාසය",
+      "title": "Recent Income History",
       "headers": {
-        "date": "දිනය",
-        "note": "සටහන",
-        "type": "වර්ගය",
-        "amount": "ප්‍රමාණය",
-        "account": "ගිණුම"
+        "date": "Date",
+        "note": "Note",
+        "type": "Type",
+        "amount": "Amount",
+        "account": "Account"
       }
     },
     "addDialog": {
-      "title": "ආදායම එකතු කරන්න",
-      "description": "තෝරාගත් වෙන්කරණ සඳහා ආදායම වාර්තා කරන්න.",
+      "title": "Add Income",
+      "description": "Record income for the selected reservation.",
       "reservationInfo": {
-        "reservation": "වෙන්කරණ:",
-        "guest": "අමුත්තා:",
-        "amount": "ප්‍රමාණය:"
+        "reservation": "Reservation:",
+        "guest": "Guest:",
+        "amount": "Amount:"
       },
       "form": {
-        "amount": "ප්‍රමාණය",
-        "note": "සටහන",
-        "notePlaceholder": "අතිරේක සටහන්...",
-        "incomeType": "ආදායම් වර්ගය",
-        "incomeTypePlaceholder": "ආදායම් වර්ගය තෝරන්න",
-        "paymentType": "ගෙවීම් ආකාරය",
-        "account": "ගිණුම",
-        "accountRequired": "ගිණුම *",
-        "accountPlaceholder": "ගිණුම තෝරන්න",
-        "accountDescription": "ගෙවීම වාර්තා කිරීමට ගිණුම"
+        "amount": "Amount",
+        "note": "Note",
+        "notePlaceholder": "Additional notes...",
+        "incomeType": "Income Type",
+        "incomeTypePlaceholder": "Select income type",
+        "paymentType": "Payment Type",
+        "account": "Account",
+        "accountRequired": "Account *",
+        "accountPlaceholder": "Select account",
+        "accountDescription": "Account to record the payment"
       },
       "paymentTypes": {
-        "direct": "💵 සෘජු ගෙවීම (දැන් ගෙව යි)",
-        "deferred": "📋 බිල්පතට එක් කරන්න (පසුව ගෙවන්න)",
-        "directDescription": "අමුත්තා සෘජුව ගෙව්වා. ගිණුම් ශේෂය යාවත්කාලීන කරයි.",
-        "deferredDescription": "වෙන්කරණ බිල්පතට එක් කරන්න. අමුත්තා පිටවීමේදී ගෙවනු ඇත.",
-        "deferredInfo": "💡 ප්‍රමාද ගෙවීම: මෙම ප්‍රමාණය වෙන්කරණ මුළු ප්‍රමාණයට එකතු වේ. අමුත්තා පිටවීමේදී ගෙවනු ඇත. දැන් කිසිම ගිණුමක් යාවත්කාලීන නොවේ."
+        "direct": "💵 Direct Payment (Paid Now)",
+        "deferred": "📋 Add to Bill (Pay Later)",
+        "directDescription": "Guest paid directly. Will update account balance.",
+        "deferredDescription": "Add to reservation bill. Guest will pay during checkout.",
+        "deferredInfo": "💡 Deferred Payment: This amount will be added to the reservation total. Guest will pay during checkout. No account will be updated now."
       },
       "buttons": {
-        "cancel": "අවලංගු කරන්න",
-        "record": "ආදායම වාර්තා කරන්න"
+        "cancel": "Cancel",
+        "record": "Record Income"
       },
       "messages": {
-        "directSuccess": "සෘජු ගෙවීම ගිණුමට වාර්තා කරන ලදී",
-        "deferredSuccess": "ප්‍රමාණය වෙන්කරණ බිල්පතට එකතු කරන ලදී",
-        "error": "ආදායම වාර්තා කිරීමට අසමත් විය"
+        "directSuccess": "Direct payment recorded to account",
+        "deferredSuccess": "Amount added to reservation bill",
+        "error": "Failed to record income"
       }
     }
   },
   "expense": {
-    "title": "වියදම් කළමනාකරණය",
-    "permissionDenied": "ඔබට මෙම පිටුවට ප්‍රවේශ වීමට අවසර නැත. කරුණාකර ඔබේ පරිපාලකයා සම්බන්ධ කරගන්න.",
-    "viewAllExpenses": "සියලුම වියදම් බලන්න",
+    "title": "Expense Management",
+    "permissionDenied": "You don't have permission to access this page. Please contact your administrator.",
+    "viewAllExpenses": "View All Expenses",
     "form": {
-      "title": "නව වියදමක් එකතු කරන්න",
+      "title": "Add New Expense",
       "fields": {
-        "location": "ස්ථානය",
-        "mainCategory": "ප්‍රධාන වර්ගය",
-        "subCategory": "උප වර්ගය",
-        "amount": "ප්‍රමාණය",
-        "account": "ගිණුම",
-        "date": "දිනය",
-        "note": "සටහන"
+        "location": "Location",
+        "mainCategory": "Main Category",
+        "subCategory": "Sub Category",
+        "amount": "Amount",
+        "account": "Account",
+        "date": "Date",
+        "note": "Note"
       },
       "placeholders": {
-        "location": "ස්ථානය තෝරන්න",
-        "mainCategory": "ප්‍රධාන වර්ගය තෝරන්න",
-        "subCategory": "උප වර්ගය තෝරන්න",
-        "account": "ගිණුම තෝරන්න",
-        "note": "මෙම වියදම පිළිබඳ විස්තර එකතු කරන්න..."
+        "location": "Select Location",
+        "mainCategory": "Select main category",
+        "subCategory": "Select sub category",
+        "account": "Select account",
+        "note": "Add details about this expense..."
       },
       "buttons": {
-        "add": "වියදම එකතු කරන්න",
-        "adding": "එකතු කරමින්..."
+        "add": "Add Expense",
+        "adding": "Adding..."
       },
       "messages": {
-        "success": "සාර්ථකයි",
-        "successDetails": "වියදම් වාර්තාව සාර්ථකව එකතු කරන ලදී",
-        "successGeneral": "වියදම් වාර්තාව සාර්ථකව එකතු කරන ලදී",
-        "error": "දෝෂයක්",
-        "errorDetails": "වියදම් වාර්තාව එකතු කිරීමට අසමත් විය"
+        "success": "Success",
+        "successDetails": "Expense record added successfully",
+        "successGeneral": "Expense record added successfully",
+        "error": "Error",
+        "errorDetails": "Failed to add expense record"
       }
     },
     "shortcuts": {
-      "title": "ඉක්මන් වියදම් කෙටිමං"
+      "title": "Quick Expense Shortcuts"
     },
     "historyTable": {
-      "title": "මෑත වියදම්",
+      "title": "Recent Expenses",
       "headers": {
-        "date": "දිනය",
-        "category": "වර්ගය",
-        "amount": "ප්‍රමාණය",
-        "account": "ගිණුම",
-        "note": "සටහන"
+        "date": "Date",
+        "category": "Category",
+        "amount": "Amount",
+        "account": "Account",
+        "note": "Note"
       },
-      "noRecords": "තවම වියදම් වාර්තා නැත. ඔබේ පළමු වියදම ඉහළින් එකතු කරන්න!"
+      "noRecords": "No expense records yet. Add your first expense above!"
+    }
+  },
+  "accounts": {
+    "title": "ගිණුම්",
+    "errorLoading": "ගිණුම් පුරවීමේ දෝශයකි",
+    "buttons": {
+      "addAccount": "ගිණුමක් එක් කරන්න",
+      "transferMoney": "මුදල් ස්ථාන මාරු කරන්න",
+      "save": "සුරකින්න",
+      "cancel": "අවලංගු කරන්න",
+      "delete": "ගිණුම මකන්න",
+      "edit": "සංස්කරණය කරන්න"
+    },
+    "tabs": {
+      "accounts": "ගිණුම්",
+      "transactions": "මෑත ගනුදෙනු"
+    },
+    "summary": {
+      "totalAccounts": "සම්පූර්ණ ගිණුම්",
+      "totalBalanceLKR": "සම්පූර්ණ ශේෂයක් (LKR)",
+      "totalBalanceUSD": "සම්පූර්ණ ශේෂයක් (USD)"
+    },
+    "form": {
+      "addAccount": "ගිණුමක් එක් කරන්න",
+      "editAccount": "ගිණුම සංස්කරණය කරන්න",
+      "accountName": "ගිණුමේ නම",
+      "accountNamePlaceholder": "ගිණුමේ නම ඇතුළත් කරන්න",
+      "currency": "මුදල් ඒකකය",
+      "initialBalance": "ආරම්භක ශේෂය",
+      "locationAccess": "ස්ථාන ප්‍රවේශය",
+      "locationAccessDescription": "මෙම ගිණුම භාවිතා කළ හැකි ස්ථාන තෝරන්න",
+      "validation": {
+        "nameRequired": "ගිණුමේ නම අවශ්‍යයි",
+        "balanceInvalid": "ආරම්භක ශේෂය 0 හෝ වැඩි විය යුතුයි"
+      },
+      "messages": {
+        "createSuccess": "ගිණුම සාර්ථකව නිර්මාණය විය",
+        "updateSuccess": "ගිණුම සාර්ථකව යාවත්කාලීන විය",
+        "deleteSuccess": "ගිණුම සාර්ථකව මකා දැමිණි",
+        "createError": "ගිණුම නිර්මාණය කිරීමට අසමත් විය",
+        "updateError": "ගිණුම යාවත්කාලීන කිරීමට අසමත් විය",
+        "deleteError": "ගිණුම මකා දැමීමට අසමත් විය"
+      }
+    },
+    "transfer": {
+      "title": "මුදල් ස්ථාන මාරු කරන්න",
+      "fromAccount": "ගිණුමෙන්",
+      "toAccount": "ගිණුමට",
+      "amount": "මුදල",
+      "conversionRate": "පරිවර්තන අනුපාතය",
+      "note": "සටහන (විකල්ප)",
+      "notePlaceholder": "මෙම ස්ථාන මාරුව සඳහා සටහනක් එක් කරන්න...",
+      "validation": {
+        "fromAccountRequired": "කරුණාකර මූල ගිණුම තෝරන්න",
+        "toAccountRequired": "කරුණාකර ගමනාන්ත ගිණුම තෝරන්න",
+        "sameAccount": "මූල සහ ගමනාන්ත ගිණුම් එකම විය නොහැක",
+        "amountRequired": "මුදල අවශ්‍යයි",
+        "amountInvalid": "මුදල 0 ට වඩා වැඩි විය යුතුයි",
+        "insufficientBalance": "මූල ගිණුමේ ප්‍රමාණවත් ශේෂයක් නැත"
+      },
+      "messages": {
+        "success": "ස්ථාන මාරුව සාර්ථකව සම්පූර්ණ විය",
+        "error": "ස්ථාන මාරුව සම්පූර්ණ කිරීමට අසමත් විය"
+      }
+    },
+    "card": {
+      "balance": "ශේෂය",
+      "currency": "මුදල් ඒකකය",
+      "locations": "ස්ථාන"
+    },
+    "transactions": {
+      "title": "මෑත ගනුදෙනු",
+      "type": "වර්ගය",
+      "amount": "මුදල",
+      "account": "ගිණුම",
+      "date": "දිනය",
+      "note": "සටහන",
+      "transfer": "ස්ථාන මාරුව",
+      "income": "ආදායම",
+      "expense": "වියදම",
+      "noTransactions": "මෑත ගනුදෙනු හමු නොවීය"
     }
   }
 }

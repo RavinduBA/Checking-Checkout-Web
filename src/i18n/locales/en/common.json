@@ -230,13 +230,7 @@
   "language": {
     "selectLanguage": "Select Language",
     "english": "English",
-    "spanish": "Spanish",
-    "french": "French",
-    "german": "German",
-    "portuguese": "Portuguese",
-    "sinhala": "Sinhala",
-    "tamil": "Tamil",
-    "hindi": "Hindi"
+    "sinhala": "Sinhala"
   },
   "settings": {
     "profile": "Profile",

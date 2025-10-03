@@ -1,52 +1,22 @@
 import i18n from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
-import de from "./locales/de/common.json";
 // Import translation files
 import en from "./locales/en/common.json";
-import es from "./locales/es/common.json";
-import fr from "./locales/fr/common.json";
-import hi from "./locales/hi/common.json";
-import pt from "./locales/pt/common.json";
 import si from "./locales/si/common.json";
-import ta from "./locales/ta/common.json";
 
 // Define supported languages
 export const supportedLanguages = [
 	{ code: "en", name: "English", nativeName: "English" },
-	{ code: "es", name: "Spanish", nativeName: "Español" },
-	{ code: "fr", name: "French", nativeName: "Français" },
-	{ code: "de", name: "German", nativeName: "Deutsch" },
-	{ code: "pt", name: "Portuguese", nativeName: "Português" },
 	{ code: "si", name: "Sinhala", nativeName: "සිංහල" },
-	{ code: "ta", name: "Tamil", nativeName: "தமிழ்" },
-	{ code: "hi", name: "Hindi", nativeName: "हिंदी" },
 ];
 
 const resources = {
 	en: {
 		common: en,
 	},
-	es: {
-		common: es,
-	},
-	fr: {
-		common: fr,
-	},
-	de: {
-		common: de,
-	},
-	pt: {
-		common: pt,
-	},
 	si: {
 		common: si,
-	},
-	ta: {
-		common: ta,
-	},
-	hi: {
-		common: hi,
 	},
 };
 

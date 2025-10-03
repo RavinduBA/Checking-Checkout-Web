@@ -20,13 +20,7 @@ type Props = {
 
 const languages = [
 	{ code: "en", name: "English", flag: "🇺🇸" },
-	{ code: "es", name: "Español", flag: "🇪🇸" },
-	{ code: "fr", name: "Français", flag: "🇫🇷" },
-	{ code: "de", name: "Deutsch", flag: "🇩🇪" },
-	{ code: "pt", name: "Português", flag: "🇵🇹" },
 	{ code: "si", name: "සිංහල", flag: "🇱🇰" },
-	{ code: "ta", name: "தமிழ்", flag: "🇮🇳" },
-	{ code: "hi", name: "हिंदी", flag: "🇮🇳" },
 ];
 
 const LanguageDropdown = ({ defaultOpen, align, trigger }: Props) => {
