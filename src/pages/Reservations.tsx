@@ -4,6 +4,7 @@ import { NewReservationDialog } from "@/components/NewReservationDialog";
 import { OTPVerification } from "@/components/OTPVerification";
 import { ReservationEditDialog } from "@/components/ReservationEditDialog";
 import { AddIncomeDialog } from "@/components/reservation/AddIncomeDialog";
+import { PaymentDialog } from "@/components/reservation/PaymentDialog";
 import { PaymentsTable } from "@/components/reservation/PaymentsTable";
 import { ReservationsDesktopTable } from "@/components/reservation/ReservationsDesktopTable";
 import { ReservationsFilters } from "@/components/reservation/ReservationsFilters";
@@ -34,6 +35,12 @@ export default function Reservations() {
 	const [showOTPVerification, setShowOTPVerification] = useState(false);
 	const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
 	const [selectedReservation, setSelectedReservation] = useState<any>(null);
+	const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+	const [paymentData, setPaymentData] = useState<{
+		reservationId: string;
+		amount: number;
+		currency: string;
+	} | null>(null);
 	const [otpData, setOtpData] = useState<{
 		phoneNumber: string;
 		reservationId: string;
@@ -57,11 +64,9 @@ export default function Reservations() {
 		amount: number,
 		currency: string,
 	) => {
-		// For now, navigate directly to payment form
-		// TODO: Add OTP verification logic if needed
-		navigate(
-			`/payment-form?reservationId=${reservationId}&amount=${amount}&currency=${currency}`,
-		);
+		// Open payment dialog instead of navigating
+		setPaymentData({ reservationId, amount, currency });
+		setIsPaymentDialogOpen(true);
 	};
 
 	const handleOTPVerified = () => {
@@ -88,6 +93,17 @@ export default function Reservations() {
 	const handleCloseIncomeDialog = () => {
 		setIsIncomeDialogOpen(false);
 		setSelectedReservation(null);
+	};
+
+	const handlePaymentSuccess = () => {
+		refetch();
+		setIsPaymentDialogOpen(false);
+		setPaymentData(null);
+	};
+
+	const handleClosePaymentDialog = () => {
+		setIsPaymentDialogOpen(false);
+		setPaymentData(null);
 	};
 
 	const handleDataUpdate = () => {
@@ -201,6 +217,17 @@ export default function Reservations() {
 				accounts={accounts}
 				onSuccess={handleIncomeSuccess}
 			/>
+
+			{paymentData && (
+				<PaymentDialog
+					isOpen={isPaymentDialogOpen}
+					onClose={handleClosePaymentDialog}
+					reservationId={paymentData.reservationId}
+					initialAmount={paymentData.amount}
+					initialCurrency={paymentData.currency}
+					onSuccess={handlePaymentSuccess}
+				/>
+			)}
 		</div>
 	);
 }

@@ -225,7 +225,7 @@ export function AddIncomeDialog({
 								setIncomeForm({ ...incomeForm, currency })
 							}
 							label=""
-							showGoogleSearchLink={true}
+							showGoogleSearchLink={false}
 						/>
 					</div>
 					<div>
