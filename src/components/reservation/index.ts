@@ -4,5 +4,3 @@ export { ReservationDateSelector } from "./ReservationDateSelector";
 export { ReservationsTable } from "./ReservationsTable";
 export { IncomeHistoryTable } from "./IncomeHistoryTable";
 export { AddIncomeDialog } from "./AddIncomeDialog";
-export { useIncomeHistory } from "./useIncomeHistory";
-export { useReservationIncomeMapping } from "./useReservationIncomeMapping";

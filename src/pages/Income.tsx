@@ -4,12 +4,12 @@ import { IncomeSkeleton } from "@/components/IncomeSkeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useIncomeData } from "@/hooks/useIncomeData";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useIncomeHistory } from "@/hooks/useIncomeHistory";
+import { useReservationIncomeMapping } from "@/hooks/useReservationIncomeMapping";
 import {
 	ReservationsTable,
 	IncomeHistoryTable,
 	AddIncomeDialog,
-	useIncomeHistory,
-	useReservationIncomeMapping,
 } from "@/components/reservation";
 
 type Database = any;
