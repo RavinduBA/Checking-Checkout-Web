@@ -68,7 +68,7 @@ export function ReservationsDesktopTable({
 	};
 
 	const getTotalPayableAmount = (reservation: any): number => {
-		const roomAmount = reservation.total_amount;
+		const roomAmount = reservation.room_rate * reservation.nights; // Use calculated room amount, not total_amount
 		const additionalServices = incomeRecords
 			.filter((inc) => inc.booking_id === reservation.id)
 			.reduce((sum, inc) => sum + Number(inc.amount), 0);
@@ -136,7 +136,7 @@ export function ReservationsDesktopTable({
 									</TableCell>
 									<TableCell>
 										{getCurrencySymbol(reservation.currency)}{" "}
-										{reservation.total_amount.toLocaleString()}
+										{(reservation.room_rate * reservation.nights).toLocaleString()}
 									</TableCell>
 									<TableCell>
 										<ReservationExpensesDisplay

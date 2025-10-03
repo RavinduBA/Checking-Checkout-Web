@@ -84,7 +84,7 @@ export function AddIncomeDialog({
 	useEffect(() => {
 		if (selectedReservation) {
 			setIncomeForm({
-				amount: selectedReservation.total_amount,
+				amount: 0, // Start with empty amount for additional services
 				note:
 					t("income.addDialog.reservationInfo.reservation") +
 					` ${selectedReservation.reservation_number}`,
