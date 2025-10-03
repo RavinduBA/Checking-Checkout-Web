@@ -1,4 +1,8 @@
+import { useState } from "react";
+import { Plus } from "lucide-react";
+import { AddIncomeDialog } from "./AddIncomeDialog";
 import { ReservationsListSkeleton } from "@/components/ReservationsListSkeleton";
+import { Button } from "@/components/ui/button";
 import {
 	Table,
 	TableBody,
@@ -9,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { useLocationContext } from "@/context/LocationContext";
 import { useIncomeData } from "@/hooks/useReservationsData";
+import { useIncomeData as useAccountsData } from "@/hooks/useIncomeData";
 
 type IncomeRecord = {
 	id: string;
@@ -26,8 +31,10 @@ interface PaymentsTableProps {
 }
 
 export function PaymentsTable() {
+	const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
 	const { selectedLocation } = useLocationContext();
 	const { incomeRecords, loading, refetch } = useIncomeData();
+	const { accounts } = useAccountsData();
 
 	// Utility functions
 	const getCurrencySymbol = (currency: string): string => {
@@ -44,6 +51,19 @@ export function PaymentsTable() {
 		return `${getCurrencySymbol(currency)} ${amount.toLocaleString()}`;
 	};
 
+	const handleAddIncome = () => {
+		setIsIncomeDialogOpen(true);
+	};
+
+	const handleIncomeSuccess = () => {
+		refetch();
+		setIsIncomeDialogOpen(false);
+	};
+
+	const handleCloseDialog = () => {
+		setIsIncomeDialogOpen(false);
+	};
+
 	if (loading) {
 		return <ReservationsListSkeleton />;
 	}
@@ -52,9 +72,19 @@ export function PaymentsTable() {
 		<div className="space-y-4">
 			<div className="bg-white shadow rounded-lg">
 				<div className="px-4 py-5 sm:p-6">
-					<h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-						Payments
-					</h3>
+					<div className="flex justify-between items-center mb-4">
+						<h3 className="text-lg leading-6 font-medium text-gray-900">
+							Payments
+						</h3>
+						<Button
+							onClick={handleAddIncome}
+							size="sm"
+							className="flex items-center gap-2"
+						>
+							<Plus className="h-4 w-4" />
+							Add Income
+						</Button>
+					</div>
 					{incomeRecords.length === 0 ? (
 						<p className="text-sm text-muted-foreground">No payments found</p>
 					) : (
@@ -103,6 +133,14 @@ export function PaymentsTable() {
 					)}
 				</div>
 			</div>
+
+			<AddIncomeDialog
+				isOpen={isIncomeDialogOpen}
+				onClose={handleCloseDialog}
+				selectedReservation={null}
+				accounts={accounts}
+				onSuccess={handleIncomeSuccess}
+			/>
 		</div>
 	);
 }
