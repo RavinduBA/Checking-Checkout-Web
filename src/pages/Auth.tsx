@@ -185,12 +185,12 @@ export default function Auth() {
 			</aside>
 
 			<div className="flex-1 flex items-center justify-center h-screen">
-				<div className="w-full max-w-md space-y-8 px-4 bg-white text-gray-600 sm:px-0">
+				<div className="w-full max-w-md space-y-8 px-4 bg-card text-foreground sm:px-0">
 					<div className="space-y-1">
-						<h2 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-50">
+						<h2 className="text-xl font-semibold tracking-tight text-foreground">
 							{isLogin ? "Get started now" : "Create your account"}
 						</h2>
-						<p className="text-sm text-gray-700 dark:text-gray-400">
+						<p className="text-sm text-muted-foreground">
 							{isLogin
 								? "Enter your credentials to access your account"
 								: "Start your 7-day free trial today"}
