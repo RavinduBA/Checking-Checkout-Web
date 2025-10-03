@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { NewReservationDialog } from "@/components/NewReservationDialog";
 import { OTPVerification } from "@/components/OTPVerification";
 import { ReservationEditDialog } from "@/components/ReservationEditDialog";
+import { AddIncomeDialog } from "@/components/reservation/AddIncomeDialog";
 import { PaymentsTable } from "@/components/reservation/PaymentsTable";
 import { ReservationsDesktopTable } from "@/components/reservation/ReservationsDesktopTable";
 import { ReservationsFilters } from "@/components/reservation/ReservationsFilters";
@@ -13,31 +14,26 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { ViewReservationDialog } from "@/components/ViewReservationDialog";
 import { useLocationContext } from "@/context/LocationContext";
 import { useReservationsData } from "@/hooks/useReservationsData";
+import { useIncomeData } from "@/hooks/useIncomeData";
 
 export default function Reservations() {
 	const { locations } = useLocationContext();
 	const { refetch } = useReservationsData();
+	const { accounts } = useIncomeData();
 	const navigate = useNavigate();
 
-	// State for filters
+	// Dialog states
+	const [activeTab, setActiveTab] = useState("reservations");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState("all");
-	const [activeTab, setActiveTab] = useState("reservations");
-
-	// State for dialogs
-	const [isNewReservationDialogOpen, setIsNewReservationDialogOpen] =
-		useState(false);
-	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+	const [isNewReservationDialogOpen, setIsNewReservationDialogOpen] = useState(false);
 	const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-	const [viewingReservationId, setViewingReservationId] = useState<
-		string | null
-	>(null);
-	const [editingReservation, setEditingReservation] = useState<any | null>(
-		null,
-	);
-
-	// State for OTP verification
+	const [viewingReservationId, setViewingReservationId] = useState<string | null>(null);
+	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+	const [editingReservation, setEditingReservation] = useState<any>(null);
 	const [showOTPVerification, setShowOTPVerification] = useState(false);
+	const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
+	const [selectedReservation, setSelectedReservation] = useState<any>(null);
 	const [otpData, setOtpData] = useState<{
 		phoneNumber: string;
 		reservationId: string;
@@ -78,6 +74,22 @@ export default function Reservations() {
 		setOtpData(null);
 	};
 
+	const handleAddIncome = (reservation: any) => {
+		setSelectedReservation(reservation);
+		setIsIncomeDialogOpen(true);
+	};
+
+	const handleIncomeSuccess = () => {
+		refetch();
+		setIsIncomeDialogOpen(false);
+		setSelectedReservation(null);
+	};
+
+	const handleCloseIncomeDialog = () => {
+		setIsIncomeDialogOpen(false);
+		setSelectedReservation(null);
+	};
+
 	const handleDataUpdate = () => {
 		refetch();
 	};
@@ -108,6 +120,7 @@ export default function Reservations() {
 							onViewReservation={handleViewReservation}
 							onEditReservation={handleEditReservation}
 							onPayment={handlePayment}
+							onAddIncome={handleAddIncome}
 						/>
 
 						<ReservationsDesktopTable
@@ -116,6 +129,7 @@ export default function Reservations() {
 							onViewReservation={handleViewReservation}
 							onEditReservation={handleEditReservation}
 							onPayment={handlePayment}
+							onAddIncome={handleAddIncome}
 						/>
 					</TabsContent>
 
@@ -178,6 +192,14 @@ export default function Reservations() {
 					setViewingReservationId(null);
 				}}
 				reservationId={viewingReservationId || ""}
+			/>
+
+			<AddIncomeDialog
+				isOpen={isIncomeDialogOpen}
+				onClose={handleCloseIncomeDialog}
+				selectedReservation={selectedReservation}
+				accounts={accounts}
+				onSuccess={handleIncomeSuccess}
 			/>
 		</div>
 	);

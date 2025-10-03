@@ -12,47 +12,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function ReservationsListSkeleton() {
 	return (
-		<div className="max-w-full w-full pb-20 sm:pb-0 mx-auto p-4 space-y-6">
+		<div className="max-w-full w-full pb-20 sm:pb-0 mx-auto space-y-6">
 			{/* Header Skeleton */}
-			<div className="flex flex-col gap-4">
-				<Skeleton className="h-8 w-64" />
 
-				{/* Filters Skeleton */}
-				<div className="flex flex-col lg:flex-row gap-4">
-					<Skeleton className="w-full lg:w-48 h-10" />
-					<Skeleton className="w-full lg:w-64 h-10" />
-					<Skeleton className="w-full lg:w-48 h-10" />
-					<Skeleton className="w-40 h-10" />
-				</div>
-			</div>
 
 			{/* Tabs Skeleton */}
-			<Tabs defaultValue="reservations" className="w-full">
-				<TabsList className="grid w-full grid-cols-2">
-					<TabsTrigger value="reservations">Reservations</TabsTrigger>
-					<TabsTrigger value="payments">Payments</TabsTrigger>
-				</TabsList>
+			<div className="w-full">
 
-				<TabsContent value="reservations" className="space-y-4">
+				<div className="space-y-4">
 					{/* Desktop Table View Skeleton */}
 					<div className="hidden lg:block">
 						<Card>
 							<CardHeader>
-								<CardTitle>Reservations</CardTitle>
+								<CardTitle className="px-4"><Skeleton className="h-6 w-24" /></CardTitle>
 							</CardHeader>
 							<CardContent>
 								<Table>
 									<TableHeader>
 										<TableRow>
-											<TableHead>Reservation #</TableHead>
-											<TableHead>Guest</TableHead>
-											<TableHead>Room</TableHead>
-											<TableHead>Check-in</TableHead>
-											<TableHead>Check-out</TableHead>
-											<TableHead>Room Amount</TableHead>
-											<TableHead>Expenses</TableHead>
-											<TableHead>Status</TableHead>
-											<TableHead>Actions</TableHead>
+											<TableHead><Skeleton className="h-6 w-24" /></TableHead>
+											<TableHead><Skeleton className="h-6 w-24" /></TableHead>
+											<TableHead><Skeleton className="h-6 w-24" /></TableHead>
+											<TableHead><Skeleton className="h-6 w-24" /></TableHead>
+											<TableHead><Skeleton className="h-6 w-24" /></TableHead>
+											<TableHead><Skeleton className="h-6 w-24" /></TableHead>
 										</TableRow>
 									</TableHeader>
 									<TableBody>
@@ -140,53 +123,8 @@ export function ReservationsListSkeleton() {
 							</Card>
 						))}
 					</div>
-				</TabsContent>
-
-				<TabsContent value="payments" className="space-y-4">
-					<Card>
-						<CardHeader>
-							<CardTitle>Recent Payments</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<div className="mb-4">
-								<Skeleton className="h-4 w-32" />
-							</div>
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Payment #</TableHead>
-										<TableHead>Amount</TableHead>
-										<TableHead>Method</TableHead>
-										<TableHead>Date</TableHead>
-										<TableHead>Status</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{Array.from({ length: 5 }).map((_, index) => (
-										<TableRow key={index}>
-											<TableCell>
-												<Skeleton className="h-4 w-24" />
-											</TableCell>
-											<TableCell>
-												<Skeleton className="h-4 w-20" />
-											</TableCell>
-											<TableCell>
-												<Skeleton className="h-4 w-16" />
-											</TableCell>
-											<TableCell>
-												<Skeleton className="h-4 w-20" />
-											</TableCell>
-											<TableCell>
-												<Skeleton className="h-6 w-20 rounded-full" />
-											</TableCell>
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-						</CardContent>
-					</Card>
-				</TabsContent>
-			</Tabs>
+				</div>
+			</div>
 		</div>
 	);
 }

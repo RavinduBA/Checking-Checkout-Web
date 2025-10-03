@@ -24,6 +24,7 @@ interface ReservationsDesktopTableProps {
 	onViewReservation: (id: string) => void;
 	onEditReservation: (reservation: any) => void;
 	onPayment: (reservationId: string, amount: number, currency: string) => void;
+	onAddIncome: (reservation: any) => void;
 }
 
 export function ReservationsDesktopTable({
@@ -32,6 +33,7 @@ export function ReservationsDesktopTable({
 	onViewReservation,
 	onEditReservation,
 	onPayment,
+	onAddIncome,
 }: ReservationsDesktopTableProps) {
 	const { reservations, loading } = useReservationsData();
 	const { incomeRecords } = useIncomeData();
@@ -95,7 +97,7 @@ export function ReservationsDesktopTable({
 		<div className="hidden lg:block">
 			<Card>
 				<CardHeader>
-					<CardTitle>Reservations</CardTitle>
+					<CardTitle className="px-4 text-sm font-medium">Reservations</CardTitle>
 				</CardHeader>
 				<CardContent>
 					<Table>
@@ -156,6 +158,7 @@ export function ReservationsDesktopTable({
 													reservation.currency,
 												)
 											}
+											onAddIncome={() => onAddIncome(reservation)}
 											canShowPayment={canShowPaymentButton(reservation)}
 											isMobile={false}
 										/>

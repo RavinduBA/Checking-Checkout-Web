@@ -1,4 +1,4 @@
-import { CreditCard, Edit, Eye } from "lucide-react";
+import { CreditCard, DollarSign, Edit, Eye } from "lucide-react";
 import { OTPVerification } from "@/components/OTPVerification";
 import { ReservationPrintButton } from "@/components/ReservationPrintButton";
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,7 @@ interface ReservationActionsProps {
 	onView: () => void;
 	onEdit: () => void;
 	onPayment: () => void;
+	onAddIncome: () => void;
 	canShowPayment: boolean;
 	isMobile?: boolean;
 }
@@ -62,29 +63,86 @@ export function ReservationActions({
 	onView,
 	onEdit,
 	onPayment,
+	onAddIncome,
 	canShowPayment,
 	isMobile = false,
 }: ReservationActionsProps) {
-	if (isMobile) {
+		if (isMobile) {
+			return (
+				<div className="flex gap-2 mt-4">
+					<Button variant="outline" size="sm" className="flex-1" onClick={onView}>
+						<Eye className="size-4 mr-1" />
+						View
+					</Button>
+
+					<ReservationPrintButton
+						reservation={reservation}
+						buttonText=""
+						buttonVariant="outline"
+						buttonSize="sm"
+						showIcon={true}
+					/>
+
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={onAddIncome}
+						className="text-blue-600 hover:text-blue-700"
+					>
+						<DollarSign className="size-4" />
+					</Button>
+
+					{canShowPayment && (
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={onPayment}
+							className="text-green-600 hover:text-green-700"
+						>
+							<CreditCard className="size-4" />
+						</Button>
+					)}
+
+					<OTPVerification
+						onVerified={onEdit}
+						triggerComponent={
+							<Button variant="outline" size="sm">
+								<Edit className="size-4" />
+							</Button>
+						}
+					/>
+				</div>
+			);
+		}
+
 		return (
-			<div className="flex gap-2 mt-4">
-				<Button variant="outline" size="sm" className="flex-1" onClick={onView}>
-					<Eye className="size-4 mr-1" />
-					View
+			<div className="flex gap-1">
+				<Button variant="ghost" size="icon" onClick={onView}>
+					<Eye className="size-4" />
 				</Button>
 
 				<ReservationPrintButton
 					reservation={reservation}
 					buttonText=""
-					buttonVariant="outline"
-					buttonSize="sm"
+					buttonVariant="ghost"
+					buttonSize="icon"
 					showIcon={true}
 				/>
 
+				<Button 
+					variant="ghost" 
+					size="icon" 
+					onClick={onAddIncome}
+					className="text-blue-600 hover:text-blue-700"
+					title="Add Income"
+				>
+					<DollarSign className="size-4" />
+				</Button>
+
 				{canShowPayment && (
 					<Button
-						variant="outline"
-						size="sm"
+						variant="ghost"
+						size="icon"
 						onClick={onPayment}
 						className="text-green-600 hover:text-green-700"
 					>
@@ -95,48 +153,11 @@ export function ReservationActions({
 				<OTPVerification
 					onVerified={onEdit}
 					triggerComponent={
-						<Button variant="outline" size="sm">
+						<Button variant="ghost" size="icon">
 							<Edit className="size-4" />
 						</Button>
 					}
 				/>
 			</div>
 		);
-	}
-
-	return (
-		<div className="flex gap-1">
-			<Button variant="ghost" size="icon" onClick={onView}>
-				<Eye className="size-4" />
-			</Button>
-
-			<ReservationPrintButton
-				reservation={reservation}
-				buttonText=""
-				buttonVariant="ghost"
-				buttonSize="icon"
-				showIcon={true}
-			/>
-
-			{canShowPayment && (
-				<Button
-					variant="ghost"
-					size="icon"
-					onClick={onPayment}
-					className="text-green-600 hover:text-green-700"
-				>
-					<CreditCard className="size-4" />
-				</Button>
-			)}
-
-			<OTPVerification
-				onVerified={onEdit}
-				triggerComponent={
-					<Button variant="ghost" size="icon">
-						<Edit className="size-4" />
-					</Button>
-				}
-			/>
-		</div>
-	);
 }

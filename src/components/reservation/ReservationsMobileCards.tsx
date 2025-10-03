@@ -17,6 +17,7 @@ interface ReservationsMobileCardsProps {
 	onViewReservation: (id: string) => void;
 	onEditReservation: (reservation: any) => void;
 	onPayment: (reservationId: string, amount: number, currency: string) => void;
+	onAddIncome: (reservation: any) => void;
 }
 
 export function ReservationsMobileCards({
@@ -25,6 +26,7 @@ export function ReservationsMobileCards({
 	onViewReservation,
 	onEditReservation,
 	onPayment,
+	onAddIncome,
 }: ReservationsMobileCardsProps) {
 	const { reservations, loading } = useReservationsData();
 	const { incomeRecords } = useIncomeData();
@@ -161,6 +163,7 @@ export function ReservationsMobileCards({
 									reservation.currency,
 								)
 							}
+							onAddIncome={() => onAddIncome(reservation)}
 							canShowPayment={canShowPaymentButton(reservation)}
 							isMobile={true}
 						/>
