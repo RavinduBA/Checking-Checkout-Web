@@ -13,6 +13,8 @@ export interface UserPermissions {
 }
 
 export interface User extends Profile {
+	last_sign_in_at?: string | null;
+	avatar_url?: string | null;
 	permissions: {
 		[locationName: string]: UserPermissions;
 	};

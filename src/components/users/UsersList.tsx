@@ -18,16 +18,26 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatDistanceToNow } from "date-fns";
-import { useUsersData } from "@/hooks/useUsersData";
+import { useUsersData, type User as UsersDataUser } from "@/hooks/useUsersData";
 import { supabase } from "@/integrations/supabase/client";
-import type { User as UserType } from "./types";
 
 interface UsersListProps {
-	onEditUser: (user: UserType) => void;
+	onEditUser: (user: UsersDataUser) => void;
 }
 
 export function UsersList({ onEditUser }: UsersListProps) {
-	const { users, loading, refetch } = useUsersData();
+	const { users, loading, refetch, deleteUser } = useUsersData();
+
+	const handleDeleteUser = async (userId: string) => {
+		if (confirm("Are you sure you want to remove this user's access?")) {
+			try {
+				await deleteUser(userId);
+			} catch (error) {
+				console.error("Failed to delete user:", error);
+				alert("Failed to delete user. Please try again.");
+			}
+		}
+	};
 
 	const formatLastActivity = (lastSignIn: string | null | undefined) => {
 		if (!lastSignIn) return "Never";
@@ -192,7 +202,7 @@ export function UsersList({ onEditUser }: UsersListProps) {
 													<Button
 														variant="ghost"
 														size="sm"
-														onClick={() => deleteUser(user.id)}
+														onClick={() => handleDeleteUser(user.id)}
 														className="text-destructive hover:text-destructive"
 													>
 														<Trash2 className="h-4 w-4" />

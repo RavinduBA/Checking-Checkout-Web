@@ -23,9 +23,17 @@ export default function Users() {
 	const { loading } = useUsersData();
 
 	const handleEditUser = (user: UsersDataUser) => {
-		// Convert UsersDataUser to User type for editing
+		// Convert to component User type
 		const convertedUser: User = {
-			...user,
+			id: user.id,
+			name: user.name,
+			email: user.email,
+			is_tenant_admin: user.is_tenant_admin,
+			created_at: user.created_at,
+			last_sign_in_at: user.last_sign_in_at,
+			phone: user.phone,
+			avatar_url: user.avatar_url,
+			tenant_role: user.tenant_role,
 			permissions: user.permissions,
 			location_count: user.location_count,
 			total_permissions: user.total_permissions,
