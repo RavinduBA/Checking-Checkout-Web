@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useUsers } from "./hooks";
+import { useUsersData } from "@/hooks/useUsersData";
 import type { User as UserType } from "./types";
 import { permissionTypes } from "./types";
 
@@ -18,7 +18,7 @@ interface PermissionMatrixProps {
 }
 
 export function PermissionMatrix({ onEditUser }: PermissionMatrixProps) {
-	const { users, loading } = useUsers();
+	const { users, loading } = useUsersData();
 
 	const getPermissionCount = (permissions: any) => {
 		return Object.values(permissions).filter(Boolean).length;

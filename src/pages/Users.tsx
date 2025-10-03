@@ -4,15 +4,14 @@ import { Button } from "@/components/ui/button";
 import {
 	UsersList,
 	PermissionMatrix,
-	UserStats,
 	InviteMemberDialog,
 	EditUserDialog,
-	useUsers,
 	type User,
 } from "@/components/users";
 import { useAuth } from "@/context/AuthContext";
 import { useLocationContext } from "@/context/LocationContext";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useUsersData, type User as UsersDataUser } from "@/hooks/useUsersData";
 
 export default function Users() {
 	const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -21,10 +20,17 @@ export default function Users() {
 	const { user: currentUser, tenant } = useAuth();
 	const { hasPermission } = usePermissions();
 	const { locations } = useLocationContext();
-	const { loading } = useUsers();
+	const { loading } = useUsersData();
 
-	const handleEditUser = (user: User) => {
-		setEditingUser({ ...user });
+	const handleEditUser = (user: UsersDataUser) => {
+		// Convert UsersDataUser to User type for editing
+		const convertedUser: User = {
+			...user,
+			permissions: user.permissions,
+			location_count: user.location_count,
+			total_permissions: user.total_permissions,
+		};
+		setEditingUser(convertedUser);
 		setShowEditUser(true);
 	};
 
@@ -54,9 +60,6 @@ export default function Users() {
 					</Button>
 				)}
 			</div>
-
-			{/* User Statistics */}
-			<UserStats />
 
 			{/* Users List */}
 			<UsersList onEditUser={handleEditUser} />

@@ -18,7 +18,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatDistanceToNow } from "date-fns";
-import { useUsers } from "./hooks";
+import { useUsersData } from "@/hooks/useUsersData";
+import { supabase } from "@/integrations/supabase/client";
 import type { User as UserType } from "./types";
 
 interface UsersListProps {
@@ -26,7 +27,7 @@ interface UsersListProps {
 }
 
 export function UsersList({ onEditUser }: UsersListProps) {
-	const { users, loading, deleteUser } = useUsers();
+	const { users, loading, refetch } = useUsersData();
 
 	const formatLastActivity = (lastSignIn: string | null | undefined) => {
 		if (!lastSignIn) return "Never";
