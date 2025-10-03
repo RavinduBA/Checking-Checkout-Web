@@ -307,5 +307,81 @@
       "tracking": "Commission Tracking",
       "reports": "Commission Reports"
     }
+  },
+  "income": {
+    "title": "Income Management",
+    "permissionDenied": "You don't have permission to access income management.",
+    "reservationsTable": {
+      "title": "Reservations - Add Income",
+      "headers": {
+        "reservationNumber": "Reservation #",
+        "guest": "Guest",
+        "room": "Room",
+        "checkIn": "Check-in",
+        "checkOut": "Check-out",
+        "totalAmount": "Total Amount",
+        "status": "Status",
+        "action": "Action"
+      },
+      "addIncomeButton": "Add Income",
+      "disabledReasons": {
+        "confirmed": "Income cannot be added - reservation is confirmed (payment completed)",
+        "alreadyRecorded": "Income already recorded for this reservation"
+      },
+      "statuses": {
+        "tentative": "Tentative",
+        "confirmed": "Confirmed",
+        "checked_in": "Checked In",
+        "checked_out": "Checked Out",
+        "cancelled": "Cancelled"
+      }
+    },
+    "historyTable": {
+      "title": "Recent Income History",
+      "headers": {
+        "date": "Date",
+        "note": "Note",
+        "type": "Type",
+        "amount": "Amount",
+        "account": "Account"
+      }
+    },
+    "addDialog": {
+      "title": "Add Income",
+      "description": "Record income for the selected reservation.",
+      "reservationInfo": {
+        "reservation": "Reservation:",
+        "guest": "Guest:",
+        "amount": "Amount:"
+      },
+      "form": {
+        "amount": "Amount",
+        "note": "Note",
+        "notePlaceholder": "Additional notes...",
+        "incomeType": "Income Type",
+        "incomeTypePlaceholder": "Select income type",
+        "paymentType": "Payment Type",
+        "account": "Account",
+        "accountRequired": "Account *",
+        "accountPlaceholder": "Select account",
+        "accountDescription": "Account to record the payment"
+      },
+      "paymentTypes": {
+        "direct": "💵 Direct Payment (Paid Now)",
+        "deferred": "📋 Add to Bill (Pay Later)",
+        "directDescription": "Guest paid directly. Will update account balance.",
+        "deferredDescription": "Add to reservation bill. Guest will pay during checkout.",
+        "deferredInfo": "💡 Deferred Payment: This amount will be added to the reservation total. Guest will pay during checkout. No account will be updated now."
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "record": "Record Income"
+      },
+      "messages": {
+        "directSuccess": "Direct payment recorded to account",
+        "deferredSuccess": "Amount added to reservation bill",
+        "error": "Failed to record income"
+      }
+    }
   }
 }

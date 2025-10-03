@@ -1,5 +1,6 @@
 import { AlertCircle } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { IncomeSkeleton } from "@/components/IncomeSkeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useIncomeData } from "@/hooks/useIncomeData";
@@ -16,6 +17,7 @@ type Database = any;
 type Reservation = Database["public"]["Tables"]["reservations"]["Row"];
 
 const Income = () => {
+	const { t } = useTranslation();
 	const { hasAnyPermission } = usePermissions();
 	const { reservations, rooms, accounts, loading, refetch } = useIncomeData();
 	const { incomeHistory, refetch: refetchIncomeHistory } = useIncomeHistory();
@@ -46,7 +48,7 @@ const Income = () => {
 				<Alert>
 					<AlertCircle className="size-4" />
 					<AlertDescription>
-						You don't have permission to access income management.
+						{t("income.permissionDenied")}
 					</AlertDescription>
 				</Alert>
 			</div>
@@ -57,7 +59,7 @@ const Income = () => {
 
 	return (
 		<div className="p-6 space-y-6">
-			<h1 className="text-2xl font-bold">Income Management</h1>
+			<h1 className="text-2xl font-bold">{t("income.title")}</h1>
 
 			<ReservationsTable
 				reservations={reservations}

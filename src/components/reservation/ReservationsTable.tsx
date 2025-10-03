@@ -1,4 +1,5 @@
 import { DollarSign } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +29,8 @@ export function ReservationsTable({
 	reservationIncomeMap,
 	onAddIncome,
 }: ReservationsTableProps) {
+	const { t } = useTranslation();
+	
 	const getStatusBadge = (status: string) => {
 		const variants: Record<
 			string,
@@ -41,7 +44,7 @@ export function ReservationsTable({
 		};
 		return (
 			<Badge variant={variants[status] || "default"}>
-				{status.charAt(0).toUpperCase() + status.slice(1)}
+				{t(`income.reservationsTable.statuses.${status}`, status.charAt(0).toUpperCase() + status.slice(1))}
 			</Badge>
 		);
 	};
@@ -60,10 +63,10 @@ export function ReservationsTable({
 
 	const getDisabledReason = (reservation: Reservation) => {
 		if (reservation.status === "confirmed") {
-			return "Income cannot be added - reservation is confirmed (payment completed)";
+			return t("income.reservationsTable.disabledReasons.confirmed");
 		}
 		if (reservationIncomeMap[reservation.id]) {
-			return "Income already recorded for this reservation";
+			return t("income.reservationsTable.disabledReasons.alreadyRecorded");
 		}
 		return "";
 	};
@@ -71,20 +74,20 @@ export function ReservationsTable({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>Reservations - Add Income</CardTitle>
+				<CardTitle>{t("income.reservationsTable.title")}</CardTitle>
 			</CardHeader>
 			<CardContent>
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>Reservation #</TableHead>
-							<TableHead>Guest</TableHead>
-							<TableHead>Room</TableHead>
-							<TableHead>Check-in</TableHead>
-							<TableHead>Check-out</TableHead>
-							<TableHead>Total Amount</TableHead>
-							<TableHead>Status</TableHead>
-							<TableHead>Action</TableHead>
+							<TableHead>{t("income.reservationsTable.headers.reservationNumber")}</TableHead>
+							<TableHead>{t("income.reservationsTable.headers.guest")}</TableHead>
+							<TableHead>{t("income.reservationsTable.headers.room")}</TableHead>
+							<TableHead>{t("income.reservationsTable.headers.checkIn")}</TableHead>
+							<TableHead>{t("income.reservationsTable.headers.checkOut")}</TableHead>
+							<TableHead>{t("income.reservationsTable.headers.totalAmount")}</TableHead>
+							<TableHead>{t("income.reservationsTable.headers.status")}</TableHead>
+							<TableHead>{t("income.reservationsTable.headers.action")}</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
@@ -120,7 +123,7 @@ export function ReservationsTable({
 											onClick={() => onAddIncome(reservation)}
 										>
 											<DollarSign className="size-4 mr-1" />
-											Add Income
+											{t("income.reservationsTable.addIncomeButton")}
 										</Button>
 									</TableCell>
 								</TableRow>

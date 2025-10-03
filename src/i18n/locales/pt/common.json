@@ -307,5 +307,81 @@
       "tracking": "Rastreamento de Comissões",
       "reports": "Relatórios de Comissões"
     }
+  },
+  "income": {
+    "title": "Gestão de Receitas",
+    "permissionDenied": "Você não tem permissão para acessar a gestão de receitas.",
+    "reservationsTable": {
+      "title": "Reservas - Adicionar Receita",
+      "headers": {
+        "reservationNumber": "Reserva #",
+        "guest": "Hóspede",
+        "room": "Quarto",
+        "checkIn": "Check-in",
+        "checkOut": "Check-out",
+        "totalAmount": "Valor Total",
+        "status": "Status",
+        "action": "Ação"
+      },
+      "addIncomeButton": "Adicionar Receita",
+      "disabledReasons": {
+        "confirmed": "Receita não pode ser adicionada - reserva está confirmada (pagamento concluído)",
+        "alreadyRecorded": "Receita já registrada para esta reserva"
+      },
+      "statuses": {
+        "tentative": "Tentativo",
+        "confirmed": "Confirmado",
+        "checked_in": "Check-in Feito",
+        "checked_out": "Check-out Feito",
+        "cancelled": "Cancelado"
+      }
+    },
+    "historyTable": {
+      "title": "Histórico de Receitas Recentes",
+      "headers": {
+        "date": "Data",
+        "note": "Nota",
+        "type": "Tipo",
+        "amount": "Valor",
+        "account": "Conta"
+      }
+    },
+    "addDialog": {
+      "title": "Adicionar Receita",
+      "description": "Registrar receita para a reserva selecionada.",
+      "reservationInfo": {
+        "reservation": "Reserva:",
+        "guest": "Hóspede:",
+        "amount": "Valor:"
+      },
+      "form": {
+        "amount": "Valor",
+        "note": "Nota",
+        "notePlaceholder": "Notas adicionais...",
+        "incomeType": "Tipo de Receita",
+        "incomeTypePlaceholder": "Selecionar tipo de receita",
+        "paymentType": "Tipo de Pagamento",
+        "account": "Conta",
+        "accountRequired": "Conta *",
+        "accountPlaceholder": "Selecionar conta",
+        "accountDescription": "Conta para registrar o pagamento"
+      },
+      "paymentTypes": {
+        "direct": "💵 Pagamento Direto (Pago Agora)",
+        "deferred": "📋 Adicionar à Conta (Pagar Depois)",
+        "directDescription": "Hóspede pagou diretamente. Atualizará o saldo da conta.",
+        "deferredDescription": "Adicionar à conta da reserva. Hóspede pagará no check-out.",
+        "deferredInfo": "💡 Pagamento Diferido: Este valor será adicionado ao total da reserva. Hóspede pagará no check-out. Nenhuma conta será atualizada agora."
+      },
+      "buttons": {
+        "cancel": "Cancelar",
+        "record": "Registrar Receita"
+      },
+      "messages": {
+        "directSuccess": "Pagamento direto registrado na conta",
+        "deferredSuccess": "Valor adicionado à conta da reserva",
+        "error": "Falha ao registrar receita"
+      }
+    }
   }
 }

@@ -306,5 +306,81 @@
       "tracking": "Seguimiento de Comisiones",
       "reports": "Informes de Comisiones"
     }
+  },
+  "income": {
+    "title": "Gestión de Ingresos",
+    "permissionDenied": "No tienes permiso para acceder a la gestión de ingresos.",
+    "reservationsTable": {
+      "title": "Reservas - Agregar Ingreso",
+      "headers": {
+        "reservationNumber": "Reserva #",
+        "guest": "Huésped",
+        "room": "Habitación",
+        "checkIn": "Check-in",
+        "checkOut": "Check-out",
+        "totalAmount": "Importe Total",
+        "status": "Estado",
+        "action": "Acción"
+      },
+      "addIncomeButton": "Agregar Ingreso",
+      "disabledReasons": {
+        "confirmed": "No se puede agregar ingreso - la reserva está confirmada (pago completado)",
+        "alreadyRecorded": "Ingreso ya registrado para esta reserva"
+      },
+      "statuses": {
+        "tentative": "Tentativo",
+        "confirmed": "Confirmado",
+        "checked_in": "Registrado",
+        "checked_out": "Salida",
+        "cancelled": "Cancelado"
+      }
+    },
+    "historyTable": {
+      "title": "Historial de Ingresos Recientes",
+      "headers": {
+        "date": "Fecha",
+        "note": "Nota",
+        "type": "Tipo",
+        "amount": "Importe",
+        "account": "Cuenta"
+      }
+    },
+    "addDialog": {
+      "title": "Agregar Ingreso",
+      "description": "Registrar ingreso para la reserva seleccionada.",
+      "reservationInfo": {
+        "reservation": "Reserva:",
+        "guest": "Huésped:",
+        "amount": "Importe:"
+      },
+      "form": {
+        "amount": "Importe",
+        "note": "Nota",
+        "notePlaceholder": "Notas adicionales...",
+        "incomeType": "Tipo de Ingreso",
+        "incomeTypePlaceholder": "Seleccionar tipo de ingreso",
+        "paymentType": "Tipo de Pago",
+        "account": "Cuenta",
+        "accountRequired": "Cuenta *",
+        "accountPlaceholder": "Seleccionar cuenta",
+        "accountDescription": "Cuenta para registrar el pago"
+      },
+      "paymentTypes": {
+        "direct": "💵 Pago Directo (Pagado Ahora)",
+        "deferred": "📋 Agregar a la Factura (Pagar Después)",
+        "directDescription": "El huésped pagó directamente. Actualizará el saldo de la cuenta.",
+        "deferredDescription": "Agregar a la factura de reserva. El huésped pagará al hacer check-out.",
+        "deferredInfo": "💡 Pago Diferido: Este importe se agregará al total de la reserva. El huésped pagará al hacer check-out. Ninguna cuenta se actualizará ahora."
+      },
+      "buttons": {
+        "cancel": "Cancelar",
+        "record": "Registrar Ingreso"
+      },
+      "messages": {
+        "directSuccess": "Pago directo registrado en la cuenta",
+        "deferredSuccess": "Importe agregado a la factura de reserva",
+        "error": "Error al registrar el ingreso"
+      }
+    }
   }
 }

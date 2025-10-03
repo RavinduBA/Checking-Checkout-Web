@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Table,
@@ -16,20 +17,22 @@ interface IncomeHistoryTableProps {
 }
 
 export function IncomeHistoryTable({ incomeHistory }: IncomeHistoryTableProps) {
+	const { t } = useTranslation();
+	
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>Recent Income History</CardTitle>
+				<CardTitle>{t("income.historyTable.title")}</CardTitle>
 			</CardHeader>
 			<CardContent>
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>Date</TableHead>
-							<TableHead>Note</TableHead>
-							<TableHead>Type</TableHead>
-							<TableHead>Amount</TableHead>
-							<TableHead>Account</TableHead>
+							<TableHead>{t("income.historyTable.headers.date")}</TableHead>
+							<TableHead>{t("income.historyTable.headers.note")}</TableHead>
+							<TableHead>{t("income.historyTable.headers.type")}</TableHead>
+							<TableHead>{t("income.historyTable.headers.amount")}</TableHead>
+							<TableHead>{t("income.historyTable.headers.account")}</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>

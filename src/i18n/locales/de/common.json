@@ -307,5 +307,81 @@
       "tracking": "Provisionsverfolgung",
       "reports": "Provisionsberichte"
     }
+  },
+  "income": {
+    "title": "Einnahmenverwaltung",
+    "permissionDenied": "Sie haben keine Berechtigung, auf die Einnahmenverwaltung zuzugreifen.",
+    "reservationsTable": {
+      "title": "Reservierungen - Einnahme hinzufügen",
+      "headers": {
+        "reservationNumber": "Reservierung #",
+        "guest": "Gast",
+        "room": "Zimmer",
+        "checkIn": "Check-in",
+        "checkOut": "Check-out",
+        "totalAmount": "Gesamtbetrag",
+        "status": "Status",
+        "action": "Aktion"
+      },
+      "addIncomeButton": "Einnahme hinzufügen",
+      "disabledReasons": {
+        "confirmed": "Einnahme kann nicht hinzugefügt werden - Reservierung ist bestätigt (Zahlung abgeschlossen)",
+        "alreadyRecorded": "Einnahme bereits für diese Reservierung erfasst"
+      },
+      "statuses": {
+        "tentative": "Vorläufig",
+        "confirmed": "Bestätigt",
+        "checked_in": "Eingecheckt",
+        "checked_out": "Ausgecheckt",
+        "cancelled": "Storniert"
+      }
+    },
+    "historyTable": {
+      "title": "Aktuelle Einnahmenhistorie",
+      "headers": {
+        "date": "Datum",
+        "note": "Notiz",
+        "type": "Typ",
+        "amount": "Betrag",
+        "account": "Konto"
+      }
+    },
+    "addDialog": {
+      "title": "Einnahme hinzufügen",
+      "description": "Einnahme für die ausgewählte Reservierung erfassen.",
+      "reservationInfo": {
+        "reservation": "Reservierung:",
+        "guest": "Gast:",
+        "amount": "Betrag:"
+      },
+      "form": {
+        "amount": "Betrag",
+        "note": "Notiz",
+        "notePlaceholder": "Zusätzliche Notizen...",
+        "incomeType": "Einnahmentyp",
+        "incomeTypePlaceholder": "Einnahmentyp auswählen",
+        "paymentType": "Zahlungsart",
+        "account": "Konto",
+        "accountRequired": "Konto *",
+        "accountPlaceholder": "Konto auswählen",
+        "accountDescription": "Konto zur Erfassung der Zahlung"
+      },
+      "paymentTypes": {
+        "direct": "💵 Direktzahlung (Jetzt bezahlt)",
+        "deferred": "📋 Zur Rechnung hinzufügen (Später bezahlen)",
+        "directDescription": "Gast hat direkt bezahlt. Wird den Kontostand aktualisieren.",
+        "deferredDescription": "Zur Reservierungsrechnung hinzufügen. Gast zahlt beim Check-out.",
+        "deferredInfo": "💡 Aufgeschobene Zahlung: Dieser Betrag wird zur Reservierungsgesamtsumme hinzugefügt. Gast zahlt beim Check-out. Kein Konto wird jetzt aktualisiert."
+      },
+      "buttons": {
+        "cancel": "Abbrechen",
+        "record": "Einnahme erfassen"
+      },
+      "messages": {
+        "directSuccess": "Direktzahlung auf Konto erfasst",
+        "deferredSuccess": "Betrag zur Reservierungsrechnung hinzugefügt",
+        "error": "Fehler beim Erfassen der Einnahme"
+      }
+    }
   }
 }

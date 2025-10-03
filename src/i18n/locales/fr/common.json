@@ -307,5 +307,81 @@
       "tracking": "Suivi des Commissions",
       "reports": "Rapports de Commissions"
     }
+  },
+  "income": {
+    "title": "Gestion des Revenus",
+    "permissionDenied": "Vous n'avez pas la permission d'accéder à la gestion des revenus.",
+    "reservationsTable": {
+      "title": "Réservations - Ajouter un Revenu",
+      "headers": {
+        "reservationNumber": "Réservation #",
+        "guest": "Client",
+        "room": "Chambre",
+        "checkIn": "Arrivée",
+        "checkOut": "Départ",
+        "totalAmount": "Montant Total",
+        "status": "Statut",
+        "action": "Action"
+      },
+      "addIncomeButton": "Ajouter un Revenu",
+      "disabledReasons": {
+        "confirmed": "Impossible d'ajouter un revenu - la réservation est confirmée (paiement effectué)",
+        "alreadyRecorded": "Revenu déjà enregistré pour cette réservation"
+      },
+      "statuses": {
+        "tentative": "Provisoire",
+        "confirmed": "Confirmé",
+        "checked_in": "Arrivé",
+        "checked_out": "Parti",
+        "cancelled": "Annulé"
+      }
+    },
+    "historyTable": {
+      "title": "Historique des Revenus Récents",
+      "headers": {
+        "date": "Date",
+        "note": "Note",
+        "type": "Type",
+        "amount": "Montant",
+        "account": "Compte"
+      }
+    },
+    "addDialog": {
+      "title": "Ajouter un Revenu",
+      "description": "Enregistrer un revenu pour la réservation sélectionnée.",
+      "reservationInfo": {
+        "reservation": "Réservation:",
+        "guest": "Client:",
+        "amount": "Montant:"
+      },
+      "form": {
+        "amount": "Montant",
+        "note": "Note",
+        "notePlaceholder": "Notes supplémentaires...",
+        "incomeType": "Type de Revenu",
+        "incomeTypePlaceholder": "Sélectionner le type de revenu",
+        "paymentType": "Type de Paiement",
+        "account": "Compte",
+        "accountRequired": "Compte *",
+        "accountPlaceholder": "Sélectionner un compte",
+        "accountDescription": "Compte pour enregistrer le paiement"
+      },
+      "paymentTypes": {
+        "direct": "💵 Paiement Direct (Payé Maintenant)",
+        "deferred": "📋 Ajouter à la Facture (Payer Plus Tard)",
+        "directDescription": "Le client a payé directement. Mettra à jour le solde du compte.",
+        "deferredDescription": "Ajouter à la facture de réservation. Le client paiera lors du départ.",
+        "deferredInfo": "💡 Paiement Différé: Ce montant sera ajouté au total de la réservation. Le client paiera lors du départ. Aucun compte ne sera mis à jour maintenant."
+      },
+      "buttons": {
+        "cancel": "Annuler",
+        "record": "Enregistrer le Revenu"
+      },
+      "messages": {
+        "directSuccess": "Paiement direct enregistré sur le compte",
+        "deferredSuccess": "Montant ajouté à la facture de réservation",
+        "error": "Échec de l'enregistrement du revenu"
+      }
+    }
   }
 }
