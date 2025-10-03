@@ -9,7 +9,7 @@ import { ReservationsFilters } from "@/components/reservation/ReservationsFilter
 import { ReservationsHeader } from "@/components/reservation/ReservationsHeader";
 import { ReservationsMobileCards } from "@/components/reservation/ReservationsMobileCards";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { ViewReservationDialog } from "@/components/ViewReservationDialog";
 import { useLocationContext } from "@/context/LocationContext";
 import { useReservationsData } from "@/hooks/useReservationsData";
@@ -84,42 +84,46 @@ export default function Reservations() {
 
 	return (
 		<div className="max-w-full w-full pb-20 sm:pb-0">
-			<ReservationsHeader activeTab={activeTab} onTabChange={setActiveTab} />
+			<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+				<ReservationsHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
-			<div className="container mx-auto px-6">
-				<ReservationsFilters
-					locations={locations}
-					selectedLocation=""
-					searchQuery={searchQuery}
-					statusFilter={statusFilter}
-					onLocationChange={() => {
-						// Location switching handled by LocationContext
-					}}
-					onSearchChange={setSearchQuery}
-					onStatusFilterChange={setStatusFilter}
-					onNewReservation={() => setIsNewReservationDialogOpen(true)}
-				/>
-
-				<TabsContent value="reservations" className="space-y-4">
-					<ReservationsMobileCards
+				<div className="container mx-auto px-6">
+					<ReservationsFilters
+						locations={locations}
+						selectedLocation=""
 						searchQuery={searchQuery}
 						statusFilter={statusFilter}
-						onViewReservation={handleViewReservation}
-						onEditReservation={handleEditReservation}
-						onPayment={handlePayment}
+						onLocationChange={() => {
+							// Location switching handled by LocationContext
+						}}
+						onSearchChange={setSearchQuery}
+						onStatusFilterChange={setStatusFilter}
+						onNewReservation={() => setIsNewReservationDialogOpen(true)}
 					/>
 
-					<ReservationsDesktopTable
-						searchQuery={searchQuery}
-						statusFilter={statusFilter}
-						onViewReservation={handleViewReservation}
-						onEditReservation={handleEditReservation}
-						onPayment={handlePayment}
-					/>
-				</TabsContent>
+					<TabsContent value="reservations" className="space-y-4">
+						<ReservationsMobileCards
+							searchQuery={searchQuery}
+							statusFilter={statusFilter}
+							onViewReservation={handleViewReservation}
+							onEditReservation={handleEditReservation}
+							onPayment={handlePayment}
+						/>
 
-				<PaymentsTable />
-			</div>
+						<ReservationsDesktopTable
+							searchQuery={searchQuery}
+							statusFilter={statusFilter}
+							onViewReservation={handleViewReservation}
+							onEditReservation={handleEditReservation}
+							onPayment={handlePayment}
+						/>
+					</TabsContent>
+
+					<TabsContent value="payments" className="space-y-4">
+						<PaymentsTable />
+					</TabsContent>
+				</div>
+			</Tabs>
 
 			{/* Dialogs */}
 			{showOTPVerification && otpData && (

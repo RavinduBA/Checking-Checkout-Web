@@ -22,7 +22,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/context/AuthContext";
 import { useLocationContext } from "@/context/LocationContext";
 import { useIncomeData } from "@/hooks/useReservationsData";
@@ -90,110 +89,104 @@ export function PaymentsTable() {
 	};
 
 	if (loading) {
-		return (
-			<TabsContent value="payments">
-				<ReservationsListSkeleton />
-			</TabsContent>
-		);
+		return <ReservationsListSkeleton />;
 	}
 
 	return (
-		<TabsContent value="payments">
-			<div className="space-y-4">
-				<div className="bg-white shadow rounded-lg">
-					<div className="px-4 py-5 sm:p-6">
-						<h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-							Payments
-						</h3>
-						{incomeRecords.length === 0 ? (
-							<p className="text-sm text-muted-foreground">No payments found</p>
-						) : (
-							<div className="overflow-x-auto">
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>Date</TableHead>
-											<TableHead>Amount</TableHead>
-											<TableHead>Payment Method</TableHead>
-											<TableHead>Account</TableHead>
-											<TableHead>Reference</TableHead>
-											<TableHead>Notes</TableHead>
-											<TableHead className="w-[50px]">Actions</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{incomeRecords.map((payment) => (
-											<TableRow key={payment.id}>
-												<TableCell>
-													{new Date(payment.date).toLocaleDateString()}
-												</TableCell>
-												<TableCell className="font-medium">
-													{formatCurrency(payment.amount, payment.currency)}
-												</TableCell>
-												<TableCell>
-													<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-														{payment.payment_method}
+		<div className="space-y-4">
+			<div className="bg-white shadow rounded-lg">
+				<div className="px-4 py-5 sm:p-6">
+					<h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+						Payments
+					</h3>
+					{incomeRecords.length === 0 ? (
+						<p className="text-sm text-muted-foreground">No payments found</p>
+					) : (
+						<div className="overflow-x-auto">
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Date</TableHead>
+										<TableHead>Amount</TableHead>
+										<TableHead>Payment Method</TableHead>
+										<TableHead>Account</TableHead>
+										<TableHead>Reference</TableHead>
+										<TableHead>Notes</TableHead>
+										<TableHead className="w-[50px]">Actions</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{incomeRecords.map((payment) => (
+										<TableRow key={payment.id}>
+											<TableCell>
+												{new Date(payment.date).toLocaleDateString()}
+											</TableCell>
+											<TableCell className="font-medium">
+												{formatCurrency(payment.amount, payment.currency)}
+											</TableCell>
+											<TableCell>
+												<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+													{payment.payment_method}
+												</span>
+											</TableCell>
+											<TableCell>-</TableCell>
+											<TableCell>-</TableCell>
+											<TableCell>
+												{payment.note ? (
+													<span className="text-sm text-muted-foreground truncate max-w-[150px] block">
+														{payment.note}
 													</span>
-												</TableCell>
-												<TableCell>-</TableCell>
-												<TableCell>-</TableCell>
-												<TableCell>
-													{payment.note ? (
-														<span className="text-sm text-muted-foreground truncate max-w-[150px] block">
-															{payment.note}
-														</span>
-													) : (
-														"-"
-													)}
-												</TableCell>
-												<TableCell>
-													<AlertDialog>
-														<AlertDialogTrigger asChild>
-															<Button
-																variant="ghost"
-																size="sm"
-																onClick={() => setDeleteId(payment.id)}
+												) : (
+													"-"
+												)}
+											</TableCell>
+											<TableCell>
+												<AlertDialog>
+													<AlertDialogTrigger asChild>
+														<Button
+															variant="ghost"
+															size="sm"
+															onClick={() => setDeleteId(payment.id)}
+														>
+															<Trash2 className="h-4 w-4" />
+														</Button>
+													</AlertDialogTrigger>
+													<AlertDialogContent>
+														<AlertDialogHeader>
+															<AlertDialogTitle>
+																Delete Payment
+															</AlertDialogTitle>
+															<AlertDialogDescription>
+																Are you sure you want to delete this payment?
+																This action cannot be undone.
+															</AlertDialogDescription>
+														</AlertDialogHeader>
+														<AlertDialogFooter>
+															<AlertDialogCancel
+																onClick={() => setDeleteId(null)}
 															>
-																<Trash2 className="h-4 w-4" />
-															</Button>
-														</AlertDialogTrigger>
-														<AlertDialogContent>
-															<AlertDialogHeader>
-																<AlertDialogTitle>
-																	Delete Payment
-																</AlertDialogTitle>
-																<AlertDialogDescription>
-																	Are you sure you want to delete this payment?
-																	This action cannot be undone.
-																</AlertDialogDescription>
-															</AlertDialogHeader>
-															<AlertDialogFooter>
-																<AlertDialogCancel
-																	onClick={() => setDeleteId(null)}
-																>
-																	Cancel
-																</AlertDialogCancel>
-																<AlertDialogAction
-																	onClick={() =>
-																		deleteId && handleDeletePayment(deleteId)
-																	}
-																	className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-																>
-																	Delete
-																</AlertDialogAction>
-															</AlertDialogFooter>
-														</AlertDialogContent>
-													</AlertDialog>
-												</TableCell>
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-							</div>
-						)}
-					</div>
+																Cancel
+															</AlertDialogCancel>
+															<AlertDialogAction
+																onClick={() =>
+																	deleteId && handleDeletePayment(deleteId)
+																}
+																className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+															>
+																Delete
+															</AlertDialogAction>
+														</AlertDialogFooter>
+													</AlertDialogContent>
+												</AlertDialog>
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</div>
+					)}
 				</div>
 			</div>
-		</TabsContent>
+		</div>
 	);
 }

@@ -1,4 +1,4 @@
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ReservationsHeaderProps {
 	activeTab: string;
@@ -18,12 +18,10 @@ export function ReservationsHeader({
 				</p>
 			</div>
 
-			<Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-				<TabsList className="grid w-full grid-cols-2">
-					<TabsTrigger value="reservations">Reservations</TabsTrigger>
-					<TabsTrigger value="payments">Payments</TabsTrigger>
-				</TabsList>
-			</Tabs>
+			<TabsList className="grid w-full grid-cols-2">
+				<TabsTrigger value="reservations">Reservations</TabsTrigger>
+				<TabsTrigger value="payments">Payments</TabsTrigger>
+			</TabsList>
 		</div>
 	);
 }
