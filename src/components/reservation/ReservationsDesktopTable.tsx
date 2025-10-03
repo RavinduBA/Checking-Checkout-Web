@@ -106,10 +106,8 @@ export function ReservationsDesktopTable({
 								<TableHead>Reservation #</TableHead>
 								<TableHead>Guest</TableHead>
 								<TableHead>Room</TableHead>
-								<TableHead>Check-in</TableHead>
-								<TableHead>Check-out</TableHead>
-								<TableHead>Room Amount</TableHead>
-								<TableHead>Additional Services</TableHead>
+								<TableHead>Stay Period</TableHead>
+								<TableHead>Amount Breakdown</TableHead>
 								<TableHead>Total Payable</TableHead>
 								<TableHead>Paid Amount</TableHead>
 								<TableHead>Balance</TableHead>
@@ -129,20 +127,33 @@ export function ReservationsDesktopTable({
 										{reservation.rooms?.room_type}
 									</TableCell>
 									<TableCell>
-										{new Date(reservation.check_in_date).toLocaleDateString()}
+										<div className="text-sm">
+											<div className="font-medium">
+												{new Date(reservation.check_in_date).toLocaleDateString()}
+											</div>
+											<div className="text-muted-foreground text-xs">to</div>
+											<div className="font-medium">
+												{new Date(reservation.check_out_date).toLocaleDateString()}
+											</div>
+											<div className="text-xs text-muted-foreground">
+												({reservation.nights} {reservation.nights === 1 ? 'night' : 'nights'})
+											</div>
+										</div>
 									</TableCell>
 									<TableCell>
-										{new Date(reservation.check_out_date).toLocaleDateString()}
-									</TableCell>
-									<TableCell>
-										{getCurrencySymbol(reservation.currency)}{" "}
-										{(reservation.room_rate * reservation.nights).toLocaleString()}
-									</TableCell>
-									<TableCell>
-										<ReservationExpensesDisplay
-											reservationId={reservation.id}
-											currency={reservation.currency}
-										/>
+										<div className="text-sm space-y-1">
+											<div className="font-medium">
+												Room: {getCurrencySymbol(reservation.currency)}{" "}
+												{(reservation.room_rate * reservation.nights).toLocaleString()}
+											</div>
+											<div className="text-muted-foreground">
+												Services: <ReservationExpensesDisplay
+													reservationId={reservation.id}
+													currency={reservation.currency}
+													isCompact={true}
+												/>
+											</div>
+										</div>
 									</TableCell>
 									<TableCell>
 										{getCurrencySymbol(reservation.currency)}{" "}
