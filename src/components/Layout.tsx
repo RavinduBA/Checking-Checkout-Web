@@ -148,9 +148,7 @@ export function Layout() {
 									</Button>
 								}
 							/>
-							<ProfileDropdown
-								trigger={<ProfileAvatarButton />}
-							/>
+							<ProfileDropdown trigger={<ProfileAvatarButton />} />
 						</div>
 					</div>
 				</header>

@@ -1,7 +1,7 @@
 import { CreditCard, Edit, Eye } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { OTPVerification } from "@/components/OTPVerification";
 import { ReservationPrintButton } from "@/components/ReservationPrintButton";
+import { Button } from "@/components/ui/button";
 
 type ReservationForActions = {
 	id: string;
@@ -25,7 +25,13 @@ type ReservationForActions = {
 	paid_amount?: number | null;
 	balance_amount?: number | null;
 	currency: "LKR" | "USD" | "EUR" | "GBP";
-	status: "pending" | "confirmed" | "checked_in" | "checked_out" | "cancelled" | "tentative";
+	status:
+		| "pending"
+		| "confirmed"
+		| "checked_in"
+		| "checked_out"
+		| "cancelled"
+		| "tentative";
 	special_requests?: string | null;
 	arrival_time?: string | null;
 	created_by?: string | null;
@@ -62,16 +68,11 @@ export function ReservationActions({
 	if (isMobile) {
 		return (
 			<div className="flex gap-2 mt-4">
-				<Button
-					variant="outline"
-					size="sm"
-					className="flex-1"
-					onClick={onView}
-				>
+				<Button variant="outline" size="sm" className="flex-1" onClick={onView}>
 					<Eye className="size-4 mr-1" />
 					View
 				</Button>
-				
+
 				<ReservationPrintButton
 					reservation={reservation}
 					buttonText=""
@@ -79,7 +80,7 @@ export function ReservationActions({
 					buttonSize="sm"
 					showIcon={true}
 				/>
-				
+
 				{canShowPayment && (
 					<Button
 						variant="outline"
@@ -90,7 +91,7 @@ export function ReservationActions({
 						<CreditCard className="size-4" />
 					</Button>
 				)}
-				
+
 				<OTPVerification
 					onVerified={onEdit}
 					triggerComponent={
@@ -105,14 +106,10 @@ export function ReservationActions({
 
 	return (
 		<div className="flex gap-1">
-			<Button
-				variant="ghost"
-				size="icon"
-				onClick={onView}
-			>
+			<Button variant="ghost" size="icon" onClick={onView}>
 				<Eye className="size-4" />
 			</Button>
-			
+
 			<ReservationPrintButton
 				reservation={reservation}
 				buttonText=""
@@ -120,7 +117,7 @@ export function ReservationActions({
 				buttonSize="icon"
 				showIcon={true}
 			/>
-			
+
 			{canShowPayment && (
 				<Button
 					variant="ghost"
@@ -131,7 +128,7 @@ export function ReservationActions({
 					<CreditCard className="size-4" />
 				</Button>
 			)}
-			
+
 			<OTPVerification
 				onVerified={onEdit}
 				triggerComponent={

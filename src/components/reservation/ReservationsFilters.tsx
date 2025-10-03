@@ -1,4 +1,4 @@
-import { Search, Calendar, MapPin } from "lucide-react";
+import { Calendar, MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -51,7 +51,7 @@ export function ReservationsFilters({
 					</SelectContent>
 				</Select>
 			)}
-			
+
 			<div className="relative flex-1 lg:w-64">
 				<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
 				<Input
@@ -61,7 +61,7 @@ export function ReservationsFilters({
 					className="pl-10 w-full"
 				/>
 			</div>
-			
+
 			<Select value={statusFilter} onValueChange={onStatusFilterChange}>
 				<SelectTrigger className="w-full lg:w-48">
 					<SelectValue placeholder="Filter by status" />
@@ -76,7 +76,7 @@ export function ReservationsFilters({
 					<SelectItem value="cancelled">Cancelled</SelectItem>
 				</SelectContent>
 			</Select>
-			
+
 			<Button onClick={onNewReservation} className="flex-shrink-0">
 				<Calendar className="size-4 mr-2" />
 				New Reservation

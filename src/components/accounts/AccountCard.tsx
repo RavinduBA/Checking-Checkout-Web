@@ -32,7 +32,9 @@ export function AccountCard({
 			</CardHeader>
 			<CardContent className="space-y-2">
 				<div className="flex justify-between items-center">
-					<span className="text-sm text-muted-foreground">{t("accounts.card.balance")}</span>
+					<span className="text-sm text-muted-foreground">
+						{t("accounts.card.balance")}
+					</span>
 					<div className="text-lg font-bold">
 						{account.currency === "LKR" ? "Rs." : "$"}
 						{balance.toLocaleString()}

@@ -1,24 +1,28 @@
+import { useIncomeData } from "@/hooks/useReservationsData";
+
 interface ReservationExpensesDisplayProps {
 	reservationId: string;
 	currency: string;
-	incomeRecords: Array<{
-		id: string;
-		booking_id: string | null;
-		amount: number;
-		payment_method: string;
-		currency: string;
-	}>;
-	getCurrencySymbol: (currency: string) => string;
 	isCompact?: boolean;
 }
 
 export function ReservationExpensesDisplay({
 	reservationId,
 	currency,
-	incomeRecords,
-	getCurrencySymbol,
 	isCompact = false,
 }: ReservationExpensesDisplayProps) {
+	const { incomeRecords } = useIncomeData();
+
+	// Utility function
+	const getCurrencySymbol = (currency: string): string => {
+		const symbols: Record<string, string> = {
+			LKR: "Rs.",
+			USD: "$",
+			EUR: "€",
+			GBP: "£",
+		};
+		return symbols[currency] || currency;
+	};
 	const pendingExpenses = incomeRecords
 		.filter(
 			(inc) =>
@@ -31,11 +35,7 @@ export function ReservationExpensesDisplay({
 		.reduce((sum, inc) => sum + Number(inc.amount), 0);
 
 	if (totalExpenses === 0) {
-		return (
-			<span className="text-muted-foreground">
-				-
-			</span>
-		);
+		return <span className="text-muted-foreground">-</span>;
 	}
 
 	if (isCompact) {
@@ -44,7 +44,8 @@ export function ReservationExpensesDisplay({
 				Expenses: {getCurrencySymbol(currency)} {totalExpenses.toLocaleString()}
 				{pendingExpenses > 0 && (
 					<span className="text-yellow-600 ml-2">
-						(Pending: {getCurrencySymbol(currency)} {pendingExpenses.toLocaleString()})
+						(Pending: {getCurrencySymbol(currency)}{" "}
+						{pendingExpenses.toLocaleString()})
 					</span>
 				)}
 			</span>
@@ -59,7 +60,8 @@ export function ReservationExpensesDisplay({
 				</div>
 				{pendingExpenses > 0 && (
 					<div className="text-yellow-600 text-xs">
-						Pending: {getCurrencySymbol(currency)} {pendingExpenses.toLocaleString()}
+						Pending: {getCurrencySymbol(currency)}{" "}
+						{pendingExpenses.toLocaleString()}
 					</div>
 				)}
 			</div>

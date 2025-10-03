@@ -10,7 +10,7 @@ interface AccountSummaryCardsProps {
 
 export function AccountSummaryCards({ accounts }: AccountSummaryCardsProps) {
 	const { t } = useTranslation("common");
-	// For now, we'll just use initial_balance since we need to implement 
+	// For now, we'll just use initial_balance since we need to implement
 	// proper balance calculation with income/expenses/transfers
 	const totalLKRBalance = accounts
 		.filter((account) => account.currency === "LKR")

@@ -15,14 +15,15 @@ const ProfileAvatarButton = React.forwardRef<
 
 	// Get user data
 	const userName = profile?.name || user?.email?.split("@")[0] || "User";
-	
+
 	// Use avatar_url from profile database or fallback to user metadata
-	const userAvatar = profile?.avatar_url || user?.user_metadata?.avatar_url || "";
+	const userAvatar =
+		profile?.avatar_url || user?.user_metadata?.avatar_url || "";
 
 	// Generate initials for fallback
 	const getInitials = (name: string): string => {
 		if (!name || name.trim() === "") return "U";
-		
+
 		const words = name.trim().split(/\s+/);
 		if (words.length === 1) {
 			return words[0].substring(0, 2).toUpperCase();
@@ -46,8 +47,8 @@ const ProfileAvatarButton = React.forwardRef<
 			{...props}
 		>
 			<Avatar className="size-9.5 rounded-md">
-				<AvatarImage 
-					src={userAvatar} 
+				<AvatarImage
+					src={userAvatar}
 					alt={`${userName}'s avatar`}
 					className="object-cover"
 				/>

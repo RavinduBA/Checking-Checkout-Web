@@ -5,7 +5,10 @@ interface ReservationsHeaderProps {
 	onTabChange: (value: string) => void;
 }
 
-export function ReservationsHeader({ activeTab, onTabChange }: ReservationsHeaderProps) {
+export function ReservationsHeader({
+	activeTab,
+	onTabChange,
+}: ReservationsHeaderProps) {
 	return (
 		<div className="container mx-auto p-6">
 			<div className="mb-6">

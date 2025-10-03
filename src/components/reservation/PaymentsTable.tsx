@@ -1,13 +1,32 @@
+import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
-import { TabsContent } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ReservationsListSkeleton } from "@/components/ReservationsListSkeleton";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { supabase } from "@/integrations/supabase/client";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import { TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/context/AuthContext";
 import { useLocationContext } from "@/context/LocationContext";
+import { useIncomeData } from "@/hooks/useReservationsData";
+import { supabase } from "@/integrations/supabase/client";
 
 type IncomeRecord = {
 	id: string;
@@ -21,15 +40,25 @@ type IncomeRecord = {
 };
 
 interface PaymentsTableProps {
-	incomeRecords: IncomeRecord[];
-	onRefresh: () => void;
-	getCurrencySymbol: (currency: string) => string;
+	// No props needed - component fetches its own data
 }
 
-export function PaymentsTable({ incomeRecords, onRefresh, getCurrencySymbol }: PaymentsTableProps) {
+export function PaymentsTable() {
 	const [deleteId, setDeleteId] = useState<string | null>(null);
 	const { user } = useAuth();
 	const { selectedLocation } = useLocationContext();
+	const { incomeRecords, loading, refetch } = useIncomeData();
+
+	// Utility functions
+	const getCurrencySymbol = (currency: string): string => {
+		const symbols: Record<string, string> = {
+			LKR: "Rs.",
+			USD: "$",
+			EUR: "€",
+			GBP: "£",
+		};
+		return symbols[currency] || currency;
+	};
 
 	const handleDeletePayment = async (id: string) => {
 		if (!user || !selectedLocation) {
@@ -47,7 +76,7 @@ export function PaymentsTable({ incomeRecords, onRefresh, getCurrencySymbol }: P
 			if (error) throw error;
 
 			toast.success("Payment deleted successfully");
-			onRefresh();
+			refetch();
 		} catch (error) {
 			console.error("Error deleting payment:", error);
 			toast.error("Failed to delete payment");
@@ -59,6 +88,14 @@ export function PaymentsTable({ incomeRecords, onRefresh, getCurrencySymbol }: P
 	const formatCurrency = (amount: number, currency: string) => {
 		return `${getCurrencySymbol(currency)} ${amount.toLocaleString()}`;
 	};
+
+	if (loading) {
+		return (
+			<TabsContent value="payments">
+				<ReservationsListSkeleton />
+			</TabsContent>
+		);
+	}
 
 	return (
 		<TabsContent value="payments">
@@ -122,17 +159,24 @@ export function PaymentsTable({ incomeRecords, onRefresh, getCurrencySymbol }: P
 														</AlertDialogTrigger>
 														<AlertDialogContent>
 															<AlertDialogHeader>
-																<AlertDialogTitle>Delete Payment</AlertDialogTitle>
+																<AlertDialogTitle>
+																	Delete Payment
+																</AlertDialogTitle>
 																<AlertDialogDescription>
-																	Are you sure you want to delete this payment? This action cannot be undone.
+																	Are you sure you want to delete this payment?
+																	This action cannot be undone.
 																</AlertDialogDescription>
 															</AlertDialogHeader>
 															<AlertDialogFooter>
-																<AlertDialogCancel onClick={() => setDeleteId(null)}>
+																<AlertDialogCancel
+																	onClick={() => setDeleteId(null)}
+																>
 																	Cancel
 																</AlertDialogCancel>
 																<AlertDialogAction
-																	onClick={() => deleteId && handleDeletePayment(deleteId)}
+																	onClick={() =>
+																		deleteId && handleDeletePayment(deleteId)
+																	}
 																	className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 																>
 																	Delete

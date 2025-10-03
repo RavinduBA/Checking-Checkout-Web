@@ -140,8 +140,12 @@ export default function Accounts() {
 
 			<Tabs defaultValue="accounts" className="space-y-4">
 				<TabsList>
-					<TabsTrigger value="accounts">{t("accounts.tabs.accounts")}</TabsTrigger>
-					<TabsTrigger value="transactions">{t("accounts.tabs.transactions")}</TabsTrigger>
+					<TabsTrigger value="accounts">
+						{t("accounts.tabs.accounts")}
+					</TabsTrigger>
+					<TabsTrigger value="transactions">
+						{t("accounts.tabs.transactions")}
+					</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="accounts" className="space-y-4">

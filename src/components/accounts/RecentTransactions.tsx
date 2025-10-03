@@ -111,7 +111,9 @@ export function RecentTransactions({ accounts }: RecentTransactionsProps) {
 	if (loading) {
 		return (
 			<div className="space-y-4">
-				<h3 className="text-lg font-semibold">{t("accounts.transactions.title")}</h3>
+				<h3 className="text-lg font-semibold">
+					{t("accounts.transactions.title")}
+				</h3>
 				<RecentTransactionsSkeleton />
 			</div>
 		);
@@ -120,9 +122,13 @@ export function RecentTransactions({ accounts }: RecentTransactionsProps) {
 	if (transactions.length === 0) {
 		return (
 			<div className="space-y-4">
-				<h3 className="text-lg font-semibold">{t("accounts.transactions.title")}</h3>
+				<h3 className="text-lg font-semibold">
+					{t("accounts.transactions.title")}
+				</h3>
 				<div className="text-center py-8">
-					<p className="text-muted-foreground">{t("accounts.transactions.noTransactions")}</p>
+					<p className="text-muted-foreground">
+						{t("accounts.transactions.noTransactions")}
+					</p>
 				</div>
 			</div>
 		);
@@ -130,7 +136,9 @@ export function RecentTransactions({ accounts }: RecentTransactionsProps) {
 
 	return (
 		<div className="space-y-4">
-			<h3 className="text-lg font-semibold">{t("accounts.transactions.title")}</h3>
+			<h3 className="text-lg font-semibold">
+				{t("accounts.transactions.title")}
+			</h3>
 			<div className="space-y-3">
 				{transactions.map((transaction) => (
 					<div
