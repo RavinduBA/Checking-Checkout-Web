@@ -1,20 +1,22 @@
-import { useState, useEffect, useCallback } from "react";
-import { MapPin, Edit, Save } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Edit, MapPin, Save } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "@/hooks/useTenant";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { toast } from "@/hooks/use-toast";
+import { useTenant } from "@/hooks/useTenant";
+import { supabase } from "@/integrations/supabase/client";
 import { Location } from "./types";
 
 export function LocationManagement() {
 	const { tenant } = useTenant();
 	const [locations, setLocations] = useState<Location[]>([]);
 	const [isEditingLocation, setIsEditingLocation] = useState(false);
-	const [editingLocationId, setEditingLocationId] = useState<string | null>(null);
+	const [editingLocationId, setEditingLocationId] = useState<string | null>(
+		null,
+	);
 	const [locationForm, setLocationForm] = useState({
 		name: "",
 		address: "",
@@ -248,9 +250,7 @@ export function LocationManagement() {
 													/>
 												</div>
 												<div>
-													<Label htmlFor="editLocationAddress">
-														Address
-													</Label>
+													<Label htmlFor="editLocationAddress">Address</Label>
 													<Input
 														id="editLocationAddress"
 														value={locationForm.address}

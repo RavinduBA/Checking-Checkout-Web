@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { format, parseISO, isWithinInterval } from "date-fns";
+import { format, isWithinInterval, parseISO } from "date-fns";
 import { useLocationContext } from "@/context/LocationContext";
 import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,7 +49,7 @@ export function useRoomAvailability({
 				const start = format(startDate, "yyyy-MM-dd");
 				const end = format(endDate, "yyyy-MM-dd");
 				query = query.or(
-					`check_in_date.lte.${end},check_out_date.gte.${start}`
+					`check_in_date.lte.${end},check_out_date.gte.${start}`,
 				);
 			}
 
@@ -84,10 +84,12 @@ export function useRoomAvailability({
 			const checkOut = parseISO(reservation.check_out_date);
 
 			// Date is unavailable if it's between check-in (inclusive) and check-out (exclusive)
-			return isWithinInterval(date, {
-				start: checkIn,
-				end: checkOut,
-			}) && format(date, "yyyy-MM-dd") !== format(checkOut, "yyyy-MM-dd");
+			return (
+				isWithinInterval(date, {
+					start: checkIn,
+					end: checkOut,
+				}) && format(date, "yyyy-MM-dd") !== format(checkOut, "yyyy-MM-dd")
+			);
 		});
 	};
 
@@ -97,7 +99,7 @@ export function useRoomAvailability({
 	const isRangeAvailable = (
 		checkInDate: Date,
 		checkOutDate: Date,
-		roomIdToCheck?: string
+		roomIdToCheck?: string,
 	): boolean => {
 		const targetRoomId = roomIdToCheck || roomId;
 		if (!targetRoomId) return true;
@@ -111,9 +113,7 @@ export function useRoomAvailability({
 
 			// Check for any overlap
 			// Overlap exists if: (newCheckIn < existingCheckOut) AND (newCheckOut > existingCheckIn)
-			return (
-				checkInDate < existingCheckOut && checkOutDate > existingCheckIn
-			);
+			return checkInDate < existingCheckOut && checkOutDate > existingCheckIn;
 		});
 	};
 
@@ -123,7 +123,7 @@ export function useRoomAvailability({
 	const getUnavailableDates = (
 		startRange: Date,
 		endRange: Date,
-		roomIdToCheck?: string
+		roomIdToCheck?: string,
 	): Date[] => {
 		const targetRoomId = roomIdToCheck || roomId;
 		if (!targetRoomId) return [];

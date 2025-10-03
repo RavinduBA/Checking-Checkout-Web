@@ -1,7 +1,14 @@
-import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import { Tables } from "@/integrations/supabase/types";
 
 type Account = Tables<"accounts">;
@@ -15,7 +22,10 @@ interface ExpenseHistoryTableProps {
 	accounts: Account[];
 }
 
-export function ExpenseHistoryTable({ expenses, accounts }: ExpenseHistoryTableProps) {
+export function ExpenseHistoryTable({
+	expenses,
+	accounts,
+}: ExpenseHistoryTableProps) {
 	const { t } = useTranslation();
 
 	return (
@@ -28,7 +38,9 @@ export function ExpenseHistoryTable({ expenses, accounts }: ExpenseHistoryTableP
 					<TableHeader>
 						<TableRow>
 							<TableHead>{t("expense.historyTable.headers.date")}</TableHead>
-							<TableHead>{t("expense.historyTable.headers.category")}</TableHead>
+							<TableHead>
+								{t("expense.historyTable.headers.category")}
+							</TableHead>
 							<TableHead>{t("expense.historyTable.headers.amount")}</TableHead>
 							<TableHead>{t("expense.historyTable.headers.account")}</TableHead>
 							<TableHead>{t("expense.historyTable.headers.note")}</TableHead>
@@ -49,11 +61,7 @@ export function ExpenseHistoryTable({ expenses, accounts }: ExpenseHistoryTableP
 								</TableCell>
 								<TableCell>
 									{accounts.find((a) => a.id === expense.account_id)?.name}(
-									{
-										accounts.find((a) => a.id === expense.account_id)
-											?.currency
-									}
-									)
+									{accounts.find((a) => a.id === expense.account_id)?.currency})
 								</TableCell>
 								<TableCell>{expense.note || "-"}</TableCell>
 							</TableRow>

@@ -1,28 +1,28 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
 import { format, parseISO } from "date-fns";
+import {
+	Calendar,
+	CreditCard,
+	DollarSign,
+	Edit,
+	FileText,
+	Mail,
+	MapPin,
+	Phone,
+	Trash2,
+	User,
+} from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import {
-	Calendar,
-	MapPin,
-	User,
-	Phone,
-	Mail,
-	CreditCard,
-	Edit,
-	Trash2,
-	FileText,
-	DollarSign,
-} from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type Reservation = Database["public"]["Tables"]["reservations"]["Row"] & {
@@ -69,7 +69,9 @@ export function BookingDetailsDialog({
 
 	const checkInDate = parseISO(reservation.check_in_date);
 	const checkOutDate = parseISO(reservation.check_out_date);
-	const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+	const nights = Math.ceil(
+		(checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24),
+	);
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
@@ -85,13 +87,15 @@ export function BookingDetailsDialog({
 					{/* Guest Information */}
 					<div className="space-y-3">
 						<div className="flex items-center justify-between">
-							<h3 className="font-semibold text-lg">{reservation.guest_name}</h3>
+							<h3 className="font-semibold text-lg">
+								{reservation.guest_name}
+							</h3>
 							<Badge
 								variant="outline"
 								className="text-xs"
-								style={{ 
+								style={{
 									color: getStatusBorderColor(reservation.status),
-									borderColor: getStatusBorderColor(reservation.status)
+									borderColor: getStatusBorderColor(reservation.status),
 								}}
 							>
 								{reservation.status.toUpperCase()}
@@ -126,40 +130,60 @@ export function BookingDetailsDialog({
 							<Calendar className="h-4 w-4" />
 							{t("calendar.bookingDialog.stayDetails")}
 						</div>
-						
+
 						<div className="grid grid-cols-2 gap-4 text-sm">
 							<div>
-								<div className="text-muted-foreground">{t("calendar.bookingDialog.checkIn")}</div>
-								<div className="font-medium">{format(checkInDate, "MMM dd, yyyy")}</div>
+								<div className="text-muted-foreground">
+									{t("calendar.bookingDialog.checkIn")}
+								</div>
+								<div className="font-medium">
+									{format(checkInDate, "MMM dd, yyyy")}
+								</div>
 							</div>
 							<div>
-								<div className="text-muted-foreground">{t("calendar.bookingDialog.checkOut")}</div>
-								<div className="font-medium">{format(checkOutDate, "MMM dd, yyyy")}</div>
+								<div className="text-muted-foreground">
+									{t("calendar.bookingDialog.checkOut")}
+								</div>
+								<div className="font-medium">
+									{format(checkOutDate, "MMM dd, yyyy")}
+								</div>
 							</div>
 						</div>
 
 						<div className="grid grid-cols-2 gap-4 text-sm">
 							<div>
-								<div className="text-muted-foreground">{t("calendar.bookingDialog.room")}</div>
+								<div className="text-muted-foreground">
+									{t("calendar.bookingDialog.room")}
+								</div>
 								<div className="font-medium">
-									{reservation.rooms?.room_number} - {reservation.rooms?.room_type}
+									{reservation.rooms?.room_number} -{" "}
+									{reservation.rooms?.room_type}
 								</div>
 							</div>
 							<div>
-								<div className="text-muted-foreground">{t("calendar.bookingDialog.nights", { count: nights })}</div>
-								<div className="font-medium">{nights} {t("calendar.bookingDialog.nights", { count: nights })}</div>
+								<div className="text-muted-foreground">
+									{t("calendar.bookingDialog.nights", { count: nights })}
+								</div>
+								<div className="font-medium">
+									{nights}{" "}
+									{t("calendar.bookingDialog.nights", { count: nights })}
+								</div>
 							</div>
 						</div>
 
 						{reservation.adults && (
 							<div className="grid grid-cols-2 gap-4 text-sm">
 								<div>
-									<div className="text-muted-foreground">{t("calendar.bookingDialog.adults")}</div>
+									<div className="text-muted-foreground">
+										{t("calendar.bookingDialog.adults")}
+									</div>
 									<div className="font-medium">{reservation.adults}</div>
 								</div>
 								{reservation.children && (
 									<div>
-										<div className="text-muted-foreground">{t("calendar.bookingDialog.children")}</div>
+										<div className="text-muted-foreground">
+											{t("calendar.bookingDialog.children")}
+										</div>
 										<div className="font-medium">{reservation.children}</div>
 									</div>
 								)}
@@ -175,31 +199,44 @@ export function BookingDetailsDialog({
 							<DollarSign className="h-4 w-4" />
 							{t("calendar.bookingDialog.financialDetails")}
 						</div>
-						
+
 						<div className="grid grid-cols-2 gap-4 text-sm">
 							<div>
-								<div className="text-muted-foreground">{t("calendar.bookingDialog.totalAmount")}</div>
+								<div className="text-muted-foreground">
+									{t("calendar.bookingDialog.totalAmount")}
+								</div>
 								<div className="font-medium">
-									{getCurrencySymbol(reservation.currency || 'USD')} {reservation.total_amount?.toFixed(2) || '0.00'}
+									{getCurrencySymbol(reservation.currency || "USD")}{" "}
+									{reservation.total_amount?.toFixed(2) || "0.00"}
 								</div>
 							</div>
 							<div>
-								<div className="text-muted-foreground">{t("calendar.bookingDialog.paidAmount")}</div>
+								<div className="text-muted-foreground">
+									{t("calendar.bookingDialog.paidAmount")}
+								</div>
 								<div className="font-medium">
-									{getCurrencySymbol(reservation.currency || 'USD')} {reservation.paid_amount?.toFixed(2) || '0.00'}
+									{getCurrencySymbol(reservation.currency || "USD")}{" "}
+									{reservation.paid_amount?.toFixed(2) || "0.00"}
 								</div>
 							</div>
 						</div>
 
 						{reservation.total_amount && reservation.paid_amount && (
 							<div className="text-sm">
-								<div className="text-muted-foreground">{t("calendar.bookingDialog.balance")}</div>
-								<div className={`font-medium ${
-									reservation.total_amount - reservation.paid_amount > 0 
-										? 'text-red-600' 
-										: 'text-green-600'
-								}`}>
-									{getCurrencySymbol(reservation.currency || 'USD')} {(reservation.total_amount - reservation.paid_amount).toFixed(2)}
+								<div className="text-muted-foreground">
+									{t("calendar.bookingDialog.balance")}
+								</div>
+								<div
+									className={`font-medium ${
+										reservation.total_amount - reservation.paid_amount > 0
+											? "text-red-600"
+											: "text-green-600"
+									}`}
+								>
+									{getCurrencySymbol(reservation.currency || "USD")}{" "}
+									{(reservation.total_amount - reservation.paid_amount).toFixed(
+										2,
+									)}
 								</div>
 							</div>
 						)}
@@ -207,7 +244,7 @@ export function BookingDetailsDialog({
 
 					{/* Action Buttons */}
 					<Separator />
-					
+
 					<div className="flex gap-2 flex-wrap">
 						<Button
 							onClick={handleViewDetails}
@@ -218,11 +255,9 @@ export function BookingDetailsDialog({
 							{t("calendar.bookingDialog.viewDetails")}
 						</Button>
 
-						{(reservation.status === "tentative" || reservation.status === "pending") && (
-							<Button
-								onClick={handlePayment}
-								className="flex-1"
-							>
+						{(reservation.status === "tentative" ||
+							reservation.status === "pending") && (
+							<Button onClick={handlePayment} className="flex-1">
 								<CreditCard className="h-4 w-4 mr-2" />
 								{t("calendar.bookingDialog.payment")}
 							</Button>

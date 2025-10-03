@@ -237,7 +237,10 @@ export const ReservationPrintButton: React.FC<ReservationPrintButtonProps> = ({
 
 			{/* Hidden printable component - using print-only styles instead of display:none */}
 			<div style={{ display: "none" }}>
-				<PrintableReservation ref={printRef} reservation={printableReservation} />
+				<PrintableReservation
+					ref={printRef}
+					reservation={printableReservation}
+				/>
 			</div>
 		</>
 	);

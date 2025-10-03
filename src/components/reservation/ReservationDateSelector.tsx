@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
-import { format, addDays, isBefore, isAfter, isToday } from "date-fns";
-import { Calendar as CalendarIcon, ArrowRight } from "lucide-react";
-import { useRoomAvailability } from "@/hooks/useRoomAvailability";
+import { addDays, format, isAfter, isBefore, isToday } from "date-fns";
+import { ArrowRight, Calendar as CalendarIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +10,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { useRoomAvailability } from "@/hooks/useRoomAvailability";
 import { cn } from "@/lib/utils";
 
 interface ReservationDateSelectorProps {
@@ -39,15 +39,16 @@ export function ReservationDateSelector({
 	excludeReservationId,
 }: ReservationDateSelectorProps) {
 	// Check room availability
-	const { isDateAvailable, isLoading: availabilityLoading } = useRoomAvailability({
-		roomId,
-		excludeReservationId,
-	});
+	const { isDateAvailable, isLoading: availabilityLoading } =
+		useRoomAvailability({
+			roomId,
+			excludeReservationId,
+		});
 	const [checkIn, setCheckIn] = useState<Date | undefined>(
-		checkInDate ? new Date(checkInDate) : undefined
+		checkInDate ? new Date(checkInDate) : undefined,
 	);
 	const [checkOut, setCheckOut] = useState<Date | undefined>(
-		checkOutDate ? new Date(checkOutDate) : undefined
+		checkOutDate ? new Date(checkOutDate) : undefined,
 	);
 	const [isCheckInOpen, setIsCheckInOpen] = useState(false);
 	const [isCheckOutOpen, setIsCheckOutOpen] = useState(false);
@@ -72,19 +73,24 @@ export function ReservationDateSelector({
 	const handleCheckInSelect = (date: Date | undefined) => {
 		setCheckIn(date);
 		setIsCheckInOpen(false);
-		
+
 		// Auto-adjust check-out if it's before or same as new check-in
-		if (date && checkOut && (isBefore(checkOut, date) || format(checkOut, "yyyy-MM-dd") === format(date, "yyyy-MM-dd"))) {
+		if (
+			date &&
+			checkOut &&
+			(isBefore(checkOut, date) ||
+				format(checkOut, "yyyy-MM-dd") === format(date, "yyyy-MM-dd"))
+		) {
 			const newCheckOut = addDays(date, 1);
 			setCheckOut(newCheckOut);
 			onDatesChange?.(
 				format(date, "yyyy-MM-dd"),
-				format(newCheckOut, "yyyy-MM-dd")
+				format(newCheckOut, "yyyy-MM-dd"),
 			);
 		} else if (date && checkOut) {
 			onDatesChange?.(
 				format(date, "yyyy-MM-dd"),
-				format(checkOut, "yyyy-MM-dd")
+				format(checkOut, "yyyy-MM-dd"),
 			);
 		} else if (date) {
 			onDatesChange?.(format(date, "yyyy-MM-dd"), "");
@@ -94,11 +100,11 @@ export function ReservationDateSelector({
 	const handleCheckOutSelect = (date: Date | undefined) => {
 		setCheckOut(date);
 		setIsCheckOutOpen(false);
-		
+
 		if (checkIn && date) {
 			onDatesChange?.(
 				format(checkIn, "yyyy-MM-dd"),
-				format(date, "yyyy-MM-dd")
+				format(date, "yyyy-MM-dd"),
 			);
 		}
 	};
@@ -114,26 +120,31 @@ export function ReservationDateSelector({
 	const isCheckInDisabled = (date: Date) => {
 		if (minDate && isBefore(date, minDate)) return true;
 		if (maxDate && isAfter(date, maxDate)) return true;
-		
+
 		// Check room availability if roomId is provided
 		if (roomId && !availabilityLoading) {
 			return !isDateAvailable(date, roomId);
 		}
-		
+
 		return false;
 	};
 
 	const isCheckOutDisabled = (date: Date) => {
 		if (minDate && isBefore(date, minDate)) return true;
 		if (maxDate && isAfter(date, maxDate)) return true;
-		if (checkIn && (isBefore(date, checkIn) || format(date, "yyyy-MM-dd") === format(checkIn, "yyyy-MM-dd"))) return true;
-		
+		if (
+			checkIn &&
+			(isBefore(date, checkIn) ||
+				format(date, "yyyy-MM-dd") === format(checkIn, "yyyy-MM-dd"))
+		)
+			return true;
+
 		// Check room availability if roomId is provided
 		if (roomId && !availabilityLoading && checkIn) {
 			// For check-out, we need to check all dates from check-in to check-out (exclusive of check-out)
 			const currentDate = new Date(checkIn);
 			currentDate.setDate(currentDate.getDate() + 1); // Start from day after check-in
-			
+
 			while (isBefore(currentDate, date)) {
 				if (!isDateAvailable(currentDate, roomId)) {
 					return true; // Disable if any date in range is unavailable
@@ -141,7 +152,7 @@ export function ReservationDateSelector({
 				currentDate.setDate(currentDate.getDate() + 1);
 			}
 		}
-		
+
 		return false;
 	};
 
@@ -180,7 +191,7 @@ export function ReservationDateSelector({
 									variant="outline"
 									className={cn(
 										"w-full justify-start text-left font-normal",
-										!checkIn && "text-muted-foreground"
+										!checkIn && "text-muted-foreground",
 									)}
 									disabled={disabled}
 								>
@@ -209,8 +220,10 @@ export function ReservationDateSelector({
 										},
 									}}
 									modifiersClassNames={{
-										available: "bg-green-100 text-green-900 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-100 dark:hover:bg-green-900/50",
-										unavailable: "bg-red-100 text-red-900 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-100 dark:hover:bg-red-900/50 line-through",
+										available:
+											"bg-green-100 text-green-900 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-100 dark:hover:bg-green-900/50",
+										unavailable:
+											"bg-red-100 text-red-900 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-100 dark:hover:bg-red-900/50 line-through",
 									}}
 									initialFocus
 								/>
@@ -228,7 +241,7 @@ export function ReservationDateSelector({
 									variant="outline"
 									className={cn(
 										"w-full justify-start text-left font-normal",
-										!checkOut && "text-muted-foreground"
+										!checkOut && "text-muted-foreground",
 									)}
 									disabled={disabled || !checkIn}
 								>
@@ -244,15 +257,21 @@ export function ReservationDateSelector({
 									disabled={isCheckOutDisabled}
 									modifiers={{
 										available: (date) => {
-											if (!roomId || availabilityLoading || !checkIn) return false;
+											if (!roomId || availabilityLoading || !checkIn)
+												return false;
 											if (minDate && isBefore(date, minDate)) return false;
 											if (maxDate && isAfter(date, maxDate)) return false;
-											if (isBefore(date, checkIn) || format(date, "yyyy-MM-dd") === format(checkIn, "yyyy-MM-dd")) return false;
-											
+											if (
+												isBefore(date, checkIn) ||
+												format(date, "yyyy-MM-dd") ===
+													format(checkIn, "yyyy-MM-dd")
+											)
+												return false;
+
 											// Check if all dates in the range are available
 											const currentDate = new Date(checkIn);
 											currentDate.setDate(currentDate.getDate() + 1);
-											
+
 											while (isBefore(currentDate, date)) {
 												if (!isDateAvailable(currentDate, roomId)) {
 													return false;
@@ -262,15 +281,21 @@ export function ReservationDateSelector({
 											return true;
 										},
 										unavailable: (date) => {
-											if (!roomId || availabilityLoading || !checkIn) return false;
+											if (!roomId || availabilityLoading || !checkIn)
+												return false;
 											if (minDate && isBefore(date, minDate)) return false;
 											if (maxDate && isAfter(date, maxDate)) return false;
-											if (isBefore(date, checkIn) || format(date, "yyyy-MM-dd") === format(checkIn, "yyyy-MM-dd")) return false;
-											
+											if (
+												isBefore(date, checkIn) ||
+												format(date, "yyyy-MM-dd") ===
+													format(checkIn, "yyyy-MM-dd")
+											)
+												return false;
+
 											// Check if any date in the range is unavailable
 											const currentDate = new Date(checkIn);
 											currentDate.setDate(currentDate.getDate() + 1);
-											
+
 											while (isBefore(currentDate, date)) {
 												if (!isDateAvailable(currentDate, roomId)) {
 													return true;
@@ -281,8 +306,10 @@ export function ReservationDateSelector({
 										},
 									}}
 									modifiersClassNames={{
-										available: "bg-green-100 text-green-900 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-100 dark:hover:bg-green-900/50",
-										unavailable: "bg-red-100 text-red-900 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-100 dark:hover:bg-red-900/50 line-through",
+										available:
+											"bg-green-100 text-green-900 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-100 dark:hover:bg-green-900/50",
+										unavailable:
+											"bg-red-100 text-red-900 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-100 dark:hover:bg-red-900/50 line-through",
 									}}
 									initialFocus
 								/>
@@ -311,9 +338,7 @@ export function ReservationDateSelector({
 							<>
 								<div className="h-4 w-px bg-border mx-2" />
 								<div className="text-center">
-									<div className="text-sm font-medium">
-										{calculateNights()}
-									</div>
+									<div className="text-sm font-medium">{calculateNights()}</div>
 									<div className="text-xs text-muted-foreground">
 										{calculateNights() === 1 ? "night" : "nights"}
 									</div>

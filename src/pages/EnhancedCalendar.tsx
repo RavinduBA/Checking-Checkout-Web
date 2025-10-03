@@ -1,6 +1,7 @@
+import { Plus, Search } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import {
 	BookingDetailsDialog,
 	CalendarNavigation,
@@ -17,7 +18,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Search, Plus } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { getCurrencySymbol } from "@/utils/currency";
 
@@ -35,10 +35,13 @@ export default function EnhancedCalendar() {
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 	const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-	const [selectedBooking, setSelectedBooking] = useState<Reservation | null>(null);
+	const [selectedBooking, setSelectedBooking] = useState<Reservation | null>(
+		null,
+	);
 	const [isQuickBookDialogOpen, setIsQuickBookDialogOpen] = useState(false);
 	const [isBookingDetailsOpen, setIsBookingDetailsOpen] = useState(false);
-	const [isNewReservationDialogOpen, setIsNewReservationDialogOpen] = useState(false);
+	const [isNewReservationDialogOpen, setIsNewReservationDialogOpen] =
+		useState(false);
 
 	// Status color helpers
 	const getStatusColor = (status: string) => {
@@ -105,7 +108,6 @@ export default function EnhancedCalendar() {
 	return (
 		<PermissionRoute permission={["access_calendar"]}>
 			<div className="space-y-6">
-
 				{/* Filters */}
 				<div className="flex pt-3 flex-col sm:flex-row gap-4 items-start sm:items-center">
 					<div className="relative flex-1 max-w-sm">
@@ -122,13 +124,27 @@ export default function EnhancedCalendar() {
 							<SelectValue placeholder={t("calendar.search.filterByStatus")} />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="all">{t("calendar.search.allStatuses")}</SelectItem>
-							<SelectItem value="confirmed">{t("calendar.status.confirmed")}</SelectItem>
-							<SelectItem value="tentative">{t("calendar.status.tentative")}</SelectItem>
-							<SelectItem value="pending">{t("calendar.status.pending")}</SelectItem>
-							<SelectItem value="checked_in">{t("calendar.status.checked_in")}</SelectItem>
-							<SelectItem value="checked_out">{t("calendar.status.checked_out")}</SelectItem>
-							<SelectItem value="cancelled">{t("calendar.status.cancelled")}</SelectItem>
+							<SelectItem value="all">
+								{t("calendar.search.allStatuses")}
+							</SelectItem>
+							<SelectItem value="confirmed">
+								{t("calendar.status.confirmed")}
+							</SelectItem>
+							<SelectItem value="tentative">
+								{t("calendar.status.tentative")}
+							</SelectItem>
+							<SelectItem value="pending">
+								{t("calendar.status.pending")}
+							</SelectItem>
+							<SelectItem value="checked_in">
+								{t("calendar.status.checked_in")}
+							</SelectItem>
+							<SelectItem value="checked_out">
+								{t("calendar.status.checked_out")}
+							</SelectItem>
+							<SelectItem value="cancelled">
+								{t("calendar.status.cancelled")}
+							</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>

@@ -41,8 +41,9 @@ export function InviteMemberDialog({
 }: InviteMemberDialogProps) {
 	const [inviteEmail, setInviteEmail] = useState("");
 	const [inviteLocationId, setInviteLocationId] = useState("");
-	const [invitePermissions, setInvitePermissions] =
-		useState<InvitePermissions>(defaultInvitePermissions);
+	const [invitePermissions, setInvitePermissions] = useState<InvitePermissions>(
+		defaultInvitePermissions,
+	);
 	const [inviteLoading, setInviteLoading] = useState(false);
 
 	const handleInviteMember = async (e: React.FormEvent) => {
@@ -85,8 +86,7 @@ export function InviteMemberDialog({
 
 			toast({
 				title: "Invitation Sent",
-				description:
-					"Invitation sent and login credentials have been emailed",
+				description: "Invitation sent and login credentials have been emailed",
 			});
 
 			// Reset form
@@ -132,8 +132,7 @@ export function InviteMemberDialog({
 				<DialogHeader>
 					<DialogTitle>Invite Member</DialogTitle>
 					<DialogDescription>
-						Send an invitation to join your organization at a specific
-						location.
+						Send an invitation to join your organization at a specific location.
 					</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={handleInviteMember} className="space-y-4">
@@ -179,7 +178,10 @@ export function InviteMemberDialog({
 										updatePermission("access_dashboard", !!checked)
 									}
 								/>
-								<Label htmlFor="access_dashboard" className="text-sm font-normal">
+								<Label
+									htmlFor="access_dashboard"
+									className="text-sm font-normal"
+								>
 									Dashboard
 								</Label>
 							</div>
@@ -203,7 +205,10 @@ export function InviteMemberDialog({
 										updatePermission("access_expenses", !!checked)
 									}
 								/>
-								<Label htmlFor="access_expenses" className="text-sm font-normal">
+								<Label
+									htmlFor="access_expenses"
+									className="text-sm font-normal"
+								>
 									Expenses
 								</Label>
 							</div>
@@ -227,7 +232,10 @@ export function InviteMemberDialog({
 										updatePermission("access_calendar", !!checked)
 									}
 								/>
-								<Label htmlFor="access_calendar" className="text-sm font-normal">
+								<Label
+									htmlFor="access_calendar"
+									className="text-sm font-normal"
+								>
 									Calendar
 								</Label>
 							</div>
@@ -239,7 +247,10 @@ export function InviteMemberDialog({
 										updatePermission("access_bookings", !!checked)
 									}
 								/>
-								<Label htmlFor="access_bookings" className="text-sm font-normal">
+								<Label
+									htmlFor="access_bookings"
+									className="text-sm font-normal"
+								>
 									Bookings
 								</Label>
 							</div>
@@ -278,7 +289,10 @@ export function InviteMemberDialog({
 										updatePermission("access_accounts", !!checked)
 									}
 								/>
-								<Label htmlFor="access_accounts" className="text-sm font-normal">
+								<Label
+									htmlFor="access_accounts"
+									className="text-sm font-normal"
+								>
 									Accounts
 								</Label>
 							</div>
@@ -302,7 +316,10 @@ export function InviteMemberDialog({
 										updatePermission("access_settings", !!checked)
 									}
 								/>
-								<Label htmlFor="access_settings" className="text-sm font-normal">
+								<Label
+									htmlFor="access_settings"
+									className="text-sm font-normal"
+								>
 									Settings
 								</Label>
 							</div>
@@ -312,9 +329,7 @@ export function InviteMemberDialog({
 					<Button
 						type="submit"
 						disabled={inviteLoading || !inviteLocationId}
-						className={
-							!inviteLocationId ? "opacity-50 cursor-not-allowed" : ""
-						}
+						className={!inviteLocationId ? "opacity-50 cursor-not-allowed" : ""}
 					>
 						{inviteLoading
 							? "Sending..."

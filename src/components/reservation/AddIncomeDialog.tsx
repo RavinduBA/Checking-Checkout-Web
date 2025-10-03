@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -83,7 +83,9 @@ export function AddIncomeDialog({
 		if (selectedReservation) {
 			setIncomeForm({
 				amount: selectedReservation.total_amount,
-				note: t("income.addDialog.reservationInfo.reservation") + ` ${selectedReservation.reservation_number}`,
+				note:
+					t("income.addDialog.reservationInfo.reservation") +
+					` ${selectedReservation.reservation_number}`,
 				account_id: "",
 				income_type_id: "",
 				payment_type: "direct",
@@ -99,7 +101,8 @@ export function AddIncomeDialog({
 			const incomeData = {
 				note:
 					incomeForm.note ||
-					t("income.addDialog.reservationInfo.reservation") + ` ${selectedReservation.reservation_number}`,
+					t("income.addDialog.reservationInfo.reservation") +
+						` ${selectedReservation.reservation_number}`,
 				amount: incomeForm.amount,
 				// For direct payments: require account_id, for deferred: set to null
 				account_id:
@@ -180,15 +183,18 @@ export function AddIncomeDialog({
 					{selectedReservation && (
 						<div className="p-4 bg-gray-50 rounded-md">
 							<p>
-								<strong>{t("income.addDialog.reservationInfo.reservation")}</strong>{" "}
+								<strong>
+									{t("income.addDialog.reservationInfo.reservation")}
+								</strong>{" "}
 								{selectedReservation.reservation_number}
 							</p>
 							<p>
-								<strong>{t("income.addDialog.reservationInfo.guest")}</strong> {selectedReservation.guest_name}
+								<strong>{t("income.addDialog.reservationInfo.guest")}</strong>{" "}
+								{selectedReservation.guest_name}
 							</p>
 							<p>
-								<strong>{t("income.addDialog.reservationInfo.amount")}</strong> LKR{" "}
-								{selectedReservation.total_amount.toLocaleString()}
+								<strong>{t("income.addDialog.reservationInfo.amount")}</strong>{" "}
+								LKR {selectedReservation.total_amount.toLocaleString()}
 							</p>
 						</div>
 					)}
@@ -220,7 +226,9 @@ export function AddIncomeDialog({
 						/>
 					</div>
 					<div>
-						<Label htmlFor="income_type_id">{t("income.addDialog.form.incomeType")}</Label>
+						<Label htmlFor="income_type_id">
+							{t("income.addDialog.form.incomeType")}
+						</Label>
 						<Select
 							value={incomeForm.income_type_id}
 							onValueChange={(value) =>
@@ -228,7 +236,9 @@ export function AddIncomeDialog({
 							}
 						>
 							<SelectTrigger>
-								<SelectValue placeholder={t("income.addDialog.form.incomeTypePlaceholder")} />
+								<SelectValue
+									placeholder={t("income.addDialog.form.incomeTypePlaceholder")}
+								/>
 							</SelectTrigger>
 							<SelectContent>
 								{incomeTypes.map((type) => (
@@ -240,7 +250,9 @@ export function AddIncomeDialog({
 						</Select>
 					</div>
 					<div>
-						<Label htmlFor="payment_type">{t("income.addDialog.form.paymentType")}</Label>
+						<Label htmlFor="payment_type">
+							{t("income.addDialog.form.paymentType")}
+						</Label>
 						<Select
 							value={incomeForm.payment_type}
 							onValueChange={(value) =>
@@ -270,7 +282,9 @@ export function AddIncomeDialog({
 					</div>
 					{incomeForm.payment_type === "direct" && (
 						<div>
-							<Label htmlFor="account_id">{t("income.addDialog.form.accountRequired")}</Label>
+							<Label htmlFor="account_id">
+								{t("income.addDialog.form.accountRequired")}
+							</Label>
 							<Select
 								value={incomeForm.account_id}
 								onValueChange={(value) =>
@@ -279,7 +293,9 @@ export function AddIncomeDialog({
 								required
 							>
 								<SelectTrigger>
-									<SelectValue placeholder={t("income.addDialog.form.accountPlaceholder")} />
+									<SelectValue
+										placeholder={t("income.addDialog.form.accountPlaceholder")}
+									/>
 								</SelectTrigger>
 								<SelectContent>
 									{accounts.map((account) => (
@@ -297,16 +313,14 @@ export function AddIncomeDialog({
 					{incomeForm.payment_type === "deferred" && (
 						<div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
 							<p className="text-sm text-blue-800">
-								<strong>{t("income.addDialog.paymentTypes.deferredInfo")}</strong>
+								<strong>
+									{t("income.addDialog.paymentTypes.deferredInfo")}
+								</strong>
 							</p>
 						</div>
 					)}
 					<div className="flex gap-2 justify-end">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={handleClose}
-						>
+						<Button type="button" variant="outline" onClick={handleClose}>
 							{t("income.addDialog.buttons.cancel")}
 						</Button>
 						<Button
@@ -314,8 +328,7 @@ export function AddIncomeDialog({
 							disabled={
 								!incomeForm.amount ||
 								!selectedReservation ||
-								(incomeForm.payment_type === "direct" &&
-									!incomeForm.account_id)
+								(incomeForm.payment_type === "direct" && !incomeForm.account_id)
 							}
 						>
 							{t("income.addDialog.buttons.record")}

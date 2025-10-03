@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { isSameMonth, parseISO } from "date-fns";
 import { CalendarIcon, Plus } from "lucide-react";
-import { useNavigate } from "react-router";
 import { useState } from "react";
+import { useNavigate } from "react-router";
+import { NewReservationDialog } from "@/components/NewReservationDialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { NewReservationDialog } from "@/components/NewReservationDialog";
 import { useLocationContext } from "@/context/LocationContext";
 import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,7 +39,8 @@ export function GridView({
 	const navigate = useNavigate();
 	const { selectedLocation } = useLocationContext();
 	const { tenant } = useTenant();
-	const [isNewReservationDialogOpen, setIsNewReservationDialogOpen] = useState(false);
+	const [isNewReservationDialogOpen, setIsNewReservationDialogOpen] =
+		useState(false);
 
 	// Fetch reservations
 	const { data: reservations = [], isLoading } = useQuery({
@@ -123,7 +124,10 @@ export function GridView({
 				<p className="text-gray-500 mb-4">
 					No reservations for the selected location and time period.
 				</p>
-				<Button onClick={() => setIsNewReservationDialogOpen(true)} className="gap-2">
+				<Button
+					onClick={() => setIsNewReservationDialogOpen(true)}
+					className="gap-2"
+				>
 					<Plus className="size-4" />
 					Create First Reservation
 				</Button>

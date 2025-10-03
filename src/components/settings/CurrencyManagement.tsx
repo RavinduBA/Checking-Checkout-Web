@@ -1,9 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
 import { DollarSign, Edit, Trash2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useCallback, useEffect, useState } from "react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -14,6 +10,10 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import {
 	addCustomCurrency,
@@ -256,8 +256,7 @@ export function CurrencyManagement() {
 								<div className="space-y-4">
 									{currencyRates.length === 0 ? (
 										<p className="text-muted-foreground text-center py-8">
-											No currencies found. Add a custom currency to get
-											started.
+											No currencies found. Add a custom currency to get started.
 										</p>
 									) : (
 										currencyRates.map((currency) => (
@@ -355,9 +354,7 @@ export function CurrencyManagement() {
 								<li>
 									• USD is the base currency and cannot be modified or deleted
 								</li>
-								<li>
-									• All currency conversions are calculated via USD rates
-								</li>
+								<li>• All currency conversions are calculated via USD rates</li>
 								<li>
 									• Use the "Search Rate" button to find current exchange rates
 									on Google

@@ -1,6 +1,6 @@
 import { LanguagesIcon } from "lucide-react";
-import { Outlet, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
+import { Outlet, useLocation } from "react-router";
 import { AppSidebar } from "@/components/app-sidebar";
 import {
 	Breadcrumb,

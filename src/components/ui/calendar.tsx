@@ -159,14 +159,10 @@ function Calendar({
 					return <select {...props} />;
 				},
 				PreviousMonthButton: ({ className, ...props }) => {
-					return (
-						<button type="button" className={className} {...props} />
-					);
+					return <button type="button" className={className} {...props} />;
 				},
 				NextMonthButton: ({ className, ...props }) => {
-					return (
-						<button type="button" className={className} {...props} />
-					);
+					return <button type="button" className={className} {...props} />;
 				},
 				DayButton: CalendarDayButton,
 				WeekNumber: ({ children, ...props }) => {

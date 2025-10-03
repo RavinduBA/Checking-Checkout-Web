@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -24,7 +24,7 @@ export function useIncomeHistory() {
 				.eq("tenant_id", profile.tenant_id)
 				.order("created_at", { ascending: false })
 				.limit(20);
-			
+
 			if (error) throw error;
 			setIncomeHistory(data || []);
 		} catch (error) {

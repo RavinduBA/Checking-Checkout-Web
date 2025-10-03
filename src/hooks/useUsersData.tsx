@@ -106,28 +106,40 @@ export const useUsersData = (): UseUsersDataReturn => {
 				}
 
 				const user = userMap.get(userId)!;
-				
+
 				// Add permissions for this location
 				const permissionKeys = [
-					'access_dashboard', 'access_income', 'access_expenses', 'access_reports',
-					'access_calendar', 'access_bookings', 'access_rooms', 'access_master_files',
-					'access_accounts', 'access_users', 'access_settings', 'access_booking_channels'
+					"access_dashboard",
+					"access_income",
+					"access_expenses",
+					"access_reports",
+					"access_calendar",
+					"access_bookings",
+					"access_rooms",
+					"access_master_files",
+					"access_accounts",
+					"access_users",
+					"access_settings",
+					"access_booking_channels",
 				];
-				
+
 				const locationPermissions: UserPermissions = {};
-				permissionKeys.forEach(key => {
+				permissionKeys.forEach((key) => {
 					locationPermissions[key] = permission[key] || false;
 				});
-				
+
 				user.permissions[location.name] = locationPermissions;
-				
+
 				// Count active permissions
-				const activePermissions = permissionKeys.filter(key => permission[key]).length;
-				user.total_permissions = (user.total_permissions || 0) + activePermissions;
+				const activePermissions = permissionKeys.filter(
+					(key) => permission[key],
+				).length;
+				user.total_permissions =
+					(user.total_permissions || 0) + activePermissions;
 			});
 
 			// Convert map to array and calculate location counts
-			const usersArray = Array.from(userMap.values()).map(user => ({
+			const usersArray = Array.from(userMap.values()).map((user) => ({
 				...user,
 				location_count: Object.keys(user.permissions).length,
 			}));
@@ -141,39 +153,42 @@ export const useUsersData = (): UseUsersDataReturn => {
 		}
 	}, [tenant?.id]);
 
-	const deleteUser = useCallback(async (userId: string) => {
-		if (!tenant?.id) return;
+	const deleteUser = useCallback(
+		async (userId: string) => {
+			if (!tenant?.id) return;
 
-		try {
-			// Delete user permissions first
-			const { error: permissionsError } = await supabase
-				.from("user_permissions")
-				.delete()
-				.eq("user_id", userId)
-				.eq("tenant_id", tenant.id);
+			try {
+				// Delete user permissions first
+				const { error: permissionsError } = await supabase
+					.from("user_permissions")
+					.delete()
+					.eq("user_id", userId)
+					.eq("tenant_id", tenant.id);
 
-			if (permissionsError) {
-				throw permissionsError;
+				if (permissionsError) {
+					throw permissionsError;
+				}
+
+				// Delete user profile
+				const { error: profileError } = await supabase
+					.from("profiles")
+					.delete()
+					.eq("id", userId)
+					.eq("tenant_id", tenant.id);
+
+				if (profileError) {
+					throw profileError;
+				}
+
+				// Refresh users list
+				await fetchUsers();
+			} catch (error: any) {
+				console.error("Error deleting user:", error);
+				throw error;
 			}
-
-			// Delete user profile
-			const { error: profileError } = await supabase
-				.from("profiles")
-				.delete()
-				.eq("id", userId)
-				.eq("tenant_id", tenant.id);
-
-			if (profileError) {
-				throw profileError;
-			}
-
-			// Refresh users list
-			await fetchUsers();
-		} catch (error: any) {
-			console.error("Error deleting user:", error);
-			throw error;
-		}
-	}, [tenant?.id, fetchUsers]);
+		},
+		[tenant?.id, fetchUsers],
+	);
 
 	useEffect(() => {
 		fetchUsers();

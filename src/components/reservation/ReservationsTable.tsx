@@ -30,7 +30,7 @@ export function ReservationsTable({
 	onAddIncome,
 }: ReservationsTableProps) {
 	const { t } = useTranslation();
-	
+
 	const getStatusBadge = (status: string) => {
 		const variants: Record<
 			string,
@@ -44,7 +44,10 @@ export function ReservationsTable({
 		};
 		return (
 			<Badge variant={variants[status] || "default"}>
-				{t(`income.reservationsTable.statuses.${status}`, status.charAt(0).toUpperCase() + status.slice(1))}
+				{t(
+					`income.reservationsTable.statuses.${status}`,
+					status.charAt(0).toUpperCase() + status.slice(1),
+				)}
 			</Badge>
 		);
 	};
@@ -80,14 +83,30 @@ export function ReservationsTable({
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>{t("income.reservationsTable.headers.reservationNumber")}</TableHead>
-							<TableHead>{t("income.reservationsTable.headers.guest")}</TableHead>
-							<TableHead>{t("income.reservationsTable.headers.room")}</TableHead>
-							<TableHead>{t("income.reservationsTable.headers.checkIn")}</TableHead>
-							<TableHead>{t("income.reservationsTable.headers.checkOut")}</TableHead>
-							<TableHead>{t("income.reservationsTable.headers.totalAmount")}</TableHead>
-							<TableHead>{t("income.reservationsTable.headers.status")}</TableHead>
-							<TableHead>{t("income.reservationsTable.headers.action")}</TableHead>
+							<TableHead>
+								{t("income.reservationsTable.headers.reservationNumber")}
+							</TableHead>
+							<TableHead>
+								{t("income.reservationsTable.headers.guest")}
+							</TableHead>
+							<TableHead>
+								{t("income.reservationsTable.headers.room")}
+							</TableHead>
+							<TableHead>
+								{t("income.reservationsTable.headers.checkIn")}
+							</TableHead>
+							<TableHead>
+								{t("income.reservationsTable.headers.checkOut")}
+							</TableHead>
+							<TableHead>
+								{t("income.reservationsTable.headers.totalAmount")}
+							</TableHead>
+							<TableHead>
+								{t("income.reservationsTable.headers.status")}
+							</TableHead>
+							<TableHead>
+								{t("income.reservationsTable.headers.action")}
+							</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
@@ -106,9 +125,7 @@ export function ReservationsTable({
 										{new Date(reservation.check_in_date).toLocaleDateString()}
 									</TableCell>
 									<TableCell>
-										{new Date(
-											reservation.check_out_date,
-										).toLocaleDateString()}
+										{new Date(reservation.check_out_date).toLocaleDateString()}
 									</TableCell>
 									<TableCell>
 										LKR {reservation.total_amount.toLocaleString()}

@@ -2,16 +2,16 @@ import { useState } from "react";
 import { UsersSkeleton } from "@/components/UsersSkeleton";
 import { Button } from "@/components/ui/button";
 import {
-	UsersList,
-	PermissionMatrix,
-	InviteMemberDialog,
 	EditUserDialog,
+	InviteMemberDialog,
+	PermissionMatrix,
 	type User,
+	UsersList,
 } from "@/components/users";
 import { useAuth } from "@/context/AuthContext";
 import { useLocationContext } from "@/context/LocationContext";
 import { usePermissions } from "@/hooks/usePermissions";
-import { useUsersData, type User as UsersDataUser } from "@/hooks/useUsersData";
+import { type User as UsersDataUser, useUsersData } from "@/hooks/useUsersData";
 
 export default function Users() {
 	const [showInviteDialog, setShowInviteDialog] = useState(false);

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useLocationContext } from "@/context/LocationContext";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import type { User } from "./types";
 
 // Hook for fetching all users with detailed information
@@ -105,7 +105,7 @@ export function useUsers() {
 
 				userRecord.total_permissions = Math.max(
 					userRecord.total_permissions,
-					permissionCount
+					permissionCount,
 				);
 
 				userRecord.permissions[location.name] = {
@@ -142,42 +142,45 @@ export function useUsers() {
 		fetchUsers();
 	}, [fetchUsers]);
 
-	const deleteUser = useCallback(async (userId: string) => {
-		if (!tenant?.id) return false;
+	const deleteUser = useCallback(
+		async (userId: string) => {
+			if (!tenant?.id) return false;
 
-		if (
-			!confirm(
-				"Are you sure you want to remove this user's access? This action cannot be undone.",
-			)
-		) {
-			return false;
-		}
+			if (
+				!confirm(
+					"Are you sure you want to remove this user's access? This action cannot be undone.",
+				)
+			) {
+				return false;
+			}
 
-		try {
-			const { error } = await supabase
-				.from("user_permissions")
-				.delete()
-				.eq("user_id", userId)
-				.eq("tenant_id", tenant.id);
+			try {
+				const { error } = await supabase
+					.from("user_permissions")
+					.delete()
+					.eq("user_id", userId)
+					.eq("tenant_id", tenant.id);
 
-			if (error) throw error;
+				if (error) throw error;
 
-			await refreshUsers();
-			toast({
-				title: "User Removed",
-				description: "User access has been removed successfully.",
-			});
-			return true;
-		} catch (error: any) {
-			console.error("Error removing user:", error);
-			toast({
-				title: "Error",
-				description: error.message || "Failed to remove user",
-				variant: "destructive",
-			});
-			return false;
-		}
-	}, [tenant?.id, refreshUsers]);
+				await refreshUsers();
+				toast({
+					title: "User Removed",
+					description: "User access has been removed successfully.",
+				});
+				return true;
+			} catch (error: any) {
+				console.error("Error removing user:", error);
+				toast({
+					title: "Error",
+					description: error.message || "Failed to remove user",
+					variant: "destructive",
+				});
+				return false;
+			}
+		},
+		[tenant?.id, refreshUsers],
+	);
 
 	useEffect(() => {
 		fetchUsers();
@@ -202,11 +205,15 @@ export function useUserStats() {
 			sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 			return createdDate > sevenDaysAgo;
 		}).length,
-		averagePermissions: users.length > 0 
-			? Math.round(
-					users.reduce((sum, user) => sum + (user.total_permissions || 0), 0) / users.length
-				)
-			: 0,
+		averagePermissions:
+			users.length > 0
+				? Math.round(
+						users.reduce(
+							(sum, user) => sum + (user.total_permissions || 0),
+							0,
+						) / users.length,
+					)
+				: 0,
 	};
 
 	return { stats, loading };

@@ -15,7 +15,6 @@ import { OTPVerification } from "@/components/OTPVerification";
 import { ReservationEditDialog } from "@/components/ReservationEditDialog";
 import { ReservationPrintButton } from "@/components/ReservationPrintButton";
 import { ReservationsListSkeleton } from "@/components/ReservationsListSkeleton";
-import { ViewReservationDialog } from "@/components/ViewReservationDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,6 +36,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ViewReservationDialog } from "@/components/ViewReservationDialog";
 import { useAuth } from "@/context/AuthContext";
 import { useLocationContext } from "@/context/LocationContext";
 import { useToast } from "@/hooks/use-toast";
@@ -160,8 +160,11 @@ export const ReservationsList = () => {
 	const [editingReservation, setEditingReservation] =
 		useState<Reservation | null>(null);
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-	const [isNewReservationDialogOpen, setIsNewReservationDialogOpen] = useState(false);
-	const [viewingReservationId, setViewingReservationId] = useState<string | null>(null);
+	const [isNewReservationDialogOpen, setIsNewReservationDialogOpen] =
+		useState(false);
+	const [viewingReservationId, setViewingReservationId] = useState<
+		string | null
+	>(null);
 	const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
 	const fetchData = useCallback(async () => {

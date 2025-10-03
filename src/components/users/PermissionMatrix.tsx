@@ -1,12 +1,7 @@
-import { User, Shield, Edit, Eye, BarChart3 } from "lucide-react";
+import { BarChart3, Edit, Eye, Shield, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUsersData } from "@/hooks/useUsersData";
@@ -33,9 +28,12 @@ export function PermissionMatrix({ onEditUser }: PermissionMatrixProps) {
 	};
 
 	const getPermissionPercentage = (user: UserType) => {
-		const totalPossible = Object.keys(user.permissions).length * permissionTypes.length;
+		const totalPossible =
+			Object.keys(user.permissions).length * permissionTypes.length;
 		const actualPermissions = getTotalPermissions(user);
-		return totalPossible > 0 ? Math.round((actualPermissions / totalPossible) * 100) : 0;
+		return totalPossible > 0
+			? Math.round((actualPermissions / totalPossible) * 100)
+			: 0;
 	};
 
 	if (loading) {
@@ -83,17 +81,22 @@ export function PermissionMatrix({ onEditUser }: PermissionMatrixProps) {
 						<TabsTrigger value="overview">Overview</TabsTrigger>
 						<TabsTrigger value="detailed">Detailed View</TabsTrigger>
 					</TabsList>
-					
+
 					<TabsContent value="overview" className="space-y-4">
 						{users.map((user) => (
-							<div key={user.id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+							<div
+								key={user.id}
+								className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+							>
 								<div className="flex items-center gap-3 mb-3">
 									<div className="p-1 bg-primary/10 rounded-full">
 										<User className="size-4 text-primary" />
 									</div>
 									<div>
 										<div className="font-medium">{user.name}</div>
-										<div className="text-sm text-muted-foreground">{user.email}</div>
+										<div className="text-sm text-muted-foreground">
+											{user.email}
+										</div>
 									</div>
 									<div className="flex items-center gap-2 ml-auto">
 										<Badge
@@ -129,36 +132,44 @@ export function PermissionMatrix({ onEditUser }: PermissionMatrixProps) {
 											Permission Coverage: {getPermissionPercentage(user)}%
 										</span>
 									</div>
-									
-									<Progress 
-										value={getPermissionPercentage(user)} 
+
+									<Progress
+										value={getPermissionPercentage(user)}
 										className="h-2"
 									/>
 
 									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-										{Object.entries(user.permissions).map(([location, perms]) => (
-											<div key={location} className="p-3 bg-muted/30 rounded border">
-												<h5 className="font-medium text-sm text-primary mb-2 flex items-center justify-between">
-													{location}
-													<Badge variant="outline" className="text-xs">
-														{getPermissionCount(perms)}/{permissionTypes.length}
-													</Badge>
-												</h5>
-												<div className="flex flex-wrap gap-1">
-													{permissionTypes
-														.filter(permType => (perms as any)[permType.key])
-														.map((permType) => (
-															<Badge
-																key={permType.key}
-																variant="secondary"
-																className="text-xs"
-															>
-																{permType.label.split(' ')[0]}
-															</Badge>
-														))}
+										{Object.entries(user.permissions).map(
+											([location, perms]) => (
+												<div
+													key={location}
+													className="p-3 bg-muted/30 rounded border"
+												>
+													<h5 className="font-medium text-sm text-primary mb-2 flex items-center justify-between">
+														{location}
+														<Badge variant="outline" className="text-xs">
+															{getPermissionCount(perms)}/
+															{permissionTypes.length}
+														</Badge>
+													</h5>
+													<div className="flex flex-wrap gap-1">
+														{permissionTypes
+															.filter(
+																(permType) => (perms as any)[permType.key],
+															)
+															.map((permType) => (
+																<Badge
+																	key={permType.key}
+																	variant="secondary"
+																	className="text-xs"
+																>
+																	{permType.label.split(" ")[0]}
+																</Badge>
+															))}
+													</div>
 												</div>
-											</div>
-										))}
+											),
+										)}
 									</div>
 								</div>
 							</div>
@@ -195,7 +206,8 @@ export function PermissionMatrix({ onEditUser }: PermissionMatrixProps) {
 											<h5 className="font-medium text-sm text-primary mb-3 flex items-center justify-between">
 												{location}
 												<Badge variant="outline">
-													{getPermissionCount(perms)}/{permissionTypes.length} permissions
+													{getPermissionCount(perms)}/{permissionTypes.length}{" "}
+													permissions
 												</Badge>
 											</h5>
 											<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -225,7 +237,9 @@ export function PermissionMatrix({ onEditUser }: PermissionMatrixProps) {
 									))
 								) : (
 									<div className="text-center py-4 text-muted-foreground">
-										<p className="text-sm">No location permissions set up yet</p>
+										<p className="text-sm">
+											No location permissions set up yet
+										</p>
 										<Button
 											variant="outline"
 											size="sm"

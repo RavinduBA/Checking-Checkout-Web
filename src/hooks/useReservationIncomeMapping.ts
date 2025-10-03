@@ -1,10 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useReservationIncomeMapping() {
 	const { profile } = useProfile();
-	const [reservationIncomeMap, setReservationIncomeMap] = useState<Record<string, boolean>>({});
+	const [reservationIncomeMap, setReservationIncomeMap] = useState<
+		Record<string, boolean>
+	>({});
 	const [loading, setLoading] = useState(true);
 
 	const fetchReservationIncomeMapping = useCallback(async () => {
@@ -20,9 +22,9 @@ export function useReservationIncomeMapping() {
 				.select("booking_id")
 				.eq("tenant_id", profile.tenant_id)
 				.not("booking_id", "is", null);
-			
+
 			if (error) throw error;
-			
+
 			// Create a map of reservation IDs that have income records
 			const incomeMap: Record<string, boolean> = {};
 			data?.forEach((income) => {

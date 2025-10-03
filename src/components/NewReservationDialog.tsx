@@ -1,9 +1,11 @@
-import { format, addDays } from "date-fns";
+import { addDays, format } from "date-fns";
 import { Calendar, Save, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { CurrencySelector } from "@/components/CurrencySelector";
 import { PricingDisplay } from "@/components/PricingDisplay";
+import { ReservationDateSelector } from "@/components/reservation";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	Dialog,
 	DialogContent,
@@ -22,8 +24,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { DatePicker } from "@/components/ui/date-picker";
-import { ReservationDateSelector } from "@/components/reservation";
 import { useLocationContext } from "@/context/LocationContext";
 import { useToast } from "@/hooks/use-toast";
 import { useFormFieldPreferences } from "@/hooks/useFormFieldPreferences";
@@ -78,12 +78,16 @@ export function NewReservationDialog({
 	});
 
 	// Calculate nights when dates change
-	const nights = Math.max(1, Math.ceil(
-		formData.check_in_date && formData.check_out_date
-			? (new Date(formData.check_out_date).getTime() - new Date(formData.check_in_date).getTime()) /
-				(1000 * 60 * 60 * 24)
-			: 1
-	));
+	const nights = Math.max(
+		1,
+		Math.ceil(
+			formData.check_in_date && formData.check_out_date
+				? (new Date(formData.check_out_date).getTime() -
+						new Date(formData.check_in_date).getTime()) /
+						(1000 * 60 * 60 * 24)
+				: 1,
+		),
+	);
 
 	// Calculate total amount when room rate or nights change
 	useEffect(() => {
@@ -123,8 +127,6 @@ export function NewReservationDialog({
 		}
 	}, [isOpen, fetchRooms]);
 
-
-
 	const handleInputChange = (field: string, value: any) => {
 		setFormData((prev) => ({ ...prev, [field]: value }));
 	};
@@ -132,18 +134,18 @@ export function NewReservationDialog({
 	// Handle currency change and recalculate room rate if room is selected
 	const handleCurrencyChange = async (newCurrency: string) => {
 		const selectedRoom = rooms.find((room) => room.id === formData.room_id);
-		
+
 		if (selectedRoom) {
-			const roomCurrency = selectedRoom.currency || 'LKR';
+			const roomCurrency = selectedRoom.currency || "LKR";
 			let newRoomRate = selectedRoom.base_price || 0;
-			
+
 			// Convert room price to new currency if they differ
 			if (roomCurrency !== newCurrency) {
 				try {
 					newRoomRate = await convertCurrency(
 						selectedRoom.base_price || 0,
 						roomCurrency,
-						newCurrency
+						newCurrency,
 					);
 				} catch (error) {
 					console.error("Error converting currency:", error);
@@ -155,7 +157,7 @@ export function NewReservationDialog({
 					newRoomRate = selectedRoom.base_price || 0;
 				}
 			}
-			
+
 			setFormData((prev) => ({
 				...prev,
 				currency: newCurrency,
@@ -172,16 +174,16 @@ export function NewReservationDialog({
 		const selectedRoom = rooms.find((room) => room.id === roomId);
 		if (selectedRoom) {
 			// Check if room currency differs from selected currency
-			const roomCurrency = selectedRoom.currency || 'LKR';
+			const roomCurrency = selectedRoom.currency || "LKR";
 			let roomRate = selectedRoom.base_price || 0;
-			
+
 			// Convert room price to selected currency if they differ
 			if (roomCurrency !== formData.currency) {
 				try {
 					roomRate = await convertCurrency(
 						selectedRoom.base_price || 0,
 						roomCurrency,
-						formData.currency
+						formData.currency,
 					);
 				} catch (error) {
 					console.error("Error converting currency:", error);
@@ -193,7 +195,7 @@ export function NewReservationDialog({
 					roomRate = selectedRoom.base_price || 0;
 				}
 			}
-			
+
 			setFormData((prev) => ({
 				...prev,
 				room_id: roomId,
@@ -222,9 +224,12 @@ export function NewReservationDialog({
 
 	const generateReservationNumber = async (): Promise<string> => {
 		try {
-			const { data, error } = await supabase.rpc("generate_reservation_number", {
-				p_tenant_id: tenant?.id,
-			});
+			const { data, error } = await supabase.rpc(
+				"generate_reservation_number",
+				{
+					p_tenant_id: tenant?.id,
+				},
+			);
 
 			if (error) throw error;
 			return data || `RES${Date.now()}`;
@@ -236,7 +241,7 @@ export function NewReservationDialog({
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		
+
 		if (!tenant?.id || !profile?.id) {
 			toast({
 				title: "Error",
@@ -256,10 +261,10 @@ export function NewReservationDialog({
 		}
 
 		setSubmitting(true);
-		
+
 		try {
 			const reservationNumber = await generateReservationNumber();
-			
+
 			const reservationData = {
 				reservation_number: reservationNumber,
 				location_id: selectedLocation,
@@ -325,7 +330,6 @@ export function NewReservationDialog({
 
 			onReservationCreated();
 			onClose();
-
 		} catch (error) {
 			console.error("Error creating reservation:", error);
 			toast({
@@ -352,26 +356,29 @@ export function NewReservationDialog({
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto">
-				{/* Room Selection */}
-				<div className="space-y-2">
-					<Label htmlFor="room">Room *</Label>
-					<Select
-						value={formData.room_id}
-						onValueChange={handleRoomChange}
-						required
-					>
-						<SelectTrigger>
-							<SelectValue placeholder="Select room" />
-						</SelectTrigger>
-						<SelectContent>
-							{rooms.map((room) => (
-								<SelectItem key={room.id} value={room.id}>
-									{room.room_number} - {room.room_type} ({getCurrencySymbol(room.currency || "LKR")}{room.base_price})
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>					{/* Guest Information */}
+					{/* Room Selection */}
+					<div className="space-y-2">
+						<Label htmlFor="room">Room *</Label>
+						<Select
+							value={formData.room_id}
+							onValueChange={handleRoomChange}
+							required
+						>
+							<SelectTrigger>
+								<SelectValue placeholder="Select room" />
+							</SelectTrigger>
+							<SelectContent>
+								{rooms.map((room) => (
+									<SelectItem key={room.id} value={room.id}>
+										{room.room_number} - {room.room_type} (
+										{getCurrencySymbol(room.currency || "LKR")}
+										{room.base_price})
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>{" "}
+					{/* Guest Information */}
 					<div className="space-y-4">
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div className="md:col-span-2 space-y-2">
@@ -379,7 +386,9 @@ export function NewReservationDialog({
 								<Input
 									id="guest_name"
 									value={formData.guest_name}
-									onChange={(e) => handleInputChange("guest_name", e.target.value)}
+									onChange={(e) =>
+										handleInputChange("guest_name", e.target.value)
+									}
 									placeholder="Enter guest name"
 									required
 								/>
@@ -392,7 +401,9 @@ export function NewReservationDialog({
 										id="guest_email"
 										type="email"
 										value={formData.guest_email}
-										onChange={(e) => handleInputChange("guest_email", e.target.value)}
+										onChange={(e) =>
+											handleInputChange("guest_email", e.target.value)
+										}
 										placeholder="Enter email address"
 									/>
 								</div>
@@ -405,7 +416,9 @@ export function NewReservationDialog({
 										defaultCountry="LK"
 										international
 										value={formData.guest_phone}
-										onChange={(value) => handleInputChange("guest_phone", value || "")}
+										onChange={(value) =>
+											handleInputChange("guest_phone", value || "")
+										}
 										placeholder="Enter phone number"
 									/>
 								</div>
@@ -417,7 +430,9 @@ export function NewReservationDialog({
 									<Input
 										id="guest_nationality"
 										value={formData.guest_nationality}
-										onChange={(e) => handleInputChange("guest_nationality", e.target.value)}
+										onChange={(e) =>
+											handleInputChange("guest_nationality", e.target.value)
+										}
 										placeholder="Enter nationality"
 									/>
 								</div>
@@ -429,7 +444,9 @@ export function NewReservationDialog({
 									<Input
 										id="guest_passport_number"
 										value={formData.guest_passport_number}
-										onChange={(e) => handleInputChange("guest_passport_number", e.target.value)}
+										onChange={(e) =>
+											handleInputChange("guest_passport_number", e.target.value)
+										}
 										placeholder="Enter passport number"
 									/>
 								</div>
@@ -441,7 +458,9 @@ export function NewReservationDialog({
 									<Input
 										id="guest_id_number"
 										value={formData.guest_id_number}
-										onChange={(e) => handleInputChange("guest_id_number", e.target.value)}
+										onChange={(e) =>
+											handleInputChange("guest_id_number", e.target.value)
+										}
 										placeholder="Enter ID number"
 									/>
 								</div>
@@ -456,7 +475,9 @@ export function NewReservationDialog({
 											type="number"
 											min="1"
 											value={formData.adults}
-											onChange={(e) => handleInputChange("adults", Number(e.target.value))}
+											onChange={(e) =>
+												handleInputChange("adults", Number(e.target.value))
+											}
 											required
 										/>
 									</div>
@@ -469,7 +490,9 @@ export function NewReservationDialog({
 											type="number"
 											min="0"
 											value={formData.children}
-											onChange={(e) => handleInputChange("children", Number(e.target.value))}
+											onChange={(e) =>
+												handleInputChange("children", Number(e.target.value))
+											}
 										/>
 									</div>
 								)}
@@ -481,7 +504,9 @@ export function NewReservationDialog({
 									<Textarea
 										id="guest_address"
 										value={formData.guest_address}
-										onChange={(e) => handleInputChange("guest_address", e.target.value)}
+										onChange={(e) =>
+											handleInputChange("guest_address", e.target.value)
+										}
 										placeholder="Enter address"
 										rows={3}
 									/>
@@ -489,7 +514,6 @@ export function NewReservationDialog({
 							)}
 						</div>
 					</div>
-
 					{/* Stay Details */}
 					<div className="space-y-2">
 						<div className="flex items-center gap-2">
@@ -504,7 +528,9 @@ export function NewReservationDialog({
 										id="arrival_time"
 										type="time"
 										value={formData.arrival_time}
-										onChange={(e) => handleInputChange("arrival_time", e.target.value)}
+										onChange={(e) =>
+											handleInputChange("arrival_time", e.target.value)
+										}
 									/>
 								</div>
 							)}
@@ -529,17 +555,18 @@ export function NewReservationDialog({
 								<Textarea
 									id="special_requests"
 									value={formData.special_requests}
-									onChange={(e) => handleInputChange("special_requests", e.target.value)}
+									onChange={(e) =>
+										handleInputChange("special_requests", e.target.value)
+									}
 									placeholder="Any special requests or notes"
 								/>
 							</div>
 						)}
 					</div>
-
 					{/* Pricing */}
 					<div className="space-y-4">
 						<h3 className="text-lg font-semibold">Pricing</h3>
-						
+
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 							<div className="space-y-2">
 								<Label htmlFor="currency">Currency</Label>
@@ -556,7 +583,9 @@ export function NewReservationDialog({
 									type="number"
 									step="0.01"
 									value={formData.room_rate}
-									onChange={(e) => handleInputChange("room_rate", Number(e.target.value))}
+									onChange={(e) =>
+										handleInputChange("room_rate", Number(e.target.value))
+									}
 									placeholder="Enter room rate"
 								/>
 							</div>
@@ -569,7 +598,12 @@ export function NewReservationDialog({
 										type="number"
 										step="0.01"
 										value={formData.advance_amount}
-										onChange={(e) => handleInputChange("advance_amount", Number(e.target.value))}
+										onChange={(e) =>
+											handleInputChange(
+												"advance_amount",
+												Number(e.target.value),
+											)
+										}
 										placeholder="Enter advance amount"
 									/>
 								</div>
@@ -586,9 +620,6 @@ export function NewReservationDialog({
 							/>
 						)}
 					</div>
-
-
-
 					{/* Action Buttons */}
 					<div className="flex w-full items-center justify-end gap-3 py-4 border-t">
 						<Button type="button" variant="outline" onClick={onClose}>

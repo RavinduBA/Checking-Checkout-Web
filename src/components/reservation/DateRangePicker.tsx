@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { format, addDays, isBefore, isToday, isAfter } from "date-fns";
+import { addDays, format, isAfter, isBefore, isToday } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,35 +25,43 @@ export function DateRangePicker({
 	maxDate,
 }: DateRangePickerProps) {
 	const [selectedCheckIn, setSelectedCheckIn] = useState<Date | undefined>(
-		checkInDate ? new Date(checkInDate) : undefined
+		checkInDate ? new Date(checkInDate) : undefined,
 	);
 	const [selectedCheckOut, setSelectedCheckOut] = useState<Date | undefined>(
-		checkOutDate ? new Date(checkOutDate) : undefined
+		checkOutDate ? new Date(checkOutDate) : undefined,
 	);
 	const [isSelectingCheckOut, setIsSelectingCheckOut] = useState(false);
 
 	const handleDateSelect = (date: Date | undefined) => {
 		if (!date) return;
 
-		if (!selectedCheckIn || (!isSelectingCheckOut && isBefore(date, selectedCheckIn))) {
+		if (
+			!selectedCheckIn ||
+			(!isSelectingCheckOut && isBefore(date, selectedCheckIn))
+		) {
 			// Setting check-in date
 			setSelectedCheckIn(date);
 			setSelectedCheckOut(undefined);
 			setIsSelectingCheckOut(true);
 		} else if (isSelectingCheckOut || !selectedCheckOut) {
 			// Setting check-out date
-			if (isAfter(date, selectedCheckIn) || format(date, "yyyy-MM-dd") === format(selectedCheckIn, "yyyy-MM-dd")) {
-				const checkOut = isToday(selectedCheckIn) && format(date, "yyyy-MM-dd") === format(selectedCheckIn, "yyyy-MM-dd") 
-					? addDays(date, 1) 
-					: addDays(date, 1);
+			if (
+				isAfter(date, selectedCheckIn) ||
+				format(date, "yyyy-MM-dd") === format(selectedCheckIn, "yyyy-MM-dd")
+			) {
+				const checkOut =
+					isToday(selectedCheckIn) &&
+					format(date, "yyyy-MM-dd") === format(selectedCheckIn, "yyyy-MM-dd")
+						? addDays(date, 1)
+						: addDays(date, 1);
 				setSelectedCheckOut(checkOut);
 				setIsSelectingCheckOut(false);
-				
+
 				// Call callback with formatted dates
 				if (onDateChange) {
 					onDateChange(
 						format(selectedCheckIn, "yyyy-MM-dd"),
-						format(checkOut, "yyyy-MM-dd")
+						format(checkOut, "yyyy-MM-dd"),
 					);
 				}
 			}
@@ -81,10 +89,7 @@ export function DateRangePicker({
 		setSelectedCheckOut(tomorrow);
 		setIsSelectingCheckOut(false);
 		if (onDateChange) {
-			onDateChange(
-				format(today, "yyyy-MM-dd"),
-				format(tomorrow, "yyyy-MM-dd")
-			);
+			onDateChange(format(today, "yyyy-MM-dd"), format(tomorrow, "yyyy-MM-dd"));
 		}
 	};
 
@@ -99,41 +104,47 @@ export function DateRangePicker({
 	const isDateDisabled = (date: Date) => {
 		// Disable past dates (before minDate)
 		if (minDate && isBefore(date, minDate)) return true;
-		
+
 		// Disable dates after maxDate if provided
 		if (maxDate && isAfter(date, maxDate)) return true;
-		
+
 		// If selecting check-out, disable dates before or equal to check-in
 		if (isSelectingCheckOut && selectedCheckIn) {
-			return isBefore(date, selectedCheckIn) || format(date, "yyyy-MM-dd") === format(selectedCheckIn, "yyyy-MM-dd");
+			return (
+				isBefore(date, selectedCheckIn) ||
+				format(date, "yyyy-MM-dd") === format(selectedCheckIn, "yyyy-MM-dd")
+			);
 		}
-		
+
 		return false;
 	};
 
 	const getDateModifiers = () => {
 		const modifiers: any = {};
-		
+
 		if (selectedCheckIn) {
 			modifiers.selected_start = selectedCheckIn;
 		}
-		
+
 		if (selectedCheckOut) {
 			modifiers.selected_end = addDays(selectedCheckOut, -1); // Adjust for display
 		}
-		
+
 		if (selectedCheckIn && selectedCheckOut) {
 			const range = [];
 			let currentDate = new Date(selectedCheckIn);
 			const endDate = addDays(selectedCheckOut, -1);
-			
-			while (isBefore(currentDate, endDate) || format(currentDate, "yyyy-MM-dd") === format(endDate, "yyyy-MM-dd")) {
+
+			while (
+				isBefore(currentDate, endDate) ||
+				format(currentDate, "yyyy-MM-dd") === format(endDate, "yyyy-MM-dd")
+			) {
 				range.push(new Date(currentDate));
 				currentDate = addDays(currentDate, 1);
 			}
 			modifiers.selected_range = range;
 		}
-		
+
 		return modifiers;
 	};
 
@@ -168,10 +179,12 @@ export function DateRangePicker({
 				<div className="grid grid-cols-2 gap-4">
 					<div className="space-y-2">
 						<Label className="text-sm font-medium">Check-in</Label>
-						<div className={cn(
-							"p-3 border rounded-md text-center",
-							selectedCheckIn ? "bg-primary/10 border-primary" : "bg-muted"
-						)}>
+						<div
+							className={cn(
+								"p-3 border rounded-md text-center",
+								selectedCheckIn ? "bg-primary/10 border-primary" : "bg-muted",
+							)}
+						>
 							{selectedCheckIn ? (
 								<>
 									<div className="font-semibold text-sm">
@@ -186,13 +199,15 @@ export function DateRangePicker({
 							)}
 						</div>
 					</div>
-					
+
 					<div className="space-y-2">
 						<Label className="text-sm font-medium">Check-out</Label>
-						<div className={cn(
-							"p-3 border rounded-md text-center",
-							selectedCheckOut ? "bg-primary/10 border-primary" : "bg-muted"
-						)}>
+						<div
+							className={cn(
+								"p-3 border rounded-md text-center",
+								selectedCheckOut ? "bg-primary/10 border-primary" : "bg-muted",
+							)}
+						>
 							{selectedCheckOut ? (
 								<>
 									<div className="font-semibold text-sm">
@@ -220,12 +235,11 @@ export function DateRangePicker({
 
 				{/* Instructions */}
 				<div className="text-xs text-muted-foreground text-center">
-					{!selectedCheckIn 
+					{!selectedCheckIn
 						? "Select your check-in date"
-						: isSelectingCheckOut 
-						? "Now select your check-out date"
-						: "Click dates to change selection"
-					}
+						: isSelectingCheckOut
+							? "Now select your check-out date"
+							: "Click dates to change selection"}
 				</div>
 
 				{/* Calendar */}
@@ -236,19 +250,19 @@ export function DateRangePicker({
 					disabled={isDateDisabled}
 					modifiers={getDateModifiers()}
 					modifiersStyles={{
-						selected_start: { 
-							backgroundColor: "hsl(var(--primary))", 
+						selected_start: {
+							backgroundColor: "hsl(var(--primary))",
 							color: "hsl(var(--primary-foreground))",
-							borderRadius: "6px 0 0 6px" 
+							borderRadius: "6px 0 0 6px",
 						},
-						selected_end: { 
-							backgroundColor: "hsl(var(--primary))", 
+						selected_end: {
+							backgroundColor: "hsl(var(--primary))",
 							color: "hsl(var(--primary-foreground))",
-							borderRadius: "0 6px 6px 0" 
+							borderRadius: "0 6px 6px 0",
 						},
-						selected_range: { 
+						selected_range: {
 							backgroundColor: "hsl(var(--primary) / 0.2)",
-							color: "hsl(var(--foreground))" 
+							color: "hsl(var(--foreground))",
 						},
 					}}
 					className="w-full"

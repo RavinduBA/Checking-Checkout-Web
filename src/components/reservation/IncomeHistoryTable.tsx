@@ -18,7 +18,7 @@ interface IncomeHistoryTableProps {
 
 export function IncomeHistoryTable({ incomeHistory }: IncomeHistoryTableProps) {
 	const { t } = useTranslation();
-	
+
 	return (
 		<Card>
 			<CardHeader>

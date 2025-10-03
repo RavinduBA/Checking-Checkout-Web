@@ -1,12 +1,19 @@
-import { Edit, Shield, Trash2, User, UserCheck, MapPin, Clock, Phone, Mail } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import {
+	Clock,
+	Edit,
+	Mail,
+	MapPin,
+	Phone,
+	Shield,
+	Trash2,
+	User,
+	UserCheck,
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Table,
 	TableBody,
@@ -15,10 +22,13 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { formatDistanceToNow } from "date-fns";
-import { useUsersData, type User as UsersDataUser } from "@/hooks/useUsersData";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { type User as UsersDataUser, useUsersData } from "@/hooks/useUsersData";
 import { supabase } from "@/integrations/supabase/client";
 
 interface UsersListProps {
@@ -97,7 +107,9 @@ export function UsersList({ onEditUser }: UsersListProps) {
 								<TableHead className="hidden sm:table-cell">Contact</TableHead>
 								<TableHead>Role</TableHead>
 								<TableHead>Locations</TableHead>
-								<TableHead className="hidden md:table-cell">Last Active</TableHead>
+								<TableHead className="hidden md:table-cell">
+									Last Active
+								</TableHead>
 								<TableHead>Actions</TableHead>
 							</TableRow>
 						</TableHeader>
@@ -119,7 +131,9 @@ export function UsersList({ onEditUser }: UsersListProps) {
 												</div>
 												{user.tenant_role && (
 													<Badge variant="outline" className="text-xs mt-1">
-														{user.tenant_role.replace('tenant_', '').replace('_', ' ')}
+														{user.tenant_role
+															.replace("tenant_", "")
+															.replace("_", " ")}
 													</Badge>
 												)}
 											</div>
@@ -163,7 +177,8 @@ export function UsersList({ onEditUser }: UsersListProps) {
 												<div className="flex items-center gap-1">
 													<MapPin className="h-3 w-3" />
 													<span className="text-sm">
-														{user.location_count || 0} location{(user.location_count || 0) !== 1 ? 's' : ''}
+														{user.location_count || 0} location
+														{(user.location_count || 0) !== 1 ? "s" : ""}
 													</span>
 												</div>
 											</TooltipTrigger>
@@ -171,7 +186,9 @@ export function UsersList({ onEditUser }: UsersListProps) {
 												<div className="space-y-1">
 													<p className="font-medium">Locations:</p>
 													{Object.keys(user.permissions).map((locationName) => (
-														<p key={locationName} className="text-sm">• {locationName}</p>
+														<p key={locationName} className="text-sm">
+															• {locationName}
+														</p>
 													))}
 												</div>
 											</TooltipContent>

@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -50,7 +50,7 @@ export function CalendarDatePicker({
 					className={cn(
 						"w-full justify-start text-left font-normal",
 						!date && "text-muted-foreground",
-						className
+						className,
 					)}
 					disabled={disabled}
 				>

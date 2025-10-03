@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
 	eachDayOfInterval,
 	endOfMonth,
+	endOfWeek,
 	format,
 	isSameDay,
 	isSameMonth,
@@ -9,28 +10,27 @@ import {
 	parseISO,
 	startOfMonth,
 	startOfWeek,
-	endOfWeek,
 } from "date-fns";
+import { Calendar as CalendarIcon, Plus } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
+import { NewReservationDialog } from "@/components/NewReservationDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import { useLocationContext } from "@/context/LocationContext";
-import { useTenant } from "@/hooks/useTenant";
-import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
-import { Plus, Calendar as CalendarIcon } from "lucide-react";
-import { useNavigate } from "react-router";
-import { useState } from "react";
 import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { NewReservationDialog } from "@/components/NewReservationDialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useLocationContext } from "@/context/LocationContext";
+import { useTenant } from "@/hooks/useTenant";
+import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+import { cn } from "@/lib/utils";
 
 type Room = Database["public"]["Tables"]["rooms"]["Row"];
 type Reservation = Database["public"]["Tables"]["reservations"]["Row"] & {
@@ -66,8 +66,11 @@ export function FullCalendarMonthView({
 	const { selectedLocation } = useLocationContext();
 	const { tenant } = useTenant();
 	const [viewMoreDate, setViewMoreDate] = useState<Date | null>(null);
-	const [viewMoreReservations, setViewMoreReservations] = useState<Reservation[]>([]);
-	const [isNewReservationDialogOpen, setIsNewReservationDialogOpen] = useState(false);
+	const [viewMoreReservations, setViewMoreReservations] = useState<
+		Reservation[]
+	>([]);
+	const [isNewReservationDialogOpen, setIsNewReservationDialogOpen] =
+		useState(false);
 
 	// Get calendar dates (full weeks)
 	const monthStart = startOfMonth(currentDate);
@@ -92,7 +95,7 @@ export function FullCalendarMonthView({
 				.eq("tenant_id", tenant.id)
 				.eq("location_id", selectedLocation)
 				.or(
-					`check_in_date.lte.${format(monthEnd, "yyyy-MM-dd")},check_out_date.gte.${format(monthStart, "yyyy-MM-dd")}`
+					`check_in_date.lte.${format(monthEnd, "yyyy-MM-dd")},check_out_date.gte.${format(monthStart, "yyyy-MM-dd")}`,
 				)
 				.order("check_in_date", { ascending: true });
 
@@ -157,30 +160,38 @@ export function FullCalendarMonthView({
 	};
 
 	// Calculate the span of a reservation across the calendar grid
-	const calculateReservationSpan = (reservation: Reservation, startDate: Date) => {
+	const calculateReservationSpan = (
+		reservation: Reservation,
+		startDate: Date,
+	) => {
 		const checkIn = parseISO(reservation.check_in_date);
 		const checkOut = parseISO(reservation.check_out_date);
-		
+
 		// Find the starting position in the calendar grid
-		const startIndex = calendarDates.findIndex(date => isSameDay(date, checkIn));
+		const startIndex = calendarDates.findIndex((date) =>
+			isSameDay(date, checkIn),
+		);
 		if (startIndex === -1) return null;
 
 		// Calculate how many days to span
 		let spanDays = 0;
 		let currentDate = checkIn;
-		
-		while (currentDate < checkOut && startIndex + spanDays < calendarDates.length) {
+
+		while (
+			currentDate < checkOut &&
+			startIndex + spanDays < calendarDates.length
+		) {
 			const currentGridDate = calendarDates[startIndex + spanDays];
 			if (!currentGridDate || currentDate >= checkOut) break;
-			
+
 			// Check if we need to break at the end of a week
 			const dayOfWeek = startIndex + spanDays;
 			const isEndOfWeek = (dayOfWeek + 1) % 7 === 0;
-			
+
 			spanDays++;
 			currentDate = new Date(currentDate);
 			currentDate.setDate(currentDate.getDate() + 1);
-			
+
 			// If it's end of week and reservation continues, we'll handle it in the next week
 			if (isEndOfWeek && currentDate < checkOut) {
 				break;
@@ -190,7 +201,9 @@ export function FullCalendarMonthView({
 		return {
 			startIndex,
 			spanDays: Math.max(1, spanDays),
-			totalDays: Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
+			totalDays: Math.ceil(
+				(checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24),
+			),
 		};
 	};
 
@@ -212,24 +225,29 @@ export function FullCalendarMonthView({
 		filteredReservations.forEach((reservation) => {
 			const checkIn = parseISO(reservation.check_in_date);
 			const checkOut = parseISO(reservation.check_out_date);
-			
+
 			// Find all segments of this reservation across different weeks
 			let currentDate = checkIn;
-			
+
 			while (currentDate < checkOut) {
-				const startIndex = calendarDates.findIndex(date => isSameDay(date, currentDate));
+				const startIndex = calendarDates.findIndex((date) =>
+					isSameDay(date, currentDate),
+				);
 				if (startIndex === -1) break;
 
 				// Calculate span for this segment
 				let spanDays = 0;
 				const segmentDate = new Date(currentDate);
-				
-				while (segmentDate < checkOut && startIndex + spanDays < calendarDates.length) {
+
+				while (
+					segmentDate < checkOut &&
+					startIndex + spanDays < calendarDates.length
+				) {
 					const dayOfWeek = (startIndex + spanDays) % 7;
-					
+
 					spanDays++;
 					segmentDate.setDate(segmentDate.getDate() + 1);
-					
+
 					// Break at end of week if reservation continues
 					if (dayOfWeek === 6 && segmentDate < checkOut) {
 						break;
@@ -239,10 +257,11 @@ export function FullCalendarMonthView({
 				// Find available lane for this segment
 				let lane = 0;
 				const segmentEnd = startIndex + spanDays - 1;
-				
-				while (lane < 2) { // Max 2 lanes
+
+				while (lane < 2) {
+					// Max 2 lanes
 					let isLaneAvailable = true;
-					
+
 					for (let i = startIndex; i <= segmentEnd; i++) {
 						if (!occupiedLanes[i]) occupiedLanes[i] = new Set();
 						if (occupiedLanes[i].has(lane)) {
@@ -250,7 +269,7 @@ export function FullCalendarMonthView({
 							break;
 						}
 					}
-					
+
 					if (isLaneAvailable) {
 						// Mark this lane as occupied for all days in the segment
 						for (let i = startIndex; i <= segmentEnd; i++) {
@@ -258,12 +277,14 @@ export function FullCalendarMonthView({
 						}
 						break;
 					}
-					
+
 					lane++;
 				}
 
-				const totalDays = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
-				
+				const totalDays = Math.ceil(
+					(checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24),
+				);
+
 				segments.push({
 					reservation,
 					startIndex,
@@ -271,7 +292,7 @@ export function FullCalendarMonthView({
 					isStart: isSameDay(currentDate, checkIn),
 					isEnd: segmentDate >= checkOut,
 					totalDays,
-					lane
+					lane,
 				});
 
 				currentDate = new Date(segmentDate);
@@ -284,15 +305,15 @@ export function FullCalendarMonthView({
 	// Get status-based background colors for striped pattern
 	const getStatusStripedBackground = (status: string) => {
 		const baseColors = {
-			confirmed: '#10b981', // green
-			tentative: '#f59e0b', // yellow
-			pending: '#3b82f6', // blue
-			checked_in: '#8b5cf6', // purple
-			checked_out: '#6b7280', // gray
-			cancelled: '#ef4444', // red
+			confirmed: "#10b981", // green
+			tentative: "#f59e0b", // yellow
+			pending: "#3b82f6", // blue
+			checked_in: "#8b5cf6", // purple
+			checked_out: "#6b7280", // gray
+			cancelled: "#ef4444", // red
 		};
-		
-		const color = baseColors[status as keyof typeof baseColors] || '#6b7280';
+
+		const color = baseColors[status as keyof typeof baseColors] || "#6b7280";
 		return `repeating-linear-gradient(45deg, ${color}60 0, ${color}60 1px, transparent 0, transparent 50%)`;
 	};
 
@@ -361,7 +382,7 @@ export function FullCalendarMonthView({
 								key={day}
 								className={cn(
 									"p-2 text-center text-sm font-medium text-muted-foreground",
-									[0, 6].includes(index) && "text-muted-foreground/50"
+									[0, 6].includes(index) && "text-muted-foreground/50",
 								)}
 							>
 								{day}
@@ -386,10 +407,14 @@ export function FullCalendarMonthView({
 											"min-h-[120px] p-2 border rounded-md transition-colors cursor-pointer relative",
 											"hover:bg-muted/50",
 											!isCurrentMonth && "bg-muted/20 text-muted-foreground",
-											isDateToday && "border-primary"
+											isDateToday && "border-primary",
 										)}
 										onClick={() => {
-											if (isCurrentMonth && dayReservations.length === 0 && rooms.length > 0) {
+											if (
+												isCurrentMonth &&
+												dayReservations.length === 0 &&
+												rooms.length > 0
+											) {
 												setIsNewReservationDialogOpen(true);
 											}
 										}}
@@ -399,39 +424,44 @@ export function FullCalendarMonthView({
 											<span
 												className={cn(
 													"text-sm font-medium",
-													isDateToday && "bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center"
+													isDateToday &&
+														"bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center",
 												)}
 											>
 												{format(date, "d")}
 											</span>
-											{isCurrentMonth && dayReservations.length === 0 && rooms.length > 0 && (
-												<Button
-													variant="ghost"
-													size="sm"
-													className="h-6 w-6 p-0 md:opacity-0 hover:opacity-100 transition-opacity"
-													onClick={(e) => {
-														e.stopPropagation();
-														setIsNewReservationDialogOpen(true);
-													}}
-												>
-													<Plus className="h-3 w-3" />
-												</Button>
-											)}
+											{isCurrentMonth &&
+												dayReservations.length === 0 &&
+												rooms.length > 0 && (
+													<Button
+														variant="ghost"
+														size="sm"
+														className="h-6 w-6 p-0 md:opacity-0 hover:opacity-100 transition-opacity"
+														onClick={(e) => {
+															e.stopPropagation();
+															setIsNewReservationDialogOpen(true);
+														}}
+													>
+														<Plus className="h-3 w-3" />
+													</Button>
+												)}
 											{isCurrentMonth && hasMoreThanTwo && (
 												<div
 													className="absolute border pointer-events-auto cursor-pointer h-6 bg-muted/80 hover:bg-muted transition-colors rounded-md flex items-center justify-center text-xs font-bold text-foreground shadow-xs"
 													style={{
-														top: `${22 + (2 * 34)}px`, // Position as 3rd line with adjusted spacing: 36px offset + (2 lanes * 34px spacing)
-														left: '0.5rem', // More padding from calendar edge
-														width: 'calc(100% - 1rem)', // Adjust width for increased padding
-														zIndex: 15
+														top: `${22 + 2 * 34}px`, // Position as 3rd line with adjusted spacing: 36px offset + (2 lanes * 34px spacing)
+														left: "0.5rem", // More padding from calendar edge
+														width: "calc(100% - 1rem)", // Adjust width for increased padding
+														zIndex: 15,
 													}}
 													onClick={(e) => {
 														e.stopPropagation();
 														handleViewMore(date);
 													}}
 												>
-													{t("calendar.viewMore.moreCount", { count: dayReservations.length - 2 })}
+													{t("calendar.viewMore.moreCount", {
+														count: dayReservations.length - 2,
+													})}
 												</div>
 											)}
 										</div>
@@ -442,54 +472,66 @@ export function FullCalendarMonthView({
 
 						{/* Reservation bars overlay */}
 						<div className="absolute inset-0 pointer-events-none">
-							{reservationSegments.filter((segment) => segment.lane < 2).map((segment, segmentIndex) => {
-								const { reservation, startIndex, spanDays, isStart, isEnd, lane } = segment;
-								
-								// Calculate position
-								const row = Math.floor(startIndex / 7);
-								const col = startIndex % 7;
-								
-								return (
-									<div
-										key={`${reservation.id}-${segmentIndex}`}
-										className={cn(
-											"absolute pointer-events-auto cursor-pointer transition-colors",
-											"text-xs border text-black font-medium flex items-center",
-											getStatusColor(reservation.status),
-											"rounded-md truncate shadow-xs h-6", // Reduced from h-8 to h-6
-											"bg-size-[6px_6px] bg-fixed",
-											isStart && "pl-2", // Add left margin and padding for start segments
-											isEnd && "pr-2", // Add right margin and padding for end segments
-											!isStart && "rounded-l-none",
-											!isEnd && "rounded-r-none"
-										)}
-										style={{
-											top: `${row * 121 + 36 + (lane * 34)}px`, // Adjusted spacing for h-6: 34px per lane
-											left: `calc(${col * (100/7)}% + ${col > 0 ? '0.125rem' : '0px'})`,
-											width: `calc(${spanDays * (100/7)}% - ${spanDays > 1 ? '0.125rem' : '0px'})`,
-											zIndex: 10 + lane,
-											maxWidth: `calc(${(7-col) * (100/7)}% - 0.125rem)`, // Prevent overflow beyond week
-											backgroundImage: getStatusStripedBackground(reservation.status)
-										}}
-										onClick={(e) => {
-											e.stopPropagation();
-											onBookingClick(reservation);
-										}}
-										title={`${reservation.guest_name} - ${reservation.rooms?.room_number} (${reservation.status}) - ${format(parseISO(reservation.check_in_date), 'MMM dd')} to ${format(parseISO(reservation.check_out_date), 'MMM dd')}`}
-									>
-										{isStart && (
-											<span className="truncate block">
-												{reservation.guest_name} - {reservation.rooms?.room_number}
-											</span>
-										)}
-										{!isStart && (
-											<span className="truncate block opacity-75">
-												{reservation.guest_name}
-											</span>
-										)}
-									</div>
-								);
-							})}
+							{reservationSegments
+								.filter((segment) => segment.lane < 2)
+								.map((segment, segmentIndex) => {
+									const {
+										reservation,
+										startIndex,
+										spanDays,
+										isStart,
+										isEnd,
+										lane,
+									} = segment;
+
+									// Calculate position
+									const row = Math.floor(startIndex / 7);
+									const col = startIndex % 7;
+
+									return (
+										<div
+											key={`${reservation.id}-${segmentIndex}`}
+											className={cn(
+												"absolute pointer-events-auto cursor-pointer transition-colors",
+												"text-xs border text-black font-medium flex items-center",
+												getStatusColor(reservation.status),
+												"rounded-md truncate shadow-xs h-6", // Reduced from h-8 to h-6
+												"bg-size-[6px_6px] bg-fixed",
+												isStart && "pl-2", // Add left margin and padding for start segments
+												isEnd && "pr-2", // Add right margin and padding for end segments
+												!isStart && "rounded-l-none",
+												!isEnd && "rounded-r-none",
+											)}
+											style={{
+												top: `${row * 121 + 36 + lane * 34}px`, // Adjusted spacing for h-6: 34px per lane
+												left: `calc(${col * (100 / 7)}% + ${col > 0 ? "0.125rem" : "0px"})`,
+												width: `calc(${spanDays * (100 / 7)}% - ${spanDays > 1 ? "0.125rem" : "0px"})`,
+												zIndex: 10 + lane,
+												maxWidth: `calc(${(7 - col) * (100 / 7)}% - 0.125rem)`, // Prevent overflow beyond week
+												backgroundImage: getStatusStripedBackground(
+													reservation.status,
+												),
+											}}
+											onClick={(e) => {
+												e.stopPropagation();
+												onBookingClick(reservation);
+											}}
+											title={`${reservation.guest_name} - ${reservation.rooms?.room_number} (${reservation.status}) - ${format(parseISO(reservation.check_in_date), "MMM dd")} to ${format(parseISO(reservation.check_out_date), "MMM dd")}`}
+										>
+											{isStart && (
+												<span className="truncate block">
+													{reservation.guest_name} -{" "}
+													{reservation.rooms?.room_number}
+												</span>
+											)}
+											{!isStart && (
+												<span className="truncate block opacity-75">
+													{reservation.guest_name}
+												</span>
+											)}
+										</div>
+									);
+								})}
 						</div>
 					</div>
 
@@ -522,13 +564,19 @@ export function FullCalendarMonthView({
 					</div>
 				</div>
 			</CardContent>
-			
+
 			{/* View More Dialog */}
-			<Dialog open={viewMoreDate !== null} onOpenChange={() => setViewMoreDate(null)}>
+			<Dialog
+				open={viewMoreDate !== null}
+				onOpenChange={() => setViewMoreDate(null)}
+			>
 				<DialogContent className="max-w-md">
 					<DialogHeader>
 						<DialogTitle>
-							{viewMoreDate && t("calendar.viewMore.dialogTitle", { date: format(viewMoreDate, "MMMM d, yyyy") })}
+							{viewMoreDate &&
+								t("calendar.viewMore.dialogTitle", {
+									date: format(viewMoreDate, "MMMM d, yyyy"),
+								})}
 						</DialogTitle>
 					</DialogHeader>
 					<div className="space-y-3 max-h-96 overflow-y-auto">
@@ -537,10 +585,10 @@ export function FullCalendarMonthView({
 								key={reservation.id}
 								className={cn(
 									"p-3 rounded-lg cursor-pointer transition-colors border-l-4",
-									"hover:bg-muted/50"
+									"hover:bg-muted/50",
 								)}
 								style={{
-									borderLeftColor: getStatusBorderColor(reservation.status)
+									borderLeftColor: getStatusBorderColor(reservation.status),
 								}}
 								onClick={() => {
 									onBookingClick(reservation);
@@ -558,10 +606,17 @@ export function FullCalendarMonthView({
 									</Badge>
 								</div>
 								<div className="text-sm text-muted-foreground space-y-1">
-									<div>Room: {reservation.rooms?.room_number} - {reservation.rooms?.room_type}</div>
+									<div>
+										Room: {reservation.rooms?.room_number} -{" "}
+										{reservation.rooms?.room_type}
+									</div>
 									<div>#{reservation.reservation_number}</div>
 									<div>
-										{format(parseISO(reservation.check_in_date), "MMM dd")} - {format(parseISO(reservation.check_out_date), "MMM dd, yyyy")}
+										{format(parseISO(reservation.check_in_date), "MMM dd")} -{" "}
+										{format(
+											parseISO(reservation.check_out_date),
+											"MMM dd, yyyy",
+										)}
 									</div>
 								</div>
 							</div>

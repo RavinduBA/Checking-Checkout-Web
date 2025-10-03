@@ -1,6 +1,6 @@
 import { BarChart3, Building2, Calendar, Home, Plus } from "lucide-react";
-import { Link, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
+import { Link, useLocation } from "react-router";
 import { cn } from "@/lib/utils";
 
 export function MobileBottomNav() {

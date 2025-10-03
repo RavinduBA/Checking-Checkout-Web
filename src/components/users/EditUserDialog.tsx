@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import type { User, UserPermissions, Location } from "./types";
+import type { Location, User, UserPermissions } from "./types";
 import { permissionTypes } from "./types";
 
 interface EditUserDialogProps {
@@ -160,7 +160,9 @@ export function EditUserDialog({
 						</div>
 
 						<div className="space-y-4">
-							<Label className="text-base font-semibold">Location Permissions</Label>
+							<Label className="text-base font-semibold">
+								Location Permissions
+							</Label>
 							{locations.map((location) => (
 								<Card key={location.id} className="p-4">
 									<h3 className="font-semibold mb-3">{location.name}</h3>

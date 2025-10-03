@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExpenseShortcuts } from "@/components/ExpenseShortcuts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tables } from "@/integrations/supabase/types";
 
 type Account = Tables<"accounts">;
@@ -18,10 +18,10 @@ interface ExpenseShortcutsSectionProps {
 	}) => void;
 }
 
-export function ExpenseShortcutsSection({ 
-	locationId, 
-	accounts, 
-	onQuickFill 
+export function ExpenseShortcutsSection({
+	locationId,
+	accounts,
+	onQuickFill,
 }: ExpenseShortcutsSectionProps) {
 	const { t } = useTranslation();
 

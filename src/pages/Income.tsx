@@ -2,16 +2,16 @@ import { AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IncomeSkeleton } from "@/components/IncomeSkeleton";
+import {
+	AddIncomeDialog,
+	IncomeHistoryTable,
+	ReservationsTable,
+} from "@/components/reservation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useIncomeData } from "@/hooks/useIncomeData";
-import { usePermissions } from "@/hooks/usePermissions";
 import { useIncomeHistory } from "@/hooks/useIncomeHistory";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useReservationIncomeMapping } from "@/hooks/useReservationIncomeMapping";
-import {
-	ReservationsTable,
-	IncomeHistoryTable,
-	AddIncomeDialog,
-} from "@/components/reservation";
 
 type Database = any;
 type Reservation = Database["public"]["Tables"]["reservations"]["Row"];
@@ -21,10 +21,12 @@ const Income = () => {
 	const { hasAnyPermission } = usePermissions();
 	const { reservations, rooms, accounts, loading, refetch } = useIncomeData();
 	const { incomeHistory, refetch: refetchIncomeHistory } = useIncomeHistory();
-	const { reservationIncomeMap, refetch: refetchIncomeMapping } = useReservationIncomeMapping();
+	const { reservationIncomeMap, refetch: refetchIncomeMapping } =
+		useReservationIncomeMapping();
 
 	const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
-	const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+	const [selectedReservation, setSelectedReservation] =
+		useState<Reservation | null>(null);
 
 	const handleAddIncome = (reservation: Reservation) => {
 		setSelectedReservation(reservation);
@@ -47,9 +49,7 @@ const Income = () => {
 			<div className="p-6">
 				<Alert>
 					<AlertCircle className="size-4" />
-					<AlertDescription>
-						{t("income.permissionDenied")}
-					</AlertDescription>
+					<AlertDescription>{t("income.permissionDenied")}</AlertDescription>
 				</Alert>
 			</div>
 		);

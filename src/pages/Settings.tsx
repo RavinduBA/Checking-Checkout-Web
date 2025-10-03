@@ -1,14 +1,14 @@
 import { useTranslation } from "react-i18next";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-	ProfileSettings,
-	LocationManagement,
-	FormFieldPreferences,
-	ExpenseManagement,
-	IncomeManagement,
-	CurrencyManagement,
 	BookingManagement,
+	CurrencyManagement,
+	ExpenseManagement,
+	FormFieldPreferences,
+	IncomeManagement,
+	LocationManagement,
+	ProfileSettings,
 } from "@/components/settings";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Settings() {
 	const { t } = useTranslation();

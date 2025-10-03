@@ -22,11 +22,18 @@ interface UseUserPermissionsReturn {
 	loading: boolean;
 	error: string | null;
 	refetch: () => Promise<void>;
-	updatePermission: (userId: string, locationId: string, permission: string, value: boolean) => Promise<void>;
+	updatePermission: (
+		userId: string,
+		locationId: string,
+		permission: string,
+		value: boolean,
+	) => Promise<void>;
 }
 
 export const useUserPermissions = (): UseUserPermissionsReturn => {
-	const [permissionMatrix, setPermissionMatrix] = useState<PermissionMatrix[]>([]);
+	const [permissionMatrix, setPermissionMatrix] = useState<PermissionMatrix[]>(
+		[],
+	);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -97,52 +104,55 @@ export const useUserPermissions = (): UseUserPermissionsReturn => {
 		}
 	}, [tenant?.id]);
 
-	const updatePermission = useCallback(async (
-		userId: string,
-		locationId: string,
-		permission: string,
-		value: boolean
-	) => {
-		try {
-			const { error } = await supabase
-				.from("user_permissions")
-				.update({ [permission]: value })
-				.eq("user_id", userId)
-				.eq("location_id", locationId)
-				.eq("tenant_id", tenant?.id);
+	const updatePermission = useCallback(
+		async (
+			userId: string,
+			locationId: string,
+			permission: string,
+			value: boolean,
+		) => {
+			try {
+				const { error } = await supabase
+					.from("user_permissions")
+					.update({ [permission]: value })
+					.eq("user_id", userId)
+					.eq("location_id", locationId)
+					.eq("tenant_id", tenant?.id);
 
-			if (error) {
+				if (error) {
+					throw error;
+				}
+
+				// Update local state
+				setPermissionMatrix((prev) =>
+					prev.map((user) => {
+						if (user.userId === userId) {
+							return {
+								...user,
+								permissions: user.permissions.map((perm) => {
+									if (perm.locationId === locationId) {
+										return {
+											...perm,
+											permissions: {
+												...perm.permissions,
+												[permission]: value,
+											},
+										};
+									}
+									return perm;
+								}),
+							};
+						}
+						return user;
+					}),
+				);
+			} catch (error: any) {
+				console.error("Error updating permission:", error);
 				throw error;
 			}
-
-			// Update local state
-			setPermissionMatrix(prev => 
-				prev.map(user => {
-					if (user.userId === userId) {
-						return {
-							...user,
-							permissions: user.permissions.map(perm => {
-								if (perm.locationId === locationId) {
-									return {
-										...perm,
-										permissions: {
-											...perm.permissions,
-											[permission]: value
-										}
-									};
-								}
-								return perm;
-							})
-						};
-					}
-					return user;
-				})
-			);
-		} catch (error: any) {
-			console.error("Error updating permission:", error);
-			throw error;
-		}
-	}, [tenant?.id]);
+		},
+		[tenant?.id],
+	);
 
 	useEffect(() => {
 		fetchPermissions();

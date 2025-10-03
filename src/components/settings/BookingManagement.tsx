@@ -1,15 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
 import { Trash2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+import { useCallback, useEffect, useState } from "react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -20,9 +10,19 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
+import { supabase } from "@/integrations/supabase/client";
 import { Location } from "./types";
 
 export function BookingManagement() {
@@ -77,9 +77,12 @@ export function BookingManagement() {
 		if (!selectedLocation) return;
 
 		try {
-			const { data, error } = await supabase.functions.invoke("clear-bookings", {
-				body: { locationId: selectedLocationId },
-			});
+			const { data, error } = await supabase.functions.invoke(
+				"clear-bookings",
+				{
+					body: { locationId: selectedLocationId },
+				},
+			);
 
 			if (error) throw error;
 

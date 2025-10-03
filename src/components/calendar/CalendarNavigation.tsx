@@ -29,9 +29,9 @@ export function CalendarNavigation({
 	return (
 		<div className="flex items-center justify-between mb-4">
 			<div className="flex items-center gap-2">
-				<Button 
-					variant="outline" 
-					size="sm" 
+				<Button
+					variant="outline"
+					size="sm"
 					onClick={goToPrevMonth}
 					title={t("calendar.navigation.previousMonth")}
 				>
@@ -40,9 +40,9 @@ export function CalendarNavigation({
 				<h2 className="text-xl font-semibold min-w-[200px] text-center">
 					{format(currentDate, "MMMM yyyy")}
 				</h2>
-				<Button 
-					variant="outline" 
-					size="sm" 
+				<Button
+					variant="outline"
+					size="sm"
 					onClick={goToNextMonth}
 					title={t("calendar.navigation.nextMonth")}
 				>

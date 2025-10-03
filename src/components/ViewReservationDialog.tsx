@@ -1,16 +1,17 @@
 import {
+	BedDouble,
 	Calendar,
 	Clock,
 	CreditCard,
+	DollarSign,
 	MapPin,
 	User,
 	X,
-	BedDouble,
-	DollarSign,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
@@ -18,9 +19,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { SectionLoader } from "@/components/ui/loading-spinner";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -219,7 +219,9 @@ export function ViewReservationDialog({
 									<label className="text-xs font-medium text-muted-foreground">
 										Name
 									</label>
-									<p className="text-sm font-semibold">{reservation.guest_name}</p>
+									<p className="text-sm font-semibold">
+										{reservation.guest_name}
+									</p>
 								</div>
 								{reservation.guest_email && (
 									<div>
@@ -258,7 +260,9 @@ export function ViewReservationDialog({
 										<label className="text-xs font-medium text-muted-foreground">
 											Passport Number
 										</label>
-										<p className="text-sm">{reservation.guest_passport_number}</p>
+										<p className="text-sm">
+											{reservation.guest_passport_number}
+										</p>
 									</div>
 								)}
 								{reservation.guest_id_number && (
@@ -274,13 +278,17 @@ export function ViewReservationDialog({
 										<label className="text-xs font-medium text-muted-foreground">
 											Adults
 										</label>
-										<p className="text-sm font-semibold">{reservation.adults}</p>
+										<p className="text-sm font-semibold">
+											{reservation.adults}
+										</p>
 									</div>
 									<div>
 										<label className="text-xs font-medium text-muted-foreground">
 											Children
 										</label>
-										<p className="text-sm font-semibold">{reservation.children}</p>
+										<p className="text-sm font-semibold">
+											{reservation.children}
+										</p>
 									</div>
 								</div>
 							</CardContent>
@@ -309,7 +317,9 @@ export function ViewReservationDialog({
 											Check-out
 										</label>
 										<p className="text-sm font-semibold">
-											{new Date(reservation.check_out_date).toLocaleDateString()}
+											{new Date(
+												reservation.check_out_date,
+											).toLocaleDateString()}
 										</p>
 									</div>
 								</div>
@@ -342,7 +352,9 @@ export function ViewReservationDialog({
 									<label className="text-xs font-medium text-muted-foreground">
 										Booking Source
 									</label>
-									<p className="text-sm capitalize">{reservation.booking_source || "Direct"}</p>
+									<p className="text-sm capitalize">
+										{reservation.booking_source || "Direct"}
+									</p>
 								</div>
 							</CardContent>
 						</Card>
@@ -383,19 +395,22 @@ export function ViewReservationDialog({
 												<label className="text-xs font-medium text-muted-foreground">
 													Description
 												</label>
-												<p className="text-sm">{reservation.rooms.description}</p>
-											</div>
-										)}
-										{reservation.rooms.amenities && reservation.rooms.amenities.length > 0 && (
-											<div>
-												<label className="text-xs font-medium text-muted-foreground">
-													Amenities
-												</label>
 												<p className="text-sm">
-													{reservation.rooms.amenities.join(", ")}
+													{reservation.rooms.description}
 												</p>
 											</div>
 										)}
+										{reservation.rooms.amenities &&
+											reservation.rooms.amenities.length > 0 && (
+												<div>
+													<label className="text-xs font-medium text-muted-foreground">
+														Amenities
+													</label>
+													<p className="text-sm">
+														{reservation.rooms.amenities.join(", ")}
+													</p>
+												</div>
+											)}
 									</>
 								) : (
 									<p className="text-sm text-muted-foreground">
@@ -419,7 +434,8 @@ export function ViewReservationDialog({
 										Room Rate (per night)
 									</label>
 									<p className="text-sm font-semibold">
-										{getCurrencySymbol(reservation.currency)} {reservation.room_rate.toLocaleString()}
+										{getCurrencySymbol(reservation.currency)}{" "}
+										{reservation.room_rate.toLocaleString()}
 									</p>
 								</div>
 								<div className="flex justify-between items-center">
@@ -434,7 +450,8 @@ export function ViewReservationDialog({
 										Total Amount
 									</label>
 									<p className="text-sm font-bold">
-										{getCurrencySymbol(reservation.currency)} {reservation.total_amount.toLocaleString()}
+										{getCurrencySymbol(reservation.currency)}{" "}
+										{reservation.total_amount.toLocaleString()}
 									</p>
 								</div>
 								<div className="flex justify-between items-center">
@@ -442,7 +459,8 @@ export function ViewReservationDialog({
 										Paid Amount
 									</label>
 									<p className="text-sm text-emerald-600 font-semibold">
-										{getCurrencySymbol(reservation.currency)} {(reservation.paid_amount || 0).toLocaleString()}
+										{getCurrencySymbol(reservation.currency)}{" "}
+										{(reservation.paid_amount || 0).toLocaleString()}
 									</p>
 								</div>
 								{getTotalExpenses() > 0 && (
@@ -451,17 +469,19 @@ export function ViewReservationDialog({
 											Additional Expenses
 										</label>
 										<p className="text-sm text-orange-600">
-											{getCurrencySymbol(reservation.currency)} {getTotalExpenses().toLocaleString()}
+											{getCurrencySymbol(reservation.currency)}{" "}
+											{getTotalExpenses().toLocaleString()}
 										</p>
 									</div>
 								)}
 								<Separator />
 								<div className="flex justify-between items-center">
-									<label className="text-sm font-semibold">
-										Balance Due
-									</label>
-									<p className={`text-base font-bold ${getTotalBalance() > 0 ? "text-red-600" : "text-emerald-600"}`}>
-										{getCurrencySymbol(reservation.currency)} {getTotalBalance().toLocaleString()}
+									<label className="text-sm font-semibold">Balance Due</label>
+									<p
+										className={`text-base font-bold ${getTotalBalance() > 0 ? "text-red-600" : "text-emerald-600"}`}
+									>
+										{getCurrencySymbol(reservation.currency)}{" "}
+										{getTotalBalance().toLocaleString()}
 									</p>
 								</div>
 							</CardContent>
@@ -484,10 +504,13 @@ export function ViewReservationDialog({
 											<label className="text-xs font-medium text-muted-foreground">
 												Guide
 											</label>
-											<p className="text-sm font-semibold">{reservation.guides.name}</p>
+											<p className="text-sm font-semibold">
+												{reservation.guides.name}
+											</p>
 											{reservation.guide_commission && (
 												<p className="text-sm text-muted-foreground">
-													Commission: {getCurrencySymbol(reservation.currency)} {reservation.guide_commission.toLocaleString()}
+													Commission: {getCurrencySymbol(reservation.currency)}{" "}
+													{reservation.guide_commission.toLocaleString()}
 												</p>
 											)}
 										</div>
@@ -497,7 +520,9 @@ export function ViewReservationDialog({
 											<label className="text-xs font-medium text-muted-foreground">
 												Agent
 											</label>
-											<p className="text-sm font-semibold">{reservation.agents.name}</p>
+											<p className="text-sm font-semibold">
+												{reservation.agents.name}
+											</p>
 											{reservation.agents.agency_name && (
 												<p className="text-xs text-muted-foreground">
 													{reservation.agents.agency_name}
@@ -505,7 +530,8 @@ export function ViewReservationDialog({
 											)}
 											{reservation.agent_commission && (
 												<p className="text-sm text-muted-foreground">
-													Commission: {getCurrencySymbol(reservation.currency)} {reservation.agent_commission.toLocaleString()}
+													Commission: {getCurrencySymbol(reservation.currency)}{" "}
+													{reservation.agent_commission.toLocaleString()}
 												</p>
 											)}
 										</div>

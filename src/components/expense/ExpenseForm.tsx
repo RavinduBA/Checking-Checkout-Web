@@ -1,12 +1,18 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { Calendar, Minus } from "lucide-react";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,7 +31,13 @@ interface ExpenseFormProps {
 	onLocationChange?: (locationId: string) => void;
 }
 
-export function ExpenseForm({ locations, accounts, expenseTypes, onSuccess, onLocationChange }: ExpenseFormProps) {
+export function ExpenseForm({
+	locations,
+	accounts,
+	expenseTypes,
+	onSuccess,
+	onLocationChange,
+}: ExpenseFormProps) {
 	const { t } = useTranslation();
 	const { toast } = useToast();
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -235,7 +247,9 @@ ${selectedAccount.name} - ${currencySymbol}${currentBalance.toLocaleString()}`,
 					{/* Form Grid */}
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						<div className="space-y-2">
-							<Label htmlFor="locationId">{t("expense.form.fields.location")}</Label>
+							<Label htmlFor="locationId">
+								{t("expense.form.fields.location")}
+							</Label>
 							<Select
 								value={formData.locationId}
 								onValueChange={(value) => {
@@ -244,7 +258,9 @@ ${selectedAccount.name} - ${currencySymbol}${currentBalance.toLocaleString()}`,
 								}}
 							>
 								<SelectTrigger>
-									<SelectValue placeholder={t("expense.form.placeholders.location")} />
+									<SelectValue
+										placeholder={t("expense.form.placeholders.location")}
+									/>
 								</SelectTrigger>
 								<SelectContent>
 									{locations.map((location) => (
@@ -257,14 +273,18 @@ ${selectedAccount.name} - ${currencySymbol}${currentBalance.toLocaleString()}`,
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="mainCategory">{t("expense.form.fields.mainCategory")}</Label>
+							<Label htmlFor="mainCategory">
+								{t("expense.form.fields.mainCategory")}
+							</Label>
 							<Select
 								key={`main-${formData.mainCategory}`}
 								value={formData.mainCategory}
 								onValueChange={handleMainCategoryChange}
 							>
 								<SelectTrigger>
-									<SelectValue placeholder={t("expense.form.placeholders.mainCategory")} />
+									<SelectValue
+										placeholder={t("expense.form.placeholders.mainCategory")}
+									/>
 								</SelectTrigger>
 								<SelectContent>
 									{mainCategories.map((category) => (
@@ -277,7 +297,9 @@ ${selectedAccount.name} - ${currencySymbol}${currentBalance.toLocaleString()}`,
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="subCategory">{t("expense.form.fields.subCategory")}</Label>
+							<Label htmlFor="subCategory">
+								{t("expense.form.fields.subCategory")}
+							</Label>
 							<Select
 								key={`sub-${formData.subCategory}`}
 								value={formData.subCategory}
@@ -287,7 +309,9 @@ ${selectedAccount.name} - ${currencySymbol}${currentBalance.toLocaleString()}`,
 								disabled={!formData.mainCategory}
 							>
 								<SelectTrigger>
-									<SelectValue placeholder={t("expense.form.placeholders.subCategory")} />
+									<SelectValue
+										placeholder={t("expense.form.placeholders.subCategory")}
+									/>
 								</SelectTrigger>
 								<SelectContent>
 									{subCategories.map((subCategory) => (
@@ -320,7 +344,9 @@ ${selectedAccount.name} - ${currencySymbol}${currentBalance.toLocaleString()}`,
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="accountId">{t("expense.form.fields.account")}</Label>
+							<Label htmlFor="accountId">
+								{t("expense.form.fields.account")}
+							</Label>
 							<Select
 								key={`account-${formData.accountId}`}
 								value={formData.accountId}
@@ -329,7 +355,9 @@ ${selectedAccount.name} - ${currencySymbol}${currentBalance.toLocaleString()}`,
 								}
 							>
 								<SelectTrigger>
-									<SelectValue placeholder={t("expense.form.placeholders.account")} />
+									<SelectValue
+										placeholder={t("expense.form.placeholders.account")}
+									/>
 								</SelectTrigger>
 								<SelectContent>
 									{accounts
@@ -380,12 +408,11 @@ ${selectedAccount.name} - ${currencySymbol}${currentBalance.toLocaleString()}`,
 					</div>
 
 					{/* Submit button */}
-					<Button
-						type="submit"
-						disabled={!formData.locationId || isSubmitting}
-					>
+					<Button type="submit" disabled={!formData.locationId || isSubmitting}>
 						<Minus className="size-4 mr-2" />
-						{isSubmitting ? t("expense.form.buttons.adding") : t("expense.form.buttons.add")}
+						{isSubmitting
+							? t("expense.form.buttons.adding")
+							: t("expense.form.buttons.add")}
 					</Button>
 				</form>
 			</CardContent>
