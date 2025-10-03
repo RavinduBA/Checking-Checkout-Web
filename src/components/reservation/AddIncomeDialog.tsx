@@ -18,6 +18,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { CurrencySelector } from "@/components/CurrencySelector";
 import { useToast } from "@/hooks/use-toast";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,6 +58,7 @@ export function AddIncomeDialog({
 		account_id: "",
 		income_type_id: "",
 		payment_type: "direct" as "direct" | "deferred", // direct = paid now, deferred = add to bill
+		currency: "LKR", // Default currency
 	});
 
 	const fetchIncomeTypes = useCallback(async () => {
@@ -89,6 +91,7 @@ export function AddIncomeDialog({
 				account_id: "",
 				income_type_id: "",
 				payment_type: "direct",
+				currency: selectedReservation.currency || "LKR", // Use reservation currency or default to LKR
 			});
 		}
 	}, [selectedReservation, t]);
@@ -98,26 +101,25 @@ export function AddIncomeDialog({
 		if (!selectedReservation) return;
 
 		try {
-			const incomeData = {
-				note:
-					incomeForm.note ||
-					t("income.addDialog.reservationInfo.reservation") +
-						` ${selectedReservation.reservation_number}`,
-				amount: incomeForm.amount,
-				// For direct payments: require account_id, for deferred: set to null
-				account_id:
-					incomeForm.payment_type === "direct" ? incomeForm.account_id : null,
-				income_type_id: incomeForm.income_type_id || null,
-				type: "booking" as const,
-				payment_method:
-					incomeForm.payment_type === "direct" ? "cash" : "pending",
-				location_id: selectedReservation.location_id,
-				tenant_id: profile?.tenant_id,
-				// booking_id now references reservations table (renamed foreign key constraint)
-				booking_id: selectedReservation.id,
-			};
-
-			// Start transaction-like operations
+		const incomeData = {
+			note:
+				incomeForm.note ||
+				t("income.addDialog.reservationInfo.reservation") +
+					` ${selectedReservation.reservation_number}`,
+			amount: incomeForm.amount,
+			currency: incomeForm.currency as "LKR" | "USD" | "EUR" | "GBP", // Cast to correct enum type
+			// For direct payments: require account_id, for deferred: set to null
+			account_id:
+				incomeForm.payment_type === "direct" ? incomeForm.account_id : null,
+			income_type_id: incomeForm.income_type_id || null,
+			type: "booking" as const,
+			payment_method:
+				incomeForm.payment_type === "direct" ? "cash" : "pending",
+			location_id: selectedReservation.location_id,
+			tenant_id: profile?.tenant_id,
+			// booking_id now references reservations table (renamed foreign key constraint)
+			booking_id: selectedReservation.id,
+		};			// Start transaction-like operations
 			const { error: incomeError } = await supabase
 				.from("income")
 				.insert(incomeData);
@@ -162,6 +164,7 @@ export function AddIncomeDialog({
 			account_id: "",
 			income_type_id: "",
 			payment_type: "direct",
+			currency: "LKR", // Reset to default currency
 		});
 	};
 
@@ -194,7 +197,7 @@ export function AddIncomeDialog({
 							</p>
 							<p>
 								<strong>{t("income.addDialog.reservationInfo.amount")}</strong>{" "}
-								LKR {selectedReservation.total_amount.toLocaleString()}
+								{incomeForm.currency} {selectedReservation.total_amount.toLocaleString()}
 							</p>
 						</div>
 					)}
@@ -212,6 +215,17 @@ export function AddIncomeDialog({
 								})
 							}
 							required
+						/>
+					</div>
+					<div>
+						<Label htmlFor="currency">Currency</Label>
+						<CurrencySelector
+							currency={incomeForm.currency}
+							onCurrencyChange={(currency) =>
+								setIncomeForm({ ...incomeForm, currency })
+							}
+							label=""
+							showGoogleSearchLink={true}
 						/>
 					</div>
 					<div>

@@ -10,7 +10,7 @@ export function ReservationsHeader({
 	onTabChange,
 }: ReservationsHeaderProps) {
 	return (
-		<div className="container mx-auto p-6">
+		<div className="container mx-auto p-4 sm:p-6">
 			<div className="mb-6">
 				<h1 className="text-2xl font-bold">Reservations</h1>
 				<p className="text-muted-foreground">
