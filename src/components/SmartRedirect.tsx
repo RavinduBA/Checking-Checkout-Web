@@ -23,8 +23,6 @@ export const SmartRedirect = () => {
 		return <Navigate to="/calendar" replace />;
 	} else if (hasAnyPermission(["access_bookings"])) {
 		return <Navigate to="/reservations" replace />;
-	} else if (hasAnyPermission(["access_income"])) {
-		return <Navigate to="/income" replace />;
 	} else if (hasAnyPermission(["access_expenses"])) {
 		return <Navigate to="/expense" replace />;
 	} else if (hasAnyPermission(["access_reports"])) {

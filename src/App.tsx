@@ -25,7 +25,6 @@ import EnhancedCalendar from "./pages/EnhancedCalendar";
 import Expense from "./pages/Expense";
 import FinancialReports from "./pages/FinancialReports";
 import ForgotPassword from "./pages/ForgotPassword";
-import Income from "./pages/Income";
 import MasterFiles from "./pages/MasterFiles";
 import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
@@ -139,23 +138,6 @@ const App = () => (
 										element={
 											<PermissionRoute permission={["access_master_files"]}>
 												<MasterFiles />
-											</PermissionRoute>
-										}
-									/>
-								</Route>
-								<Route
-									path="/income"
-									element={
-										<ProtectedRoute>
-											<Layout />
-										</ProtectedRoute>
-									}
-								>
-									<Route
-										index
-										element={
-											<PermissionRoute permission={["access_income"]}>
-												<Income />
 											</PermissionRoute>
 										}
 									/>
