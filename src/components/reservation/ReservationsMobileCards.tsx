@@ -8,6 +8,8 @@ import {
 	useIncomeData,
 	useReservationsData,
 } from "@/hooks/useReservationsData";
+import { useReservationPrint } from "@/hooks/useReservationPrint";
+import { useAuth } from "@/context/AuthContext";
 import { ReservationActions } from "./ReservationActions";
 import { ReservationExpensesDisplay } from "./ReservationExpensesDisplay";
 
@@ -30,6 +32,8 @@ export function ReservationsMobileCards({
 }: ReservationsMobileCardsProps) {
 	const { reservations, loading } = useReservationsData();
 	const { incomeRecords } = useIncomeData();
+	const { printReservation } = useReservationPrint();
+	const { tenant } = useAuth();
 
 	// Utility functions
 	const getCurrencySymbol = (currency: string): string => {
@@ -61,11 +65,44 @@ export function ReservationsMobileCards({
 	};
 
 	const getTotalPayableAmount = (reservation: any): number => {
-		const roomAmount = reservation.room_rate * reservation.nights; // Use calculated room amount, not total_amount
+		const roomAmount = reservation.room_rate * reservation.nights;
 		const additionalServices = incomeRecords
 			.filter((inc) => inc.booking_id === reservation.id)
 			.reduce((sum, inc) => sum + Number(inc.amount), 0);
 		return roomAmount + additionalServices;
+	};
+
+	// Transform reservation data for printing
+	const transformToPrintableData = (reservation: any) => {
+		return {
+			...reservation,
+			// Enhanced hotel/tenant information from context
+			tenant_name: tenant?.hotel_name || tenant?.name,
+			hotel_name: tenant?.hotel_name || tenant?.name,
+			hotel_address: tenant?.hotel_address,
+			hotel_phone: tenant?.hotel_phone,
+			hotel_email: tenant?.hotel_email,
+			hotel_website: tenant?.hotel_website,
+			logo_url: tenant?.logo_url,
+
+			// Enhanced location information
+			location_name: reservation.locations?.name || "Unknown Location",
+			location_address: reservation.locations?.address || null,
+			location_phone: reservation.locations?.phone || null,
+			location_email: reservation.locations?.email || null,
+
+			// Room details
+			room_number: reservation.rooms?.room_number || "Unknown Room",
+			room_type: reservation.rooms?.room_type || "Unknown Type",
+			bed_type: reservation.rooms?.bed_type || null,
+			room_description: reservation.rooms?.description || null,
+			amenities: reservation.rooms?.amenities || [],
+		};
+	};
+
+	const handlePrintReservation = (reservation: any) => {
+		const printableData = transformToPrintableData(reservation);
+		printReservation(printableData);
 	};
 
 	// Filter reservations
@@ -164,6 +201,7 @@ export function ReservationsMobileCards({
 								)
 							}
 							onAddIncome={() => onAddIncome(reservation)}
+							onPrint={() => handlePrintReservation(reservation)}
 							canShowPayment={canShowPaymentButton(reservation)}
 							isMobile={true}
 						/>

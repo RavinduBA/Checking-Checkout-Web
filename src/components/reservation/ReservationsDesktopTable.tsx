@@ -15,6 +15,8 @@ import {
 	useIncomeData,
 	useReservationsData,
 } from "@/hooks/useReservationsData";
+import { useReservationPrint } from "@/hooks/useReservationPrint";
+import { useAuth } from "@/context/AuthContext";
 import { ReservationActions } from "./ReservationActions";
 import { ReservationExpensesDisplay } from "./ReservationExpensesDisplay";
 
@@ -37,6 +39,8 @@ export function ReservationsDesktopTable({
 }: ReservationsDesktopTableProps) {
 	const { reservations, loading } = useReservationsData();
 	const { incomeRecords } = useIncomeData();
+	const { printReservation } = useReservationPrint();
+	const { tenant } = useAuth();
 
 	// Utility functions
 	const getCurrencySymbol = (currency: string): string => {
@@ -75,6 +79,39 @@ export function ReservationsDesktopTable({
 		return roomAmount + additionalServices;
 	};
 
+	// Transform reservation data for printing
+	const transformToPrintableData = (reservation: any) => {
+		return {
+			...reservation,
+			// Enhanced hotel/tenant information from context
+			tenant_name: tenant?.hotel_name || tenant?.name,
+			hotel_name: tenant?.hotel_name || tenant?.name,
+			hotel_address: tenant?.hotel_address,
+			hotel_phone: tenant?.hotel_phone,
+			hotel_email: tenant?.hotel_email,
+			hotel_website: tenant?.hotel_website,
+			logo_url: tenant?.logo_url,
+
+			// Enhanced location information
+			location_name: reservation.locations?.name || "Unknown Location",
+			location_address: reservation.locations?.address || null,
+			location_phone: reservation.locations?.phone || null,
+			location_email: reservation.locations?.email || null,
+
+			// Room details
+			room_number: reservation.rooms?.room_number || "Unknown Room",
+			room_type: reservation.rooms?.room_type || "Unknown Type",
+			bed_type: reservation.rooms?.bed_type || null,
+			room_description: reservation.rooms?.description || null,
+			amenities: reservation.rooms?.amenities || [],
+		};
+	};
+
+	const handlePrintReservation = (reservation: any) => {
+		const printableData = transformToPrintableData(reservation);
+		printReservation(printableData);
+	};
+
 	// Filter reservations
 	const filteredReservations = reservations.filter((reservation) => {
 		const matchesSearch =
@@ -110,8 +147,7 @@ export function ReservationsDesktopTable({
 								<TableHead>Amount Breakdown</TableHead>
 								<TableHead>Total Payable</TableHead>
 								<TableHead>Paid Amount</TableHead>
-								<TableHead>Balance</TableHead>
-								<TableHead>Status</TableHead>
+								<TableHead>Balance Due</TableHead>
 								<TableHead>Actions</TableHead>
 							</TableRow>
 						</TableHeader>
@@ -119,7 +155,14 @@ export function ReservationsDesktopTable({
 							{filteredReservations.map((reservation) => (
 								<TableRow key={reservation.id}>
 									<TableCell className="font-medium">
-										{reservation.reservation_number}
+										<div>
+											<div>{reservation.reservation_number}</div>
+											<div className="text-xs text-muted-foreground mt-1">
+												<Badge className={`${getStatusColor(reservation.status)} text-xs`}>
+													{reservation.status}
+												</Badge>
+											</div>
+										</div>
 									</TableCell>
 									<TableCell>{reservation.guest_name}</TableCell>
 									<TableCell>
@@ -168,11 +211,6 @@ export function ReservationsDesktopTable({
 										{Math.max(0, getTotalPayableAmount(reservation) - (reservation.paid_amount || 0)).toLocaleString()}
 									</TableCell>
 									<TableCell>
-										<Badge className={getStatusColor(reservation.status)}>
-											{reservation.status}
-										</Badge>
-									</TableCell>
-									<TableCell>
 										<ReservationActions
 											reservation={reservation}
 											onView={() => onViewReservation(reservation.id)}
@@ -185,6 +223,7 @@ export function ReservationsDesktopTable({
 												)
 											}
 											onAddIncome={() => onAddIncome(reservation)}
+											onPrint={() => handlePrintReservation(reservation)}
 											canShowPayment={canShowPaymentButton(reservation)}
 											isMobile={false}
 										/>

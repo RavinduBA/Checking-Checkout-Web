@@ -1,7 +1,13 @@
-import { CreditCard, DollarSign, Edit, Eye } from "lucide-react";
+import { CreditCard, DollarSign, Edit, Eye, MoreHorizontal, Printer } from "lucide-react";
 import { OTPVerification } from "@/components/OTPVerification";
-import { ReservationPrintButton } from "@/components/ReservationPrintButton";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type ReservationForActions = {
 	id: string;
@@ -54,6 +60,7 @@ interface ReservationActionsProps {
 	onEdit: () => void;
 	onPayment: () => void;
 	onAddIncome: () => void;
+	onPrint?: () => void;
 	canShowPayment: boolean;
 	isMobile?: boolean;
 }
@@ -64,6 +71,7 @@ export function ReservationActions({
 	onEdit,
 	onPayment,
 	onAddIncome,
+	onPrint,
 	canShowPayment,
 	isMobile = false,
 }: ReservationActionsProps) {
@@ -75,13 +83,15 @@ export function ReservationActions({
 						View
 					</Button>
 
-					<ReservationPrintButton
-						reservation={reservation}
-						buttonText=""
-						buttonVariant="outline"
-						buttonSize="sm"
-						showIcon={true}
-					/>
+					{onPrint && (
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={onPrint}
+						>
+							<Printer className="size-4" />
+						</Button>
+					)}
 
 					<Button
 						variant="outline"
@@ -116,48 +126,51 @@ export function ReservationActions({
 		}
 
 		return (
-			<div className="flex gap-1">
-				<Button variant="ghost" size="icon" onClick={onView}>
-					<Eye className="size-4" />
-				</Button>
-
-				<ReservationPrintButton
-					reservation={reservation}
-					buttonText=""
-					buttonVariant="ghost"
-					buttonSize="icon"
-					showIcon={true}
-				/>
-
-				<Button 
-					variant="ghost" 
-					size="icon" 
-					onClick={onAddIncome}
-					className="text-blue-600 hover:text-blue-700"
-					title="Add Income"
-				>
-					<DollarSign className="size-4" />
-				</Button>
-
-				{canShowPayment && (
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={onPayment}
-						className="text-green-600 hover:text-green-700"
-					>
-						<CreditCard className="size-4" />
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<Button variant="ghost" size="icon">
+						<MoreHorizontal className="size-4" />
 					</Button>
-				)}
-
-				<OTPVerification
-					onVerified={onEdit}
-					triggerComponent={
-						<Button variant="ghost" size="icon">
-							<Edit className="size-4" />
-						</Button>
-					}
-				/>
-			</div>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align="end" className="w-48">
+					<DropdownMenuItem onClick={onView}>
+						<Eye className="size-4 mr-2" />
+						View Details
+					</DropdownMenuItem>
+					{onPrint && (
+						<DropdownMenuItem onClick={onPrint}>
+							<Printer className="size-4 mr-2" />
+							Print Reservation
+						</DropdownMenuItem>
+					)}
+					<DropdownMenuSeparator />
+					<DropdownMenuItem 
+						onClick={onAddIncome}
+						className="text-blue-600"
+					>
+						<DollarSign className="size-4 mr-2" />
+						Add Income
+					</DropdownMenuItem>
+					{canShowPayment && (
+						<DropdownMenuItem 
+							onClick={onPayment}
+							className="text-green-600"
+						>
+							<CreditCard className="size-4 mr-2" />
+							Pay Now
+						</DropdownMenuItem>
+					)}
+					<DropdownMenuSeparator />
+					<OTPVerification
+						onVerified={onEdit}
+						triggerComponent={
+							<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+								<Edit className="size-4 mr-2" />
+								Edit Reservation
+							</DropdownMenuItem>
+						}
+					/>
+				</DropdownMenuContent>
+			</DropdownMenu>
 		);
 }

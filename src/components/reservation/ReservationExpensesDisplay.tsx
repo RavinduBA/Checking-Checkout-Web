@@ -41,7 +41,7 @@ export function ReservationExpensesDisplay({
 	if (isCompact) {
 		return (
 			<span>
-				Services: {getCurrencySymbol(currency)} {totalAdditionalServices.toLocaleString()}
+				{getCurrencySymbol(currency)} {totalAdditionalServices.toLocaleString()}
 				{additionalServices > 0 && (
 					<span className="text-yellow-600 ml-2">
 						(Pending: {getCurrencySymbol(currency)}{" "}
