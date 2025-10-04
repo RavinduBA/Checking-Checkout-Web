@@ -1,5 +1,7 @@
+import { CreditCard, DollarSign } from "lucide-react";
 import { ReservationsListSkeleton } from "@/components/ReservationsListSkeleton";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Table,
@@ -148,7 +150,8 @@ export function ReservationsDesktopTable({
 								<TableHead>Total Payable</TableHead>
 								<TableHead>Paid Amount</TableHead>
 								<TableHead>Balance Due</TableHead>
-								<TableHead>Actions</TableHead>
+								<TableHead>Quick Actions</TableHead>
+								<TableHead>More</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -211,21 +214,46 @@ export function ReservationsDesktopTable({
 										{Math.max(0, getTotalPayableAmount(reservation) - (reservation.paid_amount || 0)).toLocaleString()}
 									</TableCell>
 									<TableCell>
+										<div className="flex gap-1">
+											<Button
+												variant="outline"
+												size="sm"
+												onClick={() => onAddIncome(reservation)}
+												className="text-blue-600 hover:text-blue-700"
+											>
+												<DollarSign className="size-4 mr-1" />
+												Add Income
+											</Button>
+											{canShowPaymentButton(reservation) && (
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={() =>
+														onPayment(
+															reservation.id,
+															getTotalPayableAmount(reservation),
+															reservation.currency,
+														)
+													}
+													className="text-green-600 hover:text-green-700"
+												>
+													<CreditCard className="size-4 mr-1" />
+													Pay Now
+												</Button>
+											)}
+										</div>
+									</TableCell>
+									<TableCell>
 										<ReservationActions
 											reservation={reservation}
 											onView={() => onViewReservation(reservation.id)}
 											onEdit={() => onEditReservation(reservation)}
-											onPayment={() =>
-												onPayment(
-													reservation.id,
-													getTotalPayableAmount(reservation),
-													reservation.currency,
-												)
-											}
-											onAddIncome={() => onAddIncome(reservation)}
+											onPayment={() => {}} // Not used since showPaymentAndIncome=false
+											onAddIncome={() => {}} // Not used since showPaymentAndIncome=false
 											onPrint={() => handlePrintReservation(reservation)}
-											canShowPayment={canShowPaymentButton(reservation)}
+											canShowPayment={false}
 											isMobile={false}
+											showPaymentAndIncome={false}
 										/>
 									</TableCell>
 								</TableRow>

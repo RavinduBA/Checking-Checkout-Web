@@ -204,6 +204,7 @@ export function ReservationsMobileCards({
 							onPrint={() => handlePrintReservation(reservation)}
 							canShowPayment={canShowPaymentButton(reservation)}
 							isMobile={true}
+							showPaymentAndIncome={true}
 						/>
 					</CardContent>
 				</Card>

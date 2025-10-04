@@ -58,11 +58,12 @@ interface ReservationActionsProps {
 	reservation: ReservationForActions;
 	onView: () => void;
 	onEdit: () => void;
-	onPayment: () => void;
-	onAddIncome: () => void;
+	onPayment?: () => void;
+	onAddIncome?: () => void;
 	onPrint?: () => void;
 	canShowPayment: boolean;
 	isMobile?: boolean;
+	showPaymentAndIncome?: boolean; // New prop to control visibility
 }
 
 export function ReservationActions({
@@ -74,6 +75,7 @@ export function ReservationActions({
 	onPrint,
 	canShowPayment,
 	isMobile = false,
+	showPaymentAndIncome = true,
 }: ReservationActionsProps) {
 		if (isMobile) {
 			return (
@@ -83,16 +85,17 @@ export function ReservationActions({
 						View
 					</Button>
 
-					{onPrint && (
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={onPrint}
-						>
-							<Printer className="size-4" />
-						</Button>
-					)}
+				{onPrint && (
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={onPrint}
+					>
+						<Printer className="size-4" />
+					</Button>
+				)}
 
+				{showPaymentAndIncome && onAddIncome && (
 					<Button
 						variant="outline"
 						size="sm"
@@ -101,19 +104,18 @@ export function ReservationActions({
 					>
 						<DollarSign className="size-4" />
 					</Button>
+				)}
 
-					{canShowPayment && (
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={onPayment}
-							className="text-green-600 hover:text-green-700"
-						>
-							<CreditCard className="size-4" />
-						</Button>
-					)}
-
-					<OTPVerification
+				{showPaymentAndIncome && canShowPayment && onPayment && (
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={onPayment}
+						className="text-green-600 hover:text-green-700"
+					>
+						<CreditCard className="size-4" />
+					</Button>
+				)}					<OTPVerification
 						onVerified={onEdit}
 						triggerComponent={
 							<Button variant="outline" size="sm">
@@ -143,22 +145,26 @@ export function ReservationActions({
 							Print Reservation
 						</DropdownMenuItem>
 					)}
-					<DropdownMenuSeparator />
-					<DropdownMenuItem 
-						onClick={onAddIncome}
-						className="text-blue-600"
-					>
-						<DollarSign className="size-4 mr-2" />
-						Add Income
-					</DropdownMenuItem>
-					{canShowPayment && (
-						<DropdownMenuItem 
-							onClick={onPayment}
-							className="text-green-600"
-						>
-							<CreditCard className="size-4 mr-2" />
-							Pay Now
-						</DropdownMenuItem>
+					{showPaymentAndIncome && (
+						<>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem 
+								onClick={onAddIncome}
+								className="text-blue-600"
+							>
+								<DollarSign className="size-4 mr-2" />
+								Add Income
+							</DropdownMenuItem>
+							{canShowPayment && (
+								<DropdownMenuItem 
+									onClick={onPayment}
+									className="text-green-600"
+								>
+									<CreditCard className="size-4 mr-2" />
+									Pay Now
+								</DropdownMenuItem>
+							)}
+						</>
 					)}
 					<DropdownMenuSeparator />
 					<OTPVerification
