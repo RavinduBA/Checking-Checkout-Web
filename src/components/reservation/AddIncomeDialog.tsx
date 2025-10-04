@@ -136,6 +136,17 @@ export function AddIncomeDialog({
 					})
 					.eq("id", selectedReservation.id);
 				if (reservationError) throw reservationError;
+			} else if (incomeForm.payment_type === "direct") {
+				// For direct payments, update paid_amount to reflect the payment received
+				const newPaidAmount = (selectedReservation.paid_amount || 0) + incomeForm.amount;
+				const { error: reservationError } = await supabase
+					.from("reservations")
+					.update({
+						paid_amount: newPaidAmount,
+						updated_at: new Date().toISOString(),
+					})
+					.eq("id", selectedReservation.id);
+				if (reservationError) throw reservationError;
 			}
 
 			const successMessage =

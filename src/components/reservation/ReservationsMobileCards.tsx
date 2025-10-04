@@ -66,10 +66,14 @@ export function ReservationsMobileCards({
 
 	const getTotalPayableAmount = (reservation: any): number => {
 		const roomAmount = reservation.room_rate * reservation.nights;
-		const additionalServices = incomeRecords
-			.filter((inc) => inc.booking_id === reservation.id)
+		// Only include deferred payments in total payable (unpaid services)
+		const unpaidServices = incomeRecords
+			.filter((inc) => 
+				inc.booking_id === reservation.id && 
+				inc.payment_method === "pending" // Only deferred/unpaid services
+			)
 			.reduce((sum, inc) => sum + Number(inc.amount), 0);
-		return roomAmount + additionalServices;
+		return roomAmount + unpaidServices;
 	};
 
 	// Transform reservation data for printing
